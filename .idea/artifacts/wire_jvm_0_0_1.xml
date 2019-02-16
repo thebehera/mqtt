@@ -1,0 +1,6 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="wire-jvm-0.0.1">
+    <output-path>$PROJECT_DIR$/wire/build/libs</output-path>
+    <root id="archive" name="wire-jvm-0.0.1.jar" />
+  </artifact>
+</component>
