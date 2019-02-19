@@ -8,6 +8,5 @@ class SampleTestsJVM {
     fun testHello() {
         assertTrue("JVM" in hello())
         println("mewooowwow")
-        assert(false)
     }
 }
