@@ -2,6 +2,9 @@ buildscript {
     repositories {
         jcenter()
     }
+    dependencies {
+        classpath "com.moowork.gradle:gradle-node-plugin:$gradle_node_version"
+    }
 }
 
 plugins {

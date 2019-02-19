@@ -21,6 +21,12 @@ kotlin {
     // For MacOS, should be changed to e.g. macosX64
     // For Windows, should be changed to e.g. mingwX64
     macosX64("macos")
+
+    targets {
+        fromPreset(presets.js, 'js') {
+            tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
+        }
+    }
     sourceSets {
         commonMain {
             dependencies {
@@ -59,7 +65,6 @@ kotlin {
         macosTest {
         }
     }
-
 }
 
 publishing {
@@ -104,3 +109,37 @@ bintrayUpload.doFirst {
         it.name
     }
 }
+
+// ==== CONFIGURE JS =====
+
+tasks.withType(compileKotlinJs.getClass()) {
+    kotlinOptions {
+        moduleKind = "umd"
+        sourceMap = true
+        metaInfo = true
+    }
+}
+
+compileKotlinJs {
+    kotlinOptions {
+        // NOTE: Module base-name must be equal to the package name declared in package.json
+        def baseName = "wire"
+        outputFile = new File(outputFile.parent, baseName + ".js")
+    }
+}
+
+apply from: file("$rootProject.projectDir/gradle/node-js.gradle")
+apply from: file("$rootProject.projectDir/gradle/test-mocha-js.gradle")
+apply from: file("$rootProject.projectDir/gradle/publish-npm-js.gradle")
+
+// Workaround the problem with Node downloading
+repositories.whenObjectAdded {
+    if (it instanceof IvyArtifactRepository) {
+        metadataSources {
+            artifact()
+        }
+    }
+}
+// ==== !CONFIGURE JS =====
+
+test.dependsOn jsTest, jvmTest, macosTest

@@ -1,0 +1,45 @@
+/*
+ * Copyright 2017-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license.
+ */
+
+apply plugin: 'com.moowork.node'
+
+node {
+    version = "$node_version"
+    npmVersion = "$npm_version"
+    download = true
+    nodeModulesDir = file(buildDir)
+}
+
+// Configures testing for JS modules
+
+task prepareNodePackage(type: Copy) {
+   from("npm") {
+       include 'package.json'
+       expand (project.properties + [kotlinDependency: ""])
+   }
+   from("npm") {
+       exclude 'package.json'
+   }
+   into "$node.nodeModulesDir"
+}
+
+npmInstall.dependsOn prepareNodePackage
+
+task populateNodeModules(type: Copy, dependsOn: [compileKotlinJs]) {
+    from compileKotlinJs.destinationDir
+    into "$node.nodeModulesDir/node_modules"
+
+    afterEvaluate {
+        configurations.jsTestRuntimeClasspath.each {
+            if (it.absolutePath.endsWith(".jar")) {
+                from zipTree(it.absolutePath).matching {
+                    include '*.js'
+                    include '*.js.map'
+                }
+            }
+        }
+    }
+}
+
+npmInstall.dependsOn populateNodeModules
