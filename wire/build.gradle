@@ -66,6 +66,12 @@ kotlin {
         }
         macosTest {
         }
+        iosMain {
+
+        }
+        iosTest {
+
+        }
     }
 }
 
@@ -144,4 +150,4 @@ repositories.whenObjectAdded {
 }
 // ==== !CONFIGURE JS =====
 
-test.dependsOn jsTest, jvmTest, macosTest
+test.dependsOn jsTest, jvmTest, macosTest, linuxTest, windowsTest
