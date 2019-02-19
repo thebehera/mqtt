@@ -173,6 +173,7 @@ task iosTest {
         }
     }
 }
+macosTest.dependsOn iosTest
 // ==== !CONFIGURE ios =====
 
-test.dependsOn jsTest, jvmTest, macosTest, linuxTest, windowsTest, iosTest
+test.dependsOn jsTest, jvmTest, macosTest, linuxTest, windowsTest
