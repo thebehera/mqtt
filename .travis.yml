@@ -1,4 +1,4 @@
-language: sh
+language: ruby
 matrix:
   include:
     - os: linux
