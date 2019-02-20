@@ -5,6 +5,7 @@ matrix:
     - os: osx
       osx_image: xcode10.1
     - os: windows
+      language: sh
       before_install:
         - choco install openjdk
         - export PATH=$PATH:"/C/Program Files/OpenJDK/jdk-11.0.2/bin"
