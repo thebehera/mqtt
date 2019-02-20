@@ -1,6 +1,7 @@
 os:
   - linux
   - osx
+  - windows
 osx_image: xcode10.1
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
