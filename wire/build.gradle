@@ -169,7 +169,8 @@ task iOSTest {
 iOSTest.onlyIf {System.getProperty("os.name").toLowerCase().contains("mac")}
 // ==== !CONFIGURE ios =====
 
-final def isCi = System.getenv("CONTINUOUS_INTEGRATION")
+final def isCi = System.getenv("CONTINUOUS_INTEGRATION") ?: null
+println("CI: $isCi")
 if (isCi != null && isCi.toBoolean()) {
     String osName = System.getProperty("os.name").toLowerCase()
     if (osName.contains("mac")) {
