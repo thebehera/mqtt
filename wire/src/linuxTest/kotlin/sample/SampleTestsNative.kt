@@ -5,6 +5,6 @@ import kotlin.test.assertTrue
 class SampleTestsNative {
     @Test
     fun testHello() {
-        assertTrue("Native" in hello())
+        assertTrue("Linux" in hello())
     }
 }
