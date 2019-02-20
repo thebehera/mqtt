@@ -69,5 +69,5 @@ task testMochaChrome(type: NodeTask, dependsOn: prepareMochaChrome) {
     if (project.hasProperty("mochaTests")) args += ['--grep', "$mochaTests"]
 }
 
-test.dependsOn testMochaChrome
+jsTest.dependsOn testMochaChrome
 
