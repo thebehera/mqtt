@@ -6,8 +6,8 @@ matrix:
       osx_image: xcode10.1
     - os: windows
       language: sh
-      before_script:
-        - choco install openjdk && refreshenv
+      before_install:
+        - choco install openjdk
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
