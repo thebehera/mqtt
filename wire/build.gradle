@@ -12,7 +12,10 @@ version '0.0.1'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
-
+apply plugin: "com.android.library"
+android {
+    compileSdkVersion = 28
+}
 kotlin {
     jvm()
     js() {
@@ -75,13 +78,11 @@ kotlin {
     }
 }
 
-publishing {
-    publications {
-        common(MavenPublication) {
-            artifactId = 'mqtt'
-            // Add a docs JAR artifact (it should be a custom task):
+publishing.publications {
+    common(MavenPublication) {
+        artifactId = 'mqtt'
+        // Add a docs JAR artifact (it should be a custom task):
 //                artifact(javadocJar)
-        }
     }
 }
 
@@ -167,24 +168,13 @@ task iOSTest {
     }
 }
 iOSTest.onlyIf {System.getProperty("os.name").toLowerCase().contains("mac")}
-// ==== !CONFIGURE ios =====
 
-final def isCi = System.getenv("CONTINUOUS_INTEGRATION") ?: null
-println("CI: $isCi")
-if (isCi != null && isCi.toBoolean()) {
-    String osName = System.getProperty("os.name").toLowerCase()
-    if (osName.contains("mac")) {
-        println("mac")
-        test.dependsOn macosTest, iOSTest
-    } else if (osName.contains("linux")) {
-        println("linux")
-        test.dependsOn linuxTest, jsTest, jvmTest
-    } else {
-        println("windows")
-        test.dependsOn windowsTest
-    }
+task CI {}
+String osName = System.getProperty("os.name").toLowerCase()
+if (osName.contains("mac")) {
+    CI.dependsOn macosTest, iOSTest
+} else if (osName.contains("linux")) {
+    CI.dependsOn linuxTest, jsTest, jvmTest
 } else {
-    println("all os's")
-    test.dependsOn jsTest, jvmTest, macosTest, iOSTest, linuxTest, windowsTest
+    CI.dependsOn windowsTest
 }
-
