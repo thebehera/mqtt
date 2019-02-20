@@ -176,4 +176,9 @@ task iosTest {
 macosTest.dependsOn iosTest
 // ==== !CONFIGURE ios =====
 
-test.dependsOn jsTest, jvmTest, macosTest, linuxTest, windowsTest
+String osName = System.getProperty("os.name").toLowerCase()
+if (osName.contains("mac")) {
+    test.dependsOn jsTest, jvmTest, macosTest, iosTest, linuxTest, windowsTest
+} else {
+    test.dependsOn jsTest, jvmTest, macosTest, linuxTest, windowsTest
+}
