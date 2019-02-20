@@ -1,16 +1,14 @@
-language: ruby
+language: sh
 matrix:
   include:
     - os: linux
     - os: osx
       osx_image: xcode10.1
     - os: windows
-      language: sh
       before_install:
         - choco install openjdk
         - export PATH=$PATH:"/C/Program Files/OpenJDK/jdk-11.0.2/bin"
-before_install:
-  - export GRADLE_OPTS=-Dorg.gradle.daemon=false
+        - export GRADLE_OPTS=-Dorg.gradle.daemon=false
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
