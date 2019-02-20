@@ -173,7 +173,7 @@ task iosTest {
         }
     }
 }
-macosTest.dependsOn iosTest
+
 // ==== !CONFIGURE ios =====
 
 String osName = System.getProperty("os.name").toLowerCase()
