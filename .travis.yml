@@ -1,11 +1,11 @@
+language: ruby
 matrix:
   include:
     - os: linux
     - os: osx
-        - osx_image: xcode10.1
+      osx_image: xcode10.1
     - os: windows
-        language: sh
-          - choco install jdk10
+      language: sh
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
