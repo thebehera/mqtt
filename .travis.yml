@@ -17,5 +17,7 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/
+before_script:
+  - export GRADLE_OPTS=-Dorg.gradle.daemon=false
 script:
   - ./gradlew test
