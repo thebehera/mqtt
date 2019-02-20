@@ -7,7 +7,7 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install openjdk
+        - choco install openjdk --version 11.0.2
         - export PATH=$PATH:"/C/Program Files/OpenJDK/jdk-11.0.2/bin"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
