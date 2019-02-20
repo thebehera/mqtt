@@ -15,20 +15,19 @@ apply plugin: 'signing'
 
 kotlin {
     jvm()
-    js()
+    js() {
+        tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
+    }
     // For ARM, should be changed to iosArm32 or iosArm64
     // For Linux, should be changed to e.g. linuxX64
     // For MacOS, should be changed to e.g. macosX64
     // For Windows, should be changed to e.g. mingwX64
     macosX64("macos")
-    iosArm64("iosArm64")
-    iosX64("iosX64")
     linuxX64("linux")
     mingwX64("windows")
     targets {
-        fromPreset(presets.js, 'js') {
-            tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
-        }
+        final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") ? presets.iosArm64 : presets.iosX64
+        fromPreset(iOSTarget, 'iOS')
     }
     sourceSets {
         commonMain {
@@ -67,16 +66,10 @@ kotlin {
         }
         macosTest {
         }
-        iosX64Main {
+        iOSMain {
 
         }
-        iosX64Test {
-
-        }
-        iosArm64Main {
-
-        }
-        iosArm64Test {
+        iOSTest {
 
         }
     }
@@ -159,26 +152,34 @@ repositories.whenObjectAdded {
 
 
 // ==== CONFIGURE ios =====
-task iosTest {
+task iOSTest {
     def device = project.findProperty("iosDevice")?.toString() ?: "iPhone XR"
-    dependsOn 'linkTestIosX64'
+    dependsOn 'linkTestIOS'
     group = JavaBasePlugin.VERIFICATION_GROUP
     description = "Runs tests for target 'iOS' on an iOS simulator"
 
     doLast {
-        def binary = kotlin.targets.iosX64.compilations.test.getBinary('EXECUTABLE', 'DEBUG')
+        def binary = kotlin.targets.iOS.compilations.test.getBinary('EXECUTABLE', 'DEBUG')
         println(binary)
         exec {
             commandLine 'xcrun', 'simctl', 'spawn', device, binary.absolutePath
         }
     }
 }
-
+iOSTest.onlyIf {System.getProperty("os.name").toLowerCase().contains("mac")}
 // ==== !CONFIGURE ios =====
 
-String osName = System.getProperty("os.name").toLowerCase()
-if (osName.contains("mac")) {
-    test.dependsOn jsTest, jvmTest, macosTest, iosTest, linuxTest, windowsTest
+final def isCi = System.getenv("CONTINUOUS_INTEGRATION")
+if (isCi != null && isCi.toBoolean()) {
+    String osName = System.getProperty("os.name").toLowerCase()
+    if (osName.contains("mac")) {
+        test.dependsOn macosTest, iOSTest
+    } else if (osName.contains("linux")) {
+        test.dependsOn linuxTest, jsTest, jvmTest
+    } else {
+        test.dependsOn windowsTest
+    }
 } else {
-    test.dependsOn jsTest, jvmTest, macosTest, linuxTest, windowsTest
+    test.dependsOn jsTest, jvmTest, macosTest, iOSTest, linuxTest, windowsTest
 }
+
