@@ -17,5 +17,6 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/.konan/cache
 script:
   - ./gradlew test
