@@ -6,11 +6,10 @@ matrix:
       osx_image: xcode10.1
     - os: windows
       language: sh
+      before_script: choco install gradle
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-before_install:
-  - choco install jdk10 -params source=false || true
 cache:
   directories:
     - $HOME/.gradle/caches/
