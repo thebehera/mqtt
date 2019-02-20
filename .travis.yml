@@ -1,4 +1,4 @@
-language: ruby
+language: java
 matrix:
   include:
     - os: linux
@@ -16,5 +16,6 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/.konan/
 script:
   - ./gradlew test
