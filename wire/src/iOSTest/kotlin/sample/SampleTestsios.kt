@@ -6,6 +6,6 @@ import kotlin.test.assertTrue
 class SampleTestsios {
     @Test
     fun testHello() {
-        assertTrue("Native" in hello())
+        assertTrue("iOS" in hello())
     }
 }
