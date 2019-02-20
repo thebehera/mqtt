@@ -10,7 +10,7 @@ before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; choco install jdk10 -params 'source=false'          ; fi
+  - if [[ "$TRAVIS_OS_NAME" == "windows" ]]; choco install jdk10 -params         ; fi
 cache:
   directories:
     - $HOME/.gradle/caches/
