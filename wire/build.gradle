@@ -174,13 +174,17 @@ println("CI: $isCi")
 if (isCi != null && isCi.toBoolean()) {
     String osName = System.getProperty("os.name").toLowerCase()
     if (osName.contains("mac")) {
+        println("mac")
         test.dependsOn macosTest, iOSTest
     } else if (osName.contains("linux")) {
+        println("linux")
         test.dependsOn linuxTest, jsTest, jvmTest
     } else {
+        println("windows")
         test.dependsOn windowsTest
     }
 } else {
+    println("all os's")
     test.dependsOn jsTest, jvmTest, macosTest, iOSTest, linuxTest, windowsTest
 }
 
