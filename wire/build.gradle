@@ -12,7 +12,6 @@ version '0.0.1'
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
-apply plugin: "com.android.library"
 
 kotlin {
     jvm()
@@ -75,9 +74,7 @@ kotlin {
         }
     }
 }
-android {
-    compileSdkVersion = 28
-}
+
 publishing.publications {
     common(MavenPublication) {
         artifactId = 'mqtt'
