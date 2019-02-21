@@ -7,7 +7,8 @@ repositories {
 }
 
 group 'com.github.thebehera.mqtt'
-version '0.0.' + (System.getenv('TRAVIS_BUILD_NUMBER') ?: '0')
+def version_string = '0.0.' + (System.getenv('TRAVIS_BUILD_NUMBER') ?: '0')
+version version_string
 
 apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
@@ -112,7 +113,7 @@ bintray {
         publicDownloadNumbers = true
         attributes= ['mqtt': ['true']] //Optional package-level attributes
         version {
-            name = '0.0.0-test'
+            name = version_string
             desc = 'Gradle Bintray Plugin 1.0 final'
             vcsTag = '0.0.0'
         }
