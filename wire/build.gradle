@@ -34,7 +34,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-io:0.1.5"
+                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
         commonTest {
@@ -46,6 +46,7 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk8')
+                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         jvmTest {
@@ -57,6 +58,7 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
+                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
             }
         }
         jsTest {
@@ -64,15 +66,23 @@ kotlin {
                 implementation kotlin('test-js')
             }
         }
-        macosMain {
+
+        nativeMain {
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
+            }
         }
-        macosTest {
+        macosMain {
+            dependsOn nativeMain
         }
         iOSMain {
-
+            dependsOn nativeMain
         }
-        iOSTest {
-
+        windowsMain {
+            dependsOn nativeMain
+        }
+        linuxMain {
+            dependsOn nativeMain
         }
     }
 
