@@ -17,8 +17,4 @@ class StringTests {
 
     @Test
     fun validMqttStringBasic() = assertTrue("abcdef".validateMqttUTF8String())
-
-    @Test
-    fun nonCharacter() = assertFalse("abc\u0fffdef".validateMqttUTF8String())
-
 }

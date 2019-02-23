@@ -11,3 +11,14 @@ data class FlagBits(val bit3: Boolean = false,
 
 internal val emptyFlagBits by lazy { FlagBits() }
 internal val bit1TrueFlagBits by lazy { FlagBits(bit1 = true) }
+
+fun FlagBits.toByte(): Byte {
+    val booleanArray = booleanArrayOf(bit0, bit1, bit2, bit3)
+    var result = 0
+    booleanArray.forEachIndexed { index, it ->
+        if (it) {
+            result = result or (1 shl index)
+        }
+    }
+    return result.toByte()
+}
