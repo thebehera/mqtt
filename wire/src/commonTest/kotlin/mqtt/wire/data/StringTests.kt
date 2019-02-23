@@ -8,7 +8,6 @@ class StringTests {
     @Test
     fun invalidMqttString() = assertFalse("abc\u0001def".validateMqttUTF8String())
 
-
     @Test
     fun validMqttString() = assertTrue("abc\u002Fdef".validateMqttUTF8String())
 

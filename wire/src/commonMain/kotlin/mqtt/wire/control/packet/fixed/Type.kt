@@ -2,6 +2,7 @@ package mqtt.wire.control.packet.fixed
 
 import mqtt.wire.control.packet.fixed.DirectionOfFlow.*
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 
 /**
  * The MQTT specification defines fifteen different types of MQTT Control Packet, for example the PUBLISH packet is
@@ -80,7 +81,7 @@ enum class ControlPacketType(val value: Byte, val direction: DirectionOfFlow) {
      * @param qos PUBLISH Quality of Service
      * @param retain PUBLISH retained message flag
      */
-    fun flags(dup: Boolean = false, qos: QualityOfService = QualityOfService.AT_MOST_ONCE, retain: Boolean = false) =
+    fun flags(dup: Boolean = false, qos: QualityOfService = AT_MOST_ONCE, retain: Boolean = false) =
             when (this) {
                 RESERVED -> throw IllegalStateException("Not allowed to get flags for RESERVED")
                 PUBLISH -> {
@@ -91,5 +92,41 @@ enum class ControlPacketType(val value: Byte, val direction: DirectionOfFlow) {
                 SUBSCRIBE -> bit1TrueFlagBits
                 UNSUBSCRIBE -> bit1TrueFlagBits
                 else -> emptyFlagBits
+            }
+
+
+    /**
+     * @see http://docs.oasis-open.org/mqtt/mqtt/v5.0/cos01/mqtt-v5.0-cos01.html#_Toc514847893
+     */
+    fun requiresPacketIdentifier(qualityOfService: QualityOfService = AT_MOST_ONCE) =
+            when (this) {
+                CONNECT -> false
+                CONNACK -> false
+                PINGREQ -> false
+                PINGRESP -> false
+                DISCONNECT -> false
+                AUTH -> false
+                PUBLISH -> qualityOfService.isGreaterThan(AT_MOST_ONCE)
+                else -> true
+            }
+
+    /**
+     * @see http://docs.oasis-open.org/mqtt/mqtt/v5.0/cos01/mqtt-v5.0-cos01.html#_Toc514847900
+     */
+    fun requiresProperties(controlPacketType: ControlPacketType) =
+            when (controlPacketType) {
+                CONNECT -> true
+                CONNACK -> true
+                PUBLISH -> true
+                PUBACK -> true
+                PUBREC -> true
+                PUBREL -> true
+                PUBCOMP -> true
+                SUBSCRIBE -> true
+                SUBACK -> true
+                UNSUBACK -> true
+                DISCONNECT -> true
+                AUTH -> true
+                else -> false
             }
 }

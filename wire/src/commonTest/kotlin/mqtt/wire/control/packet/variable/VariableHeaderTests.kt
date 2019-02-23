@@ -1,8 +1,8 @@
 package mqtt.wire.control.packet.variable
 
 import mqtt.wire.control.packet.fixed.ControlPacketType.*
-import mqtt.wire.control.packet.variable.VariableHeader.Companion.requiresPacketIdentifier
-import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
+import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -14,69 +14,69 @@ class VariableHeaderTests {
     // Control packet types value matching spec
     @Test
     fun variableHeaderPacketIdentifierRequirementForCONNECT() =
-            assertFalse(requiresPacketIdentifier(CONNECT), variableHeaderPacketReq)
+            assertFalse(CONNECT.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForCONNACK() =
-            assertFalse(requiresPacketIdentifier(CONNACK), variableHeaderPacketReq)
+            assertFalse(CONNACK.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBLISH_QoS_AtMostOnce() =
-            assertFalse(requiresPacketIdentifier(PUBLISH), variableHeaderPacketReq)
+            assertFalse(PUBLISH.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBLISH_QoS_AtLeastOnce() =
-            assertTrue(requiresPacketIdentifier(PUBLISH, QualityOfService.AT_LEAST_ONCE), variableHeaderPacketReq)
+            assertTrue(PUBLISH.requiresPacketIdentifier(AT_LEAST_ONCE), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBLISH_QoS_ExactlyOnce() =
-            assertTrue(requiresPacketIdentifier(PUBLISH, QualityOfService.EXACTLY_ONCE), variableHeaderPacketReq)
+            assertTrue(PUBLISH.requiresPacketIdentifier(EXACTLY_ONCE), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBACK() =
-            assertTrue(requiresPacketIdentifier(PUBACK), variableHeaderPacketReq)
+            assertTrue(PUBACK.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBREC() =
-            assertTrue(requiresPacketIdentifier(PUBREC), variableHeaderPacketReq)
+            assertTrue(PUBREC.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBREL() =
-            assertTrue(requiresPacketIdentifier(PUBREL), variableHeaderPacketReq)
+            assertTrue(PUBREL.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPUBCOMP() =
-            assertTrue(requiresPacketIdentifier(PUBCOMP), variableHeaderPacketReq)
+            assertTrue(PUBCOMP.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForSUBSCRIBE() =
-            assertTrue(requiresPacketIdentifier(SUBSCRIBE), variableHeaderPacketReq)
+            assertTrue(SUBSCRIBE.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForSUBACK() =
-            assertTrue(requiresPacketIdentifier(SUBACK), variableHeaderPacketReq)
+            assertTrue(SUBACK.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForUNSUBSCRIBE() =
-            assertTrue(requiresPacketIdentifier(UNSUBSCRIBE), variableHeaderPacketReq)
+            assertTrue(UNSUBSCRIBE.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForUNSUBACK() =
-            assertTrue(requiresPacketIdentifier(UNSUBACK), variableHeaderPacketReq)
+            assertTrue(UNSUBACK.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPINGREQ() =
-            assertFalse(requiresPacketIdentifier(PINGREQ), variableHeaderPacketReq)
+            assertFalse(PINGREQ.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForPINGRESP() =
-            assertFalse(requiresPacketIdentifier(PINGRESP), variableHeaderPacketReq)
+            assertFalse(PINGRESP.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForDISCONNECT() =
-            assertFalse(requiresPacketIdentifier(DISCONNECT), variableHeaderPacketReq)
+            assertFalse(DISCONNECT.requiresPacketIdentifier(), variableHeaderPacketReq)
 
     @Test
     fun variableHeaderPacketIdentifierRequirementForAUTH() =
-            assertFalse(requiresPacketIdentifier(AUTH), variableHeaderPacketReq)
+            assertFalse(AUTH.requiresPacketIdentifier(), variableHeaderPacketReq)
 }

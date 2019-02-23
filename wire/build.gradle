@@ -14,6 +14,7 @@ apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
+apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
     js() {
@@ -96,6 +97,16 @@ kotlin {
                 onlyIf {
                     publication != linuxOnlyPublication || findProperty("isLinux") == "true"
                 }
+            }
+        }
+    }
+
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
+                ]
             }
         }
     }
