@@ -13,70 +13,70 @@ class VariableHeaderTests {
 
     // Control packet types value matching spec
     @Test
-    fun `Variable Header packet identifier requirement for CONNECT`() =
+    fun variableHeaderPacketIdentifierRequirementForCONNECT() =
             assertFalse(requiresPacketIdentifier(CONNECT), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for CONNACK`() =
+    fun variableHeaderPacketIdentifierRequirementForCONNACK() =
             assertFalse(requiresPacketIdentifier(CONNACK), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBLISH QoS=AtMostOnce`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBLISH_QoS_AtMostOnce() =
             assertFalse(requiresPacketIdentifier(PUBLISH), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBLISH QoS=AtLeastOnce A PUBLISH packet MUST NOT contain a Packet Identifier if its QoS value is set to 0`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBLISH_QoS_AtLeastOnce() =
             assertTrue(requiresPacketIdentifier(PUBLISH, QualityOfService.AT_LEAST_ONCE), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBLISH QoS=ExactlyOnce A PUBLISH packet MUST NOT contain a Packet Identifier if its QoS value is set to 0`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBLISH_QoS_ExactlyOnce() =
             assertTrue(requiresPacketIdentifier(PUBLISH, QualityOfService.EXACTLY_ONCE), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBACK`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBACK() =
             assertTrue(requiresPacketIdentifier(PUBACK), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBREC`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBREC() =
             assertTrue(requiresPacketIdentifier(PUBREC), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBREL`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBREL() =
             assertTrue(requiresPacketIdentifier(PUBREL), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PUBCOMP`() =
+    fun variableHeaderPacketIdentifierRequirementForPUBCOMP() =
             assertTrue(requiresPacketIdentifier(PUBCOMP), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for SUBSCRIBE`() =
+    fun variableHeaderPacketIdentifierRequirementForSUBSCRIBE() =
             assertTrue(requiresPacketIdentifier(SUBSCRIBE), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for SUBACK`() =
+    fun variableHeaderPacketIdentifierRequirementForSUBACK() =
             assertTrue(requiresPacketIdentifier(SUBACK), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for UNSUBSCRIBE`() =
+    fun variableHeaderPacketIdentifierRequirementForUNSUBSCRIBE() =
             assertTrue(requiresPacketIdentifier(UNSUBSCRIBE), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for UNSUBACK`() =
+    fun variableHeaderPacketIdentifierRequirementForUNSUBACK() =
             assertTrue(requiresPacketIdentifier(UNSUBACK), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PINGREQ`() =
+    fun variableHeaderPacketIdentifierRequirementForPINGREQ() =
             assertFalse(requiresPacketIdentifier(PINGREQ), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for PINGRESP`() =
+    fun variableHeaderPacketIdentifierRequirementForPINGRESP() =
             assertFalse(requiresPacketIdentifier(PINGRESP), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for DISCONNECT`() =
+    fun variableHeaderPacketIdentifierRequirementForDISCONNECT() =
             assertFalse(requiresPacketIdentifier(DISCONNECT), variableHeaderPacketReq)
 
     @Test
-    fun `Variable Header packet identifier requirement for AUTH`() =
+    fun variableHeaderPacketIdentifierRequirementForAUTH() =
             assertFalse(requiresPacketIdentifier(AUTH), variableHeaderPacketReq)
 }
