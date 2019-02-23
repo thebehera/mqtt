@@ -33,7 +33,7 @@ class PropertyTests {
 
     @Test
     fun messageExpiryIntervalIdentifier() =
-            assertEquals(0x01, MESSAGE_EXPIRY_INTERVAL.identifier,
+            assertEquals(0x02, MESSAGE_EXPIRY_INTERVAL.identifier,
                     "invalid identifier: message expiry interval hex")
 
     @Test
@@ -56,7 +56,7 @@ class PropertyTests {
 
     @Test
     fun contentTypeIdentifier() =
-            assertEquals(0x01, CONTENT_TYPE.identifier,
+            assertEquals(0x03, CONTENT_TYPE.identifier,
                     "invalid identifier: content type hex")
 
     @Test
