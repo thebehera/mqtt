@@ -9,7 +9,8 @@ import kotlin.experimental.and
 import kotlin.experimental.or
 
 
-private val VARIABLE_BYTE_INT_MAX = 268435455
+private val VARIABLE_BYTE_INT_MAX =
+        268435455
 
 fun Int.encodeVariableByteInteger(bypassValidation: Boolean = false): ByteArray {
     if (!bypassValidation) validateVariableByteInt(this)
@@ -43,7 +44,10 @@ fun ByteArray.decodeVariableByteInteger(): Int {
             value += (digit and 0x7F) * multiplier
             multiplier *= 128
         } while ((digit and 0x80.toByte()).toInt() != 0)
-    } catch (e: IndexOutOfBoundsException) {
+    } catch (e: Exception) {
+        throw MqttMalformedInvalidVariableByteInteger(value)
+    }
+    if (value < 0 || value > VARIABLE_BYTE_INT_MAX) {
         throw MqttMalformedInvalidVariableByteInteger(value)
     }
     return value
