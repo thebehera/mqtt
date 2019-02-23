@@ -9,8 +9,7 @@ import kotlin.experimental.and
 import kotlin.experimental.or
 
 
-private val VARIABLE_BYTE_INT_MAX =
-        268435455
+private val VARIABLE_BYTE_INT_MAX = 268435455
 
 fun Int.encodeVariableByteInteger(bypassValidation: Boolean = false): ByteArray {
     if (!bypassValidation) validateVariableByteInt(this)
