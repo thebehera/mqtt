@@ -17,7 +17,7 @@ class VariableByteIntegerTests {
     @Test
     fun oversize() {
         try {
-            val encodedByteArray = Int.MAX_VALUE.encodeVariableByteInteger(true)
+            val encodedByteArray = Int.MAX_VALUE.encodeVariableByteInteger()
             encodedByteArray.decodeVariableByteInteger()
             fail("Should of have hit an exception")
         } catch (e: MqttMalformedInvalidVariableByteInteger) {
