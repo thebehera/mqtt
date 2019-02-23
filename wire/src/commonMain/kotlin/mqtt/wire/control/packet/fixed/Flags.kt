@@ -12,10 +12,18 @@ data class FlagBits(val bit3: Boolean = false,
 internal val emptyFlagBits by lazy { FlagBits() }
 internal val bit1TrueFlagBits by lazy { FlagBits(bit1 = true) }
 
-fun FlagBits.toByte(): Byte {
-    val booleanArray = booleanArrayOf(bit0, bit1, bit2, bit3)
+fun FlagBits.toByte() = booleanArrayOf(bit0, bit1, bit2, bit3).toByte()
+
+/**
+ * Bits in a byte are labelled 7 to 0. Bit number 7 is the most significant bit, the least significant bit is assigned
+ * bit number 0.
+ */
+fun BooleanArray.toByte(): Byte {
+    if (size > 8) {
+        throw IllegalArgumentException("Cannot pack information into a byte. Boolean Array too large")
+    }
     var result = 0
-    booleanArray.forEachIndexed { index, it ->
+    forEachIndexed { index, it ->
         if (it) {
             result = result or (1 shl index)
         }

@@ -1,5 +1,6 @@
 package mqtt.wire.data
 
+import mqtt.wire.MalformedInvalidVariableByteInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -20,7 +21,7 @@ class VariableByteIntegerTests {
             val encodedByteArray = Int.MAX_VALUE.encodeVariableByteInteger()
             encodedByteArray.decodeVariableByteInteger()
             fail("Should of have hit an exception")
-        } catch (e: MqttMalformedInvalidVariableByteInteger) {
+        } catch (e: MalformedInvalidVariableByteInteger) {
         }
     }
 }

@@ -1,5 +1,9 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.wire.control.packet.fixed
 
+import mqtt.wire.MalformedPacketException
+import mqtt.wire.control.packet.fixed.ControlPacketType.*
 import mqtt.wire.control.packet.fixed.DirectionOfFlow.*
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -83,7 +87,6 @@ enum class ControlPacketType(val value: Byte, val direction: DirectionOfFlow) {
      */
     fun flags(dup: Boolean = false, qos: QualityOfService = AT_MOST_ONCE, retain: Boolean = false) =
             when (this) {
-                RESERVED -> throw IllegalStateException("Not allowed to get flags for RESERVED")
                 PUBLISH -> {
                     val qosBitInformation = qos.toBitInformation()
                     FlagBits(dup, qosBitInformation.first, qosBitInformation.second, retain)
@@ -129,4 +132,30 @@ enum class ControlPacketType(val value: Byte, val direction: DirectionOfFlow) {
                 AUTH -> true
                 else -> false
             }
+}
+
+internal fun Byte.toControlPacketType(): ControlPacketType {
+    val uByte = this.toUByte()
+    val int = uByte.toInt()
+    val shiftedRight = int.shr(4)
+    val byte = shiftedRight.toByte()
+    return when (byte) {
+        RESERVED.value -> RESERVED
+        CONNECT.value -> CONNECT
+        CONNACK.value -> CONNACK
+        PUBLISH.value -> PUBLISH
+        PUBACK.value -> PUBACK
+        PUBREC.value -> PUBREC
+        PUBREL.value -> PUBREL
+        PUBCOMP.value -> PUBCOMP
+        SUBSCRIBE.value -> SUBSCRIBE
+        SUBACK.value -> SUBACK
+        UNSUBSCRIBE.value -> UNSUBSCRIBE
+        UNSUBACK.value -> UNSUBACK
+        PINGREQ.value -> PINGREQ
+        PINGRESP.value -> PINGRESP
+        DISCONNECT.value -> DISCONNECT
+        AUTH.value -> AUTH
+        else -> throw MalformedPacketException("Invalid byte1 header")
+    }
 }

@@ -4,12 +4,11 @@ package mqtt.wire.data
 
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
-import kotlinx.io.errors.IOException
+import mqtt.wire.MalformedInvalidVariableByteInteger
 import kotlin.experimental.and
 import kotlin.experimental.or
 
-
-private val VARIABLE_BYTE_INT_MAX = 268435455
+internal const val VARIABLE_BYTE_INT_MAX = 268435455
 
 fun Int.encodeVariableByteInteger(bypassValidation: Boolean = false): ByteArray {
     if (!bypassValidation) validateVariableByteInt(this)
@@ -44,10 +43,10 @@ fun ByteArray.decodeVariableByteInteger(): Int {
             multiplier *= 128
         } while ((digit and 0x80.toByte()).toInt() != 0)
     } catch (e: Exception) {
-        throw MqttMalformedInvalidVariableByteInteger(value)
+        throw MalformedInvalidVariableByteInteger(value)
     }
     if (value < 0 || value > VARIABLE_BYTE_INT_MAX) {
-        throw MqttMalformedInvalidVariableByteInteger(value)
+        throw MalformedInvalidVariableByteInteger(value)
     }
     return value
 }
@@ -56,9 +55,7 @@ fun validateVariableByteInt(value: Int) {
     if (value in 0..VARIABLE_BYTE_INT_MAX) {
         return
     } else {
-        throw MqttMalformedInvalidVariableByteInteger(value)
+        throw MalformedInvalidVariableByteInteger(value)
     }
 }
 
-class MqttMalformedInvalidVariableByteInteger(val value: Int) : IOException("Malformed Variable Byte Integer: This " +
-        "property must be a number between 0 and %VARIABLE_BYTE_INT_MAX . Read value was: $value")

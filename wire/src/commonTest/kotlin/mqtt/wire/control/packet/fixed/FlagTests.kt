@@ -12,21 +12,24 @@ class FlagTests {
 
     // Control packet types flags().matchesEmptyBits() matching spec
     @Test
-    fun controlPacketFlagsMatchSpecForCONNECT() {
-        assertEquals(emptyFlagBits, CONNECT.flags(), controlPacketSpectMatchError)
-    }
+    fun controlPacketFlagsMatchSpecForCONNECT() =
+            assertEquals(CONNECT.flags(), emptyFlagBits, controlPacketSpectMatchError)
+
+    @Test
+    fun byte1CONNECT() =
+            assertEquals(CONNECT.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForCONNACK() =
-            assertEquals(emptyFlagBits, CONNACK.flags(), controlPacketSpectMatchError)
+            assertEquals(CONNACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_Retain_false() {
         val detailed = PUBLISH.flags(dup = false, qos = AT_MOST_ONCE, retain = false)
         assertEquals(detailed.toByte(), 0x00, "invalid byte value")
-        assertEquals(emptyFlagBits, detailed, controlPacketSpectMatchError)
+        assertEquals(detailed, emptyFlagBits, controlPacketSpectMatchError)
         val simple = PUBLISH.flags()
-        assertEquals(emptyFlagBits, simple, controlPacketSpectMatchError)
+        assertEquals(simple, emptyFlagBits, controlPacketSpectMatchError)
     }
 
     @Test
@@ -137,11 +140,11 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBACK() =
-            assertEquals(emptyFlagBits, PUBACK.flags(), controlPacketSpectMatchError)
+            assertEquals(PUBACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREC() =
-            assertEquals(emptyFlagBits, PUBREC.flags(), controlPacketSpectMatchError)
+            assertEquals(PUBREC.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREL() =
@@ -149,7 +152,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBCOMP() =
-            assertEquals(emptyFlagBits, PUBCOMP.flags(), controlPacketSpectMatchError)
+            assertEquals(PUBCOMP.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBSCRIBE() =
@@ -157,7 +160,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =
-            assertEquals(emptyFlagBits, SUBACK.flags(), controlPacketSpectMatchError)
+            assertEquals(SUBACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =
@@ -165,23 +168,23 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBACK() =
-            assertEquals(emptyFlagBits, UNSUBACK.flags(), controlPacketSpectMatchError)
+            assertEquals(UNSUBACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGREQ() =
-            assertEquals(emptyFlagBits, PINGREQ.flags(), controlPacketSpectMatchError)
+            assertEquals(PINGREQ.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGRESP() =
-            assertEquals(emptyFlagBits, PINGRESP.flags(), controlPacketSpectMatchError)
+            assertEquals(PINGRESP.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForDISCONNECT() =
-            assertEquals(emptyFlagBits, DISCONNECT.flags(), controlPacketSpectMatchError)
+            assertEquals(DISCONNECT.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForAUTH() =
-            assertEquals(emptyFlagBits, AUTH.flags(), controlPacketSpectMatchError)
+            assertEquals(AUTH.flags(), emptyFlagBits, controlPacketSpectMatchError)
 
     @Test
     fun emptyFlagBitsTest() {
