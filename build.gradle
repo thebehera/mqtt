@@ -12,7 +12,9 @@ buildscript {
 plugins {
     id "com.jfrog.bintray" version "1.8.4"
 }
-
+ext {
+    kotlinx_io_version = '0.1.6'
+}
 allprojects {
     repositories {
         jcenter()
@@ -29,6 +31,6 @@ allprojects {
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
 
-
 //    tasks.build.dependsOn(['sourceJar', 'emptyJar'])
 }
+
