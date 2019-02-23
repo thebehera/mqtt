@@ -12,16 +12,16 @@ class FlagTests {
 
     // Control packet types flags().matchesEmptyBits() matching spec
     @Test
-    fun `Control Packet Flags match spec for CONNECT`() {
+    fun controlPacketFlagsMatchSpecForCONNECT() {
         assertEquals(emptyFlagBits, CONNECT.flags(), controlPacketSpectMatchError)
     }
 
     @Test
-    fun `Control Packet Flags match spec for CONNACK`() =
+    fun controlPacketFlagsMatchSpecForCONNACK() =
             assertEquals(emptyFlagBits, CONNACK.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=false qos=AtMostOnce retain=false`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_Retain_false() {
         val detailed = PUBLISH.flags(dup = false, qos = AT_MOST_ONCE, retain = false)
         assertEquals(emptyFlagBits, detailed, controlPacketSpectMatchError)
         val simple = PUBLISH.flags()
@@ -29,7 +29,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=true qos=AtMostOnce retain=false`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_trueQos_AtMostOnceRetain_false() {
         val expected = FlagBits(bit3 = true)
         val detailed = PUBLISH.flags(dup = true, qos = AT_MOST_ONCE, retain = false)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -38,7 +38,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=false qos=AtMostOnce retain=true`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_retain_true() {
         val expected = FlagBits(bit0 = true)
         val detailed = PUBLISH.flags(dup = false, qos = AT_MOST_ONCE, retain = true)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -47,7 +47,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=true qos=AtMostOnce retain=true`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_AtMostOnce_retain_true() {
         val expected = FlagBits(bit3 = true, bit0 = true)
         val detailed = PUBLISH.flags(dup = true, qos = AT_MOST_ONCE, retain = true)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -56,7 +56,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=false qos=AtLeastOnce retain=false`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_false() {
         val expected = bit1TrueFlagBits
         val detailed = PUBLISH.flags(dup = false, qos = AT_LEAST_ONCE, retain = false)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -65,7 +65,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=true qos=AtLeastOnce retain=false`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_AtLeastOnce_retain_false() {
         val expected = FlagBits(bit3 = true, bit1 = true)
         val detailed = PUBLISH.flags(dup = true, qos = AT_LEAST_ONCE, retain = false)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -74,7 +74,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=false qos=AtLeastOnce retain=true`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_true() {
         val expected = FlagBits(bit1 = true, bit0 = true)
         val detailed = PUBLISH.flags(dup = false, qos = AT_LEAST_ONCE, retain = true)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -83,14 +83,14 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=true qos=AtLeastOnce retain=true`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_AtLeastOnce_retain_true() {
         val expected = FlagBits(bit3 = true, bit1 = true, bit0 = true)
         val simple = PUBLISH.flags(dup = true, qos = AT_LEAST_ONCE, retain = true)
         assertEquals(expected, simple, controlPacketSpectMatchError)
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=false qos=ExactlyOnce retain=false`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_ExactlyOnce_retain_false() {
         val expected = FlagBits(bit2 = true)
         val detailed = PUBLISH.flags(dup = false, qos = EXACTLY_ONCE, retain = false)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -99,7 +99,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=true qos=ExactlyOnce retain=false`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_ExactlyOnce_retain_false() {
         val expected = FlagBits(bit3 = true, bit2 = true)
         val detailed = PUBLISH.flags(dup = true, qos = EXACTLY_ONCE, retain = false)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -108,7 +108,7 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=false qos=ExactlyOnce retain=true`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_ExactlyOnce_retain_true() {
         val expected = FlagBits(bit2 = true, bit0 = true)
         val detailed = PUBLISH.flags(dup = false, qos = EXACTLY_ONCE, retain = true)
         assertEquals(expected, detailed, controlPacketSpectMatchError)
@@ -117,58 +117,58 @@ class FlagTests {
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBLISH dup=true qos=ExactlyOnce retain=true`() {
+    fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_ExactlyOnce_retain_true() {
         val expected = FlagBits(bit3 = true, bit2 = true, bit0 = true)
         val simple = PUBLISH.flags(dup = true, qos = EXACTLY_ONCE, retain = true)
         assertEquals(expected, simple, controlPacketSpectMatchError)
     }
 
     @Test
-    fun `Control Packet Flags match spec for PUBACK`() =
+    fun controlPacketFlagsMatchSpecForPUBACK() =
             assertEquals(emptyFlagBits, PUBACK.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for PUBREC`() =
+    fun controlPacketFlagsMatchSpecForPUBREC() =
             assertEquals(emptyFlagBits, PUBREC.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for PUBREL`() =
+    fun controlPacketFlagsMatchSpecForPUBREL() =
             assertEquals(bit1TrueFlagBits, PUBREL.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for PUBCOMP`() =
+    fun controlPacketFlagsMatchSpecForPUBCOMP() =
             assertEquals(emptyFlagBits, PUBCOMP.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for SUBSCRIBE`() =
+    fun controlPacketFlagsMatchSpecForSUBSCRIBE() =
             assertEquals(bit1TrueFlagBits, SUBSCRIBE.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for SUBACK`() =
+    fun controlPacketFlagsMatchSpecForSUBACK() =
             assertEquals(emptyFlagBits, SUBACK.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for UNSUBSCRIBE`() =
+    fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =
             assertEquals(bit1TrueFlagBits, UNSUBSCRIBE.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for UNSUBACK`() =
+    fun controlPacketFlagsMatchSpecForUNSUBACK() =
             assertEquals(emptyFlagBits, UNSUBACK.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for PINGREQ`() =
+    fun controlPacketFlagsMatchSpecForPINGREQ() =
             assertEquals(emptyFlagBits, PINGREQ.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for PINGRESP`() =
+    fun controlPacketFlagsMatchSpecForPINGRESP() =
             assertEquals(emptyFlagBits, PINGRESP.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for DISCONNECT`() =
+    fun controlPacketFlagsMatchSpecForDISCONNECT() =
             assertEquals(emptyFlagBits, DISCONNECT.flags(), controlPacketSpectMatchError)
 
     @Test
-    fun `Control Packet Flags match spec for AUTH`() =
+    fun controlPacketFlagsMatchSpecForAUTH() =
             assertEquals(emptyFlagBits, AUTH.flags(), controlPacketSpectMatchError)
 
 }
