@@ -3,6 +3,8 @@
 package mqtt.wire.control.packet.fixed
 
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.control.packet.Payload
+import mqtt.wire.control.packet.Payload.*
 import mqtt.wire.control.packet.fixed.ControlPacketType.*
 import mqtt.wire.control.packet.fixed.DirectionOfFlow.*
 import mqtt.wire.data.QualityOfService
@@ -12,71 +14,73 @@ import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
  * The MQTT specification defines fifteen different types of MQTT Control Packet, for example the PUBLISH packet is
  * used to convey Application Messages.
  * @see https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477322
+ * @see http://docs.oasis-open.org/mqtt/mqtt/v5.0/cos01/mqtt-v5.0-cos01.html#_Toc514847903
  * @param value Value defined under [MQTT 2.1.2]
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
+ * @param payloadRequired Is the payload required? see the second url
  */
-enum class ControlPacketType(val value: Byte, val direction: DirectionOfFlow) {
-    RESERVED(0, FORBIDDEN),
+enum class ControlPacketType(val value: Byte, val direction: DirectionOfFlow, val payloadRequired: Payload) {
+    RESERVED(0, FORBIDDEN, NONE),
     /**
      * Connection request
      */
-    CONNECT(1, CLIENT_TO_SERVER),
+    CONNECT(1, CLIENT_TO_SERVER, REQUIRED),
     /**
      * Connect acknowledgment
      */
-    CONNACK(2, SERVER_TO_CLIENT),
+    CONNACK(2, SERVER_TO_CLIENT, NONE),
     /**
      * Publish message
      */
-    PUBLISH(3, BIDIRECTIONAL),
+    PUBLISH(3, BIDIRECTIONAL, OPTIONAL),
     /**
      * Publish acknowledgment (QoS 1)
      */
-    PUBACK(4, BIDIRECTIONAL),
+    PUBACK(4, BIDIRECTIONAL, NONE),
     /**
      * Publish received (QoS 2 delivery part 1)
      */
-    PUBREC(5, BIDIRECTIONAL),
+    PUBREC(5, BIDIRECTIONAL, NONE),
     /**
      * Publish release (QoS 2 delivery part 2)
      */
-    PUBREL(6, BIDIRECTIONAL),
+    PUBREL(6, BIDIRECTIONAL, NONE),
     /**
      * Publish complete (QoS 2 delivery part 3)
      */
-    PUBCOMP(7, BIDIRECTIONAL),
+    PUBCOMP(7, BIDIRECTIONAL, NONE),
     /**
      * Subscribe request
      */
-    SUBSCRIBE(8, CLIENT_TO_SERVER),
+    SUBSCRIBE(8, CLIENT_TO_SERVER, REQUIRED),
     /**
      * Subscribe acknowledgment
      */
-    SUBACK(9, SERVER_TO_CLIENT),
+    SUBACK(9, SERVER_TO_CLIENT, REQUIRED),
     /**
      * Unsubscribe request
      */
-    UNSUBSCRIBE(10, CLIENT_TO_SERVER),
+    UNSUBSCRIBE(10, CLIENT_TO_SERVER, REQUIRED),
     /**
      * Unsubscribe acknowledgment
      */
-    UNSUBACK(11, SERVER_TO_CLIENT),
+    UNSUBACK(11, SERVER_TO_CLIENT, REQUIRED),
     /**
      * PING request
      */
-    PINGREQ(12, CLIENT_TO_SERVER),
+    PINGREQ(12, CLIENT_TO_SERVER, NONE),
     /**
      * PING response
      */
-    PINGRESP(13, SERVER_TO_CLIENT),
+    PINGRESP(13, SERVER_TO_CLIENT, NONE),
     /**
      * Disconnect notification
      */
-    DISCONNECT(14, BIDIRECTIONAL),
+    DISCONNECT(14, BIDIRECTIONAL, NONE),
     /**
      * Authentication exchange
      */
-    AUTH(15, BIDIRECTIONAL);
+    AUTH(15, BIDIRECTIONAL, NONE);
 
 
     /**
