@@ -1,12 +1,12 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.wire.control.packet.fixed
+package mqtt.wire.control.packet.format.fixed
 
 import mqtt.wire.MalformedPacketException
-import mqtt.wire.control.packet.Payload
-import mqtt.wire.control.packet.Payload.*
-import mqtt.wire.control.packet.fixed.ControlPacketType.*
-import mqtt.wire.control.packet.fixed.DirectionOfFlow.*
+import mqtt.wire.control.packet.format.Payload
+import mqtt.wire.control.packet.format.Payload.*
+import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 

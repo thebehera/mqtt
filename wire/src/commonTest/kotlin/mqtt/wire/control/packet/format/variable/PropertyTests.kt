@@ -1,7 +1,7 @@
-package mqtt.wire.control.packet.variable
+package mqtt.wire.control.packet.format.variable
 
-import mqtt.wire.control.packet.fixed.ControlPacketType.PUBLISH
-import mqtt.wire.control.packet.variable.Property.*
+import mqtt.wire.control.packet.format.fixed.ControlPacketType.PUBLISH
+import mqtt.wire.control.packet.format.variable.Property.*
 import mqtt.wire.data.Type.*
 import kotlin.test.Test
 import kotlin.test.assertEquals

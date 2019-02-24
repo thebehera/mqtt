@@ -1,8 +1,8 @@
-package mqtt.wire.control.packet.fixed
+package mqtt.wire.control.packet.format.fixed
 
 import mqtt.wire.MalformedInvalidVariableByteInteger
-import mqtt.wire.control.packet.fixed.ControlPacketType.*
-import mqtt.wire.control.packet.fixed.FixedHeader.Companion.fromType
+import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
+import mqtt.wire.control.packet.format.fixed.FixedHeader.Companion.fromType
 import mqtt.wire.data.VARIABLE_BYTE_INT_MAX
 import mqtt.wire.data.decodeVariableByteInteger
 import kotlin.test.Test

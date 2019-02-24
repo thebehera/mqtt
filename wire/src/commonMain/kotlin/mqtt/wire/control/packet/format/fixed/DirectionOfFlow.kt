@@ -1,4 +1,4 @@
-package mqtt.wire.control.packet.fixed
+package mqtt.wire.control.packet.format.fixed
 
 /**
  * Direction of the control packet

@@ -1,4 +1,4 @@
-package mqtt.wire.control.packet.fixed
+package mqtt.wire.control.packet.format.fixed
 
 /**
  * The remaining bits [3-0] of byte 1 in the Fixed Header contain flags specific to each MQTT Control Packet type

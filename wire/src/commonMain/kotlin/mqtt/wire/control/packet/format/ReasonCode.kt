@@ -1,9 +1,9 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.wire.control.packet
+package mqtt.wire.control.packet.format
 
-import mqtt.wire.control.packet.fixed.ControlPacketType
-import mqtt.wire.control.packet.fixed.ControlPacketType.*
+import mqtt.wire.control.packet.format.fixed.ControlPacketType
+import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
 
 /**
  * A Reason Code is a one byte unsigned value that indicates the result of an operation. Reason Codes less than 0x80

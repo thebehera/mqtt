@@ -1,6 +1,6 @@
-package mqtt.wire.control.packet.fixed
+package mqtt.wire.control.packet.format.fixed
 
-import mqtt.wire.control.packet.fixed.ControlPacketType.PUBLISH
+import mqtt.wire.control.packet.format.fixed.ControlPacketType.PUBLISH
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.encodeVariableByteInteger

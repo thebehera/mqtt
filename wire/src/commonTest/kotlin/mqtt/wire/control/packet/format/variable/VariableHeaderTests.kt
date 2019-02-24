@@ -1,6 +1,6 @@
-package mqtt.wire.control.packet.variable
+package mqtt.wire.control.packet.format.variable
 
-import mqtt.wire.control.packet.fixed.ControlPacketType.*
+import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import kotlin.test.Test

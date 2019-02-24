@@ -1,4 +1,4 @@
-package mqtt.wire.control.packet
+package mqtt.wire.control.packet.format
 
 enum class Payload {
     REQUIRED,
