@@ -2,17 +2,16 @@
 
 package mqtt.wire.control.packet.format
 
-import mqtt.wire.control.packet.format.fixed.ControlPacketType
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
+import mqtt.wire.ControlPacket
 
 /**
- * A Reason Code is a one byte unsigned value that indicates the result of an operation. Reason Codes less than 0x80
+ * A Reason Code is a one byte unsigned unsigned4BitValue that indicates the result of an operation. Reason Codes less than 0x80
  * indicate successful completion of an operation. The normal Reason Code for success is 0. Reason Code values of 0x80
  * or greater indicate failure.
- * The CONNACK, PUBACK, PUBREC, PUBREL, PUBCOMP, DISCONNECT and AUTH Control Packets have a single Reason Code as part
- * of the Variable Header. The SUBACK and UNSUBACK packets contain a list of one or more Reason Codes in the Payload.
+ * The ConnectionAcknowledgment, PublishAcknowledgment, PublishReceived, PublishRelease, PublishComplete, DisconnectNotification and AuthenticationExchange Control Packets have a single Reason Code as part
+ * of the Variable Header. The SubscribeAcknowledgment and UnsubscribeAcknowledgment packets contain a list of one or more Reason Codes in the Payload.
  */
-enum class ReasonCode(val byte: UByte, vararg val packets: ControlPacketType) {
+enum class ReasonCode(val byte: UByte, vararg val packets: ControlPacket) {
     SUCCESS(0x00.toUByte(), CONNACK, PUBACK, PUBREC, PUBREL, PUBCOMP, UNSUBACK, AUTH),
     NORMAL_DISCONNECTION(0x00.toUByte(), DISCONNECT),
     GRANTED_QOS_0(0x00.toUByte(), SUBACK),

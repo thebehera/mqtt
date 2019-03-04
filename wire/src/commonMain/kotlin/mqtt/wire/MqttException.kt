@@ -7,4 +7,4 @@ open class MalformedPacketException(msg: String) : MqttException(msg, 0x81.toByt
 
 
 class MalformedInvalidVariableByteInteger(val value: Int) : IOException("Malformed Variable Byte Integer: This " +
-        "property must be a number between 0 and %VARIABLE_BYTE_INT_MAX . Read value was: $value")
+        "property must be a number between 0 and %VARIABLE_BYTE_INT_MAX . Read unsigned4BitValue was: $value")

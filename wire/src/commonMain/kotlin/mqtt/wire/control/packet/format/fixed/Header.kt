@@ -1,8 +1,6 @@
 package mqtt.wire.control.packet.format.fixed
 
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.PUBLISH
-import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
+import mqtt.wire.ControlPacket
 import mqtt.wire.data.encodeVariableByteInteger
 
 /**
@@ -10,20 +8,9 @@ import mqtt.wire.data.encodeVariableByteInteger
  * @see https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477321
  */
 data class FixedHeader(
-        val controlPacketType: ControlPacketType,
+        val controlPacket: ControlPacket,
         val flags: FlagBits
-) {
-    companion object {
-        fun fromType(type: ControlPacketType, dup: Boolean = false,
-                     qos: QualityOfService = AT_MOST_ONCE, retain: Boolean = false): FixedHeader {
-            val flags = when (type) {
-                PUBLISH -> type.flags(dup, qos, retain)
-                else -> type.flags()
-            }
-            return FixedHeader(type, flags)
-        }
-    }
-}
+)
 
 /**
  * The Remaining Length is a Variable Byte Integer that represents the number of bytes remaining within the current
@@ -34,7 +21,7 @@ data class FixedHeader(
 internal fun remainingLengthVariableByteInteger(remainingLength: Int) = remainingLength.encodeVariableByteInteger()
 
 fun FixedHeader.toByteArray(remainingLength: Int): ByteArray {
-    val packetValue = controlPacketType.value
+    val packetValue = controlPacket.unsigned4BitValue
     val packetValueInt = packetValue.toInt()
     val packetValueShifted = packetValueInt.shl(4)
     val localFlags = flags

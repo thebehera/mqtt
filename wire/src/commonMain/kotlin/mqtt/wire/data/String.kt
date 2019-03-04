@@ -1,4 +1,8 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.wire.data
+
+import kotlinx.io.core.*
 
 fun String.validateMqttUTF8String(): Boolean {
     var i = 0
@@ -34,6 +38,22 @@ fun String.validateMqttUTF8String(): Boolean {
         i++
     }
     return true
+}
+
+fun String.toMqttUtf8Encoded(): ByteArray {
+    if (!validateMqttUTF8String()) {
+        throw IllegalArgumentException("Invalid utf-8 string")
+    }
+    val bytes = toByteArray()
+    if (bytes.size > 65_535) {
+        throw IllegalArgumentException("UTF-8 String too large to meet spec")
+    }
+    val size = bytes.size.toUShort()
+    val packet = buildPacket {
+        writeUShort(size)
+        writeFully(bytes)
+    }
+    return packet.readBytes()
 }
 
 fun Char.isISOControl() = toInt().isISOControl()

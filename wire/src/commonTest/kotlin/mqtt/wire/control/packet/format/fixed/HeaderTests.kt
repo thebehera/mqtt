@@ -1,15 +1,39 @@
 package mqtt.wire.control.packet.format.fixed
 
-import mqtt.wire.MalformedInvalidVariableByteInteger
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
-import mqtt.wire.control.packet.format.fixed.FixedHeader.Companion.fromType
+import mqtt.wire.*
 import mqtt.wire.data.VARIABLE_BYTE_INT_MAX
-import mqtt.wire.data.decodeVariableByteInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class HeaderTests {
+
+
+    internal fun Byte.toControlPacketType(): ControlPacket {
+        val uByte = this.toUByte()
+        val int = uByte.toInt()
+        val shiftedRight = int.shr(4)
+        val byte = shiftedRight.toByte()
+        return when (byte) {
+            Reserved.unsigned4BitValue -> Reserved
+            ConnectionRequest.unsigned4BitValue -> ConnectionRequest
+            ConnectionAcknowledgment.unsigned4BitValue -> ConnectionAcknowledgment
+            PublishMessage.unsigned4BitValue -> PublishMessage()
+            PublishAcknowledgment.unsigned4BitValue -> PublishAcknowledgment
+            PublishReceived.unsigned4BitValue -> PublishReceived
+            PublishRelease.unsigned4BitValue -> PublishRelease
+            PublishComplete.unsigned4BitValue -> PublishComplete
+            SubscribeRequest.unsigned4BitValue -> SubscribeRequest
+            SubscribeAcknowledgment.unsigned4BitValue -> SubscribeAcknowledgment
+            UnsubscribeRequest.unsigned4BitValue -> UnsubscribeRequest
+            UnsubscribeAcknowledgment.unsigned4BitValue -> UnsubscribeAcknowledgment
+            PingRequest.unsigned4BitValue -> PingRequest
+            PingResponse.unsigned4BitValue -> PingResponse
+            DisconnectNotification.unsigned4BitValue -> DisconnectNotification
+            AuthenticationExchange.unsigned4BitValue -> AuthenticationExchange
+            else -> throw MalformedPacketException("Invalid byte1 header")
+        }
+    }
     @Test
     fun reserved() {
         val expected = RESERVED

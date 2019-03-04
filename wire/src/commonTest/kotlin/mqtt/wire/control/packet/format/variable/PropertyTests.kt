@@ -1,6 +1,5 @@
 package mqtt.wire.control.packet.format.variable
 
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.PUBLISH
 import mqtt.wire.control.packet.format.variable.Property.*
 import mqtt.wire.data.Type.*
 import kotlin.test.Test
@@ -20,12 +19,12 @@ class PropertyTests {
 
     @Test
     fun payloadFormatIndicatorPacketPublish() =
-            assertTrue(PAYLOAD_FORMAT_INDICATOR.packetTypes.contains(PUBLISH),
+            assertTrue(PAYLOAD_FORMAT_INDICATOR.packets.contains(PUBLISH),
                     "missing control packet type: $PUBLISH")
 
     @Test
     fun payloadFormatIndicatorCorrectControlTypeCount() =
-            assertEquals(PAYLOAD_FORMAT_INDICATOR.packetTypes.size, 1, "invalid control type count")
+            assertEquals(PAYLOAD_FORMAT_INDICATOR.packets.size, 1, "invalid control type count")
 
     @Test
     fun payloadFormatIndicatorPacketWillProperties() =
@@ -43,12 +42,12 @@ class PropertyTests {
 
     @Test
     fun messageExpiryIntervalPacketPublish() =
-            assertTrue(MESSAGE_EXPIRY_INTERVAL.packetTypes.contains(PUBLISH),
+            assertTrue(MESSAGE_EXPIRY_INTERVAL.packets.contains(PUBLISH),
                     "missing control packet type: $PUBLISH")
 
     @Test
     fun messageExpiryIntervalCorrectControlTypeCount() =
-            assertEquals(MESSAGE_EXPIRY_INTERVAL.packetTypes.size, 1, "invalid control type count")
+            assertEquals(MESSAGE_EXPIRY_INTERVAL.packets.size, 1, "invalid control type count")
 
     @Test
     fun messageExpiryIntervalPacketWillProperties() =
@@ -66,12 +65,12 @@ class PropertyTests {
 
     @Test
     fun contentTypePacketPublish() =
-            assertTrue(CONTENT_TYPE.packetTypes.contains(PUBLISH),
+            assertTrue(CONTENT_TYPE.packets.contains(PUBLISH),
                     "missing control packet type: $PUBLISH")
 
     @Test
     fun contentTypeCorrectControlTypeCount() =
-            assertEquals(CONTENT_TYPE.packetTypes.size, 1, "invalid control type count")
+            assertEquals(CONTENT_TYPE.packets.size, 1, "invalid control type count")
 
     @Test
     fun contentTypePacketWillProperties() =

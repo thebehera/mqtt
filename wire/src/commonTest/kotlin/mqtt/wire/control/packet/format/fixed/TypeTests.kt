@@ -2,7 +2,6 @@
 
 package mqtt.wire.control.packet.format.fixed
 
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +11,7 @@ class TypeTests {
     val controlPacketSpectMatchError = "doesn't match the spec from " +
             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477322"
 
-    // Control packet types value matching spec
+    // Control packet types unsigned4BitValue matching spec
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNECT() =
             assertEquals(1.toByte(), CONNECT.value, controlPacketSpectMatchError)

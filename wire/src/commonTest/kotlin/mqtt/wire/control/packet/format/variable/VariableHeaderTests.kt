@@ -1,6 +1,5 @@
 package mqtt.wire.control.packet.format.variable
 
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import kotlin.test.Test
@@ -11,7 +10,7 @@ class VariableHeaderTests {
     val variableHeaderPacketReq = "doesn't match the spec from " +
             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477326"
 
-    // Control packet types value matching spec
+    // Control packet types unsigned4BitValue matching spec
     @Test
     fun variableHeaderPacketIdentifierRequirementForCONNECT() =
             assertFalse(CONNECT.requiresPacketIdentifier(), variableHeaderPacketReq)
