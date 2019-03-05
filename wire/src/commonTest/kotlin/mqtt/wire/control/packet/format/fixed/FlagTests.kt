@@ -2,6 +2,7 @@
 
 package mqtt.wire.control.packet.format.fixed
 
+import kotlinx.io.core.readUByte
 import mqtt.wire.*
 import mqtt.wire.data.QualityOfService.*
 import kotlin.test.Test
@@ -64,11 +65,12 @@ class FlagTests {
         assertEquals(expected, simple.flagBits, controlPacketSpectMatchError)
     }
 
-    @Test
+    @Test // THIS IS WHAT I NEED TO WORK ON FIRST FIX THIS
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_false() {
         val expected = bit1TrueFlagBits
-        val detailed = PublishMessage(dup = false, qos = AT_LEAST_ONCE, retain = false)
-        assertEquals(detailed.controlPacketValue, 0x02.toUByte(), "invalid byte controlPacketValue")
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = AT_LEAST_ONCE, retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03.toUByte(), "invalid byte controlPacketValue")
+        assertEquals(detailed.serialize.readUByte(), 0x03.toUByte(), "Invalid Byte 1 in the fixed header")
         assertEquals(expected, detailed.flagBits, controlPacketSpectMatchError)
         val simple = PublishMessage(qos = AT_LEAST_ONCE)
         assertEquals(expected, simple.flagBits, controlPacketSpectMatchError)
@@ -87,7 +89,7 @@ class FlagTests {
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_true() {
         val expected = FlagBits(bit1 = true, bit0 = true)
-        val detailed = PublishMessage(dup = false, qos = AT_LEAST_ONCE, retain = true)
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = AT_LEAST_ONCE, retain = true)
         assertEquals(detailed.controlPacketValue, 0x03.toUByte(), "invalid byte controlPacketValue")
         assertEquals(expected, detailed.flagBits, controlPacketSpectMatchError)
         val simple = PublishMessage(qos = AT_LEAST_ONCE, retain = true)
