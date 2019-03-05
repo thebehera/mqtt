@@ -68,11 +68,19 @@ class FlagTests {
     @Test // THIS IS WHAT I NEED TO WORK ON FIRST FIX THIS
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_false() {
         val expected = bit1TrueFlagBits
-        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = AT_LEAST_ONCE, retain = false)
-        assertEquals(detailed.controlPacketValue, 0x03.toUByte(), "invalid byte controlPacketValue")
-        assertEquals(detailed.serialize.readUByte(), 0x03.toUByte(), "Invalid Byte 1 in the fixed header")
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = AT_LEAST_ONCE,
+                retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03.toUByte(),
+                "Invalid Byte 1 in the fixed header: Control Packet Value")
+        val byteAsUInt = detailed.serialize.readUByte().toUInt()
+        assertEquals(byteAsUInt.shr(4).toUByte(), 0x03.toUByte(),
+                "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times")
+        val sh = byteAsUInt.shl(4).toUByte().toUInt()
+        val expectedFlagMatch = sh.shr(4).toUByte()
+        assertEquals(expectedFlagMatch, 0b0010.toUByte(),
+                "Invalid Byte 1 in the fixed header: Flags dont match")
         assertEquals(expected, detailed.flagBits, controlPacketSpectMatchError)
-        val simple = PublishMessage(qos = AT_LEAST_ONCE)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, qos = AT_LEAST_ONCE)
         assertEquals(expected, simple.flagBits, controlPacketSpectMatchError)
     }
 
