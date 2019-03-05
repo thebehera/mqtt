@@ -284,7 +284,7 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasQos1() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_LEAST_ONCE))
+        val connectionRequest = ConnectionRequest()
         val bytes = connectionRequest.serialize
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
