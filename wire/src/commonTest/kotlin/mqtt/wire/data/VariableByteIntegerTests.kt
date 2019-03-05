@@ -42,8 +42,6 @@ class VariableByteIntegerTests {
     fun handles0() {
         val expectedValue = 0
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(1, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger().toInt()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -53,8 +51,6 @@ class VariableByteIntegerTests {
     fun handles1() {
         val expectedValue = 1
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(1, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger().toInt()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -64,8 +60,6 @@ class VariableByteIntegerTests {
     fun handles127() {
         val expectedValue = 127.toUInt()
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(1, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -75,8 +69,6 @@ class VariableByteIntegerTests {
     fun handles128() {
         val expectedValue = 128.toUInt()
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(2, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -86,8 +78,6 @@ class VariableByteIntegerTests {
     fun handles16383() {
         val expectedValue = 16383.toUInt()
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(2, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -97,8 +87,6 @@ class VariableByteIntegerTests {
     fun handles16384() {
         val expectedValue = 16384.toUInt()
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(3, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -108,8 +96,6 @@ class VariableByteIntegerTests {
     fun handles65535() {
         val expectedValue = 65535.toUInt()
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(3, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -119,8 +105,6 @@ class VariableByteIntegerTests {
     fun handlesMaxMinus1() {
         val expectedValue = VARIABLE_BYTE_INT_MAX - 1.toUInt()
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(4, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -130,8 +114,6 @@ class VariableByteIntegerTests {
     fun handlesMax() {
         val expectedValue = VARIABLE_BYTE_INT_MAX
         val variableIntBytes = VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                .drop(1) // drop the first byte since we dont care about the control packet type
-                .toByteArray()
         assertEquals(4, variableIntBytes.size, "Incorrect byte array size")
         val actual = variableIntBytes.decodeVariableByteInteger()
         assertEquals(expectedValue, actual, "Failed to read remaining bytes properly")
@@ -143,8 +125,6 @@ class VariableByteIntegerTests {
         val expectedValue = VARIABLE_BYTE_INT_MAX + 1.toUInt()
         try {
             VariableByteInteger(expectedValue.toUInt()).encodedValue().readBytes()
-                    .drop(1) // drop the first byte since we dont care about the control packet type
-                    .toByteArray()
             fail("should of thrown an error")
         } catch (e: MalformedInvalidVariableByteInteger) {
         }

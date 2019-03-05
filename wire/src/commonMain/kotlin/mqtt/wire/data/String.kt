@@ -52,7 +52,9 @@ inline class MqttUtf8String(private val value: String) {
         }
         return value
     }
-    val exception : InvalidMqttUtf8StringMalformedPacketException? get() {
+
+    private val exception: InvalidMqttUtf8StringMalformedPacketException?
+        get() {
         if (value.length > 65_535) {
             return InvalidMqttUtf8StringMalformedPacketException("MQTT UTF-8 String too large", 65_535, value.substring(0, 65_535))
         }
@@ -105,22 +107,6 @@ fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {
 fun ByteReadPacket.readMqttBinary() :ByteArray {
     val stringLength = readUShort().toInt()
     return readBytesOf(max = stringLength)
-}
-
-fun String.toMqttUtf8Encoded(): ByteArray {
-    if (!validateMqttUTF8String()) {
-        throw IllegalArgumentException("Invalid utf-8 string")
-    }
-    val bytes = toByteArray()
-    if (bytes.size > 65_535) {
-        throw IllegalArgumentException("UTF-8 String too large to meet spec")
-    }
-    val size = bytes.size.toUShort()
-    val packet = buildPacket {
-        writeUShort(size)
-        writeFully(bytes)
-    }
-    return packet.readBytes()
 }
 
 fun Char.isISOControl() = toInt().isISOControl()

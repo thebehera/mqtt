@@ -4,7 +4,6 @@ package mqtt.wire.data
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
 import mqtt.wire.MalformedInvalidVariableByteInteger
 import kotlin.experimental.and
 import kotlin.experimental.or
@@ -73,14 +72,6 @@ inline class VariableByteInteger(val value: UInt) {
                 numBytes++
             } while (no > 0 && numBytes < 4)
         }
-    }
-}
-
-fun validateVariableByteInt(value: UInt) {
-    if (value in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
-        return
-    } else {
-        throw MalformedInvalidVariableByteInteger(value.toUInt())
     }
 }
 

@@ -45,4 +45,9 @@ class PropertyTests {
     fun contentTypePacketWillProperties() =
             assertTrue(CONTENT_TYPE.willProperties, "incorrect will property")
 
+    @Test
+    fun readWriteProperty() {
+
+    }
+
 }

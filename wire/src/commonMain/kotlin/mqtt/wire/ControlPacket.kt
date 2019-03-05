@@ -3,13 +3,15 @@
 package mqtt.wire
 
 import kotlinx.io.core.*
-import mqtt.wire.control.packet.format.fixed.*
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
+import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.control.packet.format.variable.Property.*
 import mqtt.wire.control.packet.format.variable.PropertyKeyValueWrapper
 import mqtt.wire.control.packet.format.variable.readProperties
 import mqtt.wire.data.*
-import mqtt.wire.data.QualityOfService.*
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
+import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 
 /**
  * The MQTT specification defines fifteen different types of MQTT Control Packet, for example the PublishMessage packet is
@@ -19,51 +21,49 @@ import mqtt.wire.data.QualityOfService.*
  * @param controlPacketValue Value defined under [MQTT 2.1.2]
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
  */
-sealed class ControlPacket(val controlPacketValue: UByte,
+sealed class ControlPacket(val controlPacketValue: Byte,
                            val direction: DirectionOfFlow,
-                           val flagBits: FlagBits = emptyFlagBits) {
+                           val flags: Byte = 0b0) {
 
-    val fixedHeader by lazy {
+    private val fixedHeader by lazy {
         val packetValue = controlPacketValue
         val packetValueUInt = packetValue.toUInt()
         val packetValueShifted = packetValueUInt.shl(4)
-        val localFlagsByte = flagBits.toByte().toUInt()
+        val localFlagsByte = flags.toUInt()
         val byte1 = (packetValueShifted.toByte().toUInt() + localFlagsByte).toUByte()
         val byte2 = VariableByteInteger(remainingLength)
         buildPacket {
             writeUByte(byte1)
             writePacket(byte2.encodedValue())
-        }
+        }.readBytes()
     }
 
-    open val variableHeaderPacket :ByteReadPacket? = null
-    open val payloadPacket :ByteReadPacket? = null
+    open val variableHeaderPacket: ByteArray? = null
+    open val payloadPacket: ByteArray? = null
     private val remainingLength by lazy {
-        val variableHeaderSize = variableHeaderPacket?.readBytes()?.size ?: 0
-        val payloadSize = payloadPacket?.readBytes()?.size ?: 0
+        val variableHeaderSize = variableHeaderPacket?.size ?: 0
+        val payloadSize = payloadPacket?.size ?: 0
         (variableHeaderSize + payloadSize).toUInt()
     }
 
     val serialize by lazy {
         buildPacket {
-            writePacket(fixedHeader)
+            writeFully(fixedHeader)
             val variableHeaderPacket = variableHeaderPacket
             if (variableHeaderPacket != null) {
-                writePacket(variableHeaderPacket)
+                writeFully(variableHeaderPacket)
             }
             val payloadPacket = payloadPacket
             if (payloadPacket != null) {
-                writePacket(payloadPacket)
+                writeFully(payloadPacket)
             }
-        }
+        }.readBytes()
     }
     companion object {
         fun from(buffer: ByteReadPacket): ControlPacket {
-            val view = buffer.copy()
-            val byte1AsUInt = view.readUByte().toUInt()
+            val byte1AsUInt = buffer.readUByte().toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()
-//            val flags = byte1AsUInt.toUByte().toFlagBits()
-//            val remainingLength = view.decodeVariableByteInteger()
+            buffer.decodeVariableByteInteger() // remaining Length
             return when (packetValue) {
                 0x00 -> Reserved
                 0x01 -> ConnectionRequest.from(buffer)
@@ -73,12 +73,12 @@ sealed class ControlPacket(val controlPacketValue: UByte,
     }
 }
 
-object Reserved : ControlPacket(0.toUByte(), FORBIDDEN)
+object Reserved : ControlPacket(0, FORBIDDEN)
 
 data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader(), val payload: Payload = Payload())
-    :ControlPacket(1.toUByte(), CLIENT_TO_SERVER) {
-    override val variableHeaderPacket: ByteReadPacket get() = variableHeader.packet
-    override val payloadPacket: ByteReadPacket? get() = payload.packet
+    : ControlPacket(1, CLIENT_TO_SERVER) {
+    override val variableHeaderPacket: ByteArray get() = variableHeader.packet
+    override val payloadPacket: ByteArray? get() = payload.packet
     data class VariableHeader(
             val protocolName: MqttUtf8String = MqttUtf8String("MQTT"),
             val protocolVersion: UByte = 5.toUByte(),
@@ -161,7 +161,7 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
                 buildPacket {
                     writeInt(propertyLength)
                     writeFully(propertyBytes)
-                }
+                }.readBytes()
             }
             companion object {
                 fun from(keyValuePairs :Collection<PropertyKeyValueWrapper>): Properties {
@@ -209,16 +209,20 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
          * Protocol Level, Connect Flags, Keep Alive, and Properties
          */
         val packet by lazy {
-            val qosBitInfo = willQos.toBitInformation()
-            val connectFlags = booleanArrayOf(hasUserName, hasPassword, willRetain, qosBitInfo.first,
-                    qosBitInfo.second, willFlag, cleanStart, false).toByte()
+            val usernameFlag = if (hasUserName) 0b10000000 else 0
+            val passwordFlag = if (hasPassword) 0b1000000 else 0
+            val wRetain = if (willRetain) 0b100000 else 0
+            val qos = willQos.integerValue.toInt().shl(3)
+            val wFlag = if (willFlag) 0b100 else 0
+            val cleanStart = if (cleanStart) 0b10 else 0
+            val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
             buildPacket {
                 writeMqttUtf8String(protocolName)
                 writeUByte(protocolVersion)
-                writeByte(connectFlags)
+                writeByte(flags)
                 writeUShort(keepAliveSeconds)
-                writePacket(properties.packet)
-            }
+                writeFully(properties.packet)
+            }.readBytes()
         }
         companion object {
             fun from(buffer: ByteReadPacket) :VariableHeader {
@@ -297,7 +301,7 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
                             writeMqttUtf8String(value)
                         }
                     }
-                }
+                }.readBytes()
             }
             companion object {
                 fun from(buffer: ByteReadPacket) :WillProperties {
@@ -336,7 +340,7 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
             buildPacket {
                 writeMqttUtf8String(clientId)
                 if (willProperties != null) {
-                    writePacket(willProperties.packet)
+                    writeFully(willProperties.packet)
                 }
                 if (willTopic != null) {
                     writeMqttUtf8String(willTopic)
@@ -352,7 +356,7 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
                 if (password != null) {
                     writeMqttUtf8String(password)
                 }
-            }
+            }.readBytes()
         }
         companion object {
             fun from(buffer: ByteReadPacket, variableHeader: VariableHeader) :Payload {
@@ -376,7 +380,7 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
     }
 }
 
-object ConnectionAcknowledgment : ControlPacket(2.toUByte(), SERVER_TO_CLIENT)
+object ConnectionAcknowledgment : ControlPacket(2, SERVER_TO_CLIENT)
 
 /**
  * Creates an MQTT PUBLISH
@@ -389,7 +393,7 @@ data class PublishMessage(val dup: Boolean = false,
                           val qos: QualityOfService = AT_MOST_ONCE,
                           val retain: Boolean = false,
                           val packetIdentifier: UShort? = null)
-    : ControlPacket(unsigned4BitValue, BIDIRECTIONAL, FlagBits(dup, qos, retain)) {
+    : ControlPacket(3, BIDIRECTIONAL, PublishMessage.flags(dup, qos, retain)) {
     init {
         if (qos == AT_MOST_ONCE && packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")
@@ -398,30 +402,35 @@ data class PublishMessage(val dup: Boolean = false,
         }
     }
     companion object {
-        val unsigned4BitValue = 3.toUByte()
+        fun flags(dup: Boolean, qos: QualityOfService, retain: Boolean): Byte {
+            val dupInt = if (dup) 0b1000 else 0b0
+            val qosInt = qos.integerValue.toInt().shl(1)
+            val retainInt = if (retain) 0b1 else 0b0
+            return (dupInt or qosInt or retainInt).toByte()
+        }
     }
 }
 
-data class PublishAcknowledgment(val packetIdentifier: UShort) : ControlPacket(4.toUByte(), BIDIRECTIONAL)
+data class PublishAcknowledgment(val packetIdentifier: UShort) : ControlPacket(4, BIDIRECTIONAL)
 
-data class PublishReceived(val packetIdentifier: UShort) : ControlPacket(5.toUByte(), BIDIRECTIONAL)
+data class PublishReceived(val packetIdentifier: UShort) : ControlPacket(5, BIDIRECTIONAL)
 
-data class PublishRelease(val packetIdentifier: UShort) : ControlPacket(6.toUByte(), BIDIRECTIONAL, bit1TrueFlagBits)
+data class PublishRelease(val packetIdentifier: UShort) : ControlPacket(6, BIDIRECTIONAL, 0b10)
 
-data class PublishComplete(val packetIdentifier: UShort) : ControlPacket(7.toUByte(), BIDIRECTIONAL)
+data class PublishComplete(val packetIdentifier: UShort) : ControlPacket(7, BIDIRECTIONAL)
 
-data class SubscribeRequest(val packetIdentifier: UShort) : ControlPacket(8.toUByte(), CLIENT_TO_SERVER, bit1TrueFlagBits)
+data class SubscribeRequest(val packetIdentifier: UShort) : ControlPacket(8, CLIENT_TO_SERVER, 0b10)
 
-data class SubscribeAcknowledgment(val packetIdentifier: UShort) : ControlPacket(9.toUByte(), SERVER_TO_CLIENT)
+data class SubscribeAcknowledgment(val packetIdentifier: UShort) : ControlPacket(9, SERVER_TO_CLIENT)
 
-data class UnsubscribeRequest(val packetIdentifier: UShort) : ControlPacket(10.toUByte(), CLIENT_TO_SERVER, bit1TrueFlagBits)
+data class UnsubscribeRequest(val packetIdentifier: UShort) : ControlPacket(10, CLIENT_TO_SERVER, 0b10)
 
-data class UnsubscribeAcknowledgment(val packetIdentifier: UShort) : ControlPacket(11.toUByte(), SERVER_TO_CLIENT)
+data class UnsubscribeAcknowledgment(val packetIdentifier: UShort) : ControlPacket(11, SERVER_TO_CLIENT)
 
-object PingRequest : ControlPacket(12.toUByte(), CLIENT_TO_SERVER)
+object PingRequest : ControlPacket(12, CLIENT_TO_SERVER)
 
-object PingResponse : ControlPacket(13.toUByte(), SERVER_TO_CLIENT)
+object PingResponse : ControlPacket(13, SERVER_TO_CLIENT)
 
-object DisconnectNotification : ControlPacket(14.toUByte(), BIDIRECTIONAL)
+object DisconnectNotification : ControlPacket(14, BIDIRECTIONAL)
 
-object AuthenticationExchange : ControlPacket(15.toUByte(), BIDIRECTIONAL)
+object AuthenticationExchange : ControlPacket(15, BIDIRECTIONAL)

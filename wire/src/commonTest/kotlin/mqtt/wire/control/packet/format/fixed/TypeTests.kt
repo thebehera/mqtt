@@ -8,71 +8,71 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TypeTests {
-    val packetIdentifier = 0.toUShort()
+    private val packetIdentifier = 0.toUShort()
 
-    val controlPacketSpectMatchError = "doesn't match the spec from " +
+    private val controlPacketSpectMatchError = "doesn't match the spec from " +
             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477322"
 
     // Control packet types controlPacketValue matching spec
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNECT() =
-            assertEquals(1.toUByte(), ConnectionRequest().controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(1, ConnectionRequest().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNACK() =
-            assertEquals(2.toUByte(), ConnectionAcknowledgment.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(2, ConnectionAcknowledgment.controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBLISH() =
-            assertEquals(3.toUByte(), PublishMessage().controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(3, PublishMessage().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBACK() =
-            assertEquals(4.toUByte(), PublishAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(4, PublishAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBREC() =
-            assertEquals(5.toUByte(), PublishReceived(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(5, PublishReceived(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBREL() =
-            assertEquals(6.toUByte(), PublishRelease(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(6, PublishRelease(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBCOMP() =
-            assertEquals(7.toUByte(), PublishComplete(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(7, PublishComplete(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBSCRIBE() =
-            assertEquals(8.toUByte(), SubscribeRequest(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(8, SubscribeRequest(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBACK() =
-            assertEquals(9.toUByte(), SubscribeAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(9, SubscribeAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBSCRIBE() =
-            assertEquals(10.toUByte(), UnsubscribeRequest(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(10, UnsubscribeRequest(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBACK() =
-            assertEquals(11.toUByte(), UnsubscribeAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(11, UnsubscribeAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPINGREQ() =
-            assertEquals(12.toUByte(), PingRequest.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(12, PingRequest.controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPINGRESP() =
-            assertEquals(13.toUByte(), PingResponse.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(13, PingResponse.controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForDISCONNECT() =
-            assertEquals(14.toUByte(), DisconnectNotification.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(14, DisconnectNotification.controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForAUTH() =
-            assertEquals(15.toUByte(), AuthenticationExchange.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(15, AuthenticationExchange.controlPacketValue, controlPacketSpectMatchError)
 
 
     // Control packet types direction of flow matching spec
