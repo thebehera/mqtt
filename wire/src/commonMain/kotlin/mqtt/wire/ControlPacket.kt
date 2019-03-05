@@ -155,13 +155,14 @@ data class ConnectionRequest(val variableHeader: VariableHeader = VariableHeader
                     if (authentication != null) {
                         writePacket(authentication.packet)
                     }
-                }
-                val propertyBytes = propertiesPacket.readBytes()
-                val propertyLength = propertyBytes.size
-                buildPacket {
-                    writeInt(propertyLength)
-                    writeFully(propertyBytes)
                 }.readBytes()
+                val propertyLength = propertiesPacket.size
+                val result = buildPacket {
+                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
+                    writeFully(propertiesPacket)
+                }.readBytes()
+
+                result
             }
             companion object {
                 fun from(keyValuePairs :Collection<PropertyKeyValueWrapper>): Properties {

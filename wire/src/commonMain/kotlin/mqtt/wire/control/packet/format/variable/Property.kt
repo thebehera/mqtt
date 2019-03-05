@@ -46,15 +46,16 @@ fun ByteReadPacket.readProperties() :Collection<PropertyKeyValueWrapper> {
     do {
         val propertyIdentifier = readByte()
         propertyIndex++
-        val property = propertyMap.getValue(propertyIdentifier)
-        when (property.type) {
+        val property = propertyMap[propertyIdentifier] ?: continue
+        val byteStartIndex = remaining
+        list += when (property.type) {
             BYTE -> PropertyKeyValueWrapper(property, number = readByte().toUInt(), type = property.type)
             TWO_BYTE_INTEGER -> PropertyKeyValueWrapper(property, number = readUShort().toUInt(), type = property.type)
             FOUR_BYTE_INTEGER -> PropertyKeyValueWrapper(property, number = readUInt(), type = property.type)
             UTF_8_ENCODED_STRING -> {
                 val value = readMqttUtf8String().getValueOrThrow()
                 propertyIndex += UShort.SIZE_BYTES + value.length
-                list += PropertyKeyValueWrapper(property, value = value, type = property.type)
+                PropertyKeyValueWrapper(property, value = value, type = property.type)
             }
             BINARY_DATA -> PropertyKeyValueWrapper(property, binary = readMqttBinary(), type = property.type)
             VARIABLE_BYTE_INTEGER -> PropertyKeyValueWrapper(property, number = decodeVariableByteInteger(), type = property.type)
@@ -63,10 +64,11 @@ fun ByteReadPacket.readProperties() :Collection<PropertyKeyValueWrapper> {
                 propertyIndex += UShort.SIZE_BYTES + key.length
                 val value = readMqttUtf8String().getValueOrThrow()
                 propertyIndex += UShort.SIZE_BYTES + value.length
-                list += PropertyKeyValueWrapper(property, key, value, type = property.type)
+                PropertyKeyValueWrapper(property, key, value, type = property.type)
             }
         }
-
+        val delta = byteStartIndex - remaining
+        propertyIndex += delta.toInt()
 
     } while (propertyIndex < propertyLength)
     return list

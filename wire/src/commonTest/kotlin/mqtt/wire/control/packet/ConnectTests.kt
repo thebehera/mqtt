@@ -4,13 +4,13 @@ package mqtt.wire.control.packet
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
+import kotlinx.io.core.readUShort
 import mqtt.wire.ConnectionRequest
+import mqtt.wire.control.packet.format.variable.Property
+import mqtt.wire.control.packet.format.variable.readProperties
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.decodeVariableByteInteger
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class ConnectTests {
 
@@ -30,7 +30,7 @@ class ConnectTests {
         byteReader.readByte() // skip the first byte
 
         val remainingLength = byteReader.decodeVariableByteInteger()
-        assertEquals(remainingLength.toInt(), 16, "invalid remaining length on the CONNECT fixed header")
+        assertEquals(remainingLength.toInt(), 13, "invalid remaining length on the CONNECT fixed header")
     }
 
     @Test
@@ -426,5 +426,113 @@ class ConnectTests {
         assertFalse(reserved, "invalid byte 8 bit 0 on the CONNECT variable header for reserved flag")
     }
 
+
+    @Test
+    fun variableHeaderKeepAliveDefault() {
+        val connectionRequest = ConnectionRequest()
+        val bytes = connectionRequest.serialize
+        val byteReader = ByteReadPacket(bytes)
+        byteReader.readByte() // skip the first byte
+        byteReader.decodeVariableByteInteger() // skip the remaining length
+        byteReader.readByte() // Length MSB (0)
+        byteReader.readByte() // Length LSB (4)
+        byteReader.readByte() // 'M' or 0b01001101
+        byteReader.readByte() // 'Q' or 0b01010001
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 5 or 0b00000101
+        byteReader.readByte() // connect flags
+        val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds)
+    }
+
+    @Test
+    fun variableHeaderKeepAlive0() {
+        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(keepAliveSeconds = 0.toUShort()))
+        val bytes = connectionRequest.serialize
+        val byteReader = ByteReadPacket(bytes)
+        byteReader.readByte() // skip the first byte
+        byteReader.decodeVariableByteInteger() // skip the remaining length
+        byteReader.readByte() // Length MSB (0)
+        byteReader.readByte() // Length LSB (4)
+        byteReader.readByte() // 'M' or 0b01001101
+        byteReader.readByte() // 'Q' or 0b01010001
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 5 or 0b00000101
+        byteReader.readByte() // connect flags
+        val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(0.toUShort(), connectionRequest.variableHeader.keepAliveSeconds)
+    }
+
+
+    @Test
+    fun variableHeaderKeepAliveMax() {
+        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(keepAliveSeconds = UShort.MAX_VALUE))
+        val bytes = connectionRequest.serialize
+        val byteReader = ByteReadPacket(bytes)
+        byteReader.readByte() // skip the first byte
+        byteReader.decodeVariableByteInteger() // skip the remaining length
+        byteReader.readByte() // Length MSB (0)
+        byteReader.readByte() // Length LSB (4)
+        byteReader.readByte() // 'M' or 0b01001101
+        byteReader.readByte() // 'Q' or 0b01010001
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 5 or 0b00000101
+        byteReader.readByte() // connect flags
+        val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds)
+    }
+
+    @Test
+    fun propertyLengthEmpty() {
+        val connectionRequest = ConnectionRequest()
+        val bytes = connectionRequest.serialize
+        val byteReader = ByteReadPacket(bytes)
+        byteReader.readByte() // skip the first byte
+        byteReader.decodeVariableByteInteger() // skip the remaining length
+        byteReader.readByte() // Length MSB (0)
+        byteReader.readByte() // Length LSB (4)
+        byteReader.readByte() // 'M' or 0b01001101
+        byteReader.readByte() // 'Q' or 0b01010001
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 5 or 0b00000101
+        byteReader.readByte() // connect flags
+        byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
+        val propertyIndexStart = byteReader.remaining
+        val propertyLength = byteReader.decodeVariableByteInteger()
+        val propertyBytesLength = propertyIndexStart - byteReader.remaining
+        val propertiesBytes = connectionRequest.variableHeader.properties.packet
+        val propertySize = propertiesBytes.size - propertyBytesLength
+        assertEquals(propertyLength, propertySize.toUInt())
+        assertEquals(propertyLength, 0.toUInt())
+    }
+
+    @Test
+    fun propertyLengthSessionExpiry() {
+        val props = ConnectionRequest.VariableHeader.Properties(sessionExpiryIntervalSeconds = 1.toUInt())
+        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(properties = props))
+        val bytes = connectionRequest.serialize
+        val byteReader = ByteReadPacket(bytes)
+        byteReader.readByte() // skip the first byte
+        byteReader.decodeVariableByteInteger() // skip the remaining length
+        byteReader.readByte() // Length MSB (0)
+        byteReader.readByte() // Length LSB (4)
+        byteReader.readByte() // 'M' or 0b01001101
+        byteReader.readByte() // 'Q' or 0b01010001
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 'T' or 0b01010100
+        byteReader.readByte() // 5 or 0b00000101
+        byteReader.readByte() // connect flags
+        byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
+        val properties = byteReader.readProperties()
+        assertNotNull(properties.first())
+        assertEquals(properties.first().property, Property.SESSION_EXPIRY_INTERVAL)
+    }
 
 }
