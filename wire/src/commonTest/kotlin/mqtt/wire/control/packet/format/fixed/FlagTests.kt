@@ -2,7 +2,7 @@
 
 package mqtt.wire.control.packet.format.fixed
 
-import mqtt.wire.*
+import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
