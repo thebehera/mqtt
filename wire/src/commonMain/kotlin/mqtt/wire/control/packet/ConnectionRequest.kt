@@ -585,15 +585,71 @@ data class ConnectionRequest(
                     var authenticationData: ByteArrayWrapper? = null
                     keyValuePairs.forEach {
                         when (it) {
-                            is SessionExpiryInterval -> sessionExpiryIntervalSeconds = it.seconds
-                            is ReceiveMaximum -> receiveMaximum = it.maxQos1Or2ConcurrentMessages
-                            is MaximumPacketSize -> maximumPacketSize = it.packetSizeLimitationBytes
-                            is TopicAliasMaximum -> topicAliasMaximum = it.highestValueSupported
-                            is RequestResponseInformation -> requestResponseInformation = it.requestServerToReturnInfoInConnack
-                            is RequestProblemInformation -> requestProblemInformation = it.reasonStringOrUserPropertiesAreSentInFailures
+                            is SessionExpiryInterval -> {
+                                if (sessionExpiryIntervalSeconds != null) {
+                                    throw ProtocolError("Session Expiry Interval added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477348")
+                                }
+                                sessionExpiryIntervalSeconds = it.seconds
+                            }
+                            is ReceiveMaximum -> {
+                                if (receiveMaximum != null) {
+                                    throw ProtocolError("Receive Maximum added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477349")
+                                }
+                                if (receiveMaximum == 0.toUShort()) {
+                                    throw ProtocolError("Receive Maximum cannot be set to 0 see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477349")
+                                }
+                                receiveMaximum = it.maxQos1Or2ConcurrentMessages
+                            }
+                            is MaximumPacketSize -> {
+                                if (maximumPacketSize != null) {
+                                    throw ProtocolError("Maximum Packet Size added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350")
+                                }
+                                if (maximumPacketSize == 0.toUInt()) {
+                                    throw ProtocolError("Maximum Packet Size cannot be set to 0 see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350")
+                                }
+                                maximumPacketSize = it.packetSizeLimitationBytes
+                            }
+                            is TopicAliasMaximum -> {
+                                if (topicAliasMaximum != null) {
+                                    throw ProtocolError("Topic Alias Maximum added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477351")
+                                }
+                                topicAliasMaximum = it.highestValueSupported
+                            }
+                            is RequestResponseInformation -> {
+                                if (requestResponseInformation != null) {
+                                    throw ProtocolError("Request Response Information added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352")
+                                }
+                                requestResponseInformation = it.requestServerToReturnInfoInConnack
+                            }
+                            is RequestProblemInformation -> {
+                                if (requestProblemInformation != null) {
+                                    throw ProtocolError("Request Problem Information added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                }
+                                requestProblemInformation = it.reasonStringOrUserPropertiesAreSentInFailures
+                            }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
-                            is AuthenticationMethod -> authenticationMethod = it.value
-                            is AuthenticationData -> authenticationData = it.data
+                            is AuthenticationMethod -> {
+                                if (authenticationMethod != null) {
+                                    throw ProtocolError("Authentication Method added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477355")
+                                }
+                                authenticationMethod = it.value
+                            }
+                            is AuthenticationData -> {
+                                if (authenticationData != null) {
+                                    throw ProtocolError("Authentication Data added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477356")
+                                }
+                                authenticationData = it.data
+                            }
                             else -> throw MalformedPacketException("Invalid CONNECT property type found in MQTT payload $it")
                         }
                     }

@@ -4,6 +4,7 @@ package mqtt.wire.control.packet.format.variable.property
 
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.ProtocolError
 import mqtt.wire.data.*
 
 abstract class Property(private val identifierByte: Byte, val type: Type, val willProperties: Boolean = false) {
@@ -55,9 +56,23 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
         0x13 -> ServerKeepAlive(readUShort())
         0x15 -> AuthenticationMethod(readMqttUtf8String())
         0x16 -> AuthenticationData(readMqttBinary())
-        0x17 -> RequestProblemInformation(readByte() == 1.toByte())
+        0x17 -> {
+            val uByteAsInt = readUByte().toInt()
+            if (!(uByteAsInt == 0 || uByteAsInt == 1)) {
+                throw ProtocolError("Request Problem Information cannot have a value other than 0 or 1" +
+                        "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+            }
+            RequestProblemInformation(uByteAsInt == 1)
+        }
         0x18 -> WillDelayInterval(readUInt())
-        0x19 -> RequestResponseInformation(readByte() == 1.toByte())
+        0x19 -> {
+            val uByteAsInt = readUByte().toInt()
+            if (!(uByteAsInt == 0 || uByteAsInt == 1)) {
+                throw ProtocolError("Request Response Information cannot have a value other than 0 or 1" +
+                        "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352")
+            }
+            RequestResponseInformation(uByteAsInt == 1)
+        }
         0x1A -> ResponseInformation(readByte() == 1.toByte())
         0x1C -> ServerReference(readMqttUtf8String())
         0x1F -> ReasonString(readMqttUtf8String())
