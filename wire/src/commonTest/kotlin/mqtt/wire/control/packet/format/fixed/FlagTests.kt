@@ -1,198 +1,212 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.wire.control.packet.format.fixed
 
-import mqtt.wire.control.packet.format.fixed.ControlPacketType.*
+import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FlagTests {
+    private val packetIdentifier = 1.toUShort()
 
-    val controlPacketSpectMatchError = "doesn't match the spec from " +
+    private val controlPacketSpectMatchError = "doesn't match the spec from " +
             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477323"
 
-    // Control packet types flags().matchesEmptyBits() matching spec
+    // Control packet types flagBits.matchesEmptyBits() matching spec
     @Test
     fun controlPacketFlagsMatchSpecForCONNECT() =
-            assertEquals(CONNECT.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(ConnectionRequest().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun byte1CONNECT() =
-            assertEquals(CONNECT.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(ConnectionRequest().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForCONNACK() =
-            assertEquals(CONNACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(ConnectionAcknowledgment.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_Retain_false() {
-        val detailed = PUBLISH.flags(dup = false, qos = AT_MOST_ONCE, retain = false)
-        assertEquals(detailed.toByte(), 0x00, "invalid byte value")
-        assertEquals(detailed, emptyFlagBits, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags()
-        assertEquals(simple, emptyFlagBits, controlPacketSpectMatchError)
+        val detailed = PublishMessage()
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(detailed.flags, 0b0, controlPacketSpectMatchError)
     }
+
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_trueQos_AtMostOnceRetain_false() {
-        val expected = FlagBits(bit3 = true)
-        val detailed = PUBLISH.flags(dup = true, qos = AT_MOST_ONCE, retain = false)
-        assertEquals(detailed.toByte(), 0x08, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(dup = true)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+
+        val x = ConnectionRequest()
+        x.variableHeader.keepAliveSeconds
+        val expected = 0b1000.toByte()
+        val detailed = PublishMessage(dup = true, qos = AT_MOST_ONCE, retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(dup = true)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_retain_true() {
-        val expected = FlagBits(bit0 = true)
-        val detailed = PUBLISH.flags(dup = false, qos = AT_MOST_ONCE, retain = true)
-        assertEquals(detailed.toByte(), 0x01, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(retain = true)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b1.toByte()
+        val detailed = PublishMessage(dup = false, qos = AT_MOST_ONCE, retain = true)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(retain = true)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_AtMostOnce_retain_true() {
-        val expected = FlagBits(bit3 = true, bit0 = true)
-        val detailed = PUBLISH.flags(dup = true, qos = AT_MOST_ONCE, retain = true)
-        assertEquals(detailed.toByte(), 0x09, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(dup = true, retain = true)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b1001.toByte()
+        val detailed = PublishMessage(dup = true, qos = AT_MOST_ONCE, retain = true)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(dup = true, retain = true)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
-    @Test
+    @Test // THIS IS WHAT I NEED TO WORK ON FIRST FIX THIS
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_false() {
-        val expected = bit1TrueFlagBits
-        val detailed = PUBLISH.flags(dup = false, qos = AT_LEAST_ONCE, retain = false)
-        assertEquals(detailed.toByte(), 0x02, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(qos = AT_LEAST_ONCE)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b10.toByte()
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = AT_LEAST_ONCE,
+                retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03,
+                "Invalid Byte 1 in the fixed header: Control Packet Value")
+        val byteAsUInt = detailed.serialize[0].toUInt()
+
+        assertEquals(byteAsUInt.shr(4), 0x03.toUInt(),
+                "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times")
+        val expectedFlagMatch = byteAsUInt.shl(4).toByte().toInt().shr(4).toByte()
+        assertEquals(expectedFlagMatch, 0b0010,
+                "Invalid Byte 1 in the fixed header: Flags dont match")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, qos = AT_LEAST_ONCE)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_AtLeastOnce_retain_false() {
-        val expected = FlagBits(bit3 = true, bit1 = true)
-        val detailed = PUBLISH.flags(dup = true, qos = AT_LEAST_ONCE, retain = false)
-        assertEquals(detailed.toByte(), 0x0A, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(dup = true, qos = AT_LEAST_ONCE)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b1010.toByte()
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = true, qos = AT_LEAST_ONCE, retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, dup = true, qos = AT_LEAST_ONCE)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_true() {
-        val expected = FlagBits(bit1 = true, bit0 = true)
-        val detailed = PUBLISH.flags(dup = false, qos = AT_LEAST_ONCE, retain = true)
-        assertEquals(detailed.toByte(), 0x03, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(qos = AT_LEAST_ONCE, retain = true)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b11.toByte()
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = AT_LEAST_ONCE, retain = true)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, qos = AT_LEAST_ONCE, retain = true)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_AtLeastOnce_retain_true() {
-        val expected = FlagBits(bit3 = true, bit1 = true, bit0 = true)
-        val simple = PUBLISH.flags(dup = true, qos = AT_LEAST_ONCE, retain = true)
-        assertEquals(simple.toByte(), 0x0B, "invalid byte value")
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b1011.toByte()
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, dup = true, qos = AT_LEAST_ONCE, retain = true)
+        assertEquals(simple.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_ExactlyOnce_retain_false() {
-        val expected = FlagBits(bit2 = true)
-        val detailed = PUBLISH.flags(dup = false, qos = EXACTLY_ONCE, retain = false)
-        assertEquals(detailed.toByte(), 0x04, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(qos = EXACTLY_ONCE)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b100.toByte()
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = EXACTLY_ONCE, retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, qos = EXACTLY_ONCE)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_ExactlyOnce_retain_false() {
-        val expected = FlagBits(bit3 = true, bit2 = true)
-        val detailed = PUBLISH.flags(dup = true, qos = EXACTLY_ONCE, retain = false)
-        assertEquals(detailed.toByte(), 0x0C, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(dup = true, qos = EXACTLY_ONCE)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b1100.toByte()
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = true, qos = EXACTLY_ONCE, retain = false)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, dup = true, qos = EXACTLY_ONCE)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_ExactlyOnce_retain_true() {
-        val expected = FlagBits(bit2 = true, bit0 = true)
-        val detailed = PUBLISH.flags(dup = false, qos = EXACTLY_ONCE, retain = true)
-        assertEquals(detailed.toByte(), 0x05, "invalid byte value")
-        assertEquals(expected, detailed, controlPacketSpectMatchError)
-        val simple = PUBLISH.flags(qos = EXACTLY_ONCE, retain = true)
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b101.toByte()
+        val detailed = PublishMessage(packetIdentifier = packetIdentifier, dup = false, qos = EXACTLY_ONCE, retain = true)
+        assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, qos = EXACTLY_ONCE, retain = true)
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_true_Qos_ExactlyOnce_retain_true() {
-        val expected = FlagBits(bit3 = true, bit2 = true, bit0 = true)
-        val simple = PUBLISH.flags(dup = true, qos = EXACTLY_ONCE, retain = true)
-        assertEquals(simple.toByte(), 0x0D, "invalid byte value")
-        assertEquals(expected, simple, controlPacketSpectMatchError)
+        val expected = 0b1101.toByte()
+        val simple = PublishMessage(packetIdentifier = packetIdentifier, dup = true, qos = EXACTLY_ONCE, retain = true)
+        assertEquals(simple.controlPacketValue, 0x03, "invalid byte controlPacketValue")
+        assertEquals(expected, simple.flags, controlPacketSpectMatchError)
     }
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBACK() =
-            assertEquals(PUBACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(PublishAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREC() =
-            assertEquals(PUBREC.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(PublishReceived(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREL() =
-            assertEquals(bit1TrueFlagBits, PUBREL.flags(), controlPacketSpectMatchError)
+            assertEquals(PublishRelease(packetIdentifier).flags, 0b10, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBCOMP() =
-            assertEquals(PUBCOMP.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(PublishComplete(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBSCRIBE() =
-            assertEquals(bit1TrueFlagBits, SUBSCRIBE.flags(), controlPacketSpectMatchError)
+            assertEquals(0b10, SubscribeRequest(packetIdentifier).flags, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =
-            assertEquals(SUBACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(SubscribeAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =
-            assertEquals(bit1TrueFlagBits, UNSUBSCRIBE.flags(), controlPacketSpectMatchError)
+            assertEquals(UnsubscribeAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBACK() =
-            assertEquals(UNSUBACK.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(UnsubscribeAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGREQ() =
-            assertEquals(PINGREQ.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(PingRequest.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGRESP() =
-            assertEquals(PINGRESP.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(PingResponse.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForDISCONNECT() =
-            assertEquals(DISCONNECT.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(DisconnectNotification.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForAUTH() =
-            assertEquals(AUTH.flags(), emptyFlagBits, controlPacketSpectMatchError)
+            assertEquals(AuthenticationExchange.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun emptyFlagBitsTest() {
-        assertEquals(emptyFlagBits.toByte(), 0x00)
+        assertEquals(0b0, 0x00)
     }
 
     @Test
     fun bit1TrueFlagBitsTest() {
-        assertEquals(bit1TrueFlagBits.toByte(), 0x02)
+        assertEquals(0b10, 0x02)
     }
 }

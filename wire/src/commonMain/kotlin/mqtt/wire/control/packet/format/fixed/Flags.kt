@@ -1,18 +1,12 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.wire.control.packet.format.fixed
 
 /**
- * The remaining bits [3-0] of byte 1 in the Fixed Header contain flags specific to each MQTT Control Packet type
- * @see https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477323
+ * The remaining bits [7-0] of byte can be retreived as a boolean
+ * get the value at an index as a boolean
  */
-data class FlagBits(val bit3: Boolean = false,
-                    val bit2: Boolean = false,
-                    val bit1: Boolean = false,
-                    val bit0: Boolean = false)
-
-internal val emptyFlagBits by lazy { FlagBits() }
-internal val bit1TrueFlagBits by lazy { FlagBits(bit1 = true) }
-
-fun FlagBits.toByte() = booleanArrayOf(bit0, bit1, bit2, bit3).toByte()
+fun UByte.get(index: Int) = toInt().shl(index - 1) == 1
 
 /**
  * Bits in a byte are labelled 7 to 0. Bit number 7 is the most significant bit, the least significant bit is assigned
