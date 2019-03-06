@@ -12,7 +12,7 @@ import mqtt.wire.data.decodeVariableByteInteger
  * The MQTT specification defines fifteen different types of MQTT Control Packet, for example the PublishMessage packet is
  * used to convey Application Messages.
  * @see https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477322
- * @see http://docs.oasis-open.org/mqtt/mqtt/v5.0/cos01/mqtt-v5.0-cos01.html#_Toc514847903
+ * @see https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#_Toc514847903
  * @param controlPacketValue Value defined under [MQTT 2.1.2]
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
  */
@@ -24,8 +24,8 @@ abstract class ControlPacket(val controlPacketValue: Byte,
         val packetValue = controlPacketValue
         val packetValueUInt = packetValue.toUInt()
         val packetValueShifted = packetValueUInt.shl(4)
-        val localFlagsByte = flags.toUInt()
-        val byte1 = (packetValueShifted.toByte().toUInt() + localFlagsByte).toUByte()
+        val localFlagsByte = flags.toUByte().toInt()
+        val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
         val byte2 = VariableByteInteger(remainingLength)
         buildPacket {
             writeUByte(byte1)

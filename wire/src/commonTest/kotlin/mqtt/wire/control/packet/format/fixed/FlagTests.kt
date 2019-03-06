@@ -36,6 +36,9 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_trueQos_AtMostOnceRetain_false() {
+
+        val x = ConnectionRequest()
+        x.variableHeader.keepAliveSeconds
         val expected = 0b1000.toByte()
         val detailed = PublishMessage(dup = true, qos = AT_MOST_ONCE, retain = false)
         assertEquals(detailed.controlPacketValue, 0x03, "invalid byte controlPacketValue")

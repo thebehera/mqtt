@@ -10,7 +10,7 @@ data class MaximumQos(val qos: QualityOfService) : Property(0x24, Type.BYTE) {
         when (qos) {
             QualityOfService.AT_MOST_ONCE -> write(bytePacketBuilder, false)
             QualityOfService.AT_LEAST_ONCE -> write(bytePacketBuilder, true)
-            QualityOfService.EXACTLY_ONCE -> throw MalformedPacketException("Max QoS Cannot be >= 2 as defined http://docs.oasis-open.org/mqtt/mqtt/v5.0/cos01/mqtt-v5.0-cos01.html#_Toc514847957")
+            QualityOfService.EXACTLY_ONCE -> throw MalformedPacketException("Max QoS Cannot be >= 2 as defined https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#_Toc514847957")
         }
     }
 }
