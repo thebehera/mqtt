@@ -991,12 +991,48 @@ data class ConnectionRequest(
                     var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
                     properties.forEach {
                         when (it) {
-                            is WillDelayInterval -> willDelayIntervalSeconds = it.seconds
-                            is PayloadFormatIndicator -> payloadFormatIndicator = it.willMessageIsUtf8
-                            is MessageExpiryInterval -> messageExpiryIntervalSeconds = it.seconds
-                            is ContentType -> contentType = it.value
-                            is ResponseTopic -> responseTopic = it.value
-                            is CorrelationData -> correlationData = it.data
+                            is WillDelayInterval -> {
+                                if (willDelayIntervalSeconds != null) {
+                                    throw ProtocolError("Will Delay Interval added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477362")
+                                }
+                                willDelayIntervalSeconds = it.seconds
+                            }
+                            is PayloadFormatIndicator -> {
+                                if (payloadFormatIndicator != null) {
+                                    throw ProtocolError("Payload Format Indicator added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363")
+                                }
+                                payloadFormatIndicator = it.willMessageIsUtf8
+                            }
+                            is MessageExpiryInterval -> {
+                                if (messageExpiryIntervalSeconds != null) {
+                                    throw ProtocolError("Message Expiry Interval added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363")
+                                }
+                                messageExpiryIntervalSeconds = it.seconds
+                            }
+                            is ContentType -> {
+                                if (contentType != null) {
+                                    throw ProtocolError("Content Type added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477365")
+                                }
+                                contentType = it.value
+                            }
+                            is ResponseTopic -> {
+                                if (responseTopic != null) {
+                                    throw ProtocolError("Response Topic added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477366")
+                                }
+                                responseTopic = it.value
+                            }
+                            is CorrelationData -> {
+                                if (correlationData != null) {
+                                    throw ProtocolError("Coorelation data added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477367")
+                                }
+                                correlationData = it.data
+                            }
                             is UserProperty -> {
                                 val key = it.key
                                 val value = it.value
