@@ -5,6 +5,7 @@ package mqtt.wire.control.packet
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
+import mqtt.wire.control.packet.format.variable.property.SessionExpiryInterval
 import mqtt.wire.control.packet.format.variable.property.readProperties
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.decodeVariableByteInteger
@@ -531,6 +532,12 @@ class ConnectTests {
         val properties = byteReader.readProperties()
         assertNotNull(properties.first())
 //        assertEquals(properties.first().property, Property.SessionExpiryInterval)
+    }
+
+    @Test
+    fun variableHeaderPropertySessionExpiryIntervalSeconds() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(SessionExpiryInterval(5.toUInt())))
+        assertEquals(props.sessionExpiryIntervalSeconds, 5.toUInt())
     }
 
 }
