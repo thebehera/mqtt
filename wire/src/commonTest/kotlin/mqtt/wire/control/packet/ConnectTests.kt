@@ -5,6 +5,7 @@ package mqtt.wire.control.packet
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
+import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.variable.property.SessionExpiryInterval
 import mqtt.wire.control.packet.format.variable.property.readProperties
 import mqtt.wire.data.QualityOfService
@@ -538,6 +539,15 @@ class ConnectTests {
     fun variableHeaderPropertySessionExpiryIntervalSeconds() {
         val props = ConnectionRequest.VariableHeader.Properties.from(setOf(SessionExpiryInterval(5.toUInt())))
         assertEquals(props.sessionExpiryIntervalSeconds, 5.toUInt())
+    }
+
+    @Test
+    fun variableHeaderPropertySessionExpiryIntervalSecondsProtocolExceptionMultipleTimes() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(SessionExpiryInterval(5.toUInt()), SessionExpiryInterval(5.toUInt())))
+            fail("Should of hit a protocol exception for adding two session expiry intervals")
+        } catch (e: ProtocolError) {
+        }
     }
 
 }
