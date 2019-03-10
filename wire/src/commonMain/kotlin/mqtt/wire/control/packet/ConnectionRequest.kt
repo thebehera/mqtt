@@ -599,7 +599,7 @@ data class ConnectionRequest(
                                     throw ProtocolError("Receive Maximum added multiple times see: " +
                                             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477349")
                                 }
-                                if (receiveMaximum == 0.toUShort()) {
+                                if (it.maxQos1Or2ConcurrentMessages == 0.toUShort()) {
                                     throw ProtocolError("Receive Maximum cannot be set to 0 see: " +
                                             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477349")
                                 }
@@ -610,7 +610,7 @@ data class ConnectionRequest(
                                     throw ProtocolError("Maximum Packet Size added multiple times see: " +
                                             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350")
                                 }
-                                if (maximumPacketSize == 0.toUInt()) {
+                                if (it.packetSizeLimitationBytes == 0.toUInt()) {
                                     throw ProtocolError("Maximum Packet Size cannot be set to 0 see: " +
                                             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350")
                                 }

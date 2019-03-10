@@ -567,6 +567,15 @@ class ConnectTests {
     }
 
     @Test
+    fun variableHeaderPropertyReceiveMaximumSetTo0() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(setOf(ReceiveMaximum(0.toUShort())))
+            fail("Should of hit a protocol exception for setting 0 as the receive maximum")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
     fun variableHeaderPropertyMaximumPacketSize() {
         val props = ConnectionRequest.VariableHeader.Properties.from(setOf(MaximumPacketSize(5.toUInt())))
         assertEquals(props.maximumPacketSize, 5.toUInt())
