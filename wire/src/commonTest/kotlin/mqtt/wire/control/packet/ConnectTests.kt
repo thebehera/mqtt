@@ -6,8 +6,9 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
 import mqtt.wire.ProtocolError
-import mqtt.wire.control.packet.format.variable.property.SessionExpiryInterval
-import mqtt.wire.control.packet.format.variable.property.readProperties
+import mqtt.wire.control.packet.format.variable.property.*
+import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.decodeVariableByteInteger
 import kotlin.test.*
@@ -550,4 +551,134 @@ class ConnectTests {
         }
     }
 
+    @Test
+    fun variableHeaderPropertyReceiveMaximum() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(ReceiveMaximum(5.toUShort())))
+        assertEquals(props.receiveMaximum, 5.toUShort())
+    }
+
+    @Test
+    fun variableHeaderPropertyReceiveMaximumMultipleTimes() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(ReceiveMaximum(5.toUShort()), ReceiveMaximum(5.toUShort())))
+            fail("Should of hit a protocol exception for adding two receive maximums")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyMaximumPacketSize() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(MaximumPacketSize(5.toUInt())))
+        assertEquals(props.maximumPacketSize, 5.toUInt())
+    }
+
+    @Test
+    fun variableHeaderPropertyMaximumPacketSizeMultipleTimes() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(MaximumPacketSize(5.toUInt()), MaximumPacketSize(5.toUInt())))
+            fail("Should of hit a protocol exception for adding two maximum packet sizes")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyMaximumPacketSizeZeroValue() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(setOf(MaximumPacketSize(0.toUInt())))
+            fail("Should of hit a protocol exception for adding two maximum packet sizes")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyTopicAliasMaximum() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(TopicAliasMaximum(5.toUShort())))
+        assertEquals(props.topicAliasMaximum, 5.toUShort())
+    }
+
+    @Test
+    fun variableHeaderPropertyTopicAliasMaximumMultipleTimes() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(TopicAliasMaximum(5.toUShort()), TopicAliasMaximum(5.toUShort())))
+            fail("Should of hit a protocol exception for adding two topic alias maximums")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyRequestResponseInformation() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(RequestResponseInformation(true)))
+        assertEquals(props.requestResponseInformation, true)
+    }
+
+    @Test
+    fun variableHeaderPropertyRequestResponseInformationMultipleTimes() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(RequestResponseInformation(true), RequestResponseInformation(true)))
+            fail("Should of hit a protocol exception for adding two Request Response Information")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyRequestProblemInformation() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(RequestProblemInformation(true)))
+        assertEquals(props.requestProblemInformation, true)
+    }
+
+    @Test
+    fun variableHeaderPropertyRequestProblemInformationMultipleTimes() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(RequestProblemInformation(true), RequestProblemInformation(true)))
+            fail("Should of hit a protocol exception for adding two Request Problem Information")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyUserProperty() {
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val userPropertyResult = props.userProperty!!
+        for ((key, value) in userPropertyResult) {
+            assertEquals(key.getValueOrThrow(), "key")
+            assertEquals(value.getValueOrThrow(), "value")
+        }
+        assertEquals(userPropertyResult.size, 1)
+    }
+
+    @Test
+    fun variableHeaderPropertyUserPropertyMultipleTimes() {
+        val userProperty = UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
+        val props = ConnectionRequest.VariableHeader.Properties.from(listOf(userProperty, userProperty))
+        val userPropertyResult = props.userProperty!!
+        for ((key, value) in userPropertyResult) {
+            assertEquals(key.getValueOrThrow(), "key")
+            assertEquals(value.getValueOrThrow(), "value")
+        }
+        assertEquals(userPropertyResult.size, 2)
+    }
+
+    @Test
+    fun variableHeaderPropertyAuth() {
+        val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
+        val method = AuthenticationMethod(MqttUtf8String("yolo"))
+        val data = AuthenticationData(payload)
+        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(method, data))
+        val auth = props.authentication!!
+
+        assertEquals(auth.method.getValueOrThrow(), "yolo")
+        assertEquals(auth.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
+    }
+
+    @Test
+    fun variableHeaderPropertyAuthMultipleTimes() {
+        val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
+        val method = AuthenticationMethod(MqttUtf8String("yolo"))
+        val data = AuthenticationData(payload)
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(method, data, method, data))
+            fail("Should of hit a protocol exception for adding two Auth peices (data or method)")
+        } catch (e: ProtocolError) {
+        }
+    }
 }

@@ -526,8 +526,8 @@ data class ConnectionRequest(
                     val data: ByteArrayWrapper)
 
             init {
-                if (maximumPacketSize != null || maximumPacketSize == 0.toUInt()) {
-                    throw ProtocolError("Maximum Packet Size cannot be set to zero")
+                if (maximumPacketSize == 0.toUInt()) {
+                    throw ProtocolError("Maximum Packet Size cannot be set to 0")
                 }
             }
 
@@ -652,6 +652,7 @@ data class ConnectionRequest(
                                 }
                                 authenticationData = it.data
                             }
+
                             else -> throw MalformedPacketException("Invalid CONNECT property type found in MQTT payload $it")
                         }
                     }
