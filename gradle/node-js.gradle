@@ -47,6 +47,6 @@ task installTextEncode(type: NpmTask) {
     // install the text-encoding package only
     args = ['install', 'text-encoding']
 }
-npmInstall.dependsOn installTextEncode
+installDependenciesMochaNode.dependsOn installTextEncode
 
 npmInstall.dependsOn populateNodeModules
