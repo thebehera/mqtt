@@ -1,0 +1,32 @@
+
+bintray {
+    user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
+    key =  project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')
+    publish = true
+    override = true // for multi-platform Kotlin/Native publishing
+    pkg {
+        repo = 'mqtt'
+        name = 'wire'
+        userOrg = user
+        licenses = ['Apache-2.0']
+        vcsUrl = 'https://github.com/thebehera/mqtt.git'
+        labels = ['mqtt']
+        publicDownloadNumbers = true
+        attributes= ['mqtt': ['true']] //Optional package-level attributes
+        version {
+            name = version_string
+            desc = 'Gradle Bintray Plugin 1.0 final'
+            vcsTag = '0.0.0'
+        }
+    }
+}
+
+bintrayUpload.dependsOn publishToMavenLocal
+
+// This is for easier debugging of bintray uploading problems
+bintrayUpload.doFirst {
+    publications = project.publishing.publications.findAll { !it.name.contains('-test') }.collect {
+        println("Uploading artifact '$it.groupId:$it.artifactId:$it.version' from publication '$it.name'")
+        it.name
+    }
+}

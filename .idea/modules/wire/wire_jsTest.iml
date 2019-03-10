@@ -5,8 +5,8 @@
       <configuration version="3" platform="JavaScript " useProjectSettings="false" isTestModule="true" externalProjectId=":wire">
         <sourceSets>
           <sourceSet>wire_jsMain</sourceSet>
-          <sourceSet>wire_commonMain</sourceSet>
           <sourceSet>wire_commonTest</sourceSet>
+          <sourceSet>wire_commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <compilerSettings>

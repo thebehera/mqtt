@@ -1,0 +1,26 @@
+// ==== CONFIGURE ios =====
+task iOSTest {
+    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone XR"
+    dependsOn 'linkTestIOS'
+    group = JavaBasePlugin.VERIFICATION_GROUP
+    description = "Runs tests for target 'iOS' on an iOS simulator"
+
+    doLast {
+        def binary = kotlin.targets.iOS.compilations.test.getBinary('EXECUTABLE', 'DEBUG')
+        println(binary)
+        exec {
+            commandLine 'xcrun', 'simctl', 'spawn', device, binary.absolutePath
+        }
+    }
+}
+iOSTest.onlyIf {System.getProperty("os.name").toLowerCase().contains("mac")}
+
+task CI {}
+String osName = System.getProperty("os.name").toLowerCase()
+if (osName.contains("mac")) {
+    CI.dependsOn macosTest, iOSTest
+} else if (osName.contains("linux")) {
+    CI.dependsOn linuxTest, jsTest, jvmTest
+} else {
+    CI.dependsOn windowsTest
+}
