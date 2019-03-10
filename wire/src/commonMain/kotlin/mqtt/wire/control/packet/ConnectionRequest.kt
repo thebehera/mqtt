@@ -11,6 +11,8 @@ import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.control.packet.format.variable.property.*
 import mqtt.wire.data.*
 
+typealias CONNECT = ConnectionRequest
+
 /**
  * 3.1 CONNECT – Connection Request
  * After a Network Connection is established by a Client to a Server, the first packet sent from the Client to the
