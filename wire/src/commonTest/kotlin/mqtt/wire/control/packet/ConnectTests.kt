@@ -5,6 +5,7 @@ package mqtt.wire.control.packet
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
+import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.variable.property.*
 import mqtt.wire.data.ByteArrayWrapper
@@ -697,6 +698,16 @@ class ConnectTests {
             ConnectionRequest.VariableHeader.Properties.from(listOf(data, data))
             fail("Should of hit a protocol exception for adding two Auth Data")
         } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyInvalid() {
+        val method = ServerReference(MqttUtf8String("yolo"))
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(method, method))
+            fail("Should of hit a protocol exception for adding an invalid connect header")
+        } catch (e: MalformedPacketException) {
         }
     }
 }
