@@ -119,11 +119,3 @@ apply from: file("$rootProject.projectDir/gradle/js-main.gradle")
 apply from: file("$rootProject.projectDir/gradle/ios.gradle")
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
-
-
-// wont be needed once https://github.com/ktorio/ktor/issues/961 is fixed
-task installTextEncode(type: NpmTask) {
-    // install the text-encoding package only
-    args = ['install', 'text-encoding']
-}
-npmInstall.dependsOn installTextEncode
