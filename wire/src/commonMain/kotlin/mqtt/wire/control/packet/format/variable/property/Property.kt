@@ -7,7 +7,7 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.*
 
-abstract class Property(private val identifierByte: Byte, val type: Type, val willProperties: Boolean = false) {
+abstract class Property(val identifierByte: Byte, val type: Type, val willProperties: Boolean = false) {
     open fun write(bytePacketBuilder: BytePacketBuilder) {}
     internal fun write(bytePacketBuilder: BytePacketBuilder, boolean: Boolean) {
         bytePacketBuilder.writeByte(identifierByte)

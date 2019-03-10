@@ -92,16 +92,19 @@ inline class MqttUtf8String(private val value: String) {
 
 fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String) {
     val validatedString = string.getValueOrThrow()
-    writeUShort(validatedString.length.toUShort())
+    val len = validatedString.length.toUShort()
+    writeUShort(len)
     writeStringUtf8(validatedString)
 }
 
 fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {
-    val stringLength = readUShort().toInt()
+    val ushort = readUShort()
+    val stringLength = ushort.toInt()
     if (stringLength == 0) {
         return MqttUtf8String("")
     }
-    return MqttUtf8String(readTextExact(stringLength))
+    val text = readTextExactBytes(bytes = stringLength)
+    return MqttUtf8String(text)
 }
 
 fun ByteReadPacket.readMqttBinary() :ByteArray {

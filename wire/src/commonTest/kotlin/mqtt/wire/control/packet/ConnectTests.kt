@@ -2,20 +2,14 @@
 
 package mqtt.wire.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.readUByte
-import kotlinx.io.core.readUShort
-import kotlinx.io.core.toByteArray
+import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ConnectionRequest.VariableHeader
 import mqtt.wire.control.packet.format.variable.property.*
-import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.*
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
-import mqtt.wire.data.decodeVariableByteInteger
 import kotlin.test.*
 
 class ConnectTests {
@@ -578,6 +572,10 @@ class ConnectTests {
     fun variableHeaderPropertyReceiveMaximum() {
         val props = VariableHeader.Properties.from(setOf(ReceiveMaximum(5.toUShort())))
         assertEquals(props.receiveMaximum, 5.toUShort())
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        assertEquals(requestRead.variableHeader.properties.receiveMaximum, 5.toUShort())
     }
 
     @Test
@@ -599,9 +597,22 @@ class ConnectTests {
     }
 
     @Test
+    fun maximumPacketSizeCannotBeSetToZero() {
+        try {
+            VariableHeader.Properties.from(setOf(MaximumPacketSize(0.toUInt())))
+            fail("should of thrown an exception")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
     fun variableHeaderPropertyMaximumPacketSize() {
         val props = VariableHeader.Properties.from(setOf(MaximumPacketSize(5.toUInt())))
         assertEquals(props.maximumPacketSize, 5.toUInt())
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        assertEquals(requestRead.variableHeader.properties.maximumPacketSize, 5.toUInt())
     }
 
     @Test
@@ -626,6 +637,10 @@ class ConnectTests {
     fun variableHeaderPropertyTopicAliasMaximum() {
         val props = VariableHeader.Properties.from(setOf(TopicAliasMaximum(5.toUShort())))
         assertEquals(props.topicAliasMaximum, 5.toUShort())
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        assertEquals(requestRead.variableHeader.properties.topicAliasMaximum, 5.toUShort())
     }
 
     @Test
@@ -641,6 +656,10 @@ class ConnectTests {
     fun variableHeaderPropertyRequestResponseInformation() {
         val props = VariableHeader.Properties.from(setOf(RequestResponseInformation(true)))
         assertEquals(props.requestResponseInformation, true)
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        assertEquals(requestRead.variableHeader.properties.requestResponseInformation, true)
     }
 
     @Test
@@ -656,6 +675,10 @@ class ConnectTests {
     fun variableHeaderPropertyRequestProblemInformation() {
         val props = VariableHeader.Properties.from(setOf(RequestProblemInformation(true)))
         assertEquals(props.requestProblemInformation, true)
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        assertEquals(requestRead.variableHeader.properties.requestProblemInformation, true)
     }
 
     @Test
@@ -676,6 +699,12 @@ class ConnectTests {
             assertEquals(value.getValueOrThrow(), "value")
         }
         assertEquals(userPropertyResult.size, 1)
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val (key, value) = requestRead.variableHeader.properties.userProperty!!.first()
+        assertEquals(key.getValueOrThrow(), "key")
+        assertEquals(value.getValueOrThrow(), "value")
     }
 
     @Test
@@ -700,6 +729,12 @@ class ConnectTests {
 
         assertEquals(auth.method.getValueOrThrow(), "yolo")
         assertEquals(auth.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
+
+        val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
+        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        assertEquals(requestRead.variableHeader.properties.authentication!!.method.getValueOrThrow(), "yolo")
+        assertEquals(requestRead.variableHeader.properties.authentication!!.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
+
     }
 
     @Test
@@ -809,6 +844,255 @@ class ConnectTests {
         assertEquals(connectionRequest.payload.willProperties?.willDelayIntervalSeconds, 0.toUInt())
         assertEquals(connectionRequest.payload.willPayload, ByteArrayWrapper("Swag".toByteArray()))
         assertEquals(connectionRequest.payload.willTopic, MqttUtf8String("/yolo"))
+    }
+
+    @Test
+    fun willPropertiesWillDelayIntervalProtocolError() {
+        val data = buildPacket {
+            WillDelayInterval(1.toUInt()).write(this)
+            WillDelayInterval(2.toUInt()).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        try {
+            ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+            fail("should of hit an error")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun willPropertiesPayloadFormatIndicator() {
+        val data = buildPacket {
+            PayloadFormatIndicator(true).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        val withoutDefaults = willProps.packet()
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        assertTrue(willPropsWithoutDefaults.payloadFormatIndicator)
+        val withDefaults = willProps.packet(true)
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        assertTrue(willPropsWithDefaults.payloadFormatIndicator)
+    }
+
+    @Test
+    fun willPropertiesMessageExpiryInterval() {
+        val data = buildPacket {
+            MessageExpiryInterval(4.toUInt()).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        val withoutDefaults = willProps.packet()
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        assertEquals(willPropsWithoutDefaults.messageExpiryIntervalSeconds, 4.toUInt())
+        val withDefaults = willProps.packet(true)
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        assertEquals(willPropsWithDefaults.messageExpiryIntervalSeconds, 4.toUInt())
+    }
+
+    @Test
+    fun willPropertiesMessageExpiryIntervalProtocolError() {
+        val data = buildPacket {
+            MessageExpiryInterval(1.toUInt()).write(this)
+            MessageExpiryInterval(2.toUInt()).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        try {
+            ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+            fail("should of hit an error")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun willPropertiesContentType() {
+        val data = buildPacket {
+            ContentType(MqttUtf8String("f")).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        val withoutDefaults = willProps.packet()
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        assertEquals(willPropsWithoutDefaults.contentType!!.getValueOrThrow(), "f")
+        val withDefaults = willProps.packet(true)
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        assertEquals(willPropsWithDefaults.contentType!!.getValueOrThrow(), "f")
+    }
+
+    @Test
+    fun willPropertiesContentTypeProtocolError() {
+        val data = buildPacket {
+            ContentType(MqttUtf8String("")).write(this)
+            ContentType(MqttUtf8String("f")).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        try {
+            ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+            fail("should of hit an error")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun willPropertiesResponseTopic() {
+        val data = buildPacket {
+            ResponseTopic(MqttUtf8String("f")).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        val withoutDefaults = willProps.packet()
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        assertEquals(willPropsWithoutDefaults.responseTopic!!.getValueOrThrow(), "f")
+        val withDefaults = willProps.packet(true)
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        assertEquals(willPropsWithDefaults.responseTopic!!.getValueOrThrow(), "f")
+    }
+
+    @Test
+    fun willPropertiesResponseTopicProtocolError() {
+        val data = buildPacket {
+            ResponseTopic(MqttUtf8String("")).write(this)
+            ResponseTopic(MqttUtf8String("f")).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        try {
+            ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+            fail("should of hit an error")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun willPropertiesCoorelationData() {
+        val data = buildPacket {
+            CorrelationData(ByteArrayWrapper(byteArrayOf(0xF))).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        val withoutDefaults = willProps.packet()
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        assertEquals(willPropsWithoutDefaults.correlationData!!, ByteArrayWrapper(byteArrayOf(0xF)))
+        val withDefaults = willProps.packet(true)
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        assertEquals(willPropsWithDefaults.correlationData!!, ByteArrayWrapper(byteArrayOf(0xF)))
+    }
+
+    @Test
+    fun willPropertiesCoorelationDataProtocolError() {
+        val data = buildPacket {
+            CorrelationData(ByteArrayWrapper("".toByteArray())).write(this)
+            CorrelationData(ByteArrayWrapper("f".toByteArray())).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        try {
+            ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+            fail("should of hit an error")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun willPropertiesUserDataOne() {
+        val data = buildPacket {
+            UserProperty(MqttUtf8String("k"), MqttUtf8String("v"))
+                    .write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        val withoutDefaults = willProps.packet()
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val (keyWithoutDefaults, valueWithoutDefaults) = willPropsWithoutDefaults.userProperty.first()
+        assertEquals(keyWithoutDefaults.getValueOrThrow(), "k")
+        assertEquals(valueWithoutDefaults.getValueOrThrow(), "v")
+
+        val withDefaults = willProps.packet(true)
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val (keyWithDefaults, valueWithDefaults) = willPropsWithDefaults.userProperty.first()
+        assertEquals(keyWithDefaults.getValueOrThrow(), "k")
+        assertEquals(valueWithDefaults.getValueOrThrow(), "v")
+    }
+
+    @Test
+    fun willPropertiesUserDataOneRead() {
+        val data = buildPacket {
+            UserProperty(MqttUtf8String("k"), MqttUtf8String("v"))
+                    .write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+
+        val (key, value) = willProps.userProperty.first()
+        assertEquals(key.getValueOrThrow(), "k")
+        assertEquals(value.getValueOrThrow(), "v")
+    }
+
+    @Test
+    fun willPropertiesUserDataMultiple() {
+        val data = buildPacket {
+            UserProperty(MqttUtf8String("k0"), MqttUtf8String("v0")).write(this)
+            UserProperty(MqttUtf8String("k1"), MqttUtf8String("v1")).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+        willProps.userProperty.forEachIndexed { index, (key, value) ->
+            assertEquals(key.getValueOrThrow(), "k$index")
+            assertEquals(value.getValueOrThrow(), "v$index")
+        }
+    }
+
+    @Test
+    fun willPropertiesInvalid() {
+        val data = buildPacket {
+            ReasonString(MqttUtf8String("k")).write(this)
+        }.readBytes()
+        val dataWithPropertyLength = buildPacket {
+            writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
+            writeFully(data)
+        }.copy()
+        try {
+            ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
+            fail("should of thrown an exception")
+        } catch (e: MalformedPacketException) {
+        }
     }
 
 }
