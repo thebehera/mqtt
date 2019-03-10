@@ -680,13 +680,22 @@ class ConnectTests {
     }
 
     @Test
-    fun variableHeaderPropertyAuthMultipleTimes() {
-        val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
+    fun variableHeaderPropertyAuthMethodsMultipleTimes() {
         val method = AuthenticationMethod(MqttUtf8String("yolo"))
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(listOf(method, method))
+            fail("Should of hit a protocol exception for adding two Auth Methods")
+        } catch (e: ProtocolError) {
+        }
+    }
+
+    @Test
+    fun variableHeaderPropertyAuthDataMultipleTimes() {
+        val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
         val data = AuthenticationData(payload)
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(method, data, method, data))
-            fail("Should of hit a protocol exception for adding two Auth peices (data or method)")
+            ConnectionRequest.VariableHeader.Properties.from(listOf(data, data))
+            fail("Should of hit a protocol exception for adding two Auth Data")
         } catch (e: ProtocolError) {
         }
     }
