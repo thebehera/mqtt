@@ -6,88 +6,79 @@ import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 
 fun String.validateMqttUTF8String(): Boolean {
-    var i = 0
-    while (i < length) {
-        var isBad = false
-        val c = get(i)
-        val cAsInt = c.toInt()
-        /* Check for mismatched surrogates */
-        if (c.isHighSurrogate()) {
-            if (++i == length) {
-                isBad = true /* Trailing high surrogate */
-            } else {
-                val c2 = get(i)
-                if (!c2.isLowSurrogate()) {
-                    isBad = true /* No low surrogate */
-                } else {
-                    val ch = cAsInt and 0x3ff shl 10 or (c2.toInt() and 0x3ff)
-                    if (ch and 0xffff == 0xffff || ch and 0xffff == 0xfffe) {
-                        isBad = true /* Noncharacter in base plane */
-                    }
-                }
-            }
-        } else {
-            if (c.isISOControl() || c.isLowSurrogate()) {
-                isBad = true /* Control character or no high surrogate */
-            } else if (cAsInt >= 0xfdd0 && (cAsInt <= 0xfddf || cAsInt >= 0xfffe)) {
-                isBad = true /* Noncharacter in other nonbase plane */
-            }
-        }
-        if (isBad) {
-            return false
-        }
-        i++
+    if (length > 65_535) {
+        return false
     }
-    return true
+    val index = indexOfAny(controlCharacters + shouldNotIncludeCharacters + unicodePrivateUseCharacters)
+    return index == -1
 }
 
 class InvalidMqttUtf8StringMalformedPacketException(msg: String, indexOfError: Int, originalString: String)
     :MalformedPacketException("Fails to match MQTT Spec for a UTF-8 String. Error:($msg) at index $indexOfError of $originalString")
 
+private val controlCharacters by lazy {
+    val chars = '\uD800'..'\uDFFF'
+    val list = chars.toMutableSet()
+    list += '\u0000'
+    list.toCharArray()
+}
+
+private val shouldNotIncludeCharacters by lazy {
+    val u0001To001F = '\u0001'..'\u001F'
+    val u0001To001FSet = u0001To001F.toSet()
+    val u007FTo009F = '\u007F'..'\u009F'
+    val u007FTo009FSet = u007FTo009F.toSet()
+    val shouldNotIncludeCharacters = u0001To001FSet + u007FTo009FSet
+    shouldNotIncludeCharacters.toCharArray()
+}
+
+/**
+ * Cannot add planes 15 or 16 as it does not compile into a 'char' in kotlin
+ * http://www.unicode.org/faq/private_use.html#pua2
+ */
+private val unicodePrivateUseCharacters by lazy {
+    val mainRange = '\uE000'..'\uF8FF'
+    val mainRangeSet = mainRange.toSet()
+    mainRangeSet.toCharArray()
+}
+
 inline class MqttUtf8String(private val value: String) {
-    fun getValueOrThrow() :String {
+    fun getValueOrThrow(includeWarnings: Boolean = true): String {
         val ex = exception
         if (ex != null) {
             throw ex
+        }
+        val w = warning
+        if (w != null && includeWarnings) {
+            throw w
         }
         return value
     }
 
     private val exception: InvalidMqttUtf8StringMalformedPacketException?
         get() {
-        if (value.length > 65_535) {
-            return InvalidMqttUtf8StringMalformedPacketException("MQTT UTF-8 String too large", 65_535, value.substring(0, 65_535))
-        }
-        var i = 0
-        while (i < value.length) {
-            val c = value[i]
-            val cAsInt = c.toInt()
-            // Check for mismatched surrogates
-            if (c.isHighSurrogate()) {
-                if (++i == value.length) {
-                    return InvalidMqttUtf8StringMalformedPacketException("Trailing high surrogate", i, value)
-                } else {
-                    val c2 = value[i]
-                    if (!c2.isLowSurrogate()) {
-                        return InvalidMqttUtf8StringMalformedPacketException("No low surrogate", i, value)
-                    } else {
-                        val ch = cAsInt and 0x3ff shl 10 or (c2.toInt() and 0x3ff)
-                        if (ch and 0xffff == 0xffff || ch and 0xffff == 0xfffe) {
-                            return InvalidMqttUtf8StringMalformedPacketException("Noncharacter in base plane", i, value)
-                        }
-                    }
-                }
-            } else {
-                if (c.isISOControl() || c.isLowSurrogate()) {
-                    return InvalidMqttUtf8StringMalformedPacketException("Control character or no high surrogate", i, value)
-                } else if (cAsInt >= 0xfdd0 && (cAsInt <= 0xfddf || cAsInt >= 0xfffe)) {
-                    return InvalidMqttUtf8StringMalformedPacketException("Noncharacter in other nonbase plane", i, value)
-                }
+            if (value.length > 65_535) {
+                return InvalidMqttUtf8StringMalformedPacketException("MQTT UTF-8 String too large", 65_535, value.substring(0, 65_535))
             }
-            i++
-        }
-        return null
+            val index = value.indexOfAny(controlCharacters)
+            if (index > -1) {
+                return InvalidMqttUtf8StringMalformedPacketException("Invalid Control Character", index, value)
+            }
+            return null
     }
+
+    private val warning: InvalidMqttUtf8StringMalformedPacketException?
+        get() {
+            val index = value.indexOfAny(shouldNotIncludeCharacters)
+            if (index > -1) {
+                return InvalidMqttUtf8StringMalformedPacketException("Disallowed Unicode Code Point", index, value)
+            }
+            val indexUnicode = value.indexOfAny(unicodePrivateUseCharacters)
+            if (indexUnicode > -1) {
+                return InvalidMqttUtf8StringMalformedPacketException("Unicode private use character", index, value)
+            }
+            return null
+        }
 }
 
 fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String) {
@@ -111,7 +102,3 @@ fun ByteReadPacket.readMqttBinary() :ByteArray {
     val stringLength = readUShort().toInt()
     return readBytesOf(max = stringLength)
 }
-
-fun Char.isISOControl() = toInt().isISOControl()
-fun Int.isISOControl() = this in 0..0x001F || this in 0x007F..0x009F
-

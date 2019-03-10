@@ -4,8 +4,8 @@
     <facet type="kotlin-language" name="Kotlin">
       <configuration version="3" platform="Native " useProjectSettings="false" isTestModule="false" externalProjectId=":wire">
         <sourceSets>
-          <sourceSet>wire_commonMain</sourceSet>
           <sourceSet>wire_nativeMain</sourceSet>
+          <sourceSet>wire_commonMain</sourceSet>
         </sourceSets>
         <newMppModelJpsModuleKind>COMPILATION_AND_SOURCE_SET_HOLDER</newMppModelJpsModuleKind>
         <compilerSettings>

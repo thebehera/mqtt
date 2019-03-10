@@ -4,10 +4,7 @@ package mqtt.wire.data
 
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class StringTests {
     @Test
@@ -89,5 +86,63 @@ class StringTests {
             writeMqttUtf8String(mqttString)
         }.readBytes()
         assertEquals(bytes.size, 6)
+    }
+
+
+    @Test
+    fun nullTest() {
+        val string = MqttUtf8String("\u0000")
+        try {
+            string.getValueOrThrow()
+            fail("should of thrown")
+        } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
+        }
+    }
+
+    @Test
+    fun controlCharacterU0001toU001F() {
+        for (c in '\u0001'..'\u001F') {
+            try {
+                val string = MqttUtf8String(c.toString())
+                string.getValueOrThrow()
+                fail("should of thrown")
+            } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
+                e.toString()
+            }
+        }
+    }
+
+
+    @Test
+    fun stringLengthOverflow() {
+        try {
+            MqttUtf8String("a".repeat(65_536)).getValueOrThrow()
+            fail("should of thrown")
+        } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
+        }
+    }
+
+    @Test
+    fun controlCharacterUD800toUDFFF() {
+        for (c in '\uD800'..'\uDFFF') {
+            try {
+                val string = MqttUtf8String(c.toString())
+                string.getValueOrThrow()
+                fail("should of thrown")
+            } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
+            }
+        }
+    }
+
+    @Test
+    fun controlCharacterU007FtoU009F() {
+        for (c in '\u007F'..'\u009F') {
+            try {
+                val string = MqttUtf8String(c.toString())
+                string.getValueOrThrow()
+                fail("should of thrown")
+            } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
+            }
+        }
     }
 }
