@@ -5,7 +5,9 @@ package mqtt.wire.control.packet
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
+import kotlinx.io.core.toByteArray
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ConnectionRequest.VariableHeader
 import mqtt.wire.control.packet.format.variable.property.*
@@ -367,9 +369,19 @@ class ConnectTests {
     }
 
     @Test
+    fun variableHeaderConnectFlagsByte8HasWillFlagThrowWarning() {
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
+        try {
+            connectionRequest.serialize()
+            fail("should of thrown an exception since the default is to throw on warnings")
+        } catch (e: MqttWarning) {
+        }
+    }
+
+    @Test
     fun variableHeaderConnectFlagsByte8HasWillFlag() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
-        val bytes = connectionRequest.serialize()
+        val bytes = connectionRequest.serialize(throwOnWarning = false)
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -744,6 +756,59 @@ class ConnectTests {
             fail("Should of thrown a malformed packet exception. Payload Format Indicator is not a valid connect variable header property, it is a will property")
         } catch (e: MalformedPacketException) {
         }
-
     }
+
+    @Test
+    fun willPropertiesDefaultBasic() {
+        val actual = ConnectionRequest.Payload.WillProperties()
+        val data = actual.packet()
+        assertEquals(ByteArrayWrapper(byteArrayOf(0)), ByteArrayWrapper(data))
+        val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
+        assertEquals(actual, expected)
+    }
+
+    @Test
+    fun willPropertiesDefaultBasicSendDefaults() {
+        val actual = ConnectionRequest.Payload.WillProperties()
+        val data = actual.packet(true)
+        assertEquals(ByteArrayWrapper(byteArrayOf(7, 24, 0, 0, 0, 0, 1, 0)), ByteArrayWrapper(data))
+        val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
+        assertEquals(actual, expected)
+    }
+
+    @Test
+    fun willPropertiesChangeDelayInterval() {
+        val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4.toUInt())
+        val data = actual.packet()
+        assertEquals(ByteArrayWrapper(byteArrayOf(5, 24, 0, 0, 0, 4)), ByteArrayWrapper(data))
+        val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
+        assertEquals(actual, expected)
+    }
+
+    @Test
+    fun willPropertiesChangeDelayIntervalSendDefaults() {
+        val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4.toUInt())
+        val data = actual.packet(true)
+        assertEquals(ByteArrayWrapper(byteArrayOf(7, 24, 0, 0, 0, 4, 1, 0)), ByteArrayWrapper(data))
+        val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
+        assertEquals(actual, expected)
+    }
+
+    @Test
+    fun willPropertiesDefault() {
+        val willProps = ConnectionRequest.Payload.WillProperties()
+        val header = VariableHeader(willFlag = true)
+        val payload = ConnectionRequest.Payload(
+                willProperties = willProps,
+                willPayload = ByteArrayWrapper("Swag".toByteArray()),
+                willTopic = MqttUtf8String("/yolo"))
+        val connectionRequestPreSerialized = ConnectionRequest(header, payload)
+        assertNull(connectionRequestPreSerialized.validateOrGetWarning())
+        val serialized = connectionRequestPreSerialized.serialize()
+        val connectionRequest = ControlPacket.from(ByteReadPacket(serialized)) as ConnectionRequest
+        assertEquals(connectionRequest.payload.willProperties?.willDelayIntervalSeconds, 0.toUInt())
+        assertEquals(connectionRequest.payload.willPayload, ByteArrayWrapper("Swag".toByteArray()))
+        assertEquals(connectionRequest.payload.willTopic, MqttUtf8String("/yolo"))
+    }
+
 }

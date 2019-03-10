@@ -101,7 +101,7 @@ fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {
     if (stringLength == 0) {
         return MqttUtf8String("")
     }
-    return MqttUtf8String(readText(max = stringLength))
+    return MqttUtf8String(readTextExact(stringLength))
 }
 
 fun ByteReadPacket.readMqttBinary() :ByteArray {
