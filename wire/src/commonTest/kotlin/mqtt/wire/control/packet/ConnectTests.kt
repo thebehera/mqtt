@@ -175,7 +175,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasUsername() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true))
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
+                ConnectionRequest.Payload(userName = MqttUtf8String("yolo")))
         val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
@@ -211,7 +212,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasPassword() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true))
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
+                ConnectionRequest.Payload(password = MqttUtf8String("yolo")))
         val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
@@ -1092,6 +1094,52 @@ class ConnectTests {
             ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
             fail("should of thrown an exception")
         } catch (e: MalformedPacketException) {
+        }
+    }
+
+    @Test
+    fun usernameFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
+        try {
+            val connectionRequest = ConnectionRequest(
+                    payload = ConnectionRequest.Payload(userName = MqttUtf8String("yolo")))
+            val warning = connectionRequest.validateOrGetWarning()
+            if (warning != null) throw warning
+            fail()
+        } catch (e: MqttWarning) {
+        }
+    }
+
+    @Test
+    fun usernameFlagMatchesPayloadFailureCaseWithFlagNoUsername() {
+        try {
+            val connectionRequest = ConnectionRequest(VariableHeader(hasUserName = true))
+            val warning = connectionRequest.validateOrGetWarning()
+            if (warning != null) throw warning
+            fail()
+        } catch (e: MqttWarning) {
+        }
+    }
+
+    @Test
+    fun passwordFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
+        try {
+            val connectionRequest = ConnectionRequest(
+                    payload = ConnectionRequest.Payload(password = MqttUtf8String("yolo")))
+            val warning = connectionRequest.validateOrGetWarning()
+            if (warning != null) throw warning
+            fail()
+        } catch (e: MqttWarning) {
+        }
+    }
+
+    @Test
+    fun passwordFlagMatchesPayloadFailureCaseWithFlagNoUsername() {
+        try {
+            val connectionRequest = ConnectionRequest(VariableHeader(hasPassword = true))
+            val warning = connectionRequest.validateOrGetWarning()
+            if (warning != null) throw warning
+            fail()
+        } catch (e: MqttWarning) {
         }
     }
 

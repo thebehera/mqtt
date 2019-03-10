@@ -55,21 +55,21 @@ data class ConnectionRequest(
                     "1, the Will QoS and Will Retain fields in the Connect Flags will be used by the Server, " +
                     "and the Will Properties, Will Topic and Will Message fields MUST be present in the Payload.")
         }
+        if (variableHeader.hasUserName && payload.userName == null) {
+            return MqttWarning("[MQTT-3.1.2-17]", "If the User Name Flag is set" +
+                    " to 1, a User Name MUST be present in the Payload")
+        }
         if (!variableHeader.hasUserName && payload.userName != null) {
             return MqttWarning("[MQTT-3.1.2-16]", "If the User Name Flag is set " +
                     "to 0, a User Name MUST NOT be present in the Payload")
         }
-        if (variableHeader.hasUserName && payload.userName != null) {
-            return MqttWarning("[MQTT-3.1.2-17]", "If the User Name Flag is set" +
-                    " to 1, a User Name MUST be present in the Payload ")
+        if (variableHeader.hasPassword && payload.password == null) {
+            return MqttWarning("[MQTT-3.1.2-19]", "If the Password Flag is set" +
+                    " to 1, a Password MUST be present in the Payload")
         }
         if (!variableHeader.hasPassword && payload.password != null) {
             return MqttWarning("[MMQTT-3.1.2-18]", "If the Password Flag is set " +
                     "to 0, a Password MUST NOT be present in the Payload")
-        }
-        if (variableHeader.hasPassword && payload.password != null) {
-            return MqttWarning("[MQTT-3.1.2-19]", "If the Password Flag is set" +
-                    " to 1, a Password MUST be present in the Payload")
         }
         return null
     }
