@@ -4,6 +4,7 @@ package mqtt.wire.control.packet
 
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire.data.decodeVariableByteInteger
@@ -20,35 +21,46 @@ abstract class ControlPacket(val controlPacketValue: Byte,
                              val direction: DirectionOfFlow,
                              val flags: Byte = 0b0) {
 
-    private val fixedHeader by lazy {
+    private fun fixedHeader(payloadSize: Int = 0): ByteArray {
         val packetValue = controlPacketValue
         val packetValueUInt = packetValue.toUInt()
         val packetValueShifted = packetValueUInt.shl(4)
         val localFlagsByte = flags.toUByte().toInt()
         val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
-        val byte2 = VariableByteInteger(remainingLength)
-        buildPacket {
+        val byte2 = VariableByteInteger(remainingLength(payloadSize))
+        return buildPacket {
             writeUByte(byte1)
             writePacket(byte2.encodedValue())
         }.readBytes()
     }
 
     open val variableHeaderPacket: ByteArray? = null
-    open val payloadPacket: ByteArray? = null
-    private val remainingLength by lazy {
+    open fun payloadPacket(sendDefaults: Boolean = false): ByteArray? = null
+    private fun remainingLength(payloadSize: Int = 0): UInt {
         val variableHeaderSize = variableHeaderPacket?.size ?: 0
-        val payloadSize = payloadPacket?.size ?: 0
-        (variableHeaderSize + payloadSize).toUInt()
+        return (variableHeaderSize + payloadSize).toUInt()
     }
 
-    val serialize by lazy {
-        buildPacket {
-            writeFully(fixedHeader)
+    open fun validateOrGetWarning(): MqttWarning? {
+        return null
+    }
+
+    /**
+     * Create a byte array representing the control packet
+     * @param sendDefaults Increase the data transferred by defining the default explicitly
+     */
+    fun serialize(sendDefaults: Boolean = false, throwOnWarning: Boolean = true): ByteArray {
+        val warning = validateOrGetWarning()
+        if (warning != null && throwOnWarning) {
+            throw warning
+        }
+        return buildPacket {
+            val payloadPacket = payloadPacket(sendDefaults)
+            writeFully(fixedHeader(payloadPacket?.size ?: 0))
             val variableHeaderPacket = variableHeaderPacket
             if (variableHeaderPacket != null) {
                 writeFully(variableHeaderPacket)
             }
-            val payloadPacket = payloadPacket
             if (payloadPacket != null) {
                 writeFully(payloadPacket)
             }

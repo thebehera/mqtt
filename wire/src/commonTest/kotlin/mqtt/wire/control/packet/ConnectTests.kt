@@ -7,10 +7,12 @@ import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.ConnectionRequest.VariableHeader
 import mqtt.wire.control.packet.format.variable.property.*
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.decodeVariableByteInteger
 import kotlin.test.*
 
@@ -19,7 +21,7 @@ class ConnectTests {
     @Test
     fun fixedHeaderByte1() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byte1 = bytes.first()
         assertEquals(byte1, 0b00010000, "invalid byte 1 on the CONNECT fixed header")
     }
@@ -27,7 +29,7 @@ class ConnectTests {
     @Test
     fun fixedHeaderRemainingLength() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
 
@@ -38,7 +40,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte1() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -49,7 +51,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte2() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -62,7 +64,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte3() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -76,7 +78,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte4() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -91,7 +93,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte5() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -107,7 +109,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte6() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -124,7 +126,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolVersionByte7() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -141,8 +143,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8AllFalse() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_MOST_ONCE))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -166,7 +168,7 @@ class ConnectTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -177,8 +179,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasUsername() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_MOST_ONCE, hasUserName = true))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -202,7 +204,7 @@ class ConnectTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -213,8 +215,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasPassword() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_MOST_ONCE, hasPassword = true))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -238,7 +240,7 @@ class ConnectTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -248,9 +250,17 @@ class ConnectTests {
     }
 
     @Test
+    fun variableHeaderConnectFlagsByte8HasWillRetainCheckWarning() {
+        assertNotNull(VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
+                "should of provided an warning")
+    }
+
+
+    @Test
     fun variableHeaderConnectFlagsByte8HasWillRetain() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_MOST_ONCE, willRetain = true))
-        val bytes = connectionRequest.serialize
+        val vh = VariableHeader(willQos = AT_MOST_ONCE, willRetain = true)
+        val connectionRequest = ConnectionRequest(vh)
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -274,7 +284,7 @@ class ConnectTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -287,7 +297,7 @@ class ConnectTests {
     @Test
     fun variableHeaderConnectFlagsByte8HasQos1() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -322,8 +332,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasQos2() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -358,8 +368,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasWillFlag() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_MOST_ONCE, willFlag = true))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -383,7 +393,7 @@ class ConnectTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertTrue(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -394,8 +404,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasCleanStart() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(willQos = QualityOfService.AT_MOST_ONCE, cleanStart = true))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, cleanStart = true))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -419,7 +429,7 @@ class ConnectTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -432,7 +442,7 @@ class ConnectTests {
     @Test
     fun variableHeaderKeepAliveDefault() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -451,8 +461,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderKeepAlive0() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(keepAliveSeconds = 0.toUShort()))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0.toUShort()))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -472,8 +482,8 @@ class ConnectTests {
 
     @Test
     fun variableHeaderKeepAliveMax() {
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(keepAliveSeconds = UShort.MAX_VALUE))
-        val bytes = connectionRequest.serialize
+        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -493,7 +503,7 @@ class ConnectTests {
     @Test
     fun propertyLengthEmpty() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -517,9 +527,9 @@ class ConnectTests {
 
     @Test
     fun propertyLengthSessionExpiry() {
-        val props = ConnectionRequest.VariableHeader.Properties(sessionExpiryIntervalSeconds = 1.toUInt())
-        val connectionRequest = ConnectionRequest(ConnectionRequest.VariableHeader(properties = props))
-        val bytes = connectionRequest.serialize
+        val props = VariableHeader.Properties(sessionExpiryIntervalSeconds = 1.toUInt())
+        val connectionRequest = ConnectionRequest(VariableHeader(properties = props))
+        val bytes = connectionRequest.serialize()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -533,20 +543,20 @@ class ConnectTests {
         byteReader.readByte() // connect flags
         byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
         val properties = byteReader.readProperties()
-        assertNotNull(properties.first())
+        assertNotNull(properties!!.first())
 //        assertEquals(properties.first().property, Property.SessionExpiryInterval)
     }
 
     @Test
     fun variableHeaderPropertySessionExpiryIntervalSeconds() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(SessionExpiryInterval(5.toUInt())))
+        val props = VariableHeader.Properties.from(setOf(SessionExpiryInterval(5.toUInt())))
         assertEquals(props.sessionExpiryIntervalSeconds, 5.toUInt())
     }
 
     @Test
     fun variableHeaderPropertySessionExpiryIntervalSecondsProtocolExceptionMultipleTimes() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(SessionExpiryInterval(5.toUInt()), SessionExpiryInterval(5.toUInt())))
+            VariableHeader.Properties.from(listOf(SessionExpiryInterval(5.toUInt()), SessionExpiryInterval(5.toUInt())))
             fail("Should of hit a protocol exception for adding two session expiry intervals")
         } catch (e: ProtocolError) {
         }
@@ -554,14 +564,14 @@ class ConnectTests {
 
     @Test
     fun variableHeaderPropertyReceiveMaximum() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(ReceiveMaximum(5.toUShort())))
+        val props = VariableHeader.Properties.from(setOf(ReceiveMaximum(5.toUShort())))
         assertEquals(props.receiveMaximum, 5.toUShort())
     }
 
     @Test
     fun variableHeaderPropertyReceiveMaximumMultipleTimes() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(ReceiveMaximum(5.toUShort()), ReceiveMaximum(5.toUShort())))
+            VariableHeader.Properties.from(listOf(ReceiveMaximum(5.toUShort()), ReceiveMaximum(5.toUShort())))
             fail("Should of hit a protocol exception for adding two receive maximums")
         } catch (e: ProtocolError) {
         }
@@ -570,7 +580,7 @@ class ConnectTests {
     @Test
     fun variableHeaderPropertyReceiveMaximumSetTo0() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(setOf(ReceiveMaximum(0.toUShort())))
+            VariableHeader.Properties.from(setOf(ReceiveMaximum(0.toUShort())))
             fail("Should of hit a protocol exception for setting 0 as the receive maximum")
         } catch (e: ProtocolError) {
         }
@@ -578,14 +588,14 @@ class ConnectTests {
 
     @Test
     fun variableHeaderPropertyMaximumPacketSize() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(MaximumPacketSize(5.toUInt())))
+        val props = VariableHeader.Properties.from(setOf(MaximumPacketSize(5.toUInt())))
         assertEquals(props.maximumPacketSize, 5.toUInt())
     }
 
     @Test
     fun variableHeaderPropertyMaximumPacketSizeMultipleTimes() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(MaximumPacketSize(5.toUInt()), MaximumPacketSize(5.toUInt())))
+            VariableHeader.Properties.from(listOf(MaximumPacketSize(5.toUInt()), MaximumPacketSize(5.toUInt())))
             fail("Should of hit a protocol exception for adding two maximum packet sizes")
         } catch (e: ProtocolError) {
         }
@@ -594,7 +604,7 @@ class ConnectTests {
     @Test
     fun variableHeaderPropertyMaximumPacketSizeZeroValue() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(setOf(MaximumPacketSize(0.toUInt())))
+            VariableHeader.Properties.from(setOf(MaximumPacketSize(0.toUInt())))
             fail("Should of hit a protocol exception for adding two maximum packet sizes")
         } catch (e: ProtocolError) {
         }
@@ -602,14 +612,14 @@ class ConnectTests {
 
     @Test
     fun variableHeaderPropertyTopicAliasMaximum() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(TopicAliasMaximum(5.toUShort())))
+        val props = VariableHeader.Properties.from(setOf(TopicAliasMaximum(5.toUShort())))
         assertEquals(props.topicAliasMaximum, 5.toUShort())
     }
 
     @Test
     fun variableHeaderPropertyTopicAliasMaximumMultipleTimes() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(TopicAliasMaximum(5.toUShort()), TopicAliasMaximum(5.toUShort())))
+            VariableHeader.Properties.from(listOf(TopicAliasMaximum(5.toUShort()), TopicAliasMaximum(5.toUShort())))
             fail("Should of hit a protocol exception for adding two topic alias maximums")
         } catch (e: ProtocolError) {
         }
@@ -617,14 +627,14 @@ class ConnectTests {
 
     @Test
     fun variableHeaderPropertyRequestResponseInformation() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(RequestResponseInformation(true)))
+        val props = VariableHeader.Properties.from(setOf(RequestResponseInformation(true)))
         assertEquals(props.requestResponseInformation, true)
     }
 
     @Test
     fun variableHeaderPropertyRequestResponseInformationMultipleTimes() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(RequestResponseInformation(true), RequestResponseInformation(true)))
+            VariableHeader.Properties.from(listOf(RequestResponseInformation(true), RequestResponseInformation(true)))
             fail("Should of hit a protocol exception for adding two Request Response Information")
         } catch (e: ProtocolError) {
         }
@@ -632,14 +642,14 @@ class ConnectTests {
 
     @Test
     fun variableHeaderPropertyRequestProblemInformation() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(RequestProblemInformation(true)))
+        val props = VariableHeader.Properties.from(setOf(RequestProblemInformation(true)))
         assertEquals(props.requestProblemInformation, true)
     }
 
     @Test
     fun variableHeaderPropertyRequestProblemInformationMultipleTimes() {
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(RequestProblemInformation(true), RequestProblemInformation(true)))
+            VariableHeader.Properties.from(listOf(RequestProblemInformation(true), RequestProblemInformation(true)))
             fail("Should of hit a protocol exception for adding two Request Problem Information")
         } catch (e: ProtocolError) {
         }
@@ -647,7 +657,7 @@ class ConnectTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
         val userPropertyResult = props.userProperty!!
         for ((key, value) in userPropertyResult) {
             assertEquals(key.getValueOrThrow(), "key")
@@ -659,7 +669,7 @@ class ConnectTests {
     @Test
     fun variableHeaderPropertyUserPropertyMultipleTimes() {
         val userProperty = UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
-        val props = ConnectionRequest.VariableHeader.Properties.from(listOf(userProperty, userProperty))
+        val props = VariableHeader.Properties.from(listOf(userProperty, userProperty))
         val userPropertyResult = props.userProperty!!
         for ((key, value) in userPropertyResult) {
             assertEquals(key.getValueOrThrow(), "key")
@@ -673,7 +683,7 @@ class ConnectTests {
         val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
         val method = AuthenticationMethod(MqttUtf8String("yolo"))
         val data = AuthenticationData(payload)
-        val props = ConnectionRequest.VariableHeader.Properties.from(setOf(method, data))
+        val props = VariableHeader.Properties.from(setOf(method, data))
         val auth = props.authentication!!
 
         assertEquals(auth.method.getValueOrThrow(), "yolo")
@@ -684,7 +694,7 @@ class ConnectTests {
     fun variableHeaderPropertyAuthMethodsMultipleTimes() {
         val method = AuthenticationMethod(MqttUtf8String("yolo"))
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(method, method))
+            VariableHeader.Properties.from(listOf(method, method))
             fail("Should of hit a protocol exception for adding two Auth Methods")
         } catch (e: ProtocolError) {
         }
@@ -695,7 +705,7 @@ class ConnectTests {
         val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
         val data = AuthenticationData(payload)
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(data, data))
+            VariableHeader.Properties.from(listOf(data, data))
             fail("Should of hit a protocol exception for adding two Auth Data")
         } catch (e: ProtocolError) {
         }
@@ -705,9 +715,35 @@ class ConnectTests {
     fun variableHeaderPropertyInvalid() {
         val method = ServerReference(MqttUtf8String("yolo"))
         try {
-            ConnectionRequest.VariableHeader.Properties.from(listOf(method, method))
+            VariableHeader.Properties.from(listOf(method, method))
             fail("Should of hit a protocol exception for adding an invalid connect header")
         } catch (e: MalformedPacketException) {
         }
+    }
+
+    @Test
+    fun packetDefault() {
+        val request = ConnectionRequest()
+        val byteArray = request.serialize()
+        val requestDeserialized = ControlPacket.from(ByteReadPacket(byteArray))
+        assertEquals(requestDeserialized, request)
+    }
+
+    @Test
+    fun packetQos0() {
+        val request = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
+        val byteArray = request.serialize()
+        val requestDeserialized = ControlPacket.from(ByteReadPacket(byteArray))
+        assertEquals(requestDeserialized, request)
+    }
+
+    @Test
+    fun payloadFormatIndicatorInVariableHeader() {
+        try {
+            ConnectionRequest.VariableHeader.Properties.from(setOf(PayloadFormatIndicator(true)))
+            fail("Should of thrown a malformed packet exception. Payload Format Indicator is not a valid connect variable header property, it is a will property")
+        } catch (e: MalformedPacketException) {
+        }
+
     }
 }

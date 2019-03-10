@@ -74,7 +74,7 @@ class FlagTests {
                 retain = false)
         assertEquals(detailed.controlPacketValue, 0x03,
                 "Invalid Byte 1 in the fixed header: Control Packet Value")
-        val byteAsUInt = detailed.serialize[0].toUInt()
+        val byteAsUInt = detailed.serialize()[0].toUInt()
 
         assertEquals(byteAsUInt.shr(4), 0x03.toUInt(),
                 "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times")
@@ -209,4 +209,25 @@ class FlagTests {
     fun bit1TrueFlagBitsTest() {
         assertEquals(0b10, 0x02)
     }
+
+    @Test
+    fun uByteToBoolean0b0() = assertEquals(0b00000000.toUByte().get(0), false)
+
+    @Test
+    fun uByteToBoolean0b00000001First() = assertEquals(0b00000001.toUByte().get(0), true)
+
+
+    @Test
+    fun uByteToBoolean0b00000001Last() {
+        val ubyte = 0b10000000.toUByte()
+        val ubyteAsInt = ubyte.toInt()
+        val intShifted = ubyteAsInt.shl(7 - 7)
+        val shiftedAsUbyte = intShifted.toUByte()
+        val shiftedAsInt = shiftedAsUbyte.toInt()
+        val shiftedRight = shiftedAsInt.shr(7)
+
+        assertEquals(shiftedRight == 1, true)
+    }
+
+
 }
