@@ -42,11 +42,4 @@ task populateNodeModules(type: Copy, dependsOn: [compileKotlinJs]) {
     }
 }
 
-// wont be needed once https://github.com/ktorio/ktor/issues/961 is fixed
-task installTextEncode(type: NpmTask) {
-    // install the text-encoding package only
-    args = ['install', 'text-encoding']
-}
-installDependenciesMochaNode.dependsOn installTextEncode
-
 npmInstall.dependsOn populateNodeModules
