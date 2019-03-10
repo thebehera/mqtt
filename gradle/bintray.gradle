@@ -1,4 +1,10 @@
 
+group 'com.github.thebehera.mqtt'
+def version_string = '0.0.' + (System.getenv('TRAVIS_BUILD_NUMBER') ?: '0')
+version version_string
+
+apply plugin: 'com.jfrog.bintray'
+
 bintray {
     user = project.hasProperty('bintrayUser') ? project.property('bintrayUser') : System.getenv('BINTRAY_USER')
     key =  project.hasProperty('bintrayApiKey') ? project.property('bintrayApiKey') : System.getenv('BINTRAY_API_KEY')

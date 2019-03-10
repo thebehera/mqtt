@@ -6,11 +6,6 @@ repositories {
     jcenter()
 }
 
-group 'com.github.thebehera.mqtt'
-def version_string = '0.0.' + (System.getenv('TRAVIS_BUILD_NUMBER') ?: '0')
-version version_string
-
-apply plugin: 'com.jfrog.bintray'
 apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
@@ -123,3 +118,4 @@ publishing.publications {
 apply from: file("$rootProject.projectDir/gradle/js-main.gradle")
 apply from: file("$rootProject.projectDir/gradle/ios.gradle")
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
+//apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
