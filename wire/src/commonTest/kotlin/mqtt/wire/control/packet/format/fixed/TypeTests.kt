@@ -20,7 +20,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNACK() =
-            assertEquals(2, ConnectionAcknowledgment.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(2, ConnectionAcknowledgment().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBLISH() =
@@ -82,7 +82,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowCONNACK() =
-            assertEquals(SERVER_TO_CLIENT, ConnectionAcknowledgment.direction, controlPacketSpectMatchError)
+            assertEquals(SERVER_TO_CLIENT, ConnectionAcknowledgment().direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBLISH() =

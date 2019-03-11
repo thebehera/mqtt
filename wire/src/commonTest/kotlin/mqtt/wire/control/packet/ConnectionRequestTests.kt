@@ -12,7 +12,7 @@ import mqtt.wire.data.*
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import kotlin.test.*
 
-class ConnectTests {
+class ConnectionRequestTests {
 
     @Test
     fun fixedHeaderByte1() {

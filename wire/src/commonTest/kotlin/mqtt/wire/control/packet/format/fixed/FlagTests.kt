@@ -25,7 +25,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForCONNACK() =
-            assertEquals(ConnectionAcknowledgment.flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(ConnectionAcknowledgment().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_Retain_false() {

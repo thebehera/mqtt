@@ -77,6 +77,7 @@ abstract class ControlPacket(val controlPacketValue: Byte,
             return when (packetValue) {
                 0x00 -> Reserved
                 0x01 -> ConnectionRequest.from(buffer)
+                0x02 -> ConnectionAcknowledgment.from(buffer)
                 else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
             }
         }

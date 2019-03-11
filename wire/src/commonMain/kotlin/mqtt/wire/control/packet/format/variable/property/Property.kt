@@ -78,7 +78,7 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
             }
             RequestResponseInformation(uByteAsInt == 1)
         }
-        0x1A -> ResponseInformation(readByte() == 1.toByte())
+        0x1A -> ResponseInformation(readMqttUtf8String())
         0x1C -> ServerReference(readMqttUtf8String())
         0x1F -> ReasonString(readMqttUtf8String())
         0x21 -> ReceiveMaximum(readUShort())
