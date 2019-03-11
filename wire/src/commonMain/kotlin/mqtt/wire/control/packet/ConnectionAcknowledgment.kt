@@ -485,37 +485,39 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                             is SessionExpiryInterval -> {
                                 if (sessionExpiryIntervalSeconds != null) {
                                     throw ProtocolError("Session Expiry Interval added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477348")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477382")
                                 }
                                 sessionExpiryIntervalSeconds = it.seconds
                             }
                             is ReceiveMaximum -> {
                                 if (receiveMaximum != null) {
                                     throw ProtocolError("Receive Maximum added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477349")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477383")
                                 }
                                 if (it.maxQos1Or2ConcurrentMessages == 0.toUShort()) {
                                     throw ProtocolError("Receive Maximum cannot be set to 0 see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477349")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477383")
                                 }
                                 receiveMaximum = it.maxQos1Or2ConcurrentMessages
                             }
                             is MaximumQos -> {
                                 if (maximumQos != null) {
-                                    throw ProtocolError("")
+                                    throw ProtocolError("Maximum QoS added multiple times see:" +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477384")
                                 }
                                 maximumQos = it.qos
                             }
                             is RetainAvailable -> {
                                 if (retainAvailable != null) {
-                                    throw ProtocolError("")
+                                    throw ProtocolError("Retain Available added multiple times see:" +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477385")
                                 }
                                 retainAvailable = it.serverSupported
                             }
                             is MaximumPacketSize -> {
                                 if (maximumPacketSize != null) {
                                     throw ProtocolError("Maximum Packet Size added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477386")
                                 }
                                 if (it.packetSizeLimitationBytes == 0.toUInt()) {
                                     throw ProtocolError("Maximum Packet Size cannot be set to 0 see: " +
@@ -525,78 +527,79 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                             }
                             is AssignedClientIdentifier -> {
                                 if (assignedClientIdentifier != null) {
-                                    throw ProtocolError("")
+                                    throw ProtocolError("Assigned Client Identifier added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477387")
                                 }
                                 assignedClientIdentifier = it.value
                             }
                             is TopicAliasMaximum -> {
                                 if (topicAliasMaximum != null) {
                                     throw ProtocolError("Topic Alias Maximum added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477351")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477388")
                                 }
                                 topicAliasMaximum = it.highestValueSupported
                             }
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Request Response Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352")
+                                    throw ProtocolError("Reason String added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477389")
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
                             is WildcardSubscriptionAvailable -> {
                                 if (supportsWildcardSubscriptions != null) {
-                                    throw ProtocolError("Request Problem Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                    throw ProtocolError("Wildcard Subscription Available added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477391")
                                 }
                                 supportsWildcardSubscriptions = it.serverSupported
                             }
                             is SubscriptionIdentifierAvailable -> {
                                 if (subscriptionIdentifiersAvailable != null) {
-                                    throw ProtocolError("Request Problem Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                    throw ProtocolError("Subscription Identifier Available added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477392")
                                 }
                                 subscriptionIdentifiersAvailable = it.serverSupported
                             }
                             is SharedSubscriptionAvailable -> {
                                 if (sharedSubscriptionAvailable != null) {
-                                    throw ProtocolError("Request Problem Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                    throw ProtocolError("Shared Subscription Available added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477393")
                                 }
                                 sharedSubscriptionAvailable = it.serverSupported
                             }
                             is ServerKeepAlive -> {
                                 if (serverKeepAlive != null) {
-                                    throw ProtocolError("Request Problem Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                    throw ProtocolError("Server Keep Alive added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477394")
                                 }
                                 serverKeepAlive = it.seconds
                             }
                             is ResponseInformation -> {
                                 if (responseInformation != null) {
-                                    throw ProtocolError("Request Problem Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                    throw ProtocolError("Response Information added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477395")
                                 }
                                 responseInformation = it.requestResponseInformationInConnack
                             }
                             is ServerReference -> {
                                 if (serverReference != null) {
-                                    throw ProtocolError("Request Problem Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                                    throw ProtocolError("Server Reference added multiple times see: " +
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396")
                                 }
                                 serverReference = it.otherServer
                             }
                             is AuthenticationMethod -> {
                                 if (authenticationMethod != null) {
                                     throw ProtocolError("Authentication Method added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477355")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477397")
                                 }
                                 authenticationMethod = it.value
                             }
                             is AuthenticationData -> {
                                 if (authenticationData != null) {
                                     throw ProtocolError("Authentication Data added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477356")
+                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477398")
                                 }
                                 authenticationData = it.data
                             }
