@@ -595,14 +595,14 @@ data class ConnectionRequest(
                         AuthenticationMethod(authentication.method).write(this)
                         AuthenticationData(authentication.data).write(this)
                     }
-                }.readBytes()
+                }
                 // The length of the Properties in the CONNECT packet Variable Header encoded as a
                 // Variable Byte Integer.
-                val propertyLength = propertiesPacket.size
+                val propertyLength = propertiesPacket.remaining
                 val result = buildPacket {
                     writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writeFully(propertiesPacket)
-                }.readBytes()
+                    writePacket(propertiesPacket)
+                }
 
                 result
             }
@@ -719,8 +719,8 @@ data class ConnectionRequest(
                 writeUByte(protocolVersion)
                 writeByte(flags)
                 writeUShort(keepAliveSeconds)
-                writeFully(properties.packet)
-            }.readBytes()
+                writePacket(properties.packet)
+            }
         }
 
         companion object {
@@ -990,7 +990,7 @@ data class ConnectionRequest(
              * Create a byte array representing Will Properties
              * @param sendDefaults Increase the data transferred by defining the default explicitly
              */
-            fun packet(sendDefaults: Boolean = false): ByteArray {
+            fun packet(sendDefaults: Boolean = false): ByteReadPacket {
                 val data = buildPacket {
                     if (willDelayIntervalSeconds != 0.toUInt() || sendDefaults) {
                         WillDelayInterval(willDelayIntervalSeconds).write(this)
@@ -1017,12 +1017,11 @@ data class ConnectionRequest(
                             UserProperty(key, value).write(this)
                         }
                     }
-                }.readBytes()
+                }
                 return buildPacket {
-                    writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
-                    writeFully(data)
-
-                }.readBytes()
+                    writePacket(VariableByteInteger(data.remaining.toUInt()).encodedValue())
+                    writePacket(data)
+                }
             }
 
             companion object {
@@ -1094,12 +1093,12 @@ data class ConnectionRequest(
             }
         }
 
-        fun packet(sendDefaults: Boolean = false): ByteArray {
+        fun packet(sendDefaults: Boolean = false): ByteReadPacket {
             return buildPacket {
                 writeMqttUtf8String(clientId)
                 if (willProperties != null) {
                     val properties = willProperties.packet(sendDefaults = sendDefaults)
-                    writeFully(properties)
+                    writePacket(properties)
                 }
                 if (willTopic != null) {
                     writeMqttUtf8String(willTopic)
@@ -1115,7 +1114,7 @@ data class ConnectionRequest(
                 if (password != null) {
                     writeMqttUtf8String(password)
                 }
-            }.readBytes()
+            }
         }
 
         companion object {

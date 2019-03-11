@@ -24,6 +24,11 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         bytePacketBuilder.writeUShort(number)
     }
 
+    fun write(bytePacketBuilder: BytePacketBuilder, p: ByteReadPacket) {
+        bytePacketBuilder.writeByte(identifierByte)
+        bytePacketBuilder.writePacket(p)
+    }
+
     fun write(bytePacketBuilder: BytePacketBuilder, string: MqttUtf8String) {
         bytePacketBuilder.writeByte(identifierByte)
         bytePacketBuilder.writeMqttUtf8String(string)

@@ -2,6 +2,7 @@
 
 package mqtt.wire.control.packet.format.fixed
 
+import kotlinx.io.core.readBytes
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService.*
 import kotlin.test.Test
@@ -74,7 +75,7 @@ class FlagTests {
                 retain = false)
         assertEquals(detailed.controlPacketValue, 0x03,
                 "Invalid Byte 1 in the fixed header: Control Packet Value")
-        val byteAsUInt = detailed.serialize()[0].toUInt()
+        val byteAsUInt = detailed.serialize().readBytes()[0].toUInt()
 
         assertEquals(byteAsUInt.shr(4), 0x03.toUInt(),
                 "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times")

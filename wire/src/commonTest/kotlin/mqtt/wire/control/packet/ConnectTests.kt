@@ -17,7 +17,7 @@ class ConnectTests {
     @Test
     fun fixedHeaderByte1() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
+        val bytes = connectionRequest.serialize().readBytes()
         val byte1 = bytes.first()
         assertEquals(byte1, 0b00010000, "invalid byte 1 on the CONNECT fixed header")
     }
@@ -25,8 +25,7 @@ class ConnectTests {
     @Test
     fun fixedHeaderRemainingLength() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
 
         val remainingLength = byteReader.decodeVariableByteInteger()
@@ -36,8 +35,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte1() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         val byte1ProtocolName = byteReader.readByte()
@@ -47,8 +45,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte2() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -60,8 +57,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte3() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -74,8 +70,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte4() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -89,8 +84,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte5() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -105,8 +99,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolNameByte6() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -122,8 +115,7 @@ class ConnectTests {
     @Test
     fun variableHeaderProtocolVersionByte7() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -140,8 +132,7 @@ class ConnectTests {
     @Test
     fun variableHeaderConnectFlagsByte8AllFalse() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -177,8 +168,7 @@ class ConnectTests {
     fun variableHeaderConnectFlagsByte8HasUsername() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
                 ConnectionRequest.Payload(userName = MqttUtf8String("yolo")))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -214,8 +204,7 @@ class ConnectTests {
     fun variableHeaderConnectFlagsByte8HasPassword() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
                 ConnectionRequest.Payload(password = MqttUtf8String("yolo")))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -258,8 +247,7 @@ class ConnectTests {
     fun variableHeaderConnectFlagsByte8HasWillRetain() {
         val vh = VariableHeader(willQos = AT_MOST_ONCE, willRetain = true)
         val connectionRequest = ConnectionRequest(vh)
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -295,8 +283,7 @@ class ConnectTests {
     @Test
     fun variableHeaderConnectFlagsByte8HasQos1() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -331,8 +318,7 @@ class ConnectTests {
     @Test
     fun variableHeaderConnectFlagsByte8HasQos2() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -377,8 +363,7 @@ class ConnectTests {
     @Test
     fun variableHeaderConnectFlagsByte8HasWillFlag() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
-        val bytes = connectionRequest.serialize(throwOnWarning = false)
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize(throwOnWarning = false).copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -413,8 +398,7 @@ class ConnectTests {
     @Test
     fun variableHeaderConnectFlagsByte8HasCleanStart() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, cleanStart = true))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -450,8 +434,7 @@ class ConnectTests {
     @Test
     fun variableHeaderKeepAliveDefault() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -470,8 +453,7 @@ class ConnectTests {
     @Test
     fun variableHeaderKeepAlive0() {
         val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0.toUShort()))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -491,8 +473,7 @@ class ConnectTests {
     @Test
     fun variableHeaderKeepAliveMax() {
         val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -511,7 +492,7 @@ class ConnectTests {
     @Test
     fun propertyLengthEmpty() {
         val connectionRequest = ConnectionRequest()
-        val bytes = connectionRequest.serialize()
+        val bytes = connectionRequest.serialize().readBytes()
         val byteReader = ByteReadPacket(bytes)
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -524,10 +505,10 @@ class ConnectTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        val propertyIndexStart = byteReader.remaining
+        val propertyIndexStart = bytes.size
         val propertyLength = byteReader.decodeVariableByteInteger()
-        val propertyBytesLength = propertyIndexStart - byteReader.remaining
-        val propertiesBytes = connectionRequest.variableHeader.properties.packet
+        val propertyBytesLength = propertyIndexStart - bytes.size
+        val propertiesBytes = connectionRequest.variableHeader.properties.packet.readBytes()
         val propertySize = propertiesBytes.size - propertyBytesLength
         assertEquals(propertyLength, propertySize.toUInt())
         assertEquals(propertyLength, 0.toUInt())
@@ -537,8 +518,7 @@ class ConnectTests {
     fun propertyLengthSessionExpiry() {
         val props = VariableHeader.Properties(sessionExpiryIntervalSeconds = 1.toUInt())
         val connectionRequest = ConnectionRequest(VariableHeader(properties = props))
-        val bytes = connectionRequest.serialize()
-        val byteReader = ByteReadPacket(bytes)
+        val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
         byteReader.readByte() // Length MSB (0)
@@ -576,7 +556,7 @@ class ConnectTests {
         assertEquals(props.receiveMaximum, 5.toUShort())
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.receiveMaximum, 5.toUShort())
     }
 
@@ -613,7 +593,7 @@ class ConnectTests {
         assertEquals(props.maximumPacketSize, 5.toUInt())
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.maximumPacketSize, 5.toUInt())
     }
 
@@ -641,7 +621,7 @@ class ConnectTests {
         assertEquals(props.topicAliasMaximum, 5.toUShort())
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.topicAliasMaximum, 5.toUShort())
     }
 
@@ -660,7 +640,7 @@ class ConnectTests {
         assertEquals(props.requestResponseInformation, true)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.requestResponseInformation, true)
     }
 
@@ -679,7 +659,7 @@ class ConnectTests {
         assertEquals(props.requestProblemInformation, true)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.requestProblemInformation, true)
     }
 
@@ -703,7 +683,7 @@ class ConnectTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         val (key, value) = requestRead.variableHeader.properties.userProperty!!.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")
@@ -733,7 +713,7 @@ class ConnectTests {
         assertEquals(auth.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(ByteReadPacket(request)) as ConnectionRequest
+        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.authentication!!.method.getValueOrThrow(), "yolo")
         assertEquals(requestRead.variableHeader.properties.authentication!!.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
 
@@ -773,16 +753,16 @@ class ConnectTests {
     @Test
     fun packetDefault() {
         val request = ConnectionRequest()
-        val byteArray = request.serialize()
-        val requestDeserialized = ControlPacket.from(ByteReadPacket(byteArray))
+        val byteArray = request.serialize().copy()
+        val requestDeserialized = ControlPacket.from(byteArray)
         assertEquals(requestDeserialized, request)
     }
 
     @Test
     fun packetQos0() {
         val request = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
-        val byteArray = request.serialize()
-        val requestDeserialized = ControlPacket.from(ByteReadPacket(byteArray))
+        val byteArray = request.serialize().copy()
+        val requestDeserialized = ControlPacket.from(byteArray)
         assertEquals(requestDeserialized, request)
     }
 
@@ -798,7 +778,7 @@ class ConnectTests {
     @Test
     fun willPropertiesDefaultBasic() {
         val actual = ConnectionRequest.Payload.WillProperties()
-        val data = actual.packet()
+        val data = actual.packet().readBytes()
         assertEquals(ByteArrayWrapper(byteArrayOf(0)), ByteArrayWrapper(data))
         val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
         assertEquals(actual, expected)
@@ -807,7 +787,7 @@ class ConnectTests {
     @Test
     fun willPropertiesDefaultBasicSendDefaults() {
         val actual = ConnectionRequest.Payload.WillProperties()
-        val data = actual.packet(true)
+        val data = actual.packet(true).readBytes()
         assertEquals(ByteArrayWrapper(byteArrayOf(7, 24, 0, 0, 0, 0, 1, 0)), ByteArrayWrapper(data))
         val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
         assertEquals(actual, expected)
@@ -816,7 +796,7 @@ class ConnectTests {
     @Test
     fun willPropertiesChangeDelayInterval() {
         val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4.toUInt())
-        val data = actual.packet()
+        val data = actual.packet().readBytes()
         assertEquals(ByteArrayWrapper(byteArrayOf(5, 24, 0, 0, 0, 4)), ByteArrayWrapper(data))
         val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
         assertEquals(actual, expected)
@@ -825,7 +805,7 @@ class ConnectTests {
     @Test
     fun willPropertiesChangeDelayIntervalSendDefaults() {
         val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4.toUInt())
-        val data = actual.packet(true)
+        val data = actual.packet(true).readBytes()
         assertEquals(ByteArrayWrapper(byteArrayOf(7, 24, 0, 0, 0, 4, 1, 0)), ByteArrayWrapper(data))
         val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
         assertEquals(actual, expected)
@@ -841,8 +821,8 @@ class ConnectTests {
                 willTopic = MqttUtf8String("/yolo"))
         val connectionRequestPreSerialized = ConnectionRequest(header, payload)
         assertNull(connectionRequestPreSerialized.validateOrGetWarning())
-        val serialized = connectionRequestPreSerialized.serialize()
-        val connectionRequest = ControlPacket.from(ByteReadPacket(serialized)) as ConnectionRequest
+        val serialized = connectionRequestPreSerialized.serialize().copy()
+        val connectionRequest = ControlPacket.from(serialized) as ConnectionRequest
         assertEquals(connectionRequest.payload.willProperties?.willDelayIntervalSeconds, 0.toUInt())
         assertEquals(connectionRequest.payload.willPayload, ByteArrayWrapper("Swag".toByteArray()))
         assertEquals(connectionRequest.payload.willTopic, MqttUtf8String("/yolo"))
@@ -876,10 +856,10 @@ class ConnectTests {
         }.copy()
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
-        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
         assertTrue(willPropsWithoutDefaults.payloadFormatIndicator)
         val withDefaults = willProps.packet(true)
-        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
         assertTrue(willPropsWithDefaults.payloadFormatIndicator)
     }
 
@@ -894,10 +874,10 @@ class ConnectTests {
         }.copy()
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
-        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
         assertEquals(willPropsWithoutDefaults.messageExpiryIntervalSeconds, 4.toUInt())
         val withDefaults = willProps.packet(true)
-        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
         assertEquals(willPropsWithDefaults.messageExpiryIntervalSeconds, 4.toUInt())
     }
 
@@ -929,10 +909,10 @@ class ConnectTests {
         }.copy()
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
-        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
         assertEquals(willPropsWithoutDefaults.contentType!!.getValueOrThrow(), "f")
         val withDefaults = willProps.packet(true)
-        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
         assertEquals(willPropsWithDefaults.contentType!!.getValueOrThrow(), "f")
     }
 
@@ -964,10 +944,10 @@ class ConnectTests {
         }.copy()
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
-        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
         assertEquals(willPropsWithoutDefaults.responseTopic!!.getValueOrThrow(), "f")
         val withDefaults = willProps.packet(true)
-        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
         assertEquals(willPropsWithDefaults.responseTopic!!.getValueOrThrow(), "f")
     }
 
@@ -999,10 +979,10 @@ class ConnectTests {
         }.copy()
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
-        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
         assertEquals(willPropsWithoutDefaults.correlationData!!, ByteArrayWrapper(byteArrayOf(0xF)))
         val withDefaults = willProps.packet(true)
-        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
         assertEquals(willPropsWithDefaults.correlationData!!, ByteArrayWrapper(byteArrayOf(0xF)))
     }
 
@@ -1035,13 +1015,13 @@ class ConnectTests {
         }.copy()
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
-        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withoutDefaults))
+        val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
         val (keyWithoutDefaults, valueWithoutDefaults) = willPropsWithoutDefaults.userProperty.first()
         assertEquals(keyWithoutDefaults.getValueOrThrow(), "k")
         assertEquals(valueWithoutDefaults.getValueOrThrow(), "v")
 
         val withDefaults = willProps.packet(true)
-        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(withDefaults))
+        val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
         val (keyWithDefaults, valueWithDefaults) = willPropsWithDefaults.userProperty.first()
         assertEquals(keyWithDefaults.getValueOrThrow(), "k")
         assertEquals(valueWithDefaults.getValueOrThrow(), "v")
