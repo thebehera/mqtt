@@ -3,7 +3,9 @@
 package mqtt.wire.control.packet.format.fixed
 
 import mqtt.wire.control.packet.*
+import mqtt.wire.control.packet.PublishMessage.VariableHeader
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
+import mqtt.wire.data.MqttUtf8String
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -23,8 +25,10 @@ class TypeTests {
             assertEquals(2, ConnectionAcknowledgment().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
-    fun controlPacketTypeValueMatchesSpecForPUBLISH() =
-            assertEquals(3, PublishMessage().controlPacketValue, controlPacketSpectMatchError)
+    fun controlPacketTypeValueMatchesSpecForPUBLISH() {
+        val variable = VariableHeader(MqttUtf8String("t"))
+        assertEquals(3, PublishMessage(variable = variable).controlPacketValue, controlPacketSpectMatchError)
+    }
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBACK() =
@@ -85,8 +89,10 @@ class TypeTests {
             assertEquals(SERVER_TO_CLIENT, ConnectionAcknowledgment().direction, controlPacketSpectMatchError)
 
     @Test
-    fun controlPacketTypeDirectionOfFlowPUBLISH() =
-            assertEquals(BIDIRECTIONAL, PublishMessage().direction, controlPacketSpectMatchError)
+    fun controlPacketTypeDirectionOfFlowPUBLISH() {
+        val variable = VariableHeader(MqttUtf8String("t"))
+        assertEquals(BIDIRECTIONAL, PublishMessage(variable = variable).direction, controlPacketSpectMatchError)
+    }
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBACK() =

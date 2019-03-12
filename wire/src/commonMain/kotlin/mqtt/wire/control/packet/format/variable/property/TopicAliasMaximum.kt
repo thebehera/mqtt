@@ -5,6 +5,6 @@ package mqtt.wire.control.packet.format.variable.property
 import kotlinx.io.core.BytePacketBuilder
 import mqtt.wire.data.Type
 
-data class TopicAliasMaximum(val highestValueSupported: UShort) : Property(0x22, Type.TWO_BYTE_INTEGER) {
+data class TopicAliasMaximum(val highestValueSupported: UShort) : Property(0x23, Type.TWO_BYTE_INTEGER) {
     override fun write(bytePacketBuilder: BytePacketBuilder) = write(bytePacketBuilder, highestValueSupported)
 }

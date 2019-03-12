@@ -71,13 +71,15 @@ abstract class ControlPacket(val controlPacketValue: Byte,
     }
     companion object {
         fun from(buffer: ByteReadPacket): ControlPacket {
-            val byte1AsUInt = buffer.readUByte().toUInt()
+            val byte1 = buffer.readUByte()
+            val byte1AsUInt = byte1.toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()
             buffer.decodeVariableByteInteger() // remaining Length
             return when (packetValue) {
                 0x00 -> Reserved
                 0x01 -> ConnectionRequest.from(buffer)
                 0x02 -> ConnectionAcknowledgment.from(buffer)
+                0x03 -> PublishMessage.from(buffer, byte1)
                 else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
             }
         }

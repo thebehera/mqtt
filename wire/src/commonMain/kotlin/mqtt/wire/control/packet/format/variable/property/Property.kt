@@ -82,8 +82,8 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
         0x1C -> ServerReference(readMqttUtf8String())
         0x1F -> ReasonString(readMqttUtf8String())
         0x21 -> ReceiveMaximum(readUShort())
-        0x22 -> TopicAliasMaximum(readUShort())
-        0x23 -> TopicAlias(readUShort())
+        0x22 -> TopicAlias(readUShort())
+        0x23 -> TopicAliasMaximum(readUShort())
         0x24 -> MaximumQos(if (readByte() == 1.toByte()) QualityOfService.AT_LEAST_ONCE else QualityOfService.AT_MOST_ONCE) // Should not be present for 2
         0x25 -> RetainAvailable(readByte() == 1.toByte())
         0x26 -> UserProperty(readMqttUtf8String(), readMqttUtf8String())
