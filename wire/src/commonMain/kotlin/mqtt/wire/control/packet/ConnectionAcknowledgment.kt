@@ -393,7 +393,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     if (assignedClientIdentifier != null) {
                         AssignedClientIdentifier(assignedClientIdentifier).write(this)
                     }
-                    if (topicAliasMaximum == 0.toUShort() || sendDefaults) {
+                    if (topicAliasMaximum != 0.toUShort() || sendDefaults) {
                         TopicAliasMaximum(topicAliasMaximum).write(this)
                     }
                     if (reasonString != null) {
