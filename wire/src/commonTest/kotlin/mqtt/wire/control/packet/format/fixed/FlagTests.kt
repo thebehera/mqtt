@@ -165,19 +165,19 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBACK() =
-            assertEquals(PublishAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(PublishAcknowledgment(PublishAcknowledgment.VariableHeader(packetIdentifier)).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREC() =
-            assertEquals(PublishReceived(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(PublishReceived(PublishReceived.VariableHeader(packetIdentifier)).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREL() =
-            assertEquals(PublishRelease(packetIdentifier).flags, 0b10, controlPacketSpectMatchError)
+            assertEquals(PublishRelease(PublishRelease.VariableHeader(packetIdentifier)).flags, 0b10, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBCOMP() =
-            assertEquals(PublishComplete(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(PublishComplete(PublishComplete.VariableHeader(packetIdentifier)).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBSCRIBE() =

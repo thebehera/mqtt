@@ -32,19 +32,19 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBACK() =
-            assertEquals(4, PublishAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(4, PublishAcknowledgment(PublishAcknowledgment.VariableHeader(packetIdentifier)).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBREC() =
-            assertEquals(5, PublishReceived(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(5, PublishReceived(PublishReceived.VariableHeader(packetIdentifier)).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBREL() =
-            assertEquals(6, PublishRelease(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(6, PublishRelease(PublishRelease.VariableHeader(packetIdentifier)).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBCOMP() =
-            assertEquals(7, PublishComplete(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(7, PublishComplete(PublishComplete.VariableHeader(packetIdentifier)).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBSCRIBE() =
@@ -96,19 +96,19 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBACK() =
-            assertEquals(BIDIRECTIONAL, PublishAcknowledgment(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(BIDIRECTIONAL, PublishAcknowledgment(PublishAcknowledgment.VariableHeader(packetIdentifier)).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBREC() =
-            assertEquals(BIDIRECTIONAL, PublishReceived(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(BIDIRECTIONAL, PublishReceived(PublishReceived.VariableHeader(packetIdentifier)).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBREL() =
-            assertEquals(BIDIRECTIONAL, PublishRelease(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(BIDIRECTIONAL, PublishRelease(PublishRelease.VariableHeader(packetIdentifier)).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBCOMP() =
-            assertEquals(BIDIRECTIONAL, PublishComplete(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(BIDIRECTIONAL, PublishComplete(PublishComplete.VariableHeader(packetIdentifier)).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBSCRIBE() =
