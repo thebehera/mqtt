@@ -157,14 +157,14 @@ data class Subscription(val topicFilter: MqttUtf8String,
                          * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
                          * Error if the Maximum QoS field has the value 3.
                          */
-                        val maximumQos: QualityOfService,
+                        val maximumQos: QualityOfService = QualityOfService.AT_LEAST_ONCE,
                         /**
                          * Bit 2 of the Subscription Options represents the No Local option. If the value is 1,
                          * Application Messages MUST NOT be forwarded to a connection with a ClientID equal to the
                          * ClientID of the publishing connection [MQTT-3.8.3-3]. It is a Protocol Error to set the No
                          * Local bit to 1 on a Shared Subscription [MQTT-3.8.3-4].
                          */
-                        val noLocal: Boolean,
+                        val noLocal: Boolean = false,
                         /**
                          * Bit 3 of the Subscription Options represents the Retain As Published option. If 1,
                          * Application Messages forwarded using this subscription keep the RETAIN flag they were
@@ -172,7 +172,7 @@ data class Subscription(val topicFilter: MqttUtf8String,
                          * RETAIN flag set to 0. Retained messages sent when the subscription is established have
                          * the RETAIN flag set to 1.
                          */
-                        val retainAsPublished: Boolean,
+                        val retainAsPublished: Boolean = false,
                         /**
                          * Bits 4 and 5 of the Subscription Options represent the Retain Handling option. This option
                          * specifies whether retained messages are sent when the subscription is established. This
@@ -188,7 +188,7 @@ data class Subscription(val topicFilter: MqttUtf8String,
                          *
                          * It is a Protocol Error to send a Retain Handling value of 3.
                          */
-                        val retainHandling: RetainHandling) {
+                        val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_SUBSCRIBE_ONLY_IF_SUBSCRIBE_DOESNT_EXISTS) {
     val packet by lazy {
         val qosInt = maximumQos.integerValue
         val nlShifted = (if (noLocal) 1 else 0).shl(2)

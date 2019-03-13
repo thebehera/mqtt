@@ -181,7 +181,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBSCRIBE() =
-            assertEquals(0b10, SubscribeRequest(packetIdentifier).flags, controlPacketSpectMatchError)
+            assertEquals(0b10, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(MqttUtf8String("yolo")))).flags, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =

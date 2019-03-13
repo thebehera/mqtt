@@ -48,7 +48,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBSCRIBE() =
-            assertEquals(8, SubscribeRequest(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(8, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(MqttUtf8String("yolo")))).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBACK() =
@@ -112,7 +112,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBSCRIBE() =
-            assertEquals(CLIENT_TO_SERVER, SubscribeRequest(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(CLIENT_TO_SERVER, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(MqttUtf8String("yolo")))).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBACK() =

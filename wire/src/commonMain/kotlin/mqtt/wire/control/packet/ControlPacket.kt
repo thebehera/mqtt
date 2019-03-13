@@ -57,10 +57,13 @@ abstract class ControlPacket(val controlPacketValue: Byte,
         if (warning != null && throwOnWarning) {
             throw warning
         }
-        return buildPacket {
-            val payloadPacket = payloadPacket(sendDefaults)
-            writePacket(fixedHeader(payloadPacket?.remaining?.toInt() ?: 0))
-            val variableHeaderPacket = variableHeaderPacket
+        val variableHeaderPacket = variableHeaderPacket
+        val variablePacketSize = variableHeaderPacket?.remaining ?: 0L
+        val payloadPacket = payloadPacket(sendDefaults)
+        val payloadPacketSize = payloadPacket?.remaining ?: 0L
+        val fixedHeaderPacket = fixedHeader((variablePacketSize + payloadPacketSize).toInt())
+        val p = buildPacket {
+            writePacket(fixedHeaderPacket)
             if (variableHeaderPacket != null) {
                 writePacket(variableHeaderPacket)
             }
@@ -68,14 +71,15 @@ abstract class ControlPacket(val controlPacketValue: Byte,
                 writePacket(payloadPacket)
             }
         }
+        return p
     }
     companion object {
         fun from(buffer: ByteReadPacket): ControlPacket {
             val byte1 = buffer.readUByte()
             val byte1AsUInt = byte1.toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()
-            buffer.decodeVariableByteInteger() // remaining Length
-            return when (packetValue) {
+            val remainingLength = buffer.decodeVariableByteInteger() // remaining Length
+            val packet = when (packetValue) {
                 0x00 -> Reserved
                 0x01 -> ConnectionRequest.from(buffer)
                 0x02 -> ConnectionAcknowledgment.from(buffer)
@@ -86,6 +90,11 @@ abstract class ControlPacket(val controlPacketValue: Byte,
                 0x07 -> PublishComplete.from(buffer)
                 else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
             }
+            val afterReadingSize = buffer.remaining
+            if (afterReadingSize != remainingLength.toLong()) {
+                packet.toString()
+            }
+            return packet
         }
     }
 }
