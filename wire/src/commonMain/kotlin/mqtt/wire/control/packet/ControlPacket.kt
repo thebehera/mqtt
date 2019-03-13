@@ -80,16 +80,17 @@ abstract class ControlPacket(val controlPacketValue: Byte,
             val packetValue = byte1AsUInt.shr(4).toInt()
             val remainingLength = buffer.decodeVariableByteInteger() // remaining Length
             val packet = when (packetValue) {
-                0x00 -> Reserved
-                0x01 -> ConnectionRequest.from(buffer)
-                0x02 -> ConnectionAcknowledgment.from(buffer)
-                0x03 -> PublishMessage.from(buffer, byte1)
-                0x04 -> PublishAcknowledgment.from(buffer)
-                0x05 -> PublishReceived.from(buffer)
-                0x06 -> PublishRelease.from(buffer)
-                0x07 -> PublishComplete.from(buffer)
-                0x08 -> SubscribeRequest.from(buffer)
-                0x09 -> SubscribeAcknowledgement.from(buffer)
+                0 -> Reserved
+                1 -> ConnectionRequest.from(buffer)
+                2 -> ConnectionAcknowledgment.from(buffer)
+                3 -> PublishMessage.from(buffer, byte1)
+                4 -> PublishAcknowledgment.from(buffer)
+                5 -> PublishReceived.from(buffer)
+                6 -> PublishRelease.from(buffer)
+                7 -> PublishComplete.from(buffer)
+                8 -> SubscribeRequest.from(buffer)
+                9 -> SubscribeAcknowledgement.from(buffer)
+                10 -> UnsubscribeRequest.from(buffer)
                 else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
             }
             val afterReadingSize = buffer.remaining

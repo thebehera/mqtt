@@ -57,7 +57,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBSCRIBE() =
-            assertEquals(10, UnsubscribeRequest(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(10, UnsubscribeRequest(UnsubscribeRequest.VariableHeader(packetIdentifier), setOf(MqttUtf8String("yolo"))).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBACK() =
@@ -121,7 +121,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBSCRIBE() =
-            assertEquals(CLIENT_TO_SERVER, UnsubscribeRequest(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(CLIENT_TO_SERVER, UnsubscribeRequest(UnsubscribeRequest.VariableHeader(packetIdentifier), setOf(MqttUtf8String("yolo"))).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBACK() =
