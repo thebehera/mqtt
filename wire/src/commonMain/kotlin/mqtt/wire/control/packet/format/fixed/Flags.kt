@@ -6,14 +6,7 @@ package mqtt.wire.control.packet.format.fixed
  * The remaining bits [7-0] of byte can be retreived as a boolean
  * get the value at an index as a boolean
  */
-fun UByte.get(index: Int): Boolean {
-    val ubyteAsInt = this.toInt()
-    val intShifted = ubyteAsInt.shl(7 - index)
-    val shiftedAsUbyte = intShifted.toUByte()
-    val shiftedAsInt = shiftedAsUbyte.toInt()
-    val shiftedRight = shiftedAsInt.shr(7)
-    return shiftedRight == 1
-}
+fun UByte.get(index: Int) = this.toInt().and(0b01.shl(index)) != 0
 
 /**
  * Bits in a byte are labelled 7 to 0. Bit number 7 is the most significant bit, the least significant bit is assigned
