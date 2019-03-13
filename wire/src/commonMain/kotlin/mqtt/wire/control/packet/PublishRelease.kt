@@ -131,6 +131,7 @@ data class PublishRelease(val variable: VariableHeader)
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid Publish Release property type found in MQTT properties $it")
                         }
                     }
                     return Properties(reasonString, userProperty)

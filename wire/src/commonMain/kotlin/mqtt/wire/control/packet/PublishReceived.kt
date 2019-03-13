@@ -123,6 +123,7 @@ data class PublishReceived(val variable: VariableHeader)
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid Publish Received property type found in MQTT properties $it")
                         }
                     }
                     return Properties(reasonString, userProperty)

@@ -6,8 +6,7 @@ import kotlinx.io.core.readBytes
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.PublishMessage.FixedHeader
 import mqtt.wire.control.packet.PublishMessage.VariableHeader
-import mqtt.wire.control.packet.format.ReasonCode.GRANTED_QOS_0
-import mqtt.wire.control.packet.format.ReasonCode.GRANTED_QOS_1
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.*
 import kotlin.test.Test
@@ -207,7 +206,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForDISCONNECT() =
-            assertEquals(DisconnectNotification.flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(DisconnectNotification(DisconnectNotification.VariableHeader(NORMAL_DISCONNECTION)).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForAUTH() =

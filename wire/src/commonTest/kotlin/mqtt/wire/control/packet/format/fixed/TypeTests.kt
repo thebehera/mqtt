@@ -74,7 +74,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForDISCONNECT() =
-            assertEquals(14, DisconnectNotification.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(14, DisconnectNotification(DisconnectNotification.VariableHeader(ReasonCode.NORMAL_DISCONNECTION)).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForAUTH() =
@@ -138,7 +138,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowDISCONNECT() =
-            assertEquals(BIDIRECTIONAL, DisconnectNotification.direction, controlPacketSpectMatchError)
+            assertEquals(BIDIRECTIONAL, DisconnectNotification(DisconnectNotification.VariableHeader(ReasonCode.NORMAL_DISCONNECTION)).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowAUTH() =

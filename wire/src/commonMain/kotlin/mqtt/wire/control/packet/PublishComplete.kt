@@ -132,6 +132,7 @@ data class PublishComplete(val variable: VariableHeader) : ControlPacket(7, Dire
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid Publish Complete property type found in MQTT properties $it")
                         }
                     }
                     return Properties(reasonString, userProperty)

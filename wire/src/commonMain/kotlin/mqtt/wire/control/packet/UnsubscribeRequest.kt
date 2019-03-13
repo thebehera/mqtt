@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
+import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.variable.property.Property
@@ -90,6 +91,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
                     keyValuePairs?.forEach {
                         when (it) {
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid Unsubscribe Request property type found in MQTT properties $it")
                         }
                     }
                     return Properties(userProperty)

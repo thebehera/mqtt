@@ -108,6 +108,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid UnsubscribeAck property type found in MQTT properties $it")
                         }
                     }
                     return Properties(reasonString, userProperty)

@@ -3,6 +3,7 @@
 package mqtt.wire.control.packet
 
 import kotlinx.io.core.*
+import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.RetainHandling.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -120,6 +121,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid Subscribe Request property type found in MQTT properties $it")
                         }
                     }
                     return Properties(reasonString, userProperty)

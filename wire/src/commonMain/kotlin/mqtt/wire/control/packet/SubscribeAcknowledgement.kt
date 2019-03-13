@@ -112,6 +112,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: R
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
+                            else -> throw MalformedPacketException("Invalid Subscribe ack property type found in MQTT properties $it")
                         }
                     }
                     return Properties(reasonString, userProperty)
