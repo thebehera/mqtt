@@ -18,7 +18,7 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class PublishReceivedTests {
-    val packetIdentifier = 2.toUShort()
+    private val packetIdentifier = 2.toUShort()
 
     @Test
     fun packetIdentifier() {
