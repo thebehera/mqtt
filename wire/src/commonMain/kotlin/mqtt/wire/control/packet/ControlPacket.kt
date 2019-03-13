@@ -92,6 +92,8 @@ abstract class ControlPacket(val controlPacketValue: Byte,
                 9 -> SubscribeAcknowledgement.from(buffer)
                 10 -> UnsubscribeRequest.from(buffer)
                 11 -> UnsubscribeAcknowledgment.from(buffer)
+                12 -> PingRequest
+                13 -> PingResponse
                 else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
             }
             val afterReadingSize = buffer.remaining
