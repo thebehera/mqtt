@@ -4,6 +4,7 @@ package mqtt.wire.control.packet.format.fixed
 
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.PublishMessage.VariableHeader
+import mqtt.wire.control.packet.format.ReasonCode.GRANTED_QOS_0
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.MqttUtf8String
 import kotlin.test.Test
@@ -52,7 +53,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBACK() =
-            assertEquals(9, SubscribeAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(9, SubscribeAcknowledgement(SubscribeAcknowledgement.VariableHeader(packetIdentifier), GRANTED_QOS_0).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBSCRIBE() =
@@ -116,7 +117,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBACK() =
-            assertEquals(SERVER_TO_CLIENT, SubscribeAcknowledgment(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(SERVER_TO_CLIENT, SubscribeAcknowledgement(SubscribeAcknowledgement.VariableHeader(packetIdentifier), GRANTED_QOS_0).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBSCRIBE() =

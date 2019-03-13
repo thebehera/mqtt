@@ -7,7 +7,7 @@ package mqtt.wire.control.packet.format
  * indicate successful completion of an operation. The normal Reason Code for success is 0. Reason Code values of 0x80
  * or greater indicate failure.
  * The ConnectionAcknowledgment, PublishAcknowledgment, PublishReceived, PublishRelease, PublishCompleteNotification and AuthenticationExchange Control Packets have a single Reason Code as part
- * of the Variable Header. The SubscribeAcknowledgment and UnsubscribeAcknowledgment packets contain a list of one or more Reason Codes in the Payload.
+ * of the Variable Header. The SubscribeAcknowledgement and UnsubscribeAcknowledgment packets contain a list of one or more Reason Codes in the Payload.
  */
 enum class ReasonCode(val byte: UByte) {
     SUCCESS(0x00.toUByte()),
