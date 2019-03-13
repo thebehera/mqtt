@@ -143,7 +143,7 @@ data class PublishComplete(val variable: VariableHeader) : ControlPacket(7, Dire
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort()
                 val remaining = buffer.remaining.toInt()
-                return if (remaining == 0) {
+                return if (remaining == 2) {
                     VariableHeader(packetIdentifier)
                 } else {
                     val reasonCodeByte = buffer.readUByte()

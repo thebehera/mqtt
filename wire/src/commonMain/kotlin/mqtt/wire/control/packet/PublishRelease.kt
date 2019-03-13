@@ -142,7 +142,7 @@ data class PublishRelease(val variable: VariableHeader)
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort()
                 val remaining = buffer.remaining.toInt()
-                return if (remaining == 0) {
+                return if (remaining == 2) {
                     VariableHeader(packetIdentifier)
                 } else {
                     val reasonCodeByte = buffer.readUByte()
