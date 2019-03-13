@@ -7,6 +7,7 @@ import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.PublishMessage.FixedHeader
 import mqtt.wire.control.packet.PublishMessage.VariableHeader
 import mqtt.wire.control.packet.format.ReasonCode.GRANTED_QOS_0
+import mqtt.wire.control.packet.format.ReasonCode.GRANTED_QOS_1
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.*
 import kotlin.test.Test
@@ -190,11 +191,11 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =
-            assertEquals(UnsubscribeAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(UnsubscribeAcknowledgment(UnsubscribeAcknowledgment.VariableHeader(packetIdentifier), listOf(GRANTED_QOS_1)).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBACK() =
-            assertEquals(UnsubscribeAcknowledgment(packetIdentifier).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(UnsubscribeAcknowledgment(UnsubscribeAcknowledgment.VariableHeader(packetIdentifier), listOf(GRANTED_QOS_1)).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGREQ() =

@@ -4,6 +4,7 @@ package mqtt.wire.control.packet.format.fixed
 
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.PublishMessage.VariableHeader
+import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.GRANTED_QOS_0
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.MqttUtf8String
@@ -61,7 +62,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBACK() =
-            assertEquals(11, UnsubscribeAcknowledgment(packetIdentifier).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(11, UnsubscribeAcknowledgment(UnsubscribeAcknowledgment.VariableHeader(packetIdentifier), listOf(ReasonCode.GRANTED_QOS_1)).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPINGREQ() =
@@ -125,7 +126,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBACK() =
-            assertEquals(SERVER_TO_CLIENT, UnsubscribeAcknowledgment(packetIdentifier).direction, controlPacketSpectMatchError)
+            assertEquals(SERVER_TO_CLIENT, UnsubscribeAcknowledgment(UnsubscribeAcknowledgment.VariableHeader(packetIdentifier), listOf(ReasonCode.GRANTED_QOS_1)).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowPINGREQ() =
