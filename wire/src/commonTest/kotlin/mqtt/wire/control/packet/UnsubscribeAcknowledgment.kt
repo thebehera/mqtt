@@ -144,6 +144,7 @@ class UnsubscribeAcknowledgmentTests {
         }
         try {
             UnsubscribeAcknowledgment.from(packet)
+            fail()
         } catch (e: MalformedPacketException) {
         }
     }

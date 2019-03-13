@@ -210,7 +210,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForAUTH() =
-            assertEquals(AuthenticationExchange.flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(AuthenticationExchange(AuthenticationExchange.VariableHeader(SUCCESS, AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("yolo")))).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun emptyFlagBitsTest() {

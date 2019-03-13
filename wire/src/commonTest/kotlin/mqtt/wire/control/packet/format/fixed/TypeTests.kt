@@ -78,7 +78,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForAUTH() =
-            assertEquals(15, AuthenticationExchange.controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(15, AuthenticationExchange(AuthenticationExchange.VariableHeader(ReasonCode.SUCCESS, AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("yolo")))).controlPacketValue, controlPacketSpectMatchError)
 
 
     // Control packet types direction of flow matching spec
@@ -142,5 +142,5 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowAUTH() =
-            assertEquals(BIDIRECTIONAL, AuthenticationExchange.direction, controlPacketSpectMatchError)
+            assertEquals(BIDIRECTIONAL, AuthenticationExchange(AuthenticationExchange.VariableHeader(ReasonCode.SUCCESS, AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("yolo")))).direction, controlPacketSpectMatchError)
 }
