@@ -28,7 +28,7 @@ class ConnectionRequestTests {
         val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         val remainingLength = byteReader.decodeVariableByteInteger()
-        assertEquals(remainingLength.toInt(), 24, "invalid remaining length on the CONNECT fixed header")
+        assertEquals(remainingLength.toInt(), 13, "invalid remaining length on the CONNECT fixed header")
     }
 
     @Test

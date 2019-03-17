@@ -5,7 +5,6 @@ package mqtt.wire.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
-import mqtt.wire.control.packet.PublishMessage.VariableHeader.Companion.from
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.variable.property.*
 import mqtt.wire.data.*
@@ -531,7 +530,7 @@ data class PublishMessage(
     companion object {
         fun from(buffer: ByteReadPacket, byte1: UByte): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)
-            val variableHeader = from(buffer, fixedHeader.qos == AT_MOST_ONCE)
+            val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             val payloadBytes = ByteArrayWrapper(buffer.readBytes())
             return PublishMessage(fixedHeader, variableHeader, payloadBytes)
         }

@@ -719,7 +719,9 @@ data class ConnectionRequest(
                 writeUByte(protocolVersion)
                 writeByte(flags)
                 writeUShort(keepAliveSeconds)
-                writePacket(properties.packet)
+                if (protocolVersion > 4.toUByte()) {
+                    writePacket(properties.packet)
+                }
             }
         }
 

@@ -8,7 +8,7 @@ import mqtt.wire.MalformedInvalidVariableByteInteger
 import kotlin.experimental.and
 import kotlin.experimental.or
 
-internal val VARIABLE_BYTE_INT_MAX = 268435455.toUInt()
+val VARIABLE_BYTE_INT_MAX = 268435455.toUInt()
 
 fun ByteReadPacket.decodeVariableByteInteger() :UInt {
     var digit: Byte

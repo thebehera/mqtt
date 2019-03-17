@@ -640,8 +640,12 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 if (connectionReason == null) {
                     throw MalformedPacketException("Invalid property type found in MQTT payload $connectionReason")
                 }
-                val properties = buffer.readProperties()
-                val propeties = Properties.from(properties)
+                val propeties =if (buffer.remaining > 0) {
+                    val properties = buffer.readProperties()
+                    Properties.from(properties)
+                } else {
+                    Properties()
+                }
                 return VariableHeader(sessionPresent, connectionReason, propeties)
             }
         }
