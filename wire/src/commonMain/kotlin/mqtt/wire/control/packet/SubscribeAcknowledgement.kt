@@ -123,7 +123,11 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: R
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort()
-                val props = Properties.from(buffer.readProperties())
+                val props = if (buffer.remaining > 1L) {
+                    Properties.from(buffer.readProperties())
+                } else {
+                    Properties()
+                }
                 return VariableHeader(packetIdentifier, props)
             }
         }

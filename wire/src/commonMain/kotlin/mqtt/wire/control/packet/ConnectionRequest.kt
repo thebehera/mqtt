@@ -45,7 +45,7 @@ data class ConnectionRequest(
         val variableHeader: VariableHeader = VariableHeader(),
         val payload: Payload = Payload())
     : ControlPacket(1, DirectionOfFlow.CLIENT_TO_SERVER) {
-    override val variableHeaderPacket = variableHeader.packet
+    override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
 
     override fun validateOrGetWarning(): MqttWarning? {
@@ -706,7 +706,7 @@ data class ConnectionRequest(
          * The Variable Header for the CONNECT Packet contains the following fields in this order: Protocol Name,
          * Protocol Level, Connect Flags, Keep Alive, and Properties
          */
-        val packet by lazy {
+        fun packet(): ByteReadPacket {
             val usernameFlag = if (hasUserName) 0b10000000 else 0
             val passwordFlag = if (hasPassword) 0b1000000 else 0
             val wRetain = if (willRetain) 0b100000 else 0
@@ -714,7 +714,7 @@ data class ConnectionRequest(
             val wFlag = if (willFlag) 0b100 else 0
             val cleanStart = if (cleanStart) 0b10 else 0
             val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            buildPacket {
+            return buildPacket {
                 writeMqttUtf8String(protocolName)
                 writeUByte(protocolVersion)
                 writeByte(flags)

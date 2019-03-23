@@ -10,4 +10,4 @@ pluginManagement {
 enableFeaturePreview('GRADLE_METADATA')
 rootProject.name = 'mqtt'
 
-include ':wire'
+include ':wire', ':client', ':time'

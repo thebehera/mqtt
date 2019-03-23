@@ -30,7 +30,6 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
         commonTest {
@@ -42,7 +41,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk8')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         jvmTest {
@@ -54,31 +52,12 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
             }
         }
         jsTest {
             dependencies {
                 implementation kotlin('test-js')
             }
-        }
-
-        nativeMain {
-            dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
-            }
-        }
-        macosMain {
-            dependsOn nativeMain
-        }
-        iOSMain {
-            dependsOn nativeMain
-        }
-        windowsMain {
-            dependsOn nativeMain
-        }
-        linuxMain {
-            dependsOn nativeMain
         }
     }
 
@@ -92,16 +71,6 @@ kotlin {
                 onlyIf {
                     publication != linuxOnlyPublication || findProperty("isLinux") == "true"
                 }
-            }
-        }
-    }
-
-    targets.all {
-        compilations.all {
-            kotlinOptions {
-                freeCompilerArgs += [
-                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
-                ]
             }
         }
     }

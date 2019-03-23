@@ -102,8 +102,10 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
                 }
                 val propertyLength = propertiesPacket.remaining
                 return buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
+                    if (propertyLength > 0) {
+                        writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
+                        writePacket(propertiesPacket)
+                    }
                 }
             }
 
@@ -193,13 +195,14 @@ data class Subscription(val topicFilter: MqttUtf8String,
                         val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_SUBSCRIBE_ONLY_IF_SUBSCRIBE_DOESNT_EXISTS) {
     val packet by lazy {
         val qosInt = maximumQos.integerValue
-        val nlShifted = (if (noLocal) 1 else 0).shl(2)
-        val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
-        val rH = retainHandling.value.toInt().shl(4)
-        val combinedByte = (qosInt + nlShifted + rapShifted + rH).toByte()
+//        val nlShifted = (if (noLocal) 1 else 0).shl(2)
+//        val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
+//        val rH = retainHandling.value.toInt().shl(4)
+//        val combinedByte = (qosInt + nlShifted + rapShifted + rH).toByte()
         buildPacket {
             writeMqttUtf8String(topicFilter)
-            writeByte(combinedByte)
+//            writeByte(combinedByte)
+            writeByte(qosInt)
         }
     }
 
