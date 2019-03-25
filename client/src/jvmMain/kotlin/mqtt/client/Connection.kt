@@ -21,35 +21,50 @@ import mqtt.wire.data.QualityOfService
 import java.io.IOException
 import java.net.InetSocketAddress
 
-actual fun CoroutineScope.openSocket(hostname: String, port: Int, connectionRequest: ConnectionRequest,
-                                     clientToBroker: Channel<ControlPacket>,
-                                     brokerToClient: SendChannel<ControlPacket>) = launch {
-    val socket = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
-            .connect(InetSocketAddress(hostname, port))
+actual fun CoroutineScope.openSocket(parameters: ConnectionParameters) = launch {
+    val socketBuilder = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
+    val address = InetSocketAddress(parameters.hostname, parameters.port)
+    val connectionAttemptTime = currentTimestampMs()
+    val socket = socketBuilder.connect(address)
+    val socketConnectedTime = currentTimestampMs()
+    val socketConnectionTimeMs = socketConnectedTime - connectionAttemptTime
+    println("Connected socket in $socketConnectionTimeMs ms")
+    val output = socket.openWriteChannel(autoFlush = true)
+    val writeChannelTime = currentTimestampMs()
+    val connectionRequestPacket = parameters.connectionRequest.copy().serialize().readBytes()
+    val serializationTime = currentTimestampMs()
+    val processTime = serializationTime - writeChannelTime
+    println("Socket processing time took $processTime ms")
+    output.writeFully(connectionRequestPacket)
+    val postWriteTime = currentTimestampMs()
+    val socketWriteTime = postWriteTime - serializationTime
+    println("OUT [${connectionRequestPacket.size}][$socketWriteTime]: ${parameters.connectionRequest}")
+
 
     var lastValidatedMessageBetweenBroker = currentTimestampMs()
     launch {
-        val output = socket.openWriteChannel(autoFlush = true)
-        val connectionRequestPacket = connectionRequest.copy().serialize().readBytes()
-        output.writeFully(connectionRequestPacket)
-
-        launch {
-            val input = socket.openReadChannel()
-            while (isActive) {
-                val controlPacket = input.read()
-                if (controlPacket is ConnectionAcknowledgment) {
-                    runKeepAlive(connectionRequest, lastValidatedMessageBetweenBroker, clientToBroker)
-                }
-                brokerToClient.send(controlPacket)
-                lastValidatedMessageBetweenBroker = currentTimestampMs()
-            }
+        val input = socket.openReadChannel()
+        val initialControlPacket = input.read()
+        if (initialControlPacket is ConnectionAcknowledgment) {
+            val postConnackTime = currentTimestampMs()
+            println("Connected in ${postConnackTime - postWriteTime} ms")
+            runKeepAlive(parameters.connectionRequest, lastValidatedMessageBetweenBroker, parameters.clientToBroker)
         }
-        for (messageToSend in clientToBroker) {
-            if (isActive) {
-                output.writePacket(messageToSend.serialize())
-                println("OUT: $messageToSend")
-                lastValidatedMessageBetweenBroker = currentTimestampMs()
-            }
+        while (isActive) {
+            val controlPacket = input.read()
+            parameters.brokerToClient.send(controlPacket)
+            lastValidatedMessageBetweenBroker = currentTimestampMs()
+        }
+    }
+    for (messageToSend in parameters.clientToBroker) {
+        if (isActive) {
+            val sendMessage = messageToSend.serialize()
+            val size = sendMessage.remaining
+            val start = currentTimestampMs()
+            output.writePacket(sendMessage)
+            val sendTime = currentTimestampMs() - start
+            lastValidatedMessageBetweenBroker = currentTimestampMs()
+            println("OUT [$size][$sendTime]: $messageToSend")
         }
     }
     socket.awaitClosed()
@@ -87,20 +102,21 @@ fun main() {
             cleanStart = true,
             willQos = QualityOfService.AT_MOST_ONCE)
     val payload = ConnectionRequest.Payload(clientId = MqttUtf8String("thebehera163224626"))
-
+    val clientToBroker = Channel<ControlPacket>()
+    val brokerToClient = Channel<ControlPacket>()
+    val params = ConnectionParameters("localhost", 1883, ConnectionRequest(header, payload), clientToBroker, brokerToClient)
     while (true) {
         var job: Job? = null
         try {
             job = runBlocking {
-                val clientToBroker = Channel<ControlPacket>()
-                val brokerToClient = Channel<ControlPacket>()
                 launch {
                     while (isActive) {
                         val packet = select<ControlPacket> { brokerToClient.onReceive { it } }
-                        println("IN : $packet")
+                        val packetSize = packet.serialize().remaining
+                        println("IN  [$packetSize]: $packet")
                     }
                 }
-                val socketJob = openSocket("localhost", 1883, ConnectionRequest(header, payload), clientToBroker, brokerToClient)
+                val socketJob = openSocket(params)
                 socketJob
             }
         } catch (e: ClosedReceiveChannelException) {
