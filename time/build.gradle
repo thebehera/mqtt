@@ -104,5 +104,6 @@ publishing.publications {
 apply from: file("$projectDir/gradle/js-main.gradle")
 apply from: file("$rootProject.projectDir/gradle/ios.gradle")
 iOSTest.onlyIf { false }
+testMochaNode.onlyIf { false }
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
