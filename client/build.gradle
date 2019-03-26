@@ -33,7 +33,8 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                api project(":wire")
+                api project(":wire4")
+                api project(":wire.core")
                 api project(":time")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'

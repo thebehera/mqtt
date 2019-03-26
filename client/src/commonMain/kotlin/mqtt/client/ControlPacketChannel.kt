@@ -7,8 +7,8 @@ import kotlinx.coroutines.io.ByteWriteChannel
 import kotlinx.coroutines.io.readPacket
 import mqtt.wire.MalformedInvalidVariableByteInteger
 import mqtt.wire.MalformedPacketException
-import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.VARIABLE_BYTE_INT_MAX
+import mqtt.wire4.control.packet.ControlPacket
 import kotlin.experimental.and
 
 suspend fun ByteReadChannel.read(): ControlPacket {

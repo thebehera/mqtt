@@ -59,6 +59,23 @@ kotlin {
                 implementation kotlin('test-js')
             }
         }
+        nativeMain {
+            dependencies {
+
+            }
+        }
+        macosMain {
+            dependsOn nativeMain
+        }
+        iOSMain {
+            dependsOn nativeMain
+        }
+        windowsMain {
+            dependsOn nativeMain
+        }
+        linuxMain {
+            dependsOn nativeMain
+        }
     }
 
     // Given that `-PisLinux=true` command line argument is passed when running on Linux,
@@ -86,5 +103,6 @@ publishing.publications {
 
 apply from: file("$projectDir/gradle/js-main.gradle")
 apply from: file("$rootProject.projectDir/gradle/ios.gradle")
+iOSTest.onlyIf { false }
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")

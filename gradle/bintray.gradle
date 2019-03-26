@@ -12,7 +12,7 @@ bintray {
     override = true // for multi-platform Kotlin/Native publishing
     pkg {
         repo = 'mqtt'
-        name = 'wire'
+        name = 'wire5'
         userOrg = user
         licenses = ['Apache-2.0']
         vcsUrl = 'https://github.com/thebehera/mqtt.git'

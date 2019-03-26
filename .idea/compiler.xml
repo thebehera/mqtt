@@ -2,10 +2,28 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel>
+      <module name="com.github.thebehera.mqtt.wire.jvmMain" target="1.6" />
+      <module name="com.github.thebehera.mqtt.wire.jvmTest" target="1.6" />
       <module name="com.github.thebehera.mqtt.wire.main" target="1.8" />
       <module name="com.github.thebehera.mqtt.wire.test" target="1.8" />
+      <module name="com.github.thebehera.mqtt5.client.jvmMain" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.client.jvmTest" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.time.jvmMain" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.time.jvmTest" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.wire.core.jvmMain" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.wire.core.jvmTest" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.wire4.jvmMain" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.wire4.jvmTest" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.wire5.jvmMain" target="1.6" />
+      <module name="com.github.thebehera.mqtt5.wire5.jvmTest" target="1.6" />
+      <module name="mqtt.client.jvmMain" target="1.6" />
+      <module name="mqtt.client.jvmTest" target="1.6" />
       <module name="mqtt.main" target="1.8" />
       <module name="mqtt.test" target="1.8" />
+      <module name="mqtt.time.jvmMain" target="1.6" />
+      <module name="mqtt.time.jvmTest" target="1.6" />
+      <module name="mqtt.wire5.jvmMain" target="1.6" />
+      <module name="mqtt.wire5.jvmTest" target="1.6" />
     </bytecodeTargetLevel>
   </component>
   <component name="TypeScriptCompiler">

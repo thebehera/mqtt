@@ -15,9 +15,9 @@ import kotlinx.coroutines.io.writeFully
 import kotlinx.coroutines.selects.select
 import kotlinx.io.core.readBytes
 import mqtt.time.currentTimestampMs
-import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
+import mqtt.wire4.control.packet.*
 import java.io.IOException
 import java.net.InetSocketAddress
 
@@ -92,14 +92,14 @@ fun CoroutineScope.runKeepAlive(
 }
 
 suspend fun close(brokerToClient: SendChannel<ControlPacket>) {
-    brokerToClient.send(DisconnectNotification())
+    brokerToClient.send(DisconnectNotification)
 }
 
 fun main() {
     val header = ConnectionRequest.VariableHeader(
-            protocolVersion = 4.toUByte(),
+            protocolLevel = 4.toUByte(),
             keepAliveSeconds = 2.toUShort(),
-            cleanStart = true,
+            cleanSession = true,
             willQos = QualityOfService.AT_MOST_ONCE)
     val payload = ConnectionRequest.Payload(clientId = MqttUtf8String("thebehera163224626"))
     val clientToBroker = Channel<ControlPacket>()
