@@ -38,6 +38,7 @@ data class ConnectionRequest(
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet()
 
+    override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
         if (variableHeader.willFlag &&
                 (payload.willPayload == null || payload.willTopic == null)) {
@@ -141,7 +142,7 @@ data class ConnectionRequest(
              * If the Will Flag is set to 1, the value of Will QoS can be 0 (0x00), 1 (0x01), or 2 (0x02). It MUST NOT
              * be 3 (0x03) [MQTT-3.1.2-14].
              */
-            val willQos: QualityOfService = QualityOfService.AT_LEAST_ONCE,
+            val willQos: QualityOfService = QualityOfService.AT_MOST_ONCE,
             /**
              * 3.1.2.5 Will Flag
              *

@@ -49,7 +49,7 @@ data class ConnectionRequest(
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
-
+    override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
         if (variableHeader.willFlag &&
                 (payload.willPayload == null || payload.willTopic == null || payload.willProperties == null)) {
