@@ -8,12 +8,12 @@ import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.*
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -26,7 +26,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * MUST treat any other value as malformed and close the Network Connection [MQTT-3.15.1-1].
  */
 data class AuthenticationExchange(val variable: VariableHeader)
-    : ControlPacket(15, DirectionOfFlow.BIDIRECTIONAL) {
+    : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
     override val variableHeaderPacket = variable.packet
 
     /**

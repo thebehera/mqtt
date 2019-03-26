@@ -9,7 +9,7 @@ import kotlinx.io.core.writeUShort
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
 data class UnsubscribeAcknowledgment(val packetIdentifier: UShort)
-    : ControlPacket(11, DirectionOfFlow.SERVER_TO_CLIENT) {
+    : ControlPacketV4(11, DirectionOfFlow.SERVER_TO_CLIENT) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
 
     companion object {

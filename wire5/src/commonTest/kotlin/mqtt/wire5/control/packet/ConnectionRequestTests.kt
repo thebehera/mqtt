@@ -555,7 +555,7 @@ class ConnectionRequestTests {
         assertEquals(props.receiveMaximum, 5.toUShort())
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.receiveMaximum, 5.toUShort())
     }
 
@@ -592,7 +592,7 @@ class ConnectionRequestTests {
         assertEquals(props.maximumPacketSize, 5.toUInt())
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.maximumPacketSize, 5.toUInt())
     }
 
@@ -620,7 +620,7 @@ class ConnectionRequestTests {
         assertEquals(props.topicAliasMaximum, 5.toUShort())
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.topicAliasMaximum, 5.toUShort())
     }
 
@@ -639,7 +639,7 @@ class ConnectionRequestTests {
         assertEquals(props.requestResponseInformation, true)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.requestResponseInformation, true)
     }
 
@@ -658,7 +658,7 @@ class ConnectionRequestTests {
         assertEquals(props.requestProblemInformation, true)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.requestProblemInformation, true)
     }
 
@@ -682,7 +682,7 @@ class ConnectionRequestTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         val (key, value) = requestRead.variableHeader.properties.userProperty!!.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")
@@ -712,7 +712,7 @@ class ConnectionRequestTests {
         assertEquals(auth.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
         assertEquals(requestRead.variableHeader.properties.authentication!!.method.getValueOrThrow(), "yolo")
         assertEquals(requestRead.variableHeader.properties.authentication!!.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
 
@@ -753,7 +753,7 @@ class ConnectionRequestTests {
     fun packetDefault() {
         val request = ConnectionRequest()
         val byteArray = request.serialize().copy()
-        val requestDeserialized = ControlPacket.from(byteArray)
+        val requestDeserialized = ControlPacketV5.from(byteArray)
         assertEquals(requestDeserialized, request)
     }
 
@@ -761,7 +761,7 @@ class ConnectionRequestTests {
     fun packetQos0() {
         val request = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
         val byteArray = request.serialize().copy()
-        val requestDeserialized = ControlPacket.from(byteArray)
+        val requestDeserialized = ControlPacketV5.from(byteArray)
         assertEquals(requestDeserialized, request)
     }
 
@@ -821,7 +821,7 @@ class ConnectionRequestTests {
         val connectionRequestPreSerialized = ConnectionRequest(header, payload)
         assertNull(connectionRequestPreSerialized.validateOrGetWarning())
         val serialized = connectionRequestPreSerialized.serialize().copy()
-        val connectionRequest = ControlPacket.from(serialized) as ConnectionRequest
+        val connectionRequest = ControlPacketV5.from(serialized) as ConnectionRequest
         assertEquals(connectionRequest.payload.willProperties?.willDelayIntervalSeconds, 0.toUInt())
         assertEquals(connectionRequest.payload.willPayload, ByteArrayWrapper("Swag".toByteArray()))
         assertEquals(connectionRequest.payload.willTopic, MqttUtf8String("/yolo"))

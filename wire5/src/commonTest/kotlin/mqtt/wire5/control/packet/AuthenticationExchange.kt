@@ -25,7 +25,7 @@ class AuthenticationExchangeTests {
     fun serializeDeserialize() {
         val props = Properties(MqttUtf8String("test"))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
-        val deserialized = ControlPacket.from(disconnect.serialize()) as AuthenticationExchange
+        val deserialized = ControlPacketV5.from(disconnect.serialize()) as AuthenticationExchange
         assertEquals(deserialized.variable.reasonCode, SUCCESS)
         assertEquals(disconnect, deserialized)
     }
@@ -46,7 +46,7 @@ class AuthenticationExchangeTests {
         val header = AuthenticationExchange.VariableHeader(SUCCESS, properties = props)
         val actual = AuthenticationExchange(header)
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as AuthenticationExchange
+        val expected = ControlPacketV5.from(bytes) as AuthenticationExchange
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -82,7 +82,7 @@ class AuthenticationExchangeTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = AuthenticationExchange(AuthenticationExchange.VariableHeader(SUCCESS, properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as AuthenticationExchange
+        val requestRead = ControlPacketV5.from(request.copy()) as AuthenticationExchange
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

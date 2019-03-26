@@ -13,7 +13,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
  */
-data class PublishComplete(val packetIdentifier: UShort) : ControlPacket(7, DirectionOfFlow.BIDIRECTIONAL) {
+data class PublishComplete(val packetIdentifier: UShort) : ControlPacketV4(7, DirectionOfFlow.BIDIRECTIONAL) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
 
     companion object {

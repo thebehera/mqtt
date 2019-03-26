@@ -15,7 +15,7 @@ class ConnectionAcknowledgmentTests {
     fun serializeDeserializeDefault() {
         val actual = ConnectionAcknowledgment()
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV4.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -25,7 +25,7 @@ class ConnectionAcknowledgmentTests {
         val data = model.header.packet().readBytes()
         val sessionPresentBit = data[0].toUByte().get(0)
         assertFalse(sessionPresentBit)
-        val result = ControlPacket.from(model.serialize()) as ConnectionAcknowledgment
+        val result = ControlPacketV4.from(model.serialize()) as ConnectionAcknowledgment
         assertFalse(result.header.sessionPresent)
     }
 

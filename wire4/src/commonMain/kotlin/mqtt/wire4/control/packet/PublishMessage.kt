@@ -16,7 +16,7 @@ data class PublishMessage(
         val fixed: FixedHeader = FixedHeader(),
         val variable: VariableHeader,
         val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf()))
-    : ControlPacket(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags) {
+    : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags) {
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")

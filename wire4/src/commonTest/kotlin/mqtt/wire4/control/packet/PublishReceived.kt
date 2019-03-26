@@ -12,7 +12,7 @@ class PublishReceivedTests {
     fun packetIdentifier() {
         val puback = PublishReceived(packetIdentifier)
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV4.from(data) as PublishReceived
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
     }
 
@@ -20,7 +20,7 @@ class PublishReceivedTests {
     fun packetIdentifierSendDefaults() {
         val puback = PublishReceived(packetIdentifier)
         val data = puback.serialize(true)
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV4.from(data) as PublishReceived
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
     }
 }

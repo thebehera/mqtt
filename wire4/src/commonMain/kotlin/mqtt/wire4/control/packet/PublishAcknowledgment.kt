@@ -14,7 +14,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  * A PUBACK packet is the response to a PUBLISH packet with QoS 1.
  */
 data class PublishAcknowledgment(val packetIdentifier: UShort)
-    : ControlPacket(4, DirectionOfFlow.BIDIRECTIONAL) {
+    : ControlPacketV4(4, DirectionOfFlow.BIDIRECTIONAL) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
 
     companion object {

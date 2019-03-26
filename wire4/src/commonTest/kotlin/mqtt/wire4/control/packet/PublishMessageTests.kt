@@ -22,7 +22,7 @@ class PublishMessageTests {
             writeByte(remainingLength)
         }
         try {
-            ControlPacket.from(packet)
+            ControlPacketV4.from(packet)
             fail()
         } catch (e: MalformedPacketException) {
         }

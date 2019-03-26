@@ -16,7 +16,7 @@ import mqtt.wire4.control.packet.SubscribeAcknowledgement.ReturnCode.*
  * Subscription that was requested by the SUBSCRIBE.
  */
 data class SubscribeAcknowledgement(val packetIdentifier: UShort, val payload: List<ReturnCode>)
-    : ControlPacket(9, DirectionOfFlow.SERVER_TO_CLIENT) {
+    : ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
 

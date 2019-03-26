@@ -1,5 +1,6 @@
 package mqtt.wire5.control.packet
 
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
+import mqtt.wire.control.packet.IReserved
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
-object Reserved : ControlPacket(0, DirectionOfFlow.FORBIDDEN)
+object Reserved : ControlPacketV5(0, DirectionOfFlow.FORBIDDEN), IReserved

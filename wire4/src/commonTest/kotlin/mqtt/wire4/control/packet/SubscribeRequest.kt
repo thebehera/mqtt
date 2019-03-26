@@ -14,7 +14,7 @@ class SubscribeRequestTest {
         assertEquals(subscribeRequest.packetIdentifier, 2.toUShort())
         assertEquals(subscribeRequest.subscriptions.first().topicFilter.getValueOrThrow(), "test")
         val subscribeRequestData = subscribeRequest.serialize()
-        val requestRead = ControlPacket.from(subscribeRequestData) as SubscribeRequest
+        val requestRead = ControlPacketV4.from(subscribeRequestData) as SubscribeRequest
         assertEquals(requestRead.subscriptions.first().topicFilter.getValueOrThrow(), "test")
     }
 }

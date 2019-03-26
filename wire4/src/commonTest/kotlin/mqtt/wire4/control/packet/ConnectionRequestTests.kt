@@ -493,7 +493,7 @@ class ConnectionRequestTests {
     fun packetDefault() {
         val request = ConnectionRequest()
         val byteArray = request.serialize().copy()
-        val requestDeserialized = ControlPacket.from(byteArray)
+        val requestDeserialized = ControlPacketV4.from(byteArray)
         assertEquals(requestDeserialized, request)
     }
 
@@ -501,7 +501,7 @@ class ConnectionRequestTests {
     fun packetQos0() {
         val request = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
         val byteArray = request.serialize().copy()
-        val requestDeserialized = ControlPacket.from(byteArray)
+        val requestDeserialized = ControlPacketV4.from(byteArray)
         assertEquals(requestDeserialized, request)
     }
 

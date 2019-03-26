@@ -25,7 +25,7 @@ class PublishCompleteTests {
     fun packetIdentifier() {
         val puback = PublishComplete(VariableHeader(packetIdentifier))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishComplete
+        val pubackResult = ControlPacketV5.from(data) as PublishComplete
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
     }
 
@@ -33,7 +33,7 @@ class PublishCompleteTests {
     fun packetIdentifierSendDefaults() {
         val puback = PublishComplete(VariableHeader(packetIdentifier))
         val data = puback.serialize(true)
-        val pubackResult = ControlPacket.from(data) as PublishComplete
+        val pubackResult = ControlPacketV5.from(data) as PublishComplete
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
     }
 
@@ -41,7 +41,7 @@ class PublishCompleteTests {
     fun noMatchingSubscribers() {
         val puback = PublishComplete(VariableHeader(packetIdentifier, PACKET_IDENTIFIER_NOT_FOUND))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishComplete
+        val pubackResult = ControlPacketV5.from(data) as PublishComplete
         assertEquals(pubackResult.variable.reasonCode, PACKET_IDENTIFIER_NOT_FOUND)
     }
 
@@ -58,7 +58,7 @@ class PublishCompleteTests {
     fun reasonString() {
         val actual = PublishComplete(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as PublishComplete
+        val expected = ControlPacketV5.from(bytes) as PublishComplete
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -93,7 +93,7 @@ class PublishCompleteTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = PublishComplete(VariableHeader(packetIdentifier, properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as PublishComplete
+        val requestRead = ControlPacketV5.from(request.copy()) as PublishComplete
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

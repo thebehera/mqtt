@@ -5,9 +5,9 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -21,7 +21,7 @@ data class PublishMessage(
         val fixed: FixedHeader = FixedHeader(),
         val variable: VariableHeader,
         val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf()))
-    : ControlPacket(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags) {
+    : ControlPacketV5(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags) {
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")

@@ -28,7 +28,7 @@ class SubscribeAcknowledgementTests {
         val payload = GRANTED_QOS_0
         val puback = SubscribeAcknowledgement(variableHeader, payload)
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as SubscribeAcknowledgement
+        val pubackResult = ControlPacketV5.from(data) as SubscribeAcknowledgement
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
         assertEquals(pubackResult.payload, GRANTED_QOS_0)
     }
@@ -38,7 +38,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = GRANTED_QOS_1
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, GRANTED_QOS_1)
     }
 
@@ -47,7 +47,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = GRANTED_QOS_2
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, GRANTED_QOS_2)
     }
 
@@ -56,7 +56,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = UNSPECIFIED_ERROR
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, UNSPECIFIED_ERROR)
     }
 
@@ -65,7 +65,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = IMPLEMENTATION_SPECIFIC_ERROR
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, IMPLEMENTATION_SPECIFIC_ERROR)
     }
 
@@ -74,7 +74,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = NOT_AUTHORIZED
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, NOT_AUTHORIZED)
     }
 
@@ -83,7 +83,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = TOPIC_FILTER_INVALID
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, TOPIC_FILTER_INVALID)
     }
 
@@ -92,7 +92,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = PACKET_IDENTIFIER_IN_USE
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, PACKET_IDENTIFIER_IN_USE)
     }
 
@@ -101,7 +101,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = QUOTA_EXCEEDED
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, QUOTA_EXCEEDED)
     }
 
@@ -110,7 +110,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, SHARED_SUBSCRIPTIONS_NOT_SUPPORTED)
     }
 
@@ -119,7 +119,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED)
     }
 
@@ -128,7 +128,7 @@ class SubscribeAcknowledgementTests {
         val variableHeader = VariableHeader(packetIdentifier)
         val payload = WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
         val obj = SubscribeAcknowledgement(variableHeader, payload)
-        val result = ControlPacket.from(obj.serialize()) as SubscribeAcknowledgement
+        val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
         assertEquals(result.payload, WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED)
     }
 
@@ -149,7 +149,7 @@ class SubscribeAcknowledgementTests {
         val header = VariableHeader(packetIdentifier, properties = props)
         val actual = SubscribeAcknowledgement(header, GRANTED_QOS_1)
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as SubscribeAcknowledgement
+        val expected = ControlPacketV5.from(bytes) as SubscribeAcknowledgement
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -184,7 +184,7 @@ class SubscribeAcknowledgementTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = SubscribeAcknowledgement(VariableHeader(packetIdentifier, properties = props), WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as SubscribeAcknowledgement
+        val requestRead = ControlPacketV5.from(request.copy()) as SubscribeAcknowledgement
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

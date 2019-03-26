@@ -22,7 +22,7 @@ typealias CONNACK = ConnectionAcknowledgment
  * communications infrastructure.
  */
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
-    : ControlPacket(2, DirectionOfFlow.SERVER_TO_CLIENT) {
+    : ControlPacketV4(2, DirectionOfFlow.SERVER_TO_CLIENT) {
 
     override val variableHeaderPacket: ByteReadPacket = header.packet()
 

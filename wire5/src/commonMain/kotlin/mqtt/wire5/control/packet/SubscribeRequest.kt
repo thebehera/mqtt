@@ -5,9 +5,9 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
 import mqtt.wire5.control.packet.RetainHandling.*
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -25,7 +25,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
 data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Collection<Subscription>)
-    : ControlPacket(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
+    : ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
 
     override val variableHeaderPacket = variable.packet()
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket {

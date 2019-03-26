@@ -2,12 +2,12 @@
 
 package mqtt.wire5.control.packet.format.fixed
 
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.GRANTED_QOS_0
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

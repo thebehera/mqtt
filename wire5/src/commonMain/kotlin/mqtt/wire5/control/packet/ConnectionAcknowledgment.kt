@@ -8,13 +8,13 @@ import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.*
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.*
 
 typealias CONNACK = ConnectionAcknowledgment
@@ -29,7 +29,7 @@ typealias CONNACK = ConnectionAcknowledgment
  * communications infrastructure.
  */
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
-    : ControlPacket(2, DirectionOfFlow.SERVER_TO_CLIENT) {
+    : ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT) {
 
     override val variableHeaderPacket: ByteReadPacket = header.packet()
 

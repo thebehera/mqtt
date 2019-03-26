@@ -15,7 +15,7 @@ class UnsubscribeRequestTests {
     @Test
     fun basicTest() {
         val unsub = UnsubscribeRequest(VariableHeader(packetIdentifier), setOf(MqttUtf8String("yolo"), MqttUtf8String("yolo")))
-        val result = ControlPacket.from(unsub.serialize()) as UnsubscribeRequest
+        val result = ControlPacketV5.from(unsub.serialize()) as UnsubscribeRequest
         assertEquals(result.topics.first().getValueOrThrow(), "yolo")
     }
 
@@ -30,7 +30,7 @@ class UnsubscribeRequestTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = UnsubscribeRequest(VariableHeader(packetIdentifier, properties = props), setOf(MqttUtf8String("test"))).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as UnsubscribeRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as UnsubscribeRequest
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

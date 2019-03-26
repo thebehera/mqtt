@@ -5,18 +5,18 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.*
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readProperties
 
 data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS))
-    : ControlPacket(11, DirectionOfFlow.SERVER_TO_CLIENT) {
+    : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { reasonCodes.forEach { writeUByte(it.byte) } }
 

@@ -23,4 +23,4 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * SHOULD close the Network Connection if the Client has not already done so.
  */
-object DisconnectNotification : ControlPacket(14, DirectionOfFlow.BIDIRECTIONAL)
+object DisconnectNotification : ControlPacketV4(14, DirectionOfFlow.BIDIRECTIONAL)

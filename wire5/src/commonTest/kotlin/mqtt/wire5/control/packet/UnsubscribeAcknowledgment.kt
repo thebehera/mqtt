@@ -26,7 +26,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeDefault() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -34,7 +34,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeNoSubscriptionsExisted() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier), listOf(NO_SUBSCRIPTIONS_EXISTED))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -42,7 +42,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeUnspecifiedError() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier), listOf(UNSPECIFIED_ERROR))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -50,7 +50,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeImplementationSpecificError() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier), listOf(IMPLEMENTATION_SPECIFIC_ERROR))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -58,7 +58,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeNotAuthorized() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier), listOf(NOT_AUTHORIZED))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -66,7 +66,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeTopicFilterInvalid() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier), listOf(TOPIC_FILTER_INVALID))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -83,7 +83,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializePacketIdentifierInUse() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier), listOf(PACKET_IDENTIFIER_IN_USE))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV5.from(bytes)
         assertEquals(expected, actual)
     }
 
@@ -93,7 +93,7 @@ class UnsubscribeAcknowledgmentTests {
         val header = VariableHeader(packetIdentifier, properties = props)
         val actual = UnsubscribeAcknowledgment(header)
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as UnsubscribeAcknowledgment
+        val expected = ControlPacketV5.from(bytes) as UnsubscribeAcknowledgment
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -129,7 +129,7 @@ class UnsubscribeAcknowledgmentTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier, properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as UnsubscribeAcknowledgment
+        val requestRead = ControlPacketV5.from(request.copy()) as UnsubscribeAcknowledgment
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

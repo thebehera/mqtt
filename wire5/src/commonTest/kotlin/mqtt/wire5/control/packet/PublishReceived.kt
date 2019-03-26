@@ -24,7 +24,7 @@ class PublishReceivedTests {
     fun packetIdentifier() {
         val puback = PublishReceived(VariableHeader(packetIdentifier))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
     }
 
@@ -32,7 +32,7 @@ class PublishReceivedTests {
     fun packetIdentifierSendDefaults() {
         val puback = PublishReceived(VariableHeader(packetIdentifier))
         val data = puback.serialize(true)
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
     }
 
@@ -40,7 +40,7 @@ class PublishReceivedTests {
     fun noMatchingSubscribers() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, NO_MATCHING_SUBSCRIBERS))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, NO_MATCHING_SUBSCRIBERS)
     }
 
@@ -48,7 +48,7 @@ class PublishReceivedTests {
     fun unspecifiedError() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, UNSPECIFIED_ERROR))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, UNSPECIFIED_ERROR)
     }
 
@@ -56,7 +56,7 @@ class PublishReceivedTests {
     fun implementationSpecificError() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, IMPLEMENTATION_SPECIFIC_ERROR))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, IMPLEMENTATION_SPECIFIC_ERROR)
     }
 
@@ -64,7 +64,7 @@ class PublishReceivedTests {
     fun notAuthorized() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, NOT_AUTHORIZED))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, NOT_AUTHORIZED)
     }
 
@@ -72,7 +72,7 @@ class PublishReceivedTests {
     fun topicNameInvalid() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, TOPIC_NAME_INVALID))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, TOPIC_NAME_INVALID)
     }
 
@@ -80,7 +80,7 @@ class PublishReceivedTests {
     fun packetIdentifierInUse() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, PACKET_IDENTIFIER_IN_USE))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, PACKET_IDENTIFIER_IN_USE)
     }
 
@@ -88,7 +88,7 @@ class PublishReceivedTests {
     fun quotaExceeded() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, QUOTA_EXCEEDED))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, QUOTA_EXCEEDED)
     }
 
@@ -96,7 +96,7 @@ class PublishReceivedTests {
     fun payloadFormatInvalid() {
         val puback = PublishReceived(VariableHeader(packetIdentifier, PAYLOAD_FORMAT_INVALID))
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishReceived
+        val pubackResult = ControlPacketV5.from(data) as PublishReceived
         assertEquals(pubackResult.variable.reasonCode, PAYLOAD_FORMAT_INVALID)
     }
 
@@ -114,7 +114,7 @@ class PublishReceivedTests {
     fun reasonString() {
         val actual = PublishReceived(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as PublishReceived
+        val expected = ControlPacketV5.from(bytes) as PublishReceived
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -149,7 +149,7 @@ class PublishReceivedTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = PublishReceived(VariableHeader(packetIdentifier, properties = props)).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as PublishReceived
+        val requestRead = ControlPacketV5.from(request.copy()) as PublishReceived
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

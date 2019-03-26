@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet.format.fixed
 
 import kotlinx.io.core.readBytes
+import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire5.control.packet.*

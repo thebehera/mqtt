@@ -13,7 +13,7 @@ class UnsubscribeRequestTests {
     @Test
     fun basicTest() {
         val unsub = UnsubscribeRequest(packetIdentifier, listOf(MqttUtf8String("yolo"), MqttUtf8String("yolo")))
-        val result = ControlPacket.from(unsub.serialize()) as UnsubscribeRequest
+        val result = ControlPacketV4.from(unsub.serialize()) as UnsubscribeRequest
         assertEquals(result.topics.first().getValueOrThrow(), "yolo")
     }
 }

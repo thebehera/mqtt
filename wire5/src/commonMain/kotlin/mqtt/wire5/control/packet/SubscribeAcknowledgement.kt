@@ -5,11 +5,11 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.*
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -24,7 +24,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * error which was found for each Subscription that was requested by the SUBSCRIBE.
  */
 data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: ReasonCode)
-    : ControlPacket(9, DirectionOfFlow.SERVER_TO_CLIENT) {
+    : ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT) {
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { writeUByte(payload.byte) }
 

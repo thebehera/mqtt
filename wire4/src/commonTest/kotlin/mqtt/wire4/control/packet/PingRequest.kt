@@ -12,7 +12,7 @@ class PingRequestTests {
         assertEquals(data.size, 2)
         assertEquals(data.first(), 12.shl(4).toByte())
         assertEquals(data[1], 0)
-        val result = ControlPacket.from(ping.serialize())
+        val result = ControlPacketV4.from(ping.serialize())
         assertEquals(result, ping)
     }
 }

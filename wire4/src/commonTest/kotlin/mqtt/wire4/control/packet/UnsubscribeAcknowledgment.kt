@@ -11,7 +11,7 @@ class UnsubscribeAcknowledgmentTests {
     fun serializeDeserializeDefault() {
         val actual = UnsubscribeAcknowledgment(packetIdentifier)
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes)
+        val expected = ControlPacketV4.from(bytes)
         assertEquals(expected, actual)
     }
 }

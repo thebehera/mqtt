@@ -10,7 +10,7 @@ class DisconnectTests {
     fun serializeDeserialize() {
         val actual = DisconnectNotification
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as DisconnectNotification
+        val expected = ControlPacketV4.from(bytes) as DisconnectNotification
         assertEquals(expected, actual)
     }
 }

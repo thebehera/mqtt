@@ -1,6 +1,6 @@
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.readBytes
+import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
 /**
@@ -16,6 +16,4 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * This packet is used in Keep Alive processing. Refer to section 3.1.2.10 for more details.
  */
-object PingRequest : ControlPacket(12, DirectionOfFlow.CLIENT_TO_SERVER) {
-    val bytes by lazy { serialize().readBytes() }
-}
+object PingRequest : ControlPacketV4(12, DirectionOfFlow.CLIENT_TO_SERVER), IPingRequest

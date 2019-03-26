@@ -12,7 +12,7 @@ class PublishReleaseTests {
     fun packetIdentifier() {
         val puback = PublishRelease(packetIdentifier)
         val data = puback.serialize()
-        val pubackResult = ControlPacket.from(data) as PublishRelease
+        val pubackResult = ControlPacketV4.from(data) as PublishRelease
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
     }
 }

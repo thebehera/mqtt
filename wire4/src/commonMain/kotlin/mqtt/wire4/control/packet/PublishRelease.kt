@@ -14,7 +14,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  * A PUBREL packet is the response to a PUBREC packet. It is the third packet of the QoS 2 protocol exchange.
  */
 data class PublishRelease(val packetIdentifier: UShort)
-    : ControlPacket(6, DirectionOfFlow.BIDIRECTIONAL, 0b10) {
+    : ControlPacketV4(6, DirectionOfFlow.BIDIRECTIONAL, 0b10) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
 
     companion object {

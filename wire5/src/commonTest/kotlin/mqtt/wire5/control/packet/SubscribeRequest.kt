@@ -25,7 +25,7 @@ class SubscribeRequestTest {
         assertEquals(subscribeRequest.variable.packetIdentifier, 2.toUShort())
         assertEquals(subscribeRequest.subscriptions.first().topicFilter.getValueOrThrow(), "test")
         val subscribeRequestData = subscribeRequest.serialize()
-        val requestRead = ControlPacket.from(subscribeRequestData) as SubscribeRequest
+        val requestRead = ControlPacketV5.from(subscribeRequestData) as SubscribeRequest
         assertEquals(requestRead.subscriptions.first().topicFilter.getValueOrThrow(), "test")
     }
 
@@ -33,7 +33,7 @@ class SubscribeRequestTest {
     fun reasonString() {
         val actual = SubscribeRequest(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))), setOf(Subscription(MqttUtf8String("test"))))
         val bytes = actual.serialize()
-        val expected = ControlPacket.from(bytes) as SubscribeRequest
+        val expected = ControlPacketV5.from(bytes) as SubscribeRequest
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -68,7 +68,7 @@ class SubscribeRequestTest {
         assertEquals(userPropertyResult.size, 1)
 
         val request = SubscribeRequest(VariableHeader(packetIdentifier, properties = props), setOf(Subscription(MqttUtf8String("test")))).serialize()
-        val requestRead = ControlPacket.from(request.copy()) as SubscribeRequest
+        val requestRead = ControlPacketV5.from(request.copy()) as SubscribeRequest
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
         assertEquals(value.getValueOrThrow(), "value")

@@ -17,7 +17,7 @@ import mqtt.wire.data.writeMqttUtf8String
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
 data class UnsubscribeRequest(val packetIdentifier: UShort, val topics: List<MqttUtf8String>)
-    : ControlPacket(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
+    : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
 

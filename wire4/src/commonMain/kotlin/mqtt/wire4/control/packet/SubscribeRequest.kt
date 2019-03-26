@@ -21,7 +21,7 @@ import mqtt.wire.data.writeMqttUtf8String
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
 data class SubscribeRequest(val packetIdentifier: UShort, val subscriptions: Collection<Subscription>)
-    : ControlPacket(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
+    : ControlPacketV4(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
 
     override val variableHeaderPacket = buildPacket { writeUShort(packetIdentifier) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket {

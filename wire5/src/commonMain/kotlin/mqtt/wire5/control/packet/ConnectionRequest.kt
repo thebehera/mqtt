@@ -6,10 +6,11 @@ import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IConnectionRequest
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
+import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.*
 import mqtt.wire5.control.packet.ConnectionRequest.VariableHeader.Properties.Authentication
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire5.control.packet.format.fixed.get
 import mqtt.wire5.control.packet.format.variable.property.*
 
 typealias CONNECT = ConnectionRequest
@@ -44,7 +45,8 @@ data class ConnectionRequest(
          */
         val variableHeader: VariableHeader = VariableHeader(),
         val payload: Payload = Payload())
-    : ControlPacket(1, DirectionOfFlow.CLIENT_TO_SERVER) {
+    : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
 

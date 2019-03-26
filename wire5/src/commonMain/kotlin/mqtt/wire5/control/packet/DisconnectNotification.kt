@@ -8,11 +8,11 @@ import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.*
-import mqtt.wire5.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -27,7 +27,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * A Server MUST NOT send a DISCONNECT until after it has sent a CONNACK with Reason Code of less than 0x80
  * [MQTT-3.14.0-1].
  */
-data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) : ControlPacket(14, DirectionOfFlow.BIDIRECTIONAL) {
+data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) : ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL) {
     override val variableHeaderPacket = variable.packet
 
     data class VariableHeader(val reasonCode: ReasonCode = NORMAL_DISCONNECTION, val properties: Properties = Properties()) {
