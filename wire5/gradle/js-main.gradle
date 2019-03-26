@@ -1,0 +1,29 @@
+
+tasks.withType(compileKotlinJs.getClass()) {
+    kotlinOptions {
+        moduleKind = "umd"
+        sourceMap = true
+        metaInfo = true
+    }
+}
+
+compileKotlinJs {
+    kotlinOptions {
+        // NOTE: Module base-name must be equal to the package name declared in package.json
+        def baseName = "wire5"
+        outputFile = new File(outputFile.parent, baseName + ".js")
+    }
+}
+
+apply from: file("$rootProject.projectDir/gradle/node-js.gradle")
+apply from: file("$projectDir/gradle/test-mocha-js.gradle")
+apply from: file("$rootProject.projectDir/gradle/publish-npm-js.gradle")
+
+// Workaround the problem with Node downloading
+repositories.whenObjectAdded {
+    if (it instanceof IvyArtifactRepository) {
+        metadataSources {
+            artifact()
+        }
+    }
+}
