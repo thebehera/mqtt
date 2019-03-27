@@ -22,4 +22,4 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - ./gradlew CI :wire5:bintrayUpload
+  - ./gradlew CI bintrayUpload
