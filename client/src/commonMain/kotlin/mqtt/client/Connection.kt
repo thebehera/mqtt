@@ -190,6 +190,22 @@ interface IConnection : CoroutineScope {
 
 expect class Connection(parameters: ConnectionParameters) : AbstractConnection
 
+fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
+    if (parameters.reconnectIfNetworkLost) {
+        var oldConnection: Connection
+        retryIO {
+            oldConnection = Connection(parameters)
+            val connection = oldConnection.startAsync()
+            connection.await()
+        }
+        return@async false
+    } else {
+        val connection = Connection(parameters)
+        val result = connection.startAsync()
+        result.await()
+        return@async result.getCompleted()
+    }
+}
 
 suspend fun retryIO(
         times: Int = Int.MAX_VALUE,

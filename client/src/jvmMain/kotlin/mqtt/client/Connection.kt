@@ -15,23 +15,6 @@ import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PublishMessage
 import java.net.InetSocketAddress
 
-fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
-    if (parameters.reconnectIfNetworkLost) {
-        var oldConnection: Connection
-        retryIO {
-            oldConnection = Connection(parameters)
-            val connection = oldConnection.startAsync()
-            connection.await()
-        }
-        return@async false
-    } else {
-        val connection = Connection(parameters)
-        val result = connection.startAsync()
-        result.await()
-        return@async result.getCompleted()
-    }
-}
-
 actual class Connection actual constructor(override val parameters: ConnectionParameters) : AbstractConnection(), Runnable {
     override lateinit var platformSocket: PlatformSocket
     override val dispatcher: CoroutineDispatcher = Dispatchers.IO
@@ -59,7 +42,6 @@ actual class Connection actual constructor(override val parameters: ConnectionPa
         Runtime.getRuntime().removeShutdownHook(shutdownThread)
     }
 }
-
 
 class JavaPlatformSocket(private val socket: Socket) : PlatformSocket {
     override val output: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
