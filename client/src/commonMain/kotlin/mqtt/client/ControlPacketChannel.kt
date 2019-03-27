@@ -6,11 +6,12 @@ import kotlinx.coroutines.io.ByteReadChannel
 import kotlinx.coroutines.io.readPacket
 import mqtt.wire.MalformedInvalidVariableByteInteger
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.VARIABLE_BYTE_INT_MAX
 import mqtt.wire4.control.packet.ControlPacketV4
 import kotlin.experimental.and
 
-suspend fun ByteReadChannel.read(): ControlPacketV4 {
+suspend fun ByteReadChannel.read(): ControlPacket {
     val byte1 = readByte().toUByte()
     if (!ControlPacketV4.isValidFirstByte(byte1)) {
         throw MalformedPacketException("Invalid MQTT Control Packet Type: $byte1 Should be in range between 0 and 15 inclusive")
