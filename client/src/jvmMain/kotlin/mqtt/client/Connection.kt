@@ -13,21 +13,24 @@ import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.*
+import java.net.ConnectException
 import java.net.InetSocketAddress
 
 fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
-    //    return@async if (parameters.reconnectIfNetworkLost) {
-//        var oldConnection: Connection
-//        retryIO {
-//            oldConnection = Connection(parameters)
-//            val connection = oldConnection.start()
-//            connection.await()
-//        }
-//        return@async false
-//    } else {
-    val connection = Connection(parameters)
-    return@async connection.start()
-//    }
+    if (parameters.reconnectIfNetworkLost) {
+        var oldConnection: Connection
+        retryIO {
+            oldConnection = Connection(parameters)
+            val connection = oldConnection.start()
+            connection.await()
+        }
+        return@async false
+    } else {
+        val connection = Connection(parameters)
+        val result = connection.start()
+        result.await()
+        return@async result.getCompleted()
+    }
 }
 
 actual class Connection actual constructor(override val parameters: ConnectionParameters) : IConnection {
@@ -84,7 +87,6 @@ actual class Connection actual constructor(override val parameters: ConnectionPa
             launch {
                 val input = socket.openReadChannel()
                 println("open reading channel")
-                delay(500)
                 val controlPacket = input.read()
                 println("read first byte")
                 if (controlPacket is ConnectionAcknowledgment) {
@@ -152,16 +154,15 @@ actual class Connection actual constructor(override val parameters: ConnectionPa
 fun main() {
     val header = ConnectionRequest.VariableHeader(keepAliveSeconds = 15.toUShort())
     val payload = ConnectionRequest.Payload(clientId = MqttUtf8String("JavaSample"))
-    val params = ConnectionParameters("localhost", 1883, ConnectionRequest(header, payload))
-    val connection = Connection(params)
+    val params = ConnectionParameters("localhost", 1883, ConnectionRequest(header, payload), reconnectIfNetworkLost = false)
+    val connection = openConnection(params)
     runBlocking {
-        val result = connection.start()
         delay(2000)
         val fixed = PublishMessage.FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
         val variable = PublishMessage.VariableHeader(MqttUtf8String("yolo"))
-        connection.send(PublishMessage(fixed, variable))
-        result.await()
-        println(result.getCompleted())
+        params.clientToBroker.send(PublishMessage(fixed, variable))
+        connection.await()
+        println(connection.getCompleted())
     }
 }
 
@@ -176,6 +177,9 @@ suspend fun retryIO(
     repeat(times - 1) {
         try {
             block()
+        } catch (e: ConnectException) {
+            // silently retry
+            println("Connection refused retrying in $currentDelay ms")
         } catch (e: Exception) {
             // you can log an error here and/or make a more finer-grained
             // analysis of the cause to see if retry is needed
