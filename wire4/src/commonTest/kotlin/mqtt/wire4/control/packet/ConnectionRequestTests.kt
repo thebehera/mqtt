@@ -304,9 +304,9 @@ class ConnectionRequestTests {
         val willQosBit4 = connectFlagsPackedInByte.shl(3).shr(7) == 1
         assertFalse(willQosBit4, "invalid byte 8 bit 4 on the CONNECT variable header for willQosBit4 flag")
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
-        assertTrue(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
+        assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_LEAST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
