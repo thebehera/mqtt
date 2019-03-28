@@ -15,7 +15,6 @@ import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.ConnectionRequest
 import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PublishMessage
-import java.net.InetSocketAddress
 
 actual class Connection actual constructor(override val parameters: ConnectionParameters) : AbstractConnection(), Runnable {
     override lateinit var platformSocket: PlatformSocket
@@ -31,9 +30,8 @@ actual class Connection actual constructor(override val parameters: ConnectionPa
 
     override suspend fun buildSocket(): PlatformSocket {
         val socketBuilder = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
-        val address = InetSocketAddress(parameters.hostname, parameters.port)
         connectionAttemptTime.lazySet(currentTimestampMs())
-        val tmpSocketRef = socketBuilder.connect(address)
+        val tmpSocketRef = socketBuilder.connect(parameters.hostname, parameters.port)
         val socket = if (parameters.secure) {
             tmpSocketRef.tls(coroutineContext)
         } else {
