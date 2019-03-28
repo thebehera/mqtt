@@ -10,3 +10,5 @@ open class ProtocolError(msg: String) :MqttException(msg, 0x82.toUByte())
 
 class MalformedInvalidVariableByteInteger(value: UInt) : IOException("Malformed Variable Byte Integer: This " +
         "property must be a number between 0 and %VARIABLE_BYTE_INT_MAX . Read controlPacketValue was: $value")
+
+class BrokerRejectedConnection(val reason: String) : Exception(reason)

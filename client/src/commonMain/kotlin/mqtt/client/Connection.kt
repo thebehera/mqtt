@@ -5,26 +5,30 @@ package mqtt.client
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.io.ByteReadChannel
 import kotlinx.coroutines.io.ByteWriteChannel
 import kotlinx.coroutines.io.writeFully
 import kotlinx.io.core.readBytes
 import kotlinx.io.errors.IOException
 import mqtt.time.currentTimestampMs
+import mqtt.wire.BrokerRejectedConnection
+import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ControlPacket
+import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
-import mqtt.wire4.control.packet.ConnectionAcknowledgment
 import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
 
 data class ConnectionParameters(val hostname: String,
                                 val port: Int,
+                                val secure: Boolean,
                                 val connectionRequest: IConnectionRequest,
                                 val reconnectIfNetworkLost: Boolean = true,
                                 val clientToBroker: Channel<ControlPacket> = Channel(),
-                                val brokerToClient: SendChannel<ControlPacket> = Channel())
+                                val brokerToClient: Channel<ControlPacket> = Channel())
 
 abstract class AbstractConnection : IConnection {
     override var job: Job = Job()
@@ -93,18 +97,31 @@ interface IConnection : CoroutineScope {
 
     suspend fun openSocket(): Boolean = coroutineScope {
         if (!transitionIntoConnecting()) {
-            return@coroutineScope false
+            return@coroutineScope true
         }
         platformSocket = buildSocket()
         writeConnectionRequest()
         return@coroutineScope try {
-            startReadingFromSocket()
-            startWritingToSocket()
-            suspendUntilSocketClose()
-            println("socket closed")
-            true
+            val input = platformSocket.input
+            val controlPacket = input.read()
+            setLastMessageReceived(currentTimestampMs())
+            println("IN: $controlPacket")
+
+            if (controlPacket is IConnectionAcknowledgment) {
+                if (controlPacket.isSuccessful) {
+                    startReadingFromSocket()
+                    runKeepAlive()
+                    startWritingToSocket()
+                    true
+                } else {
+                    platformSocket.dispose()
+                    throw BrokerRejectedConnection(controlPacket.connectionReason)
+                }
+            } else {
+                platformSocket.dispose()
+                throw ProtocolError("Invalid first message expected ConnectionAcknowledgment success but got $controlPacket")
+            }
         } catch (e: CancellationException) {
-            println(e)
             false
         } finally {
             closeSocket()
@@ -112,19 +129,18 @@ interface IConnection : CoroutineScope {
     }
 
     fun CoroutineScope.startReadingFromSocket() = launch {
-        val input = platformSocket.input
-        println("open reading channel")
-        val controlPacket = input.read()
-        println("read first byte")
-        if (controlPacket is ConnectionAcknowledgment) {
-            println("IN: $controlPacket")
-            runKeepAlive()
-        }
-        while (isActive) {
-            val byte = input.read()
-            println("IN: $byte")
-            setLastMessageReceived(currentTimestampMs())
-            GlobalScope.launch(Dispatchers.Unconfined) { parameters.brokerToClient.send(controlPacket) }
+        try {
+            val input = platformSocket.input
+            while (isActive) {
+                val byte = input.read()
+                setLastMessageReceived(currentTimestampMs())
+                if (!parameters.brokerToClient.offer(byte)) {
+                    println("IN: $byte")
+                }
+            }
+        } catch (e: ClosedReceiveChannelException) {
+            println("closed receive channel")
+            job.cancel()
         }
     }
 
@@ -152,19 +168,23 @@ interface IConnection : CoroutineScope {
 
     suspend fun startWritingToSocket() {
         for (messageToSend in parameters.clientToBroker) {
-            if (isActive || messageToSend is DisconnectNotification) {
-                val sendMessage = messageToSend.serialize()
-                val size = sendMessage.remaining
-                val start = currentTimestampMs()
-                platformSocket.output.writePacket(sendMessage)
-                val writeComplete = currentTimestampMs()
-                setLastMessageReceived(writeComplete)
-                val sendTime = writeComplete - start
-                println("OUT [$size][$sendTime]: $messageToSend")
-                if (messageToSend is DisconnectNotification) {
-                    platformSocket.dispose()
-                    println("socket disposed")
+            try {
+                if (isActive) {
+                    val sendMessage = messageToSend.serialize()
+                    val size = sendMessage.remaining
+                    val start = currentTimestampMs()
+                    platformSocket.output.writePacket(sendMessage)
+                    val writeComplete = currentTimestampMs()
+                    setLastMessageReceived(writeComplete)
+                    val sendTime = writeComplete - start
+                    println("OUT [$size][$sendTime]: $messageToSend")
+                    if (messageToSend is DisconnectNotification) {
+                        return
+                    }
                 }
+            } catch (e: ClosedSendChannelException) {
+                println("closed send channel")
+                job.cancel()
             }
         }
     }
@@ -180,8 +200,9 @@ interface IConnection : CoroutineScope {
     fun beforeClosingSocket()
 
     fun closeSocket() {
+        beforeClosingSocket()
         println("socket is closed: ${platformSocket.isClosed}")
-        if (transitionIntoDisconnected()) {
+        if (!transitionIntoDisconnected()) {
             throw ConcurrentModificationException("Invalid connectivity state")
         }
     }
@@ -203,7 +224,9 @@ fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
         val connection = Connection(parameters)
         val result = connection.startAsync()
         result.await()
-        return@async result.getCompleted()
+        val result2 = result.getCompleted()
+        println("r2$result2")
+        return@async result2
     }
 }
 
@@ -217,8 +240,14 @@ suspend fun retryIO(
     repeat(times - 1) {
         try {
             block()
+        } catch (e: BrokerRejectedConnection) {
+            println("Server rejected our connection: $e")
+            return
+        } catch (e: ProtocolError) {
+            println("Protocol error stopping now $e")
+            return
         } catch (e: IOException) {
-            println("IOException retrying in $currentDelay ms")
+            println("IOException retrying in $currentDelay ms $e")
         } catch (e: Exception) {
             // you can log an error here and/or make a more finer-grained
             // analysis of the cause to see if retry is needed
