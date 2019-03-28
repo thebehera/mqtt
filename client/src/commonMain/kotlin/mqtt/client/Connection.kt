@@ -4,31 +4,18 @@ package mqtt.client
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.ClosedSendChannelException
-import kotlinx.coroutines.io.ByteReadChannel
-import kotlinx.coroutines.io.ByteWriteChannel
 import kotlinx.coroutines.io.writeFully
 import kotlinx.io.core.readBytes
-import kotlinx.io.errors.IOException
 import mqtt.time.currentTimestampMs
 import mqtt.wire.BrokerRejectedConnection
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionAcknowledgment
-import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
-
-data class ConnectionParameters(val hostname: String,
-                                val port: Int,
-                                val secure: Boolean,
-                                val connectionRequest: IConnectionRequest,
-                                val reconnectIfNetworkLost: Boolean = true,
-                                val clientToBroker: Channel<ControlPacket> = Channel(),
-                                val brokerToClient: Channel<ControlPacket> = Channel())
 
 abstract class AbstractConnection : IConnection {
     override var job: Job = Job()
@@ -234,39 +221,3 @@ fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
     }
 }
 
-suspend fun retryIO(
-        times: Int = Int.MAX_VALUE,
-        initialDelay: Long = 100, // 0.1 second
-        maxDelay: Long = 1000,    // 1 second
-        factor: Double = 2.0,
-        block: suspend () -> Unit) {
-    var currentDelay = initialDelay
-    repeat(times - 1) {
-        try {
-            block()
-        } catch (e: BrokerRejectedConnection) {
-            println("Server rejected our connection: $e")
-            return
-        } catch (e: ProtocolError) {
-            println("Protocol error stopping now $e")
-            return
-        } catch (e: IOException) {
-            println("IOException retrying in $currentDelay ms $e")
-        } catch (e: Exception) {
-            // you can log an error here and/or make a more finer-grained
-            // analysis of the cause to see if retry is needed
-            println("error while retrying: $e")
-        }
-        delay(currentDelay)
-        currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
-    }
-    return block() // last attempt
-}
-
-interface PlatformSocket {
-    val output: ByteWriteChannel
-    val input: ByteReadChannel
-    fun dispose()
-    suspend fun awaitClosed()
-    val isClosed: Boolean
-}

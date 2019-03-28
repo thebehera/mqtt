@@ -3,13 +3,11 @@
 package mqtt.client
 
 import io.ktor.network.selector.ActorSelectorManager
-import io.ktor.network.sockets.*
+import io.ktor.network.sockets.aSocket
 import io.ktor.network.tls.tls
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Runnable
-import kotlinx.coroutines.io.ByteReadChannel
-import kotlinx.coroutines.io.ByteWriteChannel
 import kotlinx.coroutines.runBlocking
 import mqtt.time.currentTimestampMs
 import mqtt.wire.data.MqttUtf8String
@@ -48,14 +46,6 @@ actual class Connection actual constructor(override val parameters: ConnectionPa
     override fun beforeClosingSocket() {
         Runtime.getRuntime().removeShutdownHook(shutdownThread)
     }
-}
-
-class JavaPlatformSocket(private val socket: Socket) : PlatformSocket {
-    override val output: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)
-    override val input: ByteReadChannel = socket.openReadChannel()
-    override suspend fun awaitClosed() = socket.awaitClosed()
-    override val isClosed: Boolean = socket.isClosed
-    override fun dispose() = socket.dispose()
 }
 
 
