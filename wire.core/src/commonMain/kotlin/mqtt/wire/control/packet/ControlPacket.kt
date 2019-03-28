@@ -64,4 +64,11 @@ interface ControlPacket {
         }
         return p
     }
+
+    companion object {
+        fun isValidFirstByte(uByte: UByte): Boolean {
+            val byte1AsUInt = uByte.toUInt()
+            return byte1AsUInt.shr(4).toInt() in 1..15
+        }
+    }
 }

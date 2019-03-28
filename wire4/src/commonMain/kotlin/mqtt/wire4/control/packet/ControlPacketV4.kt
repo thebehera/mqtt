@@ -57,10 +57,5 @@ abstract class ControlPacketV4(override val controlPacketValue: Byte,
                 else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
             }
         }
-
-        fun isValidFirstByte(uByte: UByte): Boolean {
-            val byte1AsUInt = uByte.toUInt()
-            return byte1AsUInt.shr(4).toInt() in 1..15
-        }
     }
 }

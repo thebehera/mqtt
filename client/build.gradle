@@ -15,9 +15,9 @@ apply plugin: 'signing'
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    // js() {
-    //     tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
-    // }
+//     js() {
+//         tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
+//     }
     // For ARM, should be changed to iosArm32 or iosArm64
     // For Linux, should be changed to e.g. linuxX64
     // For MacOS, should be changed to e.g. macosX64
@@ -33,9 +33,9 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                api project(":wire4")
-                api project(":wire.core")
-                api project(":time")
+                compileOnly project(":wire4")
+                implementation project(":wire.core")
+                implementation project(":time")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.1.1'
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
@@ -43,6 +43,7 @@ kotlin {
         }
         commonTest {
             dependencies {
+                implementation project(":wire4")
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
             }
@@ -55,6 +56,25 @@ kotlin {
                 implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
+        }
+//        jsMain {
+//            dependencies {
+//                implementation kotlin('stdlib-js')
+//                implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-js:1.1.1'
+//                implementation "io.ktor:ktor-client-core-js:$ktor_version"
+//                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
+//            }
+//        }
+//        jsTest {
+//            dependencies {
+//                implementation kotlin('test-js')
+//            }
+//        }
     }
 
     // Given that `-PisLinux=true` command line argument is passed when running on Linux,

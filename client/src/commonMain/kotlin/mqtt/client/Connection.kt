@@ -122,6 +122,7 @@ interface IConnection : CoroutineScope {
                 throw ProtocolError("Invalid first message expected ConnectionAcknowledgment success but got $controlPacket")
             }
         } catch (e: CancellationException) {
+            println("cancelled at opensocket")
             false
         } finally {
             closeSocket()
@@ -221,12 +222,15 @@ fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
         }
         return@async false
     } else {
-        val connection = Connection(parameters)
-        val result = connection.startAsync()
-        result.await()
-        val result2 = result.getCompleted()
-        println("r2$result2")
-        return@async result2
+        try {
+            val connection = Connection(parameters)
+            val result = connection.startAsync()
+            result.await()
+            return@async result.getCompleted()
+        } catch (e: CancellationException) {
+            println("socket closed")
+            return@async false
+        }
     }
 }
 
