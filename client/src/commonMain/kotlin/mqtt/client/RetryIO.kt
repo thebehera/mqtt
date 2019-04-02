@@ -1,5 +1,6 @@
 package mqtt.client
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.io.errors.IOException
 import mqtt.wire.BrokerRejectedConnection
@@ -29,6 +30,11 @@ suspend fun retryIO(
             }
         } catch (e: IOException) {
             println("IOException retrying in $currentDelay ms $e")
+        } catch (e: ConnectionTimeout) {
+            println("Connection timeout, retrying in $currentDelay ms: $e")
+        } catch (e: CancellationException) {
+            println("$e")
+            println("Job cancelled, retrying in $currentDelay ms")
         } catch (e: Exception) {
             // you can log an error here and/or make a more finer-grained
             // analysis of the cause to see if retry is needed

@@ -9,5 +9,8 @@ data class ConnectionParameters(val hostname: String,
                                 val secure: Boolean,
                                 val connectionRequest: IConnectionRequest,
                                 val reconnectIfNetworkLost: Boolean = true,
+                                val connectionTimeoutMilliseconds: Long = 10_000,
+        // Ignored if reconnectIfNetworkLost is false
+                                val maxNumberOfRetries: Int = Int.MAX_VALUE,
                                 val clientToBroker: Channel<ControlPacket> = Channel(),
                                 val brokerToClient: Channel<ControlPacket> = Channel())

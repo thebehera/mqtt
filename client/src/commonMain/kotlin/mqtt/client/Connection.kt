@@ -86,7 +86,16 @@ interface IConnection : CoroutineScope {
         if (!transitionIntoConnecting()) {
             return@coroutineScope true
         }
-        platformSocket = buildSocket()
+
+        val platformSocketConnected = withTimeoutOrNull(parameters.connectionTimeoutMilliseconds) {
+            buildSocket()
+        }
+        if (platformSocketConnected == null) {
+            println("failed to connect within timeout: ${parameters.connectionTimeoutMilliseconds}ms")
+            throw ConnectionTimeout("Failed to connect within ${parameters.connectionTimeoutMilliseconds}ms")
+        } else {
+            platformSocket = platformSocketConnected
+        }
         writeConnectionRequest()
         return@coroutineScope try {
             val input = platformSocket.input
@@ -110,7 +119,7 @@ interface IConnection : CoroutineScope {
             }
         } catch (e: CancellationException) {
             println("cancelled at opensocket")
-            false
+            return@coroutineScope false
         } finally {
             closeSocket()
         }
@@ -202,7 +211,7 @@ expect class Connection(parameters: ConnectionParameters) : AbstractConnection
 fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
     if (parameters.reconnectIfNetworkLost) {
         var oldConnection: Connection
-        retryIO {
+        retryIO(times = parameters.maxNumberOfRetries) {
             oldConnection = Connection(parameters)
             val connection = oldConnection.startAsync()
             connection.await()
@@ -214,9 +223,9 @@ fun openConnection(parameters: ConnectionParameters) = GlobalScope.async {
             val result = connection.startAsync()
             result.await()
             return@async result.getCompleted()
-        } catch (e: CancellationException) {
+        } catch (e: ConnectionTimeout) {
             println("socket closed")
-            return@async false
+            return@async true
         }
     }
 }

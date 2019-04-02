@@ -8,6 +8,7 @@ import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
@@ -22,7 +23,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
 data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<MqttUtf8String>)
-    : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10) {
+    : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
 
