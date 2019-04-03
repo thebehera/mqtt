@@ -117,13 +117,16 @@ internal interface ISocketConnection : CoroutineScope {
 
     private suspend fun closeSocket(e: Exception? = null): Boolean {
         if (state.value == Initializing || state.value == Connecting || state.value == Open) {
-            clientToServer.send(DisconnectNotification)
             state.lazySet(Closing)
+            clientToServer.send(DisconnectNotification)
             beforeClosingSocket()
             clientToServer.close(e)
             serverToClient.close(e)
             currentSocket?.dispose()
             currentSocket = null
+            if (!state.compareAndSet(Closing, Closed(e))) {
+                throw IllegalStateException("Invalid closing state")
+            }
             return true
         }
         return false
@@ -187,7 +190,7 @@ internal interface ISocketConnection : CoroutineScope {
             if (controlPacket is IConnectionAcknowledgment) {
                 connack = controlPacket
                 println("IN: $controlPacket")
-                if (!state.compareAndSet(Connecting, Open)) {
+                if (!state.compareAndSet(Connecting, Open)) { 
                     throw IllegalStateException("Invalid state when reading connection ack - open")
                 }
                 openWriteChannel(platformSocket)
@@ -219,9 +222,9 @@ internal interface ISocketConnection : CoroutineScope {
                 }
             }
         } catch (e: ClosedReceiveChannelException) {
-            state.lazySet(Closed(e))
+            closeSocket(e)
         } finally {
-            serverToClient.close()
+            closeSocket()
         }
     }
 
@@ -244,7 +247,7 @@ internal interface ISocketConnection : CoroutineScope {
     }
 }
 
-internal abstract class AbstractSocketConnection : ISocketConnection {
+abstract class AbstractSocketConnection : ISocketConnection {
     private val job: Job = Job()
     abstract val dispatcher: CoroutineDispatcher
     override val coroutineContext: CoroutineContext get() = job + dispatcher
@@ -263,7 +266,7 @@ internal abstract class AbstractSocketConnection : ISocketConnection {
     override fun lastMessageBetweenClientAndServer(): Long = lastMessageBetweenClientAndServer.value
 }
 
-internal expect class PlatformSocketConnection : AbstractSocketConnection
+expect class PlatformSocketConnection(parameters: ConnectionParameters) : AbstractSocketConnection
 
 interface MessageQueue
 
