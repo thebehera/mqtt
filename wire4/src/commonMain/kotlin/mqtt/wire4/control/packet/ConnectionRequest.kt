@@ -34,6 +34,37 @@ data class ConnectionRequest(
         val variableHeader: VariableHeader = VariableHeader(),
         val payload: Payload = Payload())
     : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+
+    constructor(
+            clientId: String,
+            username: String? = null,
+            password: String? = null,
+            willRetain: Boolean = false,
+            willQos: QualityOfService = QualityOfService.AT_MOST_ONCE,
+            willTopic: String? = null,
+            willPayload: ByteArrayWrapper? = null,
+            cleanSession: Boolean = false,
+            keepAliveSeconds: UShort = UShort.MAX_VALUE) :
+            this(
+                    VariableHeader(
+                            hasUserName = username != null,
+                            hasPassword = password != null,
+                            willFlag = willTopic != null && willPayload != null,
+                            willQos = willQos,
+                            willRetain = willRetain,
+                            cleanSession = cleanSession,
+                            keepAliveSeconds = keepAliveSeconds),
+                    Payload(
+                            clientId = MqttUtf8String(clientId),
+                            willTopic = if (willTopic != null && willPayload != null) MqttUtf8String(willTopic) else null,
+                            willPayload = if (willTopic != null && willPayload != null) willPayload else null,
+                            userName = if (username != null) MqttUtf8String(username) else null,
+                            password = if (password != null) MqttUtf8String(password) else null
+                    )
+            )
+
+
+
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet()
@@ -59,7 +90,7 @@ data class ConnectionRequest(
                     " to 1, a Password MUST be present in the Payload")
         }
         if (!variableHeader.hasPassword && payload.password != null) {
-            return MqttWarning("[MMQTT-3.1.2-18]", "If the Password Flag is set " +
+            return MqttWarning("[MQTT-3.1.2-18]", "If the Password Flag is set " +
                     "to 0, a Password MUST NOT be present in the Payload")
         }
         return null

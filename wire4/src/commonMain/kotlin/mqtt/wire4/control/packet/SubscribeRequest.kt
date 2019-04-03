@@ -7,6 +7,7 @@ import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.readMqttUtf8String
 import mqtt.wire.data.writeMqttUtf8String
 
@@ -44,7 +45,7 @@ data class Subscription(val topicFilter: MqttUtf8String,
                          * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
                          * Error if the Maximum QoS field has the value 3.
                          */
-                        val maximumQos: QualityOfService = QualityOfService.AT_LEAST_ONCE) {
+                        val maximumQos: QualityOfService = AT_LEAST_ONCE) {
     val packet by lazy {
         val qosInt = maximumQos.integerValue
         buildPacket {

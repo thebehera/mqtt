@@ -18,6 +18,21 @@ data class PublishMessage(
         val variable: VariableHeader,
         val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf()))
     : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
+
+    /**
+     * Build a QOS 0 At most once publish message
+     */
+    constructor(topic: String, payload: ByteArray = byteArrayOf(), dup: Boolean = false, retain: Boolean = false)
+            : this(FixedHeader(dup, retain = retain), VariableHeader(MqttUtf8String(topic)), ByteArrayWrapper(payload))
+
+    /**
+     * Build a QOS 1 or 2 publish message
+     */
+    constructor(topic: String, qos: QualityOfService, payload: ByteArray = byteArrayOf(),
+                packetIdentifier: UShort = publishCount++, dup: Boolean = false, retain: Boolean = false)
+            : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier),
+            ByteArrayWrapper(payload))
+
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")
@@ -177,6 +192,8 @@ data class PublishMessage(
     }
 
     companion object {
+        private var publishCount = 0.toUShort()
+
         fun from(buffer: ByteReadPacket, byte1: UByte): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
