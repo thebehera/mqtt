@@ -3,8 +3,10 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
+import kotlinx.io.core.internal.completeReadHead
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
+import mqtt.wire.control.packet.SerializablePayload
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -13,25 +15,24 @@ import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-data class PublishMessage(
+data class PublishMessage<T: Any>(
         val fixed: FixedHeader = FixedHeader(),
         val variable: VariableHeader,
-        val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf()))
+        val payload: SerializablePayload<T>? = null)
     : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
     /**
      * Build a QOS 0 At most once publish message
      */
-    constructor(topic: String, payload: ByteArray = byteArrayOf(), dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, retain = retain), VariableHeader(MqttUtf8String(topic)), ByteArrayWrapper(payload))
+    constructor(topic: String, payload: SerializablePayload<T>? = null, dup: Boolean = false, retain: Boolean = false)
+            : this(FixedHeader(dup, retain = retain), VariableHeader(MqttUtf8String(topic)), payload)
 
     /**
      * Build a QOS 1 or 2 publish message
      */
-    constructor(topic: String, qos: QualityOfService, payload: ByteArray = byteArrayOf(),
+    constructor(topic: String, qos: QualityOfService, payload: ByteReadPacket? = null,
                 packetIdentifier: UShort = publishCount++, dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier),
-            ByteArrayWrapper(payload))
+            : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier), payload)
 
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
@@ -42,7 +43,8 @@ data class PublishMessage(
     }
 
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
+    override val payloadPacketSize: UInt = payload?.size ?: 0.toUInt()
+    override fun payloadPacket(sendDefaults: Boolean) = payload?.serializableStrategy?.serialize(payload.payload)
 
     data class FixedHeader(
             /**
@@ -194,9 +196,10 @@ data class PublishMessage(
     companion object {
         private var publishCount = 0.toUShort()
 
-        fun from(buffer: ByteReadPacket, byte1: UByte): PublishMessage {
+        fun <T:Any> from(buffer: ByteReadPacket, byte1: UByte, ): PublishMessage<T> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
+
             val payloadBytes = ByteArrayWrapper(buffer.readBytes())
             return PublishMessage(fixedHeader, variableHeader, payloadBytes)
         }

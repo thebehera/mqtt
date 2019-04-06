@@ -4,6 +4,7 @@ package mqtt.wire.control.packet
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
+import kotlinx.io.core.writePacket
 import kotlinx.io.core.writeUByte
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -15,13 +16,13 @@ interface ControlPacket {
     val flags: Byte get() = 0b0
     val mqttVersion: Byte
 
-    private fun fixedHeader(payloadSize: Int = 0): ByteReadPacket {
+    private fun fixedHeader(): ByteReadPacket {
         val packetValue = controlPacketValue
         val packetValueUInt = packetValue.toUInt()
         val packetValueShifted = packetValueUInt.shl(4)
         val localFlagsByte = flags.toUByte().toInt()
         val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
-        val byte2 = VariableByteInteger(payloadSize.toUInt())
+        val byte2 = VariableByteInteger(remainingLength())
         return buildPacket {
             writeUByte(byte1)
             writePacket(byte2.encodedValue())
@@ -29,10 +30,11 @@ interface ControlPacket {
     }
 
     val variableHeaderPacket: ByteReadPacket? get() = null
+    val payloadPacketSize :UInt get() = payloadPacket(false)?.remaining?.toUInt() ?: 0.toUInt()
     fun payloadPacket(sendDefaults: Boolean = false): ByteReadPacket? = null
-    private fun remainingLength(payloadSize: Int = 0): UInt {
-        val variableHeaderSize = variableHeaderPacket?.remaining ?: 0
-        return (variableHeaderSize + payloadSize).toUInt()
+    private fun remainingLength(): UInt {
+        val variableHeaderSize = variableHeaderPacket?.copy()?.remaining?.toUInt() ?: 0.toUInt()
+        return variableHeaderSize + payloadPacketSize
     }
 
     fun validateOrGetWarning(): MqttWarning? {
@@ -49,17 +51,14 @@ interface ControlPacket {
             throw warning
         }
         val variableHeaderPacket = variableHeaderPacket
-        val variablePacketSize = variableHeaderPacket?.remaining ?: 0L
-        val payloadPacket = payloadPacket(sendDefaults)
-        val payloadPacketSize = payloadPacket?.remaining ?: 0L
-        val fixedHeaderPacket = fixedHeader((variablePacketSize + payloadPacketSize).toInt())
+        val fixedHeaderPacket = fixedHeader()
         val p = buildPacket {
             writePacket(fixedHeaderPacket)
             if (variableHeaderPacket != null) {
                 writePacket(variableHeaderPacket)
             }
-            if (payloadPacket != null) {
-                writePacket(payloadPacket)
+            if (payloadPacketSize > 0.toUInt()) {
+                writePacket(payloadPacket(sendDefaults)!!)
             }
         }
         return p
