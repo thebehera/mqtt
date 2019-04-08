@@ -8,6 +8,7 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.SerializablePayload
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
+import mqtt.wire.control.packet.serializers
 import mqtt.wire.data.*
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 
@@ -15,22 +16,22 @@ import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-data class PublishMessage<T: Any>(
+data class PublishMessage<T>(
         val fixed: FixedHeader = FixedHeader(),
         val variable: VariableHeader,
-        val payload: SerializablePayload<T>? = null)
+        val payload: ByteArrayWrapper? = null)
     : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
     /**
      * Build a QOS 0 At most once publish message
      */
-    constructor(topic: String, payload: SerializablePayload<T>? = null, dup: Boolean = false, retain: Boolean = false)
+    constructor(topic: String, payload: ByteArrayWrapper? = null, dup: Boolean = false, retain: Boolean = false)
             : this(FixedHeader(dup, retain = retain), VariableHeader(MqttUtf8String(topic)), payload)
 
     /**
      * Build a QOS 1 or 2 publish message
      */
-    constructor(topic: String, qos: QualityOfService, payload: ByteReadPacket? = null,
+    constructor(topic: String, qos: QualityOfService, payload: ByteArrayWrapper? = null,
                 packetIdentifier: UShort = publishCount++, dup: Boolean = false, retain: Boolean = false)
             : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier), payload)
 
@@ -43,8 +44,8 @@ data class PublishMessage<T: Any>(
     }
 
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val payloadPacketSize: UInt = payload?.size ?: 0.toUInt()
-    override fun payloadPacket(sendDefaults: Boolean) = payload?.serializableStrategy?.serialize(payload.payload)
+    override fun payloadPacket(sendDefaults: Boolean) =
+            if (payload?.byteArray != null) buildPacket { writeFully(payload.byteArray) } else null
 
     data class FixedHeader(
             /**
@@ -196,10 +197,9 @@ data class PublishMessage<T: Any>(
     companion object {
         private var publishCount = 0.toUShort()
 
-        fun <T:Any> from(buffer: ByteReadPacket, byte1: UByte, ): PublishMessage<T> {
+        fun from(buffer: ByteReadPacket, byte1: UByte): PublishMessage<String> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-
             val payloadBytes = ByteArrayWrapper(buffer.readBytes())
             return PublishMessage(fixedHeader, variableHeader, payloadBytes)
         }
