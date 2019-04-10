@@ -12,7 +12,7 @@ import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
 
-abstract class AbstractSocketConnection : CoroutineScope {
+abstract class SocketSession : CoroutineScope {
     private val job: Job = Job()
     abstract val dispatcher: CoroutineDispatcher
     override val coroutineContext: CoroutineContext get() = job + dispatcher
@@ -35,9 +35,7 @@ abstract class AbstractSocketConnection : CoroutineScope {
      * Open the connection.
      * @param waitForConnectionAcknowledgment return right after the socket has been written to
      */
-    fun openConnectionAsync(
-            waitForConnectionAcknowledgment: Boolean = false
-    ) = async {
+    fun openConnectionAsync(waitForConnectionAcknowledgment: Boolean = false) = async {
         if (!state.compareAndSet(Initializing, Connecting)) {
             val error = ConnectionFailure(ConcurrentModificationException("Invalid previous state before connecting"))
             state.lazySet(error)
@@ -130,7 +128,7 @@ abstract class AbstractSocketConnection : CoroutineScope {
     private fun openWriteChannel(platformSocket: PlatformSocket) = launch {
         val clientToServer = Channel<ControlPacket>()
         try {
-            this@AbstractSocketConnection.clientToServer = clientToServer
+            this@SocketSession.clientToServer = clientToServer
             for (messageToSend in clientToServer) {
                 if (isOpenAndActive() || messageToSend is DisconnectNotification) {
                     val sendMessage = messageToSend.serialize()
@@ -181,7 +179,7 @@ abstract class AbstractSocketConnection : CoroutineScope {
 
     private fun readControlPackets(platformSocket: PlatformSocket) = launch {
         val serverToClient = Channel<ControlPacket>()
-        this@AbstractSocketConnection.serverToClient = serverToClient
+        this@SocketSession.serverToClient = serverToClient
         try {
             val input = platformSocket.input
             while (isOpenAndActive()) {

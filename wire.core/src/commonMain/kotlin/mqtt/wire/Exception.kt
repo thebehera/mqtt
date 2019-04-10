@@ -12,3 +12,5 @@ class MalformedInvalidVariableByteInteger(value: UInt) : IOException("Malformed 
         "property must be a number between 0 and %VARIABLE_BYTE_INT_MAX . Read controlPacketValue was: $value")
 
 class BrokerRejectedConnection(val reason: String) : Exception(reason)
+
+class MqttPersistenceException(msg: String) : MqttException(msg, 0x83.toUByte())

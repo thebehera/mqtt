@@ -1,3 +1,3 @@
 package mqtt.client
 
-expect class PlatformSocketConnection(parameters: ConnectionParameters) : AbstractSocketConnection
+expect class PlatformSocketConnection(parameters: ConnectionParameters) : SocketSession

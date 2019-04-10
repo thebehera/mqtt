@@ -15,39 +15,34 @@ interface MqttDeserializationStrategy<T> {
 }
 
 
-interface MqttSerializable<T:Any> : MqttSerializationStrategy<T>, MqttDeserializationStrategy<T> {
-    val clazz: KClass<T>
-}
-
+interface MqttSerializable<T : Any> : MqttSerializationStrategy<T>, MqttDeserializationStrategy<T>
 
 object ByteArraySerializer :MqttSerializable<ByteArray> {
-    override val clazz: KClass<ByteArray> = ByteArray::class
     override fun serialize(obj: ByteArray) = buildPacket { writeFully(obj) }
     override fun deserialize(buffer: ByteReadPacket) = buffer.readBytes()
 }
 
 object StringSerializer :MqttSerializable<String> {
-    override val clazz: KClass<String> = String::class
     override fun serialize(obj: String) = buildPacket { writeStringUtf8(obj) }
     override fun deserialize(buffer: ByteReadPacket) = buffer.readText()
 }
 
-val serializers = setOf(
-        ByteArraySerializer, StringSerializer
+val serializers = mutableMapOf<KClass<*>, MqttSerializable<*>>(
+        Pair(ByteArray::class, ByteArraySerializer),
+        Pair(String::class, StringSerializer)
 )
 
-inline fun <reified T:Any> findSerializerOfType(): MqttSerializable<T>? {
-    serializers.forEach {
-        if (it.clazz == T::class) {
-            @Suppress("UNCHECKED_CAST")
-            return it as MqttSerializable<T>
-        }
-    }
-    return null
+inline fun <reified T : Any> findSerializer(): MqttSerializable<T>? {
+    @Suppress("UNCHECKED_CAST")
+    return serializers[T::class] as? MqttSerializable<T>?
+}
+
+inline fun <reified T : Any> installSerializer(serializable: MqttSerializable<T>) {
+    serializers[T::class] = serializable
 }
 
 fun main() {
-    val serializer = findSerializerOfType<String>()
+    val serializer = findSerializer<String>()
 
     serializer.toString()
 }

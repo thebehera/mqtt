@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 
 actual class PlatformSocketConnection actual constructor(override val parameters: ConnectionParameters)
-    :AbstractSocketConnection() {
+    : SocketSession() {
     override val dispatcher: CoroutineDispatcher = Dispatchers.IO
 
     override suspend fun buildSocket(): PlatformSocket {

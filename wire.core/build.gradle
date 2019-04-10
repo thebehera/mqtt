@@ -25,6 +25,11 @@ kotlin {
     targets {
         final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") ? presets.iosArm64 : presets.iosX64
         fromPreset(iOSTarget, 'iOS')
+        configure([iOS]) {
+            tasks.getByName(compilations.main.compileKotlinTaskName).kotlinOptions {
+                freeCompilerArgs = ["-XXLanguage:+InlineClasses"]
+            }
+        }
     }
     sourceSets {
         commonMain {
