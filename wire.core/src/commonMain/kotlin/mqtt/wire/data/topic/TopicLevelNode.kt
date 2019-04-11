@@ -2,11 +2,21 @@ package mqtt.wire.data.topic
 
 import mqtt.wire.data.MqttUtf8String
 
-// Represent the topic levels as a tree structure
-data class TopicLevelNode(val value: TopicLevel,
-                          val children: MutableMap<String, TopicLevelNode> = mutableMapOf()) {
+/**
+ * Represent the topics in a tree like structure. Saves memory for multiple topics with a similar structure compared
+ * to using a string and speeds up lookups to see if a topic matches a structure
+ */
+data class TopicLevelNode(val value: TopicLevel) {
+    val children: MutableMap<String, TopicLevelNode> = mutableMapOf()
+    var parent: TopicLevelNode? = null
+    /**
+     * Is this topic level a wildcard
+     */
     val isWildcard = value is MultiLevelWildcard || value is SingleLevelWildcard
 
+    /**
+     * Check if this topic or any children has a wildcard
+     */
     fun hasWildcardInTopic(): Boolean {
         if (children.isEmpty()) {
             return isWildcard
@@ -16,27 +26,65 @@ data class TopicLevelNode(val value: TopicLevel,
                 return true
             }
         }
-        return false
+        return isWildcard
     }
 
-    fun doesChildrenHaveChildren(): Boolean {
-        children.forEach {
-            if (it.value.children.isNotEmpty()) {
-                return true
+    fun detachFromParent() {
+        val parent = parent
+        parent?.children?.remove(value.value)
+        this.parent = null
+    }
+
+    fun findSimilarChildNode(otherChildNode: TopicLevelNode): TopicLevelNode? {
+        var currentChildOtherNode: TopicLevelNode? = otherChildNode.parent
+        val keyPath = ArrayList<TopicLevel>()
+        keyPath.add(otherChildNode.value)
+        while (currentChildOtherNode != null) {
+            keyPath.add(currentChildOtherNode.value)
+            currentChildOtherNode = currentChildOtherNode.parent
+        }
+        keyPath.reverse()
+        var index = 1
+        val keyPathCurrent = keyPath.getOrNull(index++)?.value
+        var currentChildThisNode = children[keyPathCurrent]
+
+        while (index < keyPath.size) {
+            val nextKey = keyPath.getOrNull(index++)?.value!!
+            if (currentChildThisNode == null) {
+                return null
+            } else {
+                currentChildThisNode = currentChildThisNode.children[nextKey]
             }
         }
-        return false
+        return currentChildThisNode
     }
 
-    fun doesDirectChildHaveWildcard(): Boolean {
-        children.forEach {
-            if (it.value.isWildcard) {
-                return true
-            }
+    fun getAllBottomLevelChildren(): Set<TopicLevelNode> {
+        if (children.isEmpty()) {
+            return setOf(this)
         }
-        return false
+        val childrensChildren = mutableSetOf<TopicLevelNode>()
+        children.values.forEach {
+            childrensChildren += it.getAllBottomLevelChildren()
+        }
+        return childrensChildren
     }
 
+    fun getCurrentPath(): String {
+        val parent = parent
+        val parentPath = parent?.getCurrentPath()
+        return if (parentPath == null) {
+            value.value
+        } else {
+            parentPath + "/" + value.value
+        }
+    }
+
+    override fun toString() = getCurrentPath()
+
+    /**
+     * Check and see if the other topic matches this topic structure.
+     */
     fun matchesTopic(other: TopicLevelNode): Boolean {
         val isCurrentTopicMultiLevelWildcard = value is MultiLevelWildcard
         val isOtherTopicMultiLevelWildcard = other.value is MultiLevelWildcard
@@ -55,15 +103,18 @@ data class TopicLevelNode(val value: TopicLevel,
         if ((isCurrentTopicSingleLevelWildcard && children.isNotEmpty()) ||
                 (isOtherTopicSingleLevelWildcard && other.children.isNotEmpty())) {
             val missingKeys = other.children.keys - children.keys
-            if (missingKeys.isNotEmpty()) {
+            if (missingKeys.contains("+") || missingKeys.contains("#")) {
+
+            } else if (missingKeys.isNotEmpty()) {
                 return false
-            }
-            other.children.forEach { otherChildPair ->
-                val otherKey = otherChildPair.key
-                val otherValue = otherChildPair.value
-                val matchingChild = children[otherKey] ?: return false
-                if (!matchingChild.matchesTopic(otherValue)) {
-                    return false
+            } else {
+                other.children.forEach { otherChildPair ->
+                    val otherKey = otherChildPair.key
+                    val otherValue = otherChildPair.value
+                    val matchingChild = children[otherKey] ?: return false
+                    if (!matchingChild.matchesTopic(otherValue)) {
+                        return false
+                    }
                 }
             }
         }
@@ -74,26 +125,39 @@ data class TopicLevelNode(val value: TopicLevel,
             }
         }
 
+        if (children.size != other.children.size && children["#"] == null && !isEitherAWildcard) {
+            return false
+        }
+
         other.children.forEach { otherChildPair ->
             val otherKey = otherChildPair.key
-            val otherValue = otherChildPair.value
-            var matchingChild = children[otherKey]
-            if (matchingChild == null) {
-                matchingChild = children["+"]
+            if (otherKey != "+") {
+                val otherValue = otherChildPair.value
+                var matchingChild = children[otherKey]
+                if (matchingChild == null) {
+                    matchingChild = children["+"]
+                }
+                if (matchingChild == null) {
+                    matchingChild = children["#"]
+                }
+                val child = matchingChild
+                        ?: return false
+                if (!child.matchesTopic(otherValue)) {
+                    return false
+                }
             }
-            if (matchingChild == null) {
-                matchingChild = children["#"]
-            }
-            val child = matchingChild ?: return false
-            if (!child.matchesTopic(otherValue)) {
-                return false
-            }
+        }
+        if (other.children.isEmpty() && children.isNotEmpty() && (other.value == SingleLevelWildcard || value == SingleLevelWildcard)) {
+            return false
         }
         return true
     }
 
     companion object {
         private const val TOPIC_LEVEL_SEPERATOR = '/'
+        /**
+         * Convert an MQTT UTF8 Compliant string into a topic level node structure
+         */
         fun from(topic: MqttUtf8String): TopicLevelNode {
             val topicValidated = topic.getValueOrThrow()
             if (topicValidated.isEmpty()) {
@@ -102,50 +166,93 @@ data class TopicLevelNode(val value: TopicLevel,
             return parse(topicValidated) ?: TopicLevelNode(EmptyValue)
         }
 
-        fun parse(topic: String): TopicLevelNode? {
+        /**
+         * Convert the string format of a suspected topic into a topic level tree structure returning the root node
+         */
+        fun parse(topic: String, parent: TopicLevelNode? = null): TopicLevelNode? {
+            if (parent == null && topic.startsWith('/')) {
+                val topTopicLevel = EmptyValue
+                val child = parse(topic.substring(1), parent)
+                val node = TopicLevelNode(topTopicLevel)
+                if (child != null) {
+                    child.parent = node
+                    node.children[child.value.value] = child
+                }
+                return node
+            }
+            if (topic.endsWith("/")) {
+                val parsedWithoutSuffix = parse(topic.substringBeforeLast("/"), parent)
+                val bottomLevelNode = parsedWithoutSuffix?.getAllBottomLevelChildren()?.first() ?: return null
+                val emptyNode = TopicLevelNode(EmptyValue)
+                emptyNode.parent = bottomLevelNode
+                bottomLevelNode.children[""] = emptyNode
+                return parsedWithoutSuffix
+
+            }
             val topics = topic.split(TOPIC_LEVEL_SEPERATOR, limit = 2)
             if (topics.isEmpty()) {
                 return null
             }
-            val topTopicLevel = topics[0]
+            val currentTopicLevel = topics[0]
+            if (currentTopicLevel.isEmpty()) {
+                throw IllegalArgumentException("Invalid size of topic level")
+            }
+            if (currentTopicLevel.length > 1) {
+                val multiLevelWildcardIndex = currentTopicLevel.indexOf('#')
+                if (multiLevelWildcardIndex > 0) {
+                    throw IllegalArgumentException("Error building topic ($currentTopicLevel): The multi-level " +
+                            "wildcard character MUST be specified either on its own or following a topic level " +
+                            "separator. In either case it MUST be the last character specified in the Topic Filter" +
+                            " [MQTT-4.7.1-1]")
+                }
+                val singleLevelWildcardIndex = currentTopicLevel.indexOf('+')
+                if (singleLevelWildcardIndex > 0) {
+                    throw IllegalArgumentException("Error building topic ($currentTopicLevel): The single-level " +
+                            "wildcard MUST occupy an entire level of the filter [MQTT-4.7.1-2].")
+                }
+            }
             when {
                 topics.size == 1 -> {
-                    if (topTopicLevel == "#") {
+                    if (currentTopicLevel == "#") {
                         return TopicLevelNode(MultiLevelWildcard)
                     }
-                    if (topTopicLevel == "+") {
+                    if (currentTopicLevel == "+") {
                         return TopicLevelNode(SingleLevelWildcard)
                     }
-                    if (topTopicLevel.isBlank()) {
+                    if (currentTopicLevel.isBlank()) {
                         return null
                     }
-                    return TopicLevelNode(StringTopicLevel(topTopicLevel))
+                    val node = TopicLevelNode(StringTopicLevel(currentTopicLevel))
+                    node.parent = parent
+                    return node
                 }
                 topics.size == 2 -> {
-                    if (topTopicLevel == "#") {
-                        throw IllegalArgumentException("Invalid multilevel wildcard found at position ${topTopicLevel.length} in topic: $topic. Was not expecting any more characters after that.")
-                    }
-                    if (topTopicLevel.isBlank()) {
-                        throw IllegalArgumentException("Invalid topic, multiple topic level separators found")
+                    if (currentTopicLevel == "#") {
+                        throw IllegalArgumentException("Invalid multilevel wildcard found at position ${currentTopicLevel.length} in topic: $topic. Was not expecting any more characters after that.")
                     }
                     val restOfTopic = topics[1]
-                    val level = when (topTopicLevel) {
+                    val level = when (currentTopicLevel) {
                         "#" -> MultiLevelWildcard
                         "+" -> SingleLevelWildcard
-                        else -> StringTopicLevel(topTopicLevel)
+                        else -> StringTopicLevel(currentTopicLevel)
                     }
                     if (restOfTopic.isEmpty()) {
                         return TopicLevelNode(level)
                     }
 
-                    val childTopicNode = parse(topics[1])
-                    val map = if (childTopicNode != null) {
-                        mutableMapOf(Pair(childTopicNode.value.value, childTopicNode))
+                    val childTopicLevel = parse(topics[1])
+                    val result = if (childTopicLevel != null) {
+                        Pair(childTopicLevel.value.value, childTopicLevel)
                     } else {
-                        mutableMapOf()
+                        null
                     }
-
-                    return TopicLevelNode(level, map)
+                    val currentNode = TopicLevelNode(level)
+                    if (result != null) {
+                        currentNode.children[result.first] = result.second
+                    }
+                    childTopicLevel?.parent = currentNode
+                    currentNode.parent = parent
+                    return currentNode
                 }
                 else -> throw RuntimeException(
                         "Topic split operation failing. Expected a max of two string splits, got more")
@@ -154,39 +261,42 @@ data class TopicLevelNode(val value: TopicLevel,
     }
 }
 
-fun copyFrom(self: TopicLevelNode, other: TopicLevelNode) {
+/**
+ * Add the topics in to the tree structure of the originial 'self' topic level node
+ */
+fun addTopicLevelNode(self: TopicLevelNode, other: TopicLevelNode) {
     if (self.value == other.value) {
         val missingChildren = other.children.keys - self.children.keys
         missingChildren.forEach {
             val missingChild = other.children[it]!!
             self.children[missingChild.value.value] = missingChild
+            missingChild.parent = self
         }
         val duplicateChildrenKeys = self.children.keys.intersect(other.children.keys)
         duplicateChildrenKeys.forEach {
-            copyFrom(self.children[it]!!, other.children[it]!!)
+            addTopicLevelNode(self.children[it]!!, other.children[it]!!)
         }
     }
 }
 
-operator fun TopicLevelNode.plus(other: TopicLevelNode): TopicLevelNode {
-    copyFrom(this, other)
-    return this
+/**
+ * Merge the two topics together into one structure
+ */
+operator fun TopicLevelNode.plusAssign(other: TopicLevelNode) {
+    addTopicLevelNode(this, other)
 }
 
-fun main() {
-    val parsed = TopicLevelNode.from(MqttUtf8String("sport/tennis/player1"))
-    val parsed2 = TopicLevelNode.from(MqttUtf8String("sport/tennis/player1/#"))
-    val parsed3 = TopicLevelNode.from(MqttUtf8String("sport/tennis/player1/+"))
-    parsed.toString()
-    parsed2.toString()
-    parsed3.toString()
+
+operator fun TopicLevelNode.minusAssign(other: TopicLevelNode) {
+    removeTopicLevelNode(this, other)
 }
 
-sealed class TopicLevel(val value: String) {
-    override fun toString() = value
+fun removeTopicLevelNode(self: TopicLevelNode, other: TopicLevelNode) {
+    val otherChildren = other.getAllBottomLevelChildren()
+    otherChildren.forEach {
+        val node = self.findSimilarChildNode(it)
+        if (node != null) {
+            node.detachFromParent()
+        }
+    }
 }
-
-object MultiLevelWildcard : TopicLevel("#")
-object SingleLevelWildcard : TopicLevel(("+"))
-object EmptyValue : TopicLevel("")
-data class StringTopicLevel(val topicValue: String) : TopicLevel(topicValue)

@@ -6,11 +6,11 @@ import kotlinx.io.core.*
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
-import mqtt.wire.data.readMqttUtf8String
-import mqtt.wire.data.writeMqttUtf8String
+import mqtt.wire.data.readMqttFilter
+import mqtt.wire.data.topic.Filter
+import mqtt.wire.data.writeMqttFilter
 
 /**
  * 3.8 SUBSCRIBE - Subscribe request
@@ -27,16 +27,14 @@ data class SubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacket
                             val subscriptions: Collection<Subscription>)
     : ControlPacketV4(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
-    constructor(topic: String, qos: QualityOfService)
-            : this(subscriptions = listOf(Subscription(MqttUtf8String(topic), qos)))
+    constructor(topic: Filter, qos: QualityOfService)
+            : this(subscriptions = listOf(Subscription(topic, qos)))
 
     constructor(topics: List<String>, qos: List<QualityOfService>)
             : this(subscriptions = Subscription.from(topics, qos))
 
     override val variableHeaderPacket = buildPacket { writeUShort(packetIdentifier) }
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket {
-        subscriptions.forEach { writePacket(it.packet) }
-    }
+    override fun payloadPacket(sendDefaults: Boolean) = Subscription.writeMany(subscriptions)
 
     companion object {
         fun from(buffer: ByteReadPacket): SubscribeRequest {
@@ -47,7 +45,7 @@ data class SubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacket
     }
 }
 
-data class Subscription(val topicFilter: MqttUtf8String,
+data class Subscription(val topicFilter: Filter,
                         /**
                          * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
                          * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
@@ -57,7 +55,7 @@ data class Subscription(val topicFilter: MqttUtf8String,
     val packet by lazy {
         val qosInt = maximumQos.integerValue
         buildPacket {
-            writeMqttUtf8String(topicFilter)
+            writeMqttFilter(topicFilter)
             writeByte(qosInt)
         }
     }
@@ -72,7 +70,7 @@ data class Subscription(val topicFilter: MqttUtf8String,
         }
 
         fun from(buffer: ByteReadPacket): Subscription {
-            val topicFilter = buffer.readMqttUtf8String()
+            val topicFilter = buffer.readMqttFilter()
             val subOptionsInt = buffer.readUByte().toInt()
             val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
             val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
@@ -86,9 +84,15 @@ data class Subscription(val topicFilter: MqttUtf8String,
             }
             val subscriptions = mutableListOf<Subscription>()
             topics.forEachIndexed { index, topic ->
-                subscriptions += Subscription(MqttUtf8String(topic), qos[index])
+                subscriptions += Subscription(Filter(topic), qos[index])
             }
             return subscriptions
+        }
+
+        fun writeMany(subscriptions: Collection<Subscription>) = buildPacket {
+            subscriptions.forEach {
+                writePacket(it.packet)
+            }
         }
     }
 }

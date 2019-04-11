@@ -37,6 +37,11 @@ inline fun <reified T : Any> findSerializer(): MqttSerializable<T>? {
     return serializers[T::class] as? MqttSerializable<T>?
 }
 
+fun <T : Any> findSerializer(kClass: KClass<T>): MqttSerializable<T>? {
+    @Suppress("UNCHECKED_CAST")
+    return serializers[kClass] as? MqttSerializable<T>?
+}
+
 inline fun <reified T : Any> installSerializer(serializable: MqttSerializable<T>) {
     serializers[T::class] = serializable
 }

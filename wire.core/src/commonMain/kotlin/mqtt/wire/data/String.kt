@@ -4,6 +4,7 @@ package mqtt.wire.data
 
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.data.topic.Filter
 
 fun String.validateMqttUTF8String(): Boolean {
     if (length > 65_535) {
@@ -78,6 +79,14 @@ fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String) {
     writeStringUtf8(validatedString)
 }
 
+
+fun BytePacketBuilder.writeMqttFilter(string: Filter) {
+    val validatedString = string.validate()!!.getAllBottomLevelChildren().first().toString()
+    val len = validatedString.length.toUShort()
+    writeUShort(len)
+    writeStringUtf8(validatedString)
+}
+
 fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {
     val ushort = readUShort()
     val stringLength = ushort.toInt()
@@ -86,6 +95,16 @@ fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {
     }
     val text = readTextExactBytes(bytes = stringLength)
     return MqttUtf8String(text)
+}
+
+fun ByteReadPacket.readMqttFilter(): Filter {
+    val ushort = readUShort()
+    val stringLength = ushort.toInt()
+    if (stringLength == 0) {
+        return Filter("")
+    }
+    val text = readTextExactBytes(bytes = stringLength)
+    return Filter(text)
 }
 
 fun ByteReadPacket.readMqttBinary() :ByteArray {

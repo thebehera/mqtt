@@ -11,45 +11,28 @@ import mqtt.wire4.control.packet.PublishMessage
 import mqtt.wire4.control.packet.SubscribeRequest
 import mqtt.wire4.control.packet.UnsubscribeRequest
 
-interface IClient {
-    var session: SocketSession?
-    val persistence: Persistence
-    val state: ClientSessionState
-
-    fun connect(connectionParameters: ConnectionParameters)
-
-    fun registerTopic(topicWildcard: List<String>, callback: SubscriptionCallback<Any>)
-    suspend fun <T : Any> publish(topic: String, qos: QualityOfService, payload: T? = null)
-
-    suspend fun <T> subscribe(topic: String, qos: QualityOfService, callback: SubscriptionCallback<T>) = subscribe(listOf(topic), listOf(qos), listOf(callback))
-    suspend fun <T> subscribe(topics: List<String>, qos: List<QualityOfService>,
-                              callback: List<SubscriptionCallback<T>>)
-
-    suspend fun unsubscribe(topic: String) = unsubscribe(listOf(topic))
-    suspend fun unsubscribe(topics: List<String>)
-
-    fun disconnectAsync(): Deferred<Boolean>?
-}
-
-class Client(override val persistence: Persistence) : IClient {
-    override var session: SocketSession? = null
-    override val state = ClientSessionState()
+class Client(val persistence: Persistence) {
+    var session: SocketSession? = null
+    val state = ClientSessionState()
     var disconnectReason: Deferred<AtomicRef<ConnectionState>>? = null
+    val subscriptionManager = SubscriptionManager()
 
-    override fun connect(connectionParameters: ConnectionParameters) {
+    fun connect(connectionParameters: ConnectionParameters) {
         val session = PlatformSocketConnection(connectionParameters)
         this.session = session
         disconnectReason = session.openConnectionAsync(true)
     }
 
-    override suspend fun <T : Any> publish(topic: String, qos: QualityOfService, payload: T?) = pub(topic, qos, payload)
+    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, payload: T?) {
+        pub(topic, qos, payload)
+    }
 
-    private suspend fun <T : Any> pub(topic: String, qos: QualityOfService, payload: T?) {
+    suspend inline fun <reified T : Any> pub(topic: String, qos: QualityOfService, payload: T?) {
         val actualPayload = if (payload == null) {
             null
         } else {
             val serializer = findSerializer<T>()
-                    ?: throw RuntimeException("Failed to find serializer for the class $payload")
+                    ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }
         val publish = PublishMessage(topic, qos, actualPayload)
@@ -70,12 +53,9 @@ class Client(override val persistence: Persistence) : IClient {
         }
     }
 
-    override fun registerTopic(topicWildcard: List<String>, callback: SubscriptionCallback<Any>) {
 
-    }
-
-    override suspend fun <T> subscribe(topics: List<String>, qos: List<QualityOfService>,
-                                       callback: List<SubscriptionCallback<T>>) {
+    fun <T> subscribe(topics: List<String>, qos: List<QualityOfService>,
+                      callback: List<SubscriptionCallback<T>>) {
         val subscription = SubscribeRequest(topics, qos)
         val oldPacket = persistence.put(subscription.packetIdentifier, subscription)
         if (oldPacket != null) {
@@ -84,7 +64,7 @@ class Client(override val persistence: Persistence) : IClient {
         }
     }
 
-    override suspend fun unsubscribe(topics: List<String>) {
+    fun unsubscribe(topics: List<String>) {
         val unsubscribeRequest = UnsubscribeRequest(topics = topics.map { MqttUtf8String(it) })
         val oldPacket = persistence.put(unsubscribeRequest.packetIdentifier, unsubscribeRequest)
         if (oldPacket != null) {
@@ -93,11 +73,9 @@ class Client(override val persistence: Persistence) : IClient {
         }
     }
 
-    override fun disconnectAsync(): Deferred<Boolean>? {
+    fun disconnectAsync(): Deferred<Boolean>? {
         val result = session?.closeAsync()
         session = null
-        state.qos1And2MessagesSentButNotAcked.clear()
-        state.qos2MessagesRecevedBytNotCompletelyAcked.clear()
         return result
     }
 

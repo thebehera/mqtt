@@ -3,19 +3,19 @@
 package mqtt.client
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
+import kotlinx.io.core.writeFully
 import mqtt.time.currentTimestampMs
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
+import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import kotlin.test.*
 
 class SocketConnectionTests {
 
@@ -25,7 +25,7 @@ class SocketConnectionTests {
     @Test
     fun connectDisconnect() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("test.mosquitto.org", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -44,7 +44,7 @@ class SocketConnectionTests {
     @Test
     fun reconnectOnce() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("test.mosquitto.org", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -63,7 +63,7 @@ class SocketConnectionTests {
     @Test
     fun socketCloseAutomatically() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("test.mosquitto.org", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -74,12 +74,12 @@ class SocketConnectionTests {
     @Test
     fun publishSingleMessageQos0() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("test.mosquitto.org", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
             result.await()
-            val publishMessage = PublishMessage("yolo", "asdf".toByteArray())
+            val publishMessage = PublishMessage("yolo", buildPacket { writeFully("asdf".toByteArray()) })
             connection.clientToServer.send(publishMessage)
             assertEquals(connection.state.value, Open)
         }
@@ -88,7 +88,7 @@ class SocketConnectionTests {
     @Test
     fun subscribeAndReceiveSuback() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("test.mosquitto.org", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
@@ -96,12 +96,17 @@ class SocketConnectionTests {
             result.await()
             val mutex = Mutex(true)
             launch(Dispatchers.Unconfined) {
-                val controlPacket = connection.serverToClient.receive()
-                assertTrue(controlPacket is SubscribeAcknowledgement)
-                recvMessage = true
-                mutex.unlock()
+                try {
+                    val controlPacket = connection.serverToClient.receive()
+                    assertTrue(controlPacket is SubscribeAcknowledgement)
+                    recvMessage = true
+                    mutex.unlock()
+                } catch (e: Exception) {
+                    fail(e.message)
+                }
             }
-            val subscribeRequest = SubscribeRequest(1.toUShort(), listOf(Subscription(MqttUtf8String("yolo"), AT_MOST_ONCE)))
+            delay(1000)
+            val subscribeRequest = SubscribeRequest(1.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
             connection.clientToServer.send(subscribeRequest)
             mutex.withLock {} // lock until we get a message
             assertTrue(recvMessage)

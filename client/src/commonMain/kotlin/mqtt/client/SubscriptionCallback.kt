@@ -1,9 +1,8 @@
 package mqtt.client
 
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.topic.Name
 
 interface SubscriptionCallback<T> {
-    val topic: String
-    val qos: QualityOfService
-    fun onMessageReceived(message: T)
+    fun onMessageReceived(topic: Name, qos: QualityOfService, message: T)
 }
