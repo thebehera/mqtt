@@ -20,10 +20,14 @@ class MosquittoServer extends DefaultTask {
         childThread = new Thread(new Runnable() {
             @Override
             void run() {
-                for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                    println("[$configurationFileName] $line")
+                try {
+                    for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                        println("[$configurationFileName] $line")
+                    }
+                } catch(Exception e) {
+                } finally {
+                    reader.close()
                 }
-                reader.close()
             }
         })
         childThread.start()
@@ -31,13 +35,13 @@ class MosquittoServer extends DefaultTask {
 
     void shutdown() {
         try {
-            if (process != null) {
+            if (process != null && process.alive) {
                 process.destroy()
                 process = null
             }
         } catch (Exception e) {
         } finally {
-            if (process != null) {
+            if (process != null && process.alive) {
                 process.destroyForcibly()
             }
         }
