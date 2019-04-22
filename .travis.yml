@@ -7,7 +7,6 @@ matrix:
     - os: linux
       before_install:
         - sudo apt-get install -y mosquitto
-        - sudo systemctl stop mosquitto
       addons:
         apt:
           update: true
