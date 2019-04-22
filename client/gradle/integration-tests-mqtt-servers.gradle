@@ -63,15 +63,16 @@ class MosquittoServer extends DefaultTask {
         process = pb.start()
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
         String moquittoVersionString = readMosquittoVersion(reader)
+        
         String readConfigFileName = readMosquittoConfigFile(reader)
         if (readConfigFileName != configurationFileName) {
             println("Warning: read mosquitto config file name ($readConfigFileName) does not match the passed in filename ($configurationFileName)")
         }
         ipv6port = readIpv6Port(reader)
         ipv4port = readIpv4Port(reader)
-//        println("Mosquitto (v$moquittoVersionString): ${pb.command()} Port: IPv6(${ipv6port}) IPv4(${ipv4port})"
-//                + "\r\nWorking directory: ${pb.directory()} "
-//        )
+        println("Mosquitto (v$moquittoVersionString): ${pb.command()} Port: IPv6(${ipv6port}) IPv4(${ipv4port})"
+                + "\r\nWorking directory: ${pb.directory()} "
+        )
         childThread = new Thread(new Runnable() {
             @Override
             void run() {
