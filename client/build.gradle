@@ -121,4 +121,7 @@ jvmTest {
     finalizedBy stopMosquittoTLS60001
     finalizedBy stopMosquitto60000Default
 }
-bintrayUpload.dependsOn jvmTest
+String osName = System.getProperty("os.name").toLowerCase()
+if (osName.contains("linux")) {
+    bintrayUpload.dependsOn jvmTest
+}
