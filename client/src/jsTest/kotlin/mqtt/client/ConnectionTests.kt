@@ -11,7 +11,7 @@
 //        val params = ConnectionParameters("m16.cloudmqtt.com", 22655, true, ConnectionRequest(header, payload), reconnectIfNetworkLost = false)
 ////    val header = ConnectionRequest.VariableHeader(keepAliveSeconds = 5.toUShort())
 ////    val payload = ConnectionRequest.Payload(clientId = MqttUtf8String("JavaSample"))
-////    val params = ConnectionParameters("localhost", 1883,false, ConnectionRequest(header, payload), reconnectIfNetworkLost = true)
+////    val params = ConnectionParameters("localhost", 60000,false, ConnectionRequest(header, payload), reconnectIfNetworkLost = true)
 //
 //        val connection = openConnection(params)
 //        runBlocking {

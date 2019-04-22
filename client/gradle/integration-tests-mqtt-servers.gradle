@@ -63,7 +63,7 @@ class MosquittoServer extends DefaultTask {
         process = pb.start()
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
         String moquittoVersionString = readMosquittoVersion(reader)
-        
+
         String readConfigFileName = readMosquittoConfigFile(reader)
         if (readConfigFileName != configurationFileName) {
             println("Warning: read mosquitto config file name ($readConfigFileName) does not match the passed in filename ($configurationFileName)")
@@ -110,12 +110,12 @@ task startMosquittoTLS60001(type: MosquittoServer) {
     configurationFileName = "mosquitto_tls_1.3_60001.conf"
 }
 
-task stopMosquitto1883Default() {
+task stopMosquitto60000Default() {
     doLast {
-        tasks.startMosquitto1883Default.shutdown()
+        tasks.startMosquitto60000Default.shutdown()
     }
 }
 
-task startMosquitto1883Default(type: MosquittoServer) {
-    configurationFileName = "mosquitto_default_1883.conf"
+task startMosquitto60000Default(type: MosquittoServer) {
+    configurationFileName = "mosquitto_default_60000.conf"
 }

@@ -7,14 +7,10 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.toByteArray
-import kotlinx.io.core.writeFully
 import mqtt.time.currentTimestampMs
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
-import kotlin.test.*
 
 class SocketConnectionTests {
 
@@ -29,7 +25,7 @@ class SocketConnectionTests {
     @Test
     fun connectDisconnect() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -48,7 +44,7 @@ class SocketConnectionTests {
     @Test
     fun reconnectOnce() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -67,7 +63,7 @@ class SocketConnectionTests {
     @Test
     fun socketCloseAutomatically() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -78,7 +74,7 @@ class SocketConnectionTests {
     @Test
     fun publishSingleMessageQos0() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -92,7 +88,7 @@ class SocketConnectionTests {
     @Test
     fun subscribeAndReceiveSuback() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5000.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false

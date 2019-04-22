@@ -117,8 +117,8 @@ apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
 jvmTest {
     dependsOn startMosquittoTLS60001
-    dependsOn startMosquitto1883Default
+    dependsOn startMosquitto60000Default
     finalizedBy stopMosquittoTLS60001
-    finalizedBy stopMosquitto1883Default
+    finalizedBy stopMosquitto60000Default
 }
 bintrayUpload.dependsOn jvmTest
