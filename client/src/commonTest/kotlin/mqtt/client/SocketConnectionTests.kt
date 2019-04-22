@@ -7,10 +7,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
+import kotlinx.io.core.buildPacket
+import kotlinx.io.core.toByteArray
+import kotlinx.io.core.writeFully
 import mqtt.time.currentTimestampMs
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
+import kotlin.test.*
 
 class SocketConnectionTests {
 
