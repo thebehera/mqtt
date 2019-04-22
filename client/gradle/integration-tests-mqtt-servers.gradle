@@ -41,14 +41,14 @@ class MosquittoServer extends DefaultTask {
 
     private static int readSocketPort(BufferedReader reader, int ipvType) {
         String mosquittoConfigPrefixLookup = "Opening ipv" + ipvType + " listen socket on port "
-//        println(mosquittoConfigPrefixLookup)
+        println(mosquittoConfigPrefixLookup)
         String socketAddressLine = reader.readLine()
         if (socketAddressLine.contains("Error: Address already in use")) {
             throw new RuntimeException("Mosquitto is already running on the port is already configured for")
         }
-//        println(socketAddressLine)
+        println(socketAddressLine)
         int startingMosquittoConfigFilenameIndex = socketAddressLine.indexOf(mosquittoConfigPrefixLookup)
-//        println(startingMosquittoConfigFilenameIndex)
+        println(startingMosquittoConfigFilenameIndex)
         int startingSpaceIndex = socketAddressLine.lastIndexOf('.')
         String result = socketAddressLine.substring(
                 startingMosquittoConfigFilenameIndex + mosquittoConfigPrefixLookup.size(), startingSpaceIndex)
@@ -63,8 +63,9 @@ class MosquittoServer extends DefaultTask {
         process = pb.start()
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
         String moquittoVersionString = readMosquittoVersion(reader)
-
+        println(moquittoVersionString)
         String readConfigFileName = readMosquittoConfigFile(reader)
+        println(readConfigFileName)
         if (readConfigFileName != configurationFileName) {
             println("Warning: read mosquitto config file name ($readConfigFileName) does not match the passed in filename ($configurationFileName)")
         }
