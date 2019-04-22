@@ -5,11 +5,12 @@ language: ruby
 matrix:
   include:
     - os: linux
-      before_install:
-        - sudo apt-get install -y mosquitto
+      dist: xenial
       addons:
         apt:
           update: true
+          packages:
+            - mosquitto
     - os: osx
       osx_image: xcode10.2
       addons:
