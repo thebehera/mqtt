@@ -153,9 +153,9 @@ abstract class SocketSession : CoroutineScope {
         clientToServer.close()
         serverToClient.close()
         currentSocket?.dispose()
-        currentSocket?.awaitClosed()
         state.lazySet(Closed(e))
         currentSocket = null
+        currentSocket?.awaitClosed()
     }
 
     private suspend fun readConnectionAck(platformSocket: PlatformSocket): ConnectionFailure? {

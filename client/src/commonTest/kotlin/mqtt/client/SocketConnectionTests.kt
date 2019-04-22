@@ -28,7 +28,7 @@ class SocketConnectionTests {
     }
     @Test
     fun connectDisconnect() {
-        val connectionRequest = ConnectionRequest(clientId = "yoloswag", keepAliveSeconds = 5.toUShort())
+        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
@@ -52,7 +52,7 @@ class SocketConnectionTests {
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
-            withTimeout(5000) {
+            withTimeout(1000) {
                 result.await()
                 connection.closeAsync().await()
                 val newParams = params.copy()
@@ -97,7 +97,7 @@ class SocketConnectionTests {
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
         block {
-            withTimeout(100000) {
+            withTimeout(1000) {
                 result.await()
                 val mutex = Mutex(true)
                 launch(Dispatchers.Unconfined) {
