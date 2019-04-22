@@ -15,6 +15,7 @@ class MosquittoServer extends DefaultTask {
     private static String readMosquittoVersion(BufferedReader reader) {
         String mqttVersionStringLookup = "mosquitto version "
         String mosquittoVersion = reader.readLine()
+        println(mosquittoVersion)
         int startingMqttVersionIndex = mosquittoVersion.indexOf(mqttVersionStringLookup)
         int startingSpaceIndex = mosquittoVersion.indexOf(" starting")
         return mosquittoVersion.substring(
@@ -24,6 +25,7 @@ class MosquittoServer extends DefaultTask {
     private static String readMosquittoConfigFile(BufferedReader reader) {
         String mosquittoConfigPrefixLookup = "Config loaded from "
         String mosquittoVersion = reader.readLine()
+        println(mosquittoVersion)
         int startingMosquittoConfigFilenameIndex = mosquittoVersion.indexOf(mosquittoConfigPrefixLookup)
         int startingSpaceIndex = mosquittoVersion.lastIndexOf('.')
         return mosquittoVersion.substring(
