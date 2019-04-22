@@ -6,11 +6,10 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      addons:
-        apt:
-          update: true
-          packages:
-            - mosquitto
+      before_install:
+        - sudo add-apt-repository ppa:mosquitto-dev/mosquitto-ppa -y
+        - sudo apt-get update -y
+        - sudo apt-get install mosquitto -y
     - os: osx
       osx_image: xcode10.2
       addons:
