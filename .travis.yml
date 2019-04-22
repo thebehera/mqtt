@@ -16,6 +16,7 @@ matrix:
         homebrew:
           packages:
             - mosquitto
+          update: true
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
@@ -31,5 +32,4 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - mosquitto -h
   - ./gradlew :client:check
