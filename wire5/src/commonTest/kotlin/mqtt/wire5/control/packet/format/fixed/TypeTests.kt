@@ -4,6 +4,7 @@ package mqtt.wire5.control.packet.format.fixed
 
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
 import mqtt.wire5.control.packet.format.ReasonCode
@@ -50,7 +51,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBSCRIBE() =
-            assertEquals(8, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(MqttUtf8String("yolo")))).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(8, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(Filter("yolo")))).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBACK() =
@@ -114,7 +115,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBSCRIBE() =
-            assertEquals(CLIENT_TO_SERVER, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(MqttUtf8String("yolo")))).direction, controlPacketSpectMatchError)
+            assertEquals(CLIENT_TO_SERVER, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(Filter("yolo")))).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBACK() =

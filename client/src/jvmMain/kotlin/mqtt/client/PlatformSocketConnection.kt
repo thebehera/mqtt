@@ -5,6 +5,8 @@ import io.ktor.network.sockets.aSocket
 import io.ktor.network.tls.tls
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import java.security.cert.X509Certificate
+import javax.net.ssl.X509TrustManager
 
 actual class PlatformSocketConnection actual constructor(override val parameters: ConnectionParameters)
     : SocketSession() {
@@ -15,7 +17,17 @@ actual class PlatformSocketConnection actual constructor(override val parameters
         val socketBuilder = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
         val tmpSocketRef = socketBuilder.connect(parameters.hostname, parameters.port)
         val socket = if (parameters.secure) {
-            tmpSocketRef.tls(coroutineContext)
+            tmpSocketRef.tls(coroutineContext) {
+                if (parameters.acceptAllCertificates) {
+                    trustManager = object : X509TrustManager {
+                        override fun checkClientTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
+                        override fun checkServerTrusted(p0: Array<out X509Certificate>?, p1: String?) {}
+                        override fun getAcceptedIssuers(): Array<X509Certificate> {
+                            return emptyArray()
+                        }
+                    }
+                }
+            }
         } else {
             tmpSocketRef
         }

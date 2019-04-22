@@ -1,0 +1,120 @@
+class MosquittoServer extends DefaultTask {
+    Process process
+    Thread childThread
+    File configurationDirectory
+    String configurationFileName
+    String mosquittoVersion
+    int ipv6port
+    int ipv4port
+
+    MosquittoServer() {
+        configurationDirectory = new File(project.projectDir, "/gradle/configurations/")
+    }
+
+
+    private static String readMosquittoVersion(BufferedReader reader) {
+        String mqttVersionStringLookup = "mosquitto version "
+        String mosquittoVersion = reader.readLine()
+        int startingMqttVersionIndex = mosquittoVersion.indexOf(mqttVersionStringLookup)
+        int startingSpaceIndex = mosquittoVersion.indexOf(" starting")
+        return mosquittoVersion.substring(
+                startingMqttVersionIndex + mqttVersionStringLookup.size(), startingSpaceIndex)
+    }
+
+    private static String readMosquittoConfigFile(BufferedReader reader) {
+        String mosquittoConfigPrefixLookup = "Config loaded from "
+        String mosquittoVersion = reader.readLine()
+        int startingMosquittoConfigFilenameIndex = mosquittoVersion.indexOf(mosquittoConfigPrefixLookup)
+        int startingSpaceIndex = mosquittoVersion.lastIndexOf('.')
+        return mosquittoVersion.substring(
+                startingMosquittoConfigFilenameIndex + mosquittoConfigPrefixLookup.size(), startingSpaceIndex)
+    }
+
+    private static int readIpv6Port(BufferedReader reader) {
+        return readSocketPort(reader, 6)
+    }
+
+
+    private static int readIpv4Port(BufferedReader reader) {
+        return readSocketPort(reader, 4)
+    }
+
+    private static int readSocketPort(BufferedReader reader, int ipvType) {
+        String mosquittoConfigPrefixLookup = "Opening ipv" + ipvType + " listen socket on port "
+//        println(mosquittoConfigPrefixLookup)
+        String socketAddressLine = reader.readLine()
+        if (socketAddressLine.contains("Error: Address already in use")) {
+            throw new RuntimeException("Mosquitto is already running on the port is already configured for")
+        }
+//        println(socketAddressLine)
+        int startingMosquittoConfigFilenameIndex = socketAddressLine.indexOf(mosquittoConfigPrefixLookup)
+//        println(startingMosquittoConfigFilenameIndex)
+        int startingSpaceIndex = socketAddressLine.lastIndexOf('.')
+        String result = socketAddressLine.substring(
+                startingMosquittoConfigFilenameIndex + mosquittoConfigPrefixLookup.size(), startingSpaceIndex)
+        return Integer.parseInt(result)
+    }
+
+    @TaskAction void startServer() {
+        ProcessBuilder pb = new ProcessBuilder()
+                .directory(configurationDirectory)
+                .command "mosquitto", "-c", configurationFileName
+        pb.redirectErrorStream(true)
+        process = pb.start()
+        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
+        String moquittoVersionString = readMosquittoVersion(reader)
+        String readConfigFileName = readMosquittoConfigFile(reader)
+        if (readConfigFileName != configurationFileName) {
+            println("Warning: read mosquitto config file name ($readConfigFileName) does not match the passed in filename ($configurationFileName)")
+        }
+        ipv6port = readIpv6Port(reader)
+        ipv4port = readIpv4Port(reader)
+//        println("Mosquitto (v$moquittoVersionString): ${pb.command()} Port: IPv6(${ipv6port}) IPv4(${ipv4port})"
+//                + "\r\nWorking directory: ${pb.directory()} "
+//        )
+        childThread = new Thread(new Runnable() {
+            @Override
+            void run() {
+                for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+                    println("[$configurationFileName] $line")
+                }
+                reader.close()
+            }
+        })
+        childThread.start()
+    }
+
+    void shutdown() {
+        try {
+            if (process != null) {
+                process.destroy()
+                process = null
+            }
+        } catch (Exception e) {
+        } finally {
+            if (process != null) {
+                process.destroyForcibly()
+            }
+        }
+    }
+}
+
+task stopMosquittoTLS60001() {
+    doLast {
+        tasks.startMosquittoTLS60001.shutdown()
+    }
+}
+
+task startMosquittoTLS60001(type: MosquittoServer) {
+    configurationFileName = "mosquitto_tls_1.3_60001.conf"
+}
+
+task stopMosquitto1883Default() {
+    doLast {
+        tasks.startMosquitto1883Default.shutdown()
+    }
+}
+
+task startMosquitto1883Default(type: MosquittoServer) {
+    configurationFileName = "mosquitto_default_1883.conf"
+}

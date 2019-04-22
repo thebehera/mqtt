@@ -8,7 +8,9 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
+import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
+import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -28,10 +30,27 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
 data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Collection<Subscription>)
     : ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
+    constructor(packetIdentifier: UShort, topic: String, qos: QualityOfService, props: Properties = Properties(),
+                noLocal: Boolean = false, retainAsPublished: Boolean = false,
+                retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE)
+            : this(VariableHeader(packetIdentifier, props),
+            listOf(Subscription.from(topic, qos, noLocal, retainAsPublished, retainHandling)))
+
+    constructor(packetIdentifier: UShort, topic: List<String>, qos: List<QualityOfService>,
+                props: Properties = Properties(), noLocalList: List<Boolean>? = null,
+                retainAsPublishedList: List<Boolean>? = null,
+                retainHandlingList: List<RetainHandling>? = null)
+            : this(VariableHeader(packetIdentifier, props),
+            Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList))
+
     override val variableHeaderPacket = variable.packet()
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket {
+    private val payload by lazy {
+        buildPacket {
         subscriptions.forEach { writePacket(it.packet) }
+        }
     }
+
+    override fun payloadPacket(sendDefaults: Boolean) = payload
 
     /**
      * 3.8.2 SUBSCRIBE Variable Header
@@ -138,7 +157,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
                     VariableHeader(packetIdentifier)
                 } else {
                     val propsData = buffer.readProperties()
-                    val props = VariableHeader.Properties.from(propsData)
+                    val props = Properties.from(propsData)
                     VariableHeader(packetIdentifier, props)
                 }
             }
@@ -154,7 +173,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
     }
 }
 
-data class Subscription(val topicFilter: MqttUtf8String,
+data class Subscription(val topicFilter: Filter,
                         /**
                          * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
                          * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
@@ -191,7 +210,7 @@ data class Subscription(val topicFilter: MqttUtf8String,
                          *
                          * It is a Protocol Error to send a Retain Handling value of 3.
                          */
-                        val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_SUBSCRIBE_ONLY_IF_SUBSCRIBE_DOESNT_EXISTS) {
+                        val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) {
     val packet by lazy {
         val qosInt = maximumQos.integerValue
         val nlShifted = (if (noLocal) 1 else 0).shl(2)
@@ -199,9 +218,8 @@ data class Subscription(val topicFilter: MqttUtf8String,
         val rH = retainHandling.value.toInt().shl(4)
         val combinedByte = (qosInt + nlShifted + rapShifted + rH).toByte()
         buildPacket {
-            writeMqttUtf8String(topicFilter)
+            writeMqttFilter(topicFilter)
             writeByte(combinedByte)
-            writeByte(qosInt)
         }
     }
 
@@ -241,7 +259,41 @@ data class Subscription(val topicFilter: MqttUtf8String,
             val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
             val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
             val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
-            return Subscription(topicFilter, qos, nlBit2, rapBit3, retainHandling)
+            return Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling)
+        }
+
+        fun from(topic: String,
+                 qos: QualityOfService,
+                 noLocal: Boolean = false,
+                 retainAsPublished: Boolean = false,
+                 retainHandlingList: RetainHandling =
+                         SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) =
+                from(listOf(topic), listOf(qos), listOf(noLocal), listOf(retainAsPublished), listOf(retainHandlingList)).first()
+
+        fun from(topics: List<String>, qos: List<QualityOfService>,
+                 noLocalList: List<Boolean>? = null,
+                 retainAsPublishedList: List<Boolean>? = null,
+                 retainHandlingList: List<RetainHandling>? = null): List<Subscription> {
+            if (topics.size != qos.size) {
+                throw IllegalArgumentException("Non matching topics collection size with the QoS collection size")
+            }
+            if (noLocalList != null && noLocalList.size != topics.size) {
+                throw IllegalArgumentException("Non matching topics collection size with the noLocalList collection size")
+            }
+            if (retainAsPublishedList != null && retainAsPublishedList.size != topics.size) {
+                throw IllegalArgumentException("Non matching topics collection size with the retainAsPublishedList collection size")
+            }
+            if (retainHandlingList != null && retainHandlingList.size != retainHandlingList.size) {
+                throw IllegalArgumentException("Non matching topics collection size with the retainHandlingList collection size")
+            }
+            val subscriptions = mutableListOf<Subscription>()
+            topics.forEachIndexed { index, topic ->
+                val noLocal = noLocalList?.get(index) ?: false
+                val retainAsPublished = retainAsPublishedList?.get(index) ?: false
+                val retainHandling = retainHandlingList?.get(index) ?: SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+                subscriptions += Subscription(Filter(topic), qos[index], noLocal, retainAsPublished, retainHandling)
+            }
+            return subscriptions
         }
     }
 }

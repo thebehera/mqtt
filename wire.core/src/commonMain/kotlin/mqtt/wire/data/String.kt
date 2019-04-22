@@ -82,9 +82,7 @@ fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String) {
 
 fun BytePacketBuilder.writeMqttFilter(string: Filter) {
     val validatedString = string.validate()!!.getAllBottomLevelChildren().first().toString()
-    val len = validatedString.length.toUShort()
-    writeUShort(len)
-    writeStringUtf8(validatedString)
+    writeMqttUtf8String(MqttUtf8String(validatedString))
 }
 
 fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {

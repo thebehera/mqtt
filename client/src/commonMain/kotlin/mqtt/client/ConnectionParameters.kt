@@ -1,7 +1,5 @@
 package mqtt.client
 
-import kotlinx.coroutines.channels.Channel
-import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 
 data class ConnectionParameters(
@@ -9,6 +7,7 @@ data class ConnectionParameters(
         val port: Int,
         val secure: Boolean,
         val connectionRequest: IConnectionRequest,
+        val acceptAllCertificates: Boolean = false,
         val reconnectIfNetworkLost: Boolean = true,
         val connectionTimeoutMilliseconds: Long = 10_000,
         // Ignored if reconnectIfNetworkLost is false

@@ -3,7 +3,6 @@
 package mqtt.client
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,7 +19,12 @@ import kotlin.test.*
 class SocketConnectionTests {
 
     fun getClientId(): String {
-        return "MqttClientTests${currentTimestampMs()}"
+        val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        val randomString = (1..10)
+                .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
+                .map(charPool::get)
+                .joinToString("")
+        return "MqttClientTests${currentTimestampMs()}_$randomString"
     }
     @Test
     fun connectDisconnect() {
@@ -29,7 +33,7 @@ class SocketConnectionTests {
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
-            withTimeout(5000) {
+            withTimeout(1000) {
                 val connectionResult = result.await().value
                 assertEquals(Open, connectionResult)
                 assertNotNull(connection.connack)
@@ -87,29 +91,30 @@ class SocketConnectionTests {
 
     @Test
     fun subscribeAndReceiveSuback() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
+        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5000.toUShort())
         val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
         block {
-            result.await()
-            val mutex = Mutex(true)
-            launch(Dispatchers.Unconfined) {
-                try {
-                    val controlPacket = connection.serverToClient.receive()
-                    assertTrue(controlPacket is SubscribeAcknowledgement)
-                    recvMessage = true
-                    mutex.unlock()
-                } catch (e: Exception) {
-                    fail(e.message)
+            withTimeout(100000) {
+                result.await()
+                val mutex = Mutex(true)
+                launch(Dispatchers.Unconfined) {
+                    try {
+                        val controlPacket = connection.serverToClient.receive()
+                        assertTrue(controlPacket is SubscribeAcknowledgement)
+                        recvMessage = true
+                        mutex.unlock()
+                    } catch (e: Exception) {
+                        fail(e.message)
+                    }
                 }
+                val subscribeRequest = SubscribeRequest(19.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
+                connection.clientToServer.send(subscribeRequest)
+                mutex.withLock {} // lock until we get a message
+                assertTrue(recvMessage)
             }
-            delay(1000)
-            val subscribeRequest = SubscribeRequest(1.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
-            connection.clientToServer.send(subscribeRequest)
-            mutex.withLock {} // lock until we get a message
-            assertTrue(recvMessage)
         }
     }
 }

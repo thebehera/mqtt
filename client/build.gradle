@@ -13,6 +13,8 @@ apply plugin: 'maven-publish'
 apply plugin: 'signing'
 
 apply from: "../gradle/experimental.gradle"
+apply from: "./gradle/integration-tests-mqtt-servers.gradle"
+
 kotlin {
     jvm()
 //     js() {
@@ -91,7 +93,6 @@ kotlin {
             }
         }
     }
-
     targets.all {
         compilations.all {
             kotlinOptions {
@@ -114,3 +115,10 @@ publishing.publications {
 
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
+
+jvmTest {
+    dependsOn startMosquittoTLS60001
+    dependsOn startMosquitto1883Default
+    finalizedBy stopMosquittoTLS60001
+    finalizedBy stopMosquitto1883Default
+}

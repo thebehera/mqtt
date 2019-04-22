@@ -6,6 +6,7 @@ import kotlinx.io.core.readBytes
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.*
+import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
@@ -183,7 +184,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBSCRIBE() =
-            assertEquals(0b10, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(MqttUtf8String("yolo")))).flags, controlPacketSpectMatchError)
+            assertEquals(0b10, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(Filter("yolo")))).flags, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =

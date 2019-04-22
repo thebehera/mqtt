@@ -1,16 +1,25 @@
 language: ruby
-branches:
-  only:
-    - master
+#branches:
+#  only:
+#    - master
 matrix:
   include:
     - os: linux
+      before_install:
+        - sudo apt-get install -y mosquitto
+      addons:
+        apt:
+          update: true
     - os: osx
-      osx_image: xcode10.1
+      osx_image: xcode10.2
+      addons:
+        homebrew:
+          packages:
+            - mosquitto
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
-#        - choco install openjdk
+#        - choco install openjdk #add mosquitto
 #        - export PATH=$PATH:"/C/Program Files/OpenJDK/jdk-11.0.2/bin"
 #        - export GRADLE_OPTS=-Dorg.gradle.daemon=false
 before_cache:

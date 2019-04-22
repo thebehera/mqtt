@@ -33,8 +33,9 @@ data class SubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacket
     constructor(topics: List<String>, qos: List<QualityOfService>)
             : this(subscriptions = Subscription.from(topics, qos))
 
-    override val variableHeaderPacket = buildPacket { writeUShort(packetIdentifier) }
-    override fun payloadPacket(sendDefaults: Boolean) = Subscription.writeMany(subscriptions)
+    private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
+    override val variableHeaderPacket = buildPacket { writeUShort(payloadSubs.remaining.toUShort()) }
+    override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
 
     companion object {
         fun from(buffer: ByteReadPacket): SubscribeRequest {
