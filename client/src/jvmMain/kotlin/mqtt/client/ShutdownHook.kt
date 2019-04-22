@@ -23,7 +23,7 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
             jobs.forEach { it.join() }
         }
         println("Successfully shut down connections")
-        if (!connections.isEmpty()) {
+        if (connections.isNotEmpty()) {
             run()
         }
     }

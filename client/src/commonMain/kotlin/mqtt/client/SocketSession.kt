@@ -4,6 +4,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.io.ClosedWriteChannelException
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ControlPacket
@@ -82,26 +83,15 @@ abstract class SocketSession : CoroutineScope {
 
     open fun beforeClosingSocket() {}
 
-    private suspend fun closeSocket(e: Exception? = null): Boolean {
-        if (state.value == Initializing || state.value == Connecting || state.value == Open) {
-            state.lazySet(Closing)
-            clientToServer.send(DisconnectNotification)
-            beforeClosingSocket()
-            clientToServer.close(e)
-            serverToClient.close(e)
-            currentSocket?.dispose()
-            currentSocket = null
-            if (!state.compareAndSet(Closing, Closed(e))) {
-                throw IllegalStateException("Invalid closing state")
-            }
-            println("socket closed")
-            return true
-        }
-        return false
-    }
 
     fun closeAsync() = async {
-        closeSocket()
+        if (state.value == Initializing || state.value == Connecting || state.value == Open) {
+            clientToServer.send(DisconnectNotification)
+            while (isActive && state.value !is Closed) {
+            }
+            return@async true
+        }
+        return@async false
     }
 
     private fun writeConnectionRequestAsync(platformSocket: PlatformSocket) = async {
@@ -140,14 +130,32 @@ abstract class SocketSession : CoroutineScope {
                     val sendTime = writeComplete - start
                     println("OUT [$size][$sendTime]: $messageToSend")
                     if (messageToSend is DisconnectNotification) {
-                        platformSocket.dispose()
+                        hardClose()
                         return@launch
                     }
                 }
             }
+        } catch (e: ClosedWriteChannelException) {
+            hardClose(e)
         } finally {
-            clientToServer.close()
+            if (state.value !is Closed) {
+                hardClose()
+            }
         }
+    }
+
+    suspend fun hardClose(e: Exception? = null) {
+        if (state.value is Closed) {
+            return
+        }
+        state.lazySet(Closing)
+        beforeClosingSocket()
+        clientToServer.close()
+        serverToClient.close()
+        currentSocket?.dispose()
+        currentSocket?.awaitClosed()
+        state.lazySet(Closed(e))
+        currentSocket = null
     }
 
     private suspend fun readConnectionAck(platformSocket: PlatformSocket): ConnectionFailure? {
@@ -190,9 +198,12 @@ abstract class SocketSession : CoroutineScope {
                 }
             }
         } catch (e: ClosedReceiveChannelException) {
-            closeSocket(e)
+            hardClose(e)
+            state.lazySet(Closed(e))
         } finally {
-            closeSocket()
+            if (state.value !is Closed) {
+                hardClose()
+            }
         }
     }
 
