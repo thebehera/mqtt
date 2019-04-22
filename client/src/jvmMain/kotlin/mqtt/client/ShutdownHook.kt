@@ -7,29 +7,35 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
     private val connections = HashSet<PlatformSocketConnection>()
 
     fun addConnection(socketConnection: PlatformSocketConnection) {
-        if (connections.size == 0) {
-            Runtime.getRuntime().addShutdownHook(this)
+        synchronized(this) {
+            if (connections.size == 0) {
+                Runtime.getRuntime().addShutdownHook(this)
+            }
+            connections += socketConnection
         }
-        connections += socketConnection
     }
 
     override fun run() {
-        println("Shut down received, closing ${connections.size} connections")
-        val jobs = mutableListOf<Job>()
-        connections.forEach { jobs += it.closeAsync() }
-        runBlocking {
-            jobs.forEach { it.join() }
+        synchronized(this) {
+            println("Shut down received, closing ${connections.size} connections")
+            val jobs = mutableListOf<Job>()
+            connections.forEach { jobs += it.closeAsync() }
+            runBlocking {
+                jobs.forEach { it.join() }
+            }
+            println("Successfully shut down connections")
         }
-        println("Successfully shut down connections")
     }
 
     fun removeConnections(socketConnection: PlatformSocketConnection) {
-        connections -= socketConnection
-        if (connections.size == 0) {
-            try {
-                Runtime.getRuntime().removeShutdownHook(this)
-            } catch (e: IllegalStateException) {
-                // ignore because we are shutting down
+        synchronized(this) {
+            connections -= socketConnection
+            if (connections.size == 0) {
+                try {
+                    Runtime.getRuntime().removeShutdownHook(this)
+                } catch (e: IllegalStateException) {
+                    // ignore because we are shutting down
+                }
             }
         }
     }
