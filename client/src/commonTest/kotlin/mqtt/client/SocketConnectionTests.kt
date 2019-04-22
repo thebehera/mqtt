@@ -33,11 +33,16 @@ class SocketConnectionTests {
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
-            withTimeout(1000) {
+            withTimeout(5000) {
+                println("connect start")
                 val connectionResult = result.await().value
                 assertEquals(Open, connectionResult)
                 assertNotNull(connection.connack)
+
+                println("connect close")
                 val connectionState = connection.closeAsync().await()
+
+                println("connect close done")
                 assertTrue(connectionState)
                 val state = connection.state.value
                 assertTrue(state is Closed, "$state is not closed")

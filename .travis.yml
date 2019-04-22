@@ -12,11 +12,9 @@ matrix:
         - sudo apt-get install mosquitto -y
     - os: osx
       osx_image: xcode10.2
-      addons:
-        homebrew:
-          packages:
-            - mosquitto
-          update: true
+      before_install:
+        - brew update && brew upgrade travis
+        - brew install mosquitto
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
