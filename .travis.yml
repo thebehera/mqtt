@@ -32,4 +32,5 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
+  - mosquitto -h
   - ./gradlew :client:check

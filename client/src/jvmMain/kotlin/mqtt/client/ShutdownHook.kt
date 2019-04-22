@@ -7,35 +7,34 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
     private val connections = HashSet<PlatformSocketConnection>()
 
     fun addConnection(socketConnection: PlatformSocketConnection) {
-        synchronized(this) {
-            if (connections.size == 0) {
-                Runtime.getRuntime().addShutdownHook(this)
-            }
-            connections += socketConnection
+        if (connections.size == 0) {
+            Runtime.getRuntime().addShutdownHook(this)
         }
+        connections += socketConnection
     }
 
     override fun run() {
-        synchronized(this) {
-            println("Shut down received, closing ${connections.size} connections")
-            val jobs = mutableListOf<Job>()
-            connections.forEach { jobs += it.closeAsync() }
-            runBlocking {
-                jobs.forEach { it.join() }
-            }
-            println("Successfully shut down connections")
+        println("Shut down received, closing ${connections.size} connections")
+        val localConnections = HashSet(connections)
+        connections.clear()
+        val jobs = mutableListOf<Job>()
+        localConnections.forEach { jobs += it.closeAsync() }
+        runBlocking {
+            jobs.forEach { it.join() }
+        }
+        println("Successfully shut down connections")
+        if (!connections.isEmpty()) {
+            run()
         }
     }
 
     fun removeConnections(socketConnection: PlatformSocketConnection) {
-        synchronized(this) {
-            connections -= socketConnection
-            if (connections.size == 0) {
-                try {
-                    Runtime.getRuntime().removeShutdownHook(this)
-                } catch (e: IllegalStateException) {
-                    // ignore because we are shutting down
-                }
+        connections -= socketConnection
+        if (connections.size == 0) {
+            try {
+                Runtime.getRuntime().removeShutdownHook(this)
+            } catch (e: IllegalStateException) {
+                // ignore because we are shutting down
             }
         }
     }
