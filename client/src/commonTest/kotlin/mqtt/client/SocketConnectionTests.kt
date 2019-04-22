@@ -29,7 +29,7 @@ class SocketConnectionTests {
     @Test
     fun connectDisconnect() {
         val connectionRequest = ConnectionRequest(clientId = "yoloswag", keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -48,7 +48,7 @@ class SocketConnectionTests {
     @Test
     fun reconnectOnce() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort(), cleanSession = true)
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -67,7 +67,7 @@ class SocketConnectionTests {
     @Test
     fun socketCloseAutomatically() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -78,7 +78,7 @@ class SocketConnectionTests {
     @Test
     fun publishSingleMessageQos0() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         block {
@@ -92,7 +92,7 @@ class SocketConnectionTests {
     @Test
     fun subscribeAndReceiveSuback() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5000.toUShort())
-        val params = ConnectionParameters("localhost", 1883, false, connectionRequest)
+        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
