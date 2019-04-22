@@ -5,7 +5,7 @@ class MosquittoServer extends DefaultTask {
     String configurationFileName
     
     MosquittoServer() {
-        configurationDirectory = new File(project.projectDir, "/gradle/configurations/")
+        configurationDirectory = new File(project.projectDir, "/gradle/configurations")
     }
 
 
@@ -52,6 +52,11 @@ task stopMosquittoTLS60001() {
 
 task startMosquittoTLS60001(type: MosquittoServer) {
     configurationFileName = "mosquitto_tls_1.3_60001.conf"
+    doFirst{
+        println(configurationDirectory.absolutePath)
+        println(configurationFileName)
+
+    }
 }
 
 task stopMosquitto60000Default() {

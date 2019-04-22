@@ -32,4 +32,4 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - ./gradlew check
+  - ./gradlew :client:check
