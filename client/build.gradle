@@ -122,3 +122,4 @@ jvmTest {
     finalizedBy stopMosquittoTLS60001
     finalizedBy stopMosquitto1883Default
 }
+bintrayUpload.dependsOn jvmTest
