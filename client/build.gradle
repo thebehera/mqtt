@@ -112,7 +112,6 @@ publishing.publications {
     }
 }
 
-
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
