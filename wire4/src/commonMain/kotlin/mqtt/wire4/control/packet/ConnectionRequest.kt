@@ -35,6 +35,7 @@ data class ConnectionRequest(
         val payload: Payload = Payload())
     : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
 
+    override val clientIdentifier: String = payload.clientId.getValueOrThrow()
     constructor(
             clientId: String,
             username: String? = null,

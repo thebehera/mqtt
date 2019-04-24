@@ -8,15 +8,14 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
     private val connections = HashSet<PlatformSocketConnection>()
     val isShuttingDown = AtomicBoolean(false)
 
+    init {
+        Runtime.getRuntime().addShutdownHook(this)
+    }
     fun addConnection(socketConnection: PlatformSocketConnection) {
-        if (connections.size == 0) {
-            Runtime.getRuntime().addShutdownHook(this)
-        }
         connections += socketConnection
     }
 
     override fun run() {
-        isShuttingDown.set(true)
         println("Shut down received, closing ${connections.size} connections")
         val localConnections = HashSet(connections)
         connections.clear()
@@ -28,22 +27,13 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
             jobs.forEach { it.await() }
         }
         println("Successfully shut down ${jobs.size} connections")
-        if (connections.isNotEmpty()) {
+        if (jobs.isNotEmpty()) {
             run()
         }
-        isShuttingDown.set(false)
     }
 
     fun removeConnections(socketConnection: PlatformSocketConnection) {
         connections -= socketConnection
-        if (connections.size == 0 && !isShuttingDown.get()) {
-            try {
-                Runtime.getRuntime().removeShutdownHook(this)
-            } catch (e: IllegalStateException) {
-                println("illegal state")
-                // ignore because we are shutting down
-            }
-        }
     }
 
     companion object {

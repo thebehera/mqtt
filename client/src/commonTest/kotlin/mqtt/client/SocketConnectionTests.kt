@@ -3,6 +3,7 @@
 package mqtt.client
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -11,6 +12,7 @@ import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
 import mqtt.time.currentTimestampMs
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
@@ -82,7 +84,7 @@ class SocketConnectionTests {
 
     @Test
     fun publishSingleMessageQos0() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
+        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 50.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params)
         val result = connection.openConnectionAsync(true)
@@ -91,6 +93,101 @@ class SocketConnectionTests {
             val publishMessage = PublishMessage("yolo", buildPacket { writeFully("asdf".toByteArray()) })
             connection.clientToServer.send(publishMessage)
             assertEquals(connection.state.value, Open)
+        }
+    }
+
+    @Test
+    fun testQos1() {
+        val clientId1 = "Client1"
+        val client1Params = buildParams(clientId1)
+        val client1SocketConnection1 = PlatformSocketConnection(client1Params)
+        val client2Params = buildParams("Client2")
+        val client2SocketConnection = PlatformSocketConnection(client2Params)
+
+
+        val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
+        val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) }, retain = true)
+        block {
+            withTimeout(50000) {
+                client1SocketConnection1.openConnectionAsync().await()
+                client2SocketConnection.openConnectionAsync().await()
+
+                println("CLIENT 1 SENDING SUBSCRIBE")
+                client1SocketConnection1.clientToServer.send(subscribe)
+                delay(5000)
+                println("CLIENT 2 SENDING PUBLISH")
+                client2SocketConnection.clientToServer.send(publish)
+//                client1SocketConnection1.cancel()
+//                delay(5000)
+//                val client1SocketConnection2 = PlatformSocketConnection(client2Params.copy())
+//                println("CLIENT 1 S2 CONNECT")
+//                client1SocketConnection2.openConnectionAsync().await()
+////                client1SocketConnection2.clientToServer.send(subscribe.copy())
+//                delay(20000)
+//                mutex.withLock {} // lock until we get a message
+            }
+        }
+    }
+
+    fun buildParams(clientId: String = getClientId()): ConnectionParameters {
+        val connectionRequest = ConnectionRequest(clientId = clientId, keepAliveSeconds = 5000.toUShort())
+        return ConnectionParameters("localhost", 60000, false, connectionRequest)
+    }
+
+    suspend fun buildConnection(clientId: String = getClientId()): PlatformSocketConnection {
+        val params = buildParams(clientId)
+        val connection = PlatformSocketConnection(params)
+        connection.openConnectionAsync().await()
+        return connection
+    }
+
+    @Test
+    fun publishQos1() {
+        var recvMessage = false
+        block {
+            withTimeout(50000) {
+                val publishClient = buildConnection("pubClient")
+                val recvClientSession1 = buildConnection("client1")
+                println("connected clients")
+                val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
+                recvClientSession1.clientToServer.send(subscribe)
+                println("sent subscribe")
+                recvClientSession1.closeAsync().await()
+
+                val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) })
+                publishClient.clientToServer.send(publish)
+                println("create new client")
+                val mutex = Mutex(true)
+                val recvClientSession2Params = buildParams("client1")
+                val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params)
+                launch(Dispatchers.Unconfined) {
+                    try {
+                        println("listing22 ${recvClientSession2Connection.serverToClient} ${recvClientSession2Connection.parameters.connectionRequest.clientIdentifier}")
+                        for (msg in recvClientSession2Connection.serverToClient) {
+                            println("listend22: $msg")
+                            if (msg is PublishMessage) {
+                                break
+                            } else {
+                                fail("received wrong message: $msg")
+                            }
+                        }
+                        recvMessage = true
+                        mutex.unlock()
+                    } catch (e: Exception) {
+                        fail(e.message)
+                    } finally {
+                        println("done 22")
+                    }
+                }
+                val job = recvClientSession2Connection.openConnectionAsync()
+                job.await()
+                println("wait")
+                mutex.withLock {} // lock until we get a message
+                println("unlocked")
+                assertTrue(recvMessage)
+                println("closing")
+                recvClientSession2Connection.closeAsync().await()
+            }
         }
     }
 

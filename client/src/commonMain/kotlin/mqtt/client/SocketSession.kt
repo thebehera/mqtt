@@ -63,12 +63,9 @@ abstract class SocketSession : CoroutineScope {
             if (readConnackException != null) {
                 return@async state
             }
-            state.lazySet(Open)
+            println("open")
             return@async state
         } else {
-            if (!state.compareAndSet(Connecting, Open)) {
-                throw ConcurrentModificationException("Invalid state when failing to connect launched")
-            }
             launch {
                 val readException = readConnectionAck(platformSocketConnected)
                 if (readException != null) {
@@ -116,9 +113,7 @@ abstract class SocketSession : CoroutineScope {
     }
 
     private fun openWriteChannel(platformSocket: PlatformSocket) = launch {
-        val clientToServer = Channel<ControlPacket>()
         try {
-            this@SocketSession.clientToServer = clientToServer
             for (messageToSend in clientToServer) {
                 if (isOpenAndActive() || messageToSend is DisconnectNotification) {
                     val sendMessage = messageToSend.serialize()
@@ -167,7 +162,7 @@ abstract class SocketSession : CoroutineScope {
                 connack = controlPacket
                 println("IN: $controlPacket")
                 if (!state.compareAndSet(Connecting, Open)) {
-                    throw IllegalStateException("Invalid state when reading connection ack - open")
+                    throw IllegalStateException("Invalid state when reading connection ack - open (is ${state.value})")
                 }
                 openWriteChannel(platformSocket)
                 readControlPackets(platformSocket)
@@ -177,24 +172,19 @@ abstract class SocketSession : CoroutineScope {
             throw ProtocolError("Invalid message received from server, expected a connection acknowledgement " +
                     "instead got: $controlPacket")
         } catch (e: Exception) {
-            val failureState = ConnectionFailure(e)
-            if (!state.compareAndSet(Connecting, failureState)) {
-                throw ConcurrentModificationException("Invalid state reading connection ack - failure")
-            }
-            return failureState
+            return ConnectionFailure(e)
         }
     }
 
     private fun readControlPackets(platformSocket: PlatformSocket) = launch {
-        val serverToClient = Channel<ControlPacket>()
-        this@SocketSession.serverToClient = serverToClient
         try {
             val input = platformSocket.input
             while (isOpenAndActive()) {
-                val byte = input.read()
+                val controlPacket = input.read()
+                println("INNNN $serverToClient: $controlPacket")
                 setLastMessageReceived(currentTimestampMs())
-                if (!serverToClient.offer(byte)) {
-                    println("NO PICKUP IN: $byte")
+                if (!serverToClient.offer(controlPacket)) {
+                    println("NO PICKUP IN: $controlPacket")
                 }
             }
         } catch (e: ClosedReceiveChannelException) {

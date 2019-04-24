@@ -4,5 +4,6 @@ package mqtt.wire.control.packet
 
 interface IConnectionRequest : ControlPacket {
     val keepAliveTimeoutSeconds: UShort
+    val clientIdentifier: String
     fun copy(): IConnectionRequest
 }

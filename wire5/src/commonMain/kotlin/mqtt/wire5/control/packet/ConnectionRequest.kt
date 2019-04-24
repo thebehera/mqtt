@@ -46,6 +46,7 @@ data class ConnectionRequest(
         val variableHeader: VariableHeader = VariableHeader(),
         val payload: Payload = Payload())
     : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    override val clientIdentifier: String = payload.clientId.getValueOrThrow()
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
