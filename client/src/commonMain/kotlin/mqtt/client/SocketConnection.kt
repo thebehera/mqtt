@@ -13,24 +13,21 @@ import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
 
-abstract class SocketSession : CoroutineScope {
-    private val job: Job = Job()
-    abstract val dispatcher: CoroutineDispatcher
-    override val coroutineContext: CoroutineContext get() = job + dispatcher
+abstract class SocketConnection(override val coroutineContext: CoroutineContext) : CoroutineScope {
     abstract val parameters: ConnectionParameters
     val state = atomic<ConnectionState>(Initializing)
 
-    var currentSocket: PlatformSocket? = null
+    var currentSocket: Transport? = null
 
     var connack: IConnectionAcknowledgment? = null
 
-    var clientToServer: Channel<ControlPacket> = Channel()
-    var serverToClient: Channel<ControlPacket> = Channel()
+    val clientToServer: Channel<ControlPacket> = Channel()
+    val serverToClient: Channel<ControlPacket> = Channel()
 
     private val lastMessageBetweenClientAndServer = atomic(0L)
     fun setLastMessageReceived(time: Long) = lastMessageBetweenClientAndServer.lazySet(time)
 
-    abstract suspend fun buildSocket(): PlatformSocket
+    abstract suspend fun buildSocket(): Transport
 
     /**
      * Open the connection.
@@ -43,7 +40,11 @@ abstract class SocketSession : CoroutineScope {
             return@async state
         }
         val platformSocketConnected = withTimeoutOrNull(parameters.connectionTimeoutMilliseconds) {
-            buildSocket()
+            try {
+                buildSocket()
+            } catch (e: Exception) {
+                return@withTimeoutOrNull null
+            }
         }
         currentSocket = platformSocketConnected
         if (platformSocketConnected == null) {
@@ -63,7 +64,6 @@ abstract class SocketSession : CoroutineScope {
             if (readConnackException != null) {
                 return@async state
             }
-            println("open")
             return@async state
         } else {
             launch {
@@ -80,6 +80,7 @@ abstract class SocketSession : CoroutineScope {
 
     open fun beforeClosingSocket() {}
 
+    suspend fun awaitSocketClose() = currentSocket?.awaitClosed()
 
     fun closeAsync() = async {
         if (state.value == Initializing || state.value == Connecting || state.value == Open) {
@@ -91,9 +92,9 @@ abstract class SocketSession : CoroutineScope {
         return@async false
     }
 
-    private fun writeConnectionRequestAsync(platformSocket: PlatformSocket) = async {
+    private fun writeConnectionRequestAsync(transport: Transport) = async {
         try {
-            val output = platformSocket.output
+            val output = transport.output
             val connectionRequestPacket = parameters.connectionRequest.copy().serialize()
             val size = connectionRequestPacket.remaining
             val serializationTime = currentTimestampMs()
@@ -112,14 +113,14 @@ abstract class SocketSession : CoroutineScope {
         }
     }
 
-    private fun openWriteChannel(platformSocket: PlatformSocket) = launch {
+    private fun openWriteChannel(transport: Transport) = launch {
         try {
             for (messageToSend in clientToServer) {
                 if (isOpenAndActive() || messageToSend is DisconnectNotification) {
                     val sendMessage = messageToSend.serialize()
                     val size = sendMessage.remaining
                     val start = currentTimestampMs()
-                    platformSocket.output.writePacket(sendMessage)
+                    transport.output.writePacket(sendMessage)
                     val writeComplete = currentTimestampMs()
                     setLastMessageReceived(writeComplete)
                     val sendTime = writeComplete - start
@@ -153,9 +154,9 @@ abstract class SocketSession : CoroutineScope {
         currentSocket?.awaitClosed()
     }
 
-    private suspend fun readConnectionAck(platformSocket: PlatformSocket): ConnectionFailure? {
+    private suspend fun readConnectionAck(transport: Transport): ConnectionFailure? {
         try {
-            val input = platformSocket.input
+            val input = transport.input
             val controlPacket = input.read()
             setLastMessageReceived(currentTimestampMs())
             if (controlPacket is IConnectionAcknowledgment) {
@@ -164,8 +165,8 @@ abstract class SocketSession : CoroutineScope {
                 if (!state.compareAndSet(Connecting, Open)) {
                     throw IllegalStateException("Invalid state when reading connection ack - open (is ${state.value})")
                 }
-                openWriteChannel(platformSocket)
-                readControlPackets(platformSocket)
+                openWriteChannel(transport)
+                readControlPackets(transport)
                 runKeepAlive()
                 return null
             }
@@ -176,15 +177,14 @@ abstract class SocketSession : CoroutineScope {
         }
     }
 
-    private fun readControlPackets(platformSocket: PlatformSocket) = launch {
+    private fun readControlPackets(transport: Transport) = launch {
         try {
-            val input = platformSocket.input
+            val input = transport.input
             while (isOpenAndActive()) {
                 val controlPacket = input.read()
-                println("INNNN $serverToClient: $controlPacket")
                 setLastMessageReceived(currentTimestampMs())
                 if (!serverToClient.offer(controlPacket)) {
-                    println("NO PICKUP IN: $controlPacket")
+                    println("IN: $controlPacket")
                 }
             }
         } catch (e: ClosedReceiveChannelException) {

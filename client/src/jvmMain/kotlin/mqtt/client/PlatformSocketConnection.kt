@@ -3,16 +3,17 @@ package mqtt.client
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.tls.tls
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
+import kotlin.coroutines.CoroutineContext
 
-actual class PlatformSocketConnection actual constructor(override val parameters: ConnectionParameters)
-    : SocketSession() {
-    override val dispatcher: CoroutineDispatcher = Dispatchers.IO
+actual class PlatformSocketConnection actual constructor(override val parameters: ConnectionParameters,
+                                                         ctx: CoroutineContext)
+    : SocketConnection(ctx) {
 
-    override suspend fun buildSocket(): PlatformSocket {
+
+    override suspend fun buildSocket(): Transport {
         @Suppress("EXPERIMENTAL_API_USAGE")
         val socketBuilder = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
         val tmpSocketRef = socketBuilder.connect(parameters.hostname, parameters.port)
@@ -32,7 +33,7 @@ actual class PlatformSocketConnection actual constructor(override val parameters
             tmpSocketRef
         }
         ShutdownHook.shutdownThread.addConnection(this)
-        return JavaPlatformSocket(socket)
+        return JavaSocketTransport(socket)
     }
 
     override fun beforeClosingSocket() {

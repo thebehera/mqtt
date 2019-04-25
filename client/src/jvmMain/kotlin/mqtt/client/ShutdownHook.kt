@@ -16,7 +16,10 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
     }
 
     override fun run() {
-        println("Shut down received, closing ${connections.size} connections")
+        if (connections.isEmpty()) {
+            return
+        }
+//        println("Attempting to shutdown ${connections.size} connections")
         val localConnections = HashSet(connections)
         connections.clear()
         val jobs = mutableListOf<Deferred<Boolean>>()
@@ -26,7 +29,7 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
         runBlocking {
             jobs.forEach { it.await() }
         }
-        println("Successfully shut down ${jobs.size} connections")
+//        println("Successfully disconnected ${jobs.size} connections due to shutdown signal")
         if (jobs.isNotEmpty()) {
             run()
         }

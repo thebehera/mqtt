@@ -1,7 +1,7 @@
 package mqtt.client
 
 /**
- * Upon normal operation each mqtt client connection progresses through a sequence of states
+ * Upon normal operation each mqtt session connection progresses through a sequence of states
  */
 sealed class ConnectionState
 
@@ -23,17 +23,17 @@ object Connecting : ConnectionState()
 object Open : ConnectionState()
 
 /**
- *  MQTT client has initiated a graceful shutdown. The client will attempt to dequeue all messages then send a
+ *  MQTT session has initiated a graceful shutdown. The session will attempt to dequeue all messages then send a
  *  DisconnectNotification
  */
 object Closing : ConnectionState()
 
 /**
- * The MQTT client has transmitted all of its messages and has received all messages from the peer.
+ * The MQTT session has transmitted all of its messages and has received all messages from the peer.
  */
 data class Closed(val exception: Exception? = null) : ConnectionState()
 
 /**
- * The MQTT client connection to server failed. Messages that were successfully enqueued by either peer may not have been transmitted to the other.
+ * The MQTT session connection to server failed. Messages that were successfully enqueued by either peer may not have been transmitted to the other.
  */
 data class ConnectionFailure(val exception: Exception) : ConnectionState()

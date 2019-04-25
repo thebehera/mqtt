@@ -3,7 +3,7 @@
 package mqtt.client
 
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -18,25 +18,23 @@ import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
 import kotlin.test.*
 
+/**
+ * These tests require running mosquitto servers with the configurations in the ./client/gradle/configurations path
+ * of this repo. Or run the gradle `:client:check` or `:client:jvmTest` command with mosquitto installed on the PATH
+ */
 class SocketConnectionTests {
 
-    fun getClientId(): String {
-        val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-        val randomString = (1..10)
-                .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
-                .map(charPool::get)
-                .joinToString("")
-        return "MqttClientTests${currentTimestampMs()}_$randomString"
-    }
+    private val ctx = Job() + PlatformCoroutineDispatcher.dispatcher
+
     @Test
     fun connectDisconnect() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
-        val connection = PlatformSocketConnection(params)
+        val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         block {
             withTimeout(5000) {
-                println("connect start")
+                println("connect startAsync")
                 val connectionResult = result.await().value
                 assertEquals(Open, connectionResult)
                 assertNotNull(connection.connack)
@@ -56,14 +54,14 @@ class SocketConnectionTests {
     fun reconnectOnce() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort(), cleanSession = true)
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
-        val connection = PlatformSocketConnection(params)
+        val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         block {
             withTimeout(5000) {
                 result.await()
                 connection.closeAsync().await()
                 val newParams = params.copy()
-                val newConnection = PlatformSocketConnection(newParams)
+                val newConnection = PlatformSocketConnection(newParams, ctx)
                 val newResult = newConnection.openConnectionAsync(true)
                 newResult.await()
                 newConnection.closeAsync().await()
@@ -75,7 +73,7 @@ class SocketConnectionTests {
     fun socketCloseAutomatically() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
-        val connection = PlatformSocketConnection(params)
+        val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         block {
             result.await()
@@ -86,7 +84,7 @@ class SocketConnectionTests {
     fun publishSingleMessageQos0() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 50.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
-        val connection = PlatformSocketConnection(params)
+        val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         block {
             result.await()
@@ -100,9 +98,9 @@ class SocketConnectionTests {
     fun testQos1() {
         val clientId1 = "Client1"
         val client1Params = buildParams(clientId1)
-        val client1SocketConnection1 = PlatformSocketConnection(client1Params)
+        val client1SocketConnection1 = PlatformSocketConnection(client1Params, ctx)
         val client2Params = buildParams("Client2")
-        val client2SocketConnection = PlatformSocketConnection(client2Params)
+        val client2SocketConnection = PlatformSocketConnection(client2Params, ctx)
 
 
         val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
@@ -114,7 +112,6 @@ class SocketConnectionTests {
 
                 println("CLIENT 1 SENDING SUBSCRIBE")
                 client1SocketConnection1.clientToServer.send(subscribe)
-                delay(5000)
                 println("CLIENT 2 SENDING PUBLISH")
                 client2SocketConnection.clientToServer.send(publish)
 //                client1SocketConnection1.cancel()
@@ -136,7 +133,7 @@ class SocketConnectionTests {
 
     suspend fun buildConnection(clientId: String = getClientId()): PlatformSocketConnection {
         val params = buildParams(clientId)
-        val connection = PlatformSocketConnection(params)
+        val connection = PlatformSocketConnection(params, ctx)
         connection.openConnectionAsync().await()
         return connection
     }
@@ -156,10 +153,10 @@ class SocketConnectionTests {
 
                 val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) })
                 publishClient.clientToServer.send(publish)
-                println("create new client")
+                println("create new session")
                 val mutex = Mutex(true)
                 val recvClientSession2Params = buildParams("client1")
-                val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params)
+                val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params, ctx)
                 launch(Dispatchers.Unconfined) {
                     try {
                         println("listing22 ${recvClientSession2Connection.serverToClient} ${recvClientSession2Connection.parameters.connectionRequest.clientIdentifier}")
@@ -195,7 +192,7 @@ class SocketConnectionTests {
     fun subscribeAndReceiveSuback() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5000.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
-        val connection = PlatformSocketConnection(params)
+        val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
         block {
@@ -219,4 +216,13 @@ class SocketConnectionTests {
             }
         }
     }
+}
+
+fun getClientId(): String {
+    val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+    val randomString = (1..10)
+            .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
+            .map(charPool::get)
+            .joinToString("")
+    return "MqttClientTests${currentTimestampMs()}_$randomString"
 }

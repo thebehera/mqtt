@@ -1,3 +1,6 @@
 package mqtt.client
 
-expect class PlatformSocketConnection(parameters: ConnectionParameters) : SocketSession
+import kotlin.coroutines.CoroutineContext
+
+expect class PlatformSocketConnection(parameters: ConnectionParameters,
+                                      ctx: CoroutineContext) : SocketConnection

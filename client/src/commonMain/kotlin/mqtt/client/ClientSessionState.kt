@@ -1,9 +1,16 @@
 package mqtt.client
 
-import mqtt.wire.control.packet.ControlPacket
+import mqtt.client.persistence.KeyValuePersistence
+import mqtt.client.persistence.MemoryKeyValuePersistence
+import mqtt.client.persistence.MemoryQueuedPersistence
+import mqtt.client.persistence.QueuedPersistence
 
-class ClientSessionState {
-    val qos1And2MessagesSentButNotAcked = LinkedHashSet<ControlPacket>()
-    val qos2MessagesRecevedBytNotCompletelyAcked = LinkedHashSet<ControlPacket>()
+class ClientSessionState(
+        val messagesNotSent: QueuedPersistence = MemoryQueuedPersistence(),
+        val qos1And2MessagesSentButNotAcked: KeyValuePersistence = MemoryKeyValuePersistence(),
+        val qos2MessagesRecevedButNotCompletelyAcked: KeyValuePersistence = MemoryKeyValuePersistence()) {
+    fun deque() {
+
+    }
 }
 

@@ -7,9 +7,9 @@ import mqtt.wire.MqttPersistenceException
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.MqttUtf8String
 
-class MemoryPersistence : Persistence {
+class MemoryKeyValuePersistence : KeyValuePersistence {
     private var map: MutableMap<UShort, ControlPacket>? = null
-    private fun getMapIfOpen() = this.map ?: throw MqttPersistenceException("Persistence is closed")
+    private fun getMapIfOpen() = this.map ?: throw MqttPersistenceException("KeyValuePersistence is closed")
     override fun open(clientId: MqttUtf8String, server: Url) {
         map = HashMap()
     }
