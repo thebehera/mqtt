@@ -3,6 +3,7 @@ package mqtt.client
 import io.ktor.network.sockets.*
 import kotlinx.coroutines.io.ByteReadChannel
 import kotlinx.coroutines.io.ByteWriteChannel
+import mqtt.client.transport.Transport
 
 class JavaSocketTransport(private val socket: Socket) : Transport {
     override val output: ByteWriteChannel = socket.openWriteChannel(autoFlush = true)

@@ -2,6 +2,7 @@ package mqtt.client
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.runBlocking
+import mqtt.client.platform.PlatformSocketConnection
 import java.util.concurrent.atomic.AtomicBoolean
 
 class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconnecting clients") {

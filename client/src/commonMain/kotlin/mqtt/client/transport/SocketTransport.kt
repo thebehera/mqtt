@@ -1,10 +1,14 @@
-package mqtt.client
+package mqtt.client.transport
 
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.io.ClosedWriteChannelException
+import mqtt.client.ConnectionTimeout
+import mqtt.client.FailedToReadConnectionAck
+import mqtt.client.connection.*
+import mqtt.client.read
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ControlPacket
@@ -13,7 +17,7 @@ import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
 
-abstract class SocketConnection(override val coroutineContext: CoroutineContext) : CoroutineScope {
+abstract class SocketTransport(override val coroutineContext: CoroutineContext) : CoroutineScope {
     abstract val parameters: ConnectionParameters
     val state = atomic<ConnectionState>(Initializing)
 
@@ -30,7 +34,7 @@ abstract class SocketConnection(override val coroutineContext: CoroutineContext)
     abstract suspend fun buildSocket(): Transport
 
     /**
-     * Open the connection.
+     * Open the transport.
      * @param waitForConnectionAcknowledgment return right after the socket has been written to
      */
     fun openConnectionAsync(waitForConnectionAcknowledgment: Boolean = false) = async {
@@ -163,14 +167,14 @@ abstract class SocketConnection(override val coroutineContext: CoroutineContext)
                 connack = controlPacket
                 println("IN: $controlPacket")
                 if (!state.compareAndSet(Connecting, Open)) {
-                    throw IllegalStateException("Invalid state when reading connection ack - open (is ${state.value})")
+                    throw IllegalStateException("Invalid state when reading transport ack - open (is ${state.value})")
                 }
                 openWriteChannel(transport)
                 readControlPackets(transport)
                 runKeepAlive()
                 return null
             }
-            throw ProtocolError("Invalid message received from server, expected a connection acknowledgement " +
+            throw ProtocolError("Invalid message received from server, expected a transport acknowledgement " +
                     "instead got: $controlPacket")
         } catch (e: Exception) {
             return ConnectionFailure(e)

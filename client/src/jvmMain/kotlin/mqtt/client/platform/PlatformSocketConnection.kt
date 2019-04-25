@@ -1,16 +1,21 @@
-package mqtt.client
+package mqtt.client.platform
 
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.tls.tls
 import kotlinx.coroutines.Dispatchers
+import mqtt.client.JavaSocketTransport
+import mqtt.client.ShutdownHook
+import mqtt.client.connection.ConnectionParameters
+import mqtt.client.transport.SocketTransport
+import mqtt.client.transport.Transport
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager
 import kotlin.coroutines.CoroutineContext
 
 actual class PlatformSocketConnection actual constructor(override val parameters: ConnectionParameters,
                                                          ctx: CoroutineContext)
-    : SocketConnection(ctx) {
+    : SocketTransport(ctx) {
 
 
     override suspend fun buildSocket(): Transport {

@@ -1,5 +1,6 @@
 package mqtt.client
 
+import mqtt.client.connection.ConnectionParameters
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals

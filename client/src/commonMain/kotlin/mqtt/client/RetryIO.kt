@@ -22,7 +22,7 @@ suspend fun retryIO(
                 currentDelay = initialDelay
             }
         } catch (e: BrokerRejectedConnection) {
-            println("Server rejected our connection: $e")
+            println("Server rejected our transport: $e")
             if (stopConnectingOnServerRejectedConnection) {
                 return
             }
@@ -43,7 +43,7 @@ suspend fun retryIO(
             // analysis of the cause to see if retry is needed
             println("error while retrying: $e")
         }
-        println("Lost connection, reconnecting connection in ${currentDelay}ms")
+        println("Lost transport, reconnecting transport in ${currentDelay}ms")
         delay(currentDelay)
         currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
     }

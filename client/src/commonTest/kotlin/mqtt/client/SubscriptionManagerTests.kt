@@ -1,5 +1,7 @@
 package mqtt.client
 
+import mqtt.client.subscription.SubscriptionCallback
+import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.TopicLevelNode

@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.subscription
 
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name

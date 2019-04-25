@@ -1,6 +1,10 @@
 package mqtt.client
 
 import kotlinx.coroutines.*
+import mqtt.client.connection.ConnectionParameters
+import mqtt.client.connection.Open
+import mqtt.client.platform.PlatformCoroutineDispatcher
+import mqtt.client.session.ClientSession
 import mqtt.wire.control.packet.findSerializer
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
@@ -17,7 +21,7 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
     val session = ClientSession(params, Job(job))
 
     fun startAsync(newConnectionCb: Runnable? = null) = async {
-        if (session.connection?.isOpenAndActive() == true) {
+        if (session.transport?.isOpenAndActive() == true) {
             return@async true
         }
         return@async retryIO(params.maxNumberOfRetries) {

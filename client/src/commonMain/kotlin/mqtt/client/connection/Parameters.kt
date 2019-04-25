@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.connection
 
 import mqtt.wire.control.packet.IConnectionRequest
 

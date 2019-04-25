@@ -11,6 +11,11 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
+import mqtt.client.connection.Closed
+import mqtt.client.connection.ConnectionParameters
+import mqtt.client.connection.Open
+import mqtt.client.platform.PlatformCoroutineDispatcher
+import mqtt.client.platform.PlatformSocketConnection
 import mqtt.time.currentTimestampMs
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -22,7 +27,7 @@ import kotlin.test.*
  * These tests require running mosquitto servers with the configurations in the ./client/gradle/configurations path
  * of this repo. Or run the gradle `:client:check` or `:client:jvmTest` command with mosquitto installed on the PATH
  */
-class SocketConnectionTests {
+class SocketTransportTests {
 
     private val ctx = Job() + PlatformCoroutineDispatcher.dispatcher
 

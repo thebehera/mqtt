@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package mqtt.client
+package mqtt.client.subscription
 
 import mqtt.wire.data.topic.TopicLevelNode
 import mqtt.wire.data.topic.minusAssign

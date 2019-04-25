@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.session
 
 import mqtt.client.persistence.KeyValuePersistence
 import mqtt.client.persistence.MemoryKeyValuePersistence
