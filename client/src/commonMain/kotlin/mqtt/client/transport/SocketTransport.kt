@@ -26,7 +26,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
     var connack: IConnectionAcknowledgment? = null
 
     val clientToServer: Channel<ControlPacket> = Channel()
-    val serverToClient: Channel<ControlPacket> = Channel()
+    var messageReceiveCallback: OnMessageReceivedCallback? = null
 
     private val lastMessageBetweenClientAndServer = atomic(0L)
     fun setLastMessageReceived(time: Long) = lastMessageBetweenClientAndServer.lazySet(time)
@@ -151,7 +151,6 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         state.lazySet(Closing)
         beforeClosingSocket()
         clientToServer.close()
-        serverToClient.close()
         currentSocket?.dispose()
         state.lazySet(Closed(e))
         currentSocket = null
@@ -165,7 +164,12 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             setLastMessageReceived(currentTimestampMs())
             if (controlPacket is IConnectionAcknowledgment) {
                 connack = controlPacket
-                println("IN: $controlPacket")
+                val callback = messageReceiveCallback
+                if (callback != null) {
+                    callback.onMessage(controlPacket)
+                } else {
+                    println("IN: $controlPacket")
+                }
                 if (!state.compareAndSet(Connecting, Open)) {
                     throw IllegalStateException("Invalid state when reading transport ack - open (is ${state.value})")
                 }
@@ -187,7 +191,10 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             while (isOpenAndActive()) {
                 val controlPacket = input.read()
                 setLastMessageReceived(currentTimestampMs())
-                if (!serverToClient.offer(controlPacket)) {
+                val callback = messageReceiveCallback
+                if (callback != null) {
+                    callback.onMessage(controlPacket)
+                } else {
                     println("IN: $controlPacket")
                 }
             }

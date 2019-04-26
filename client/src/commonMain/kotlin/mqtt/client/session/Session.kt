@@ -11,15 +11,21 @@ import mqtt.client.transport.SocketTransport
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.coroutines.CoroutineContext
 
-class ClientSession(val params: ConnectionParameters, override val coroutineContext: CoroutineContext) : CoroutineScope {
+class ClientSession(val params: ConnectionParameters,
+                    override val coroutineContext: CoroutineContext) : CoroutineScope {
     var transport: SocketTransport? = null
     val state = ClientSessionState()
     val subscriptionManager = SubscriptionManager()
 
     fun connectAsync() = async {
-        val session = PlatformSocketConnection(params, coroutineContext)
-        this@ClientSession.transport = session
-        session.openConnectionAsync(true).await().value
+        val transportLocal = transport
+        if (transportLocal != null) {
+            return@async transportLocal.state.value
+        }
+        val platformSocketConnection = PlatformSocketConnection(params, coroutineContext)
+        this@ClientSession.transport = platformSocketConnection
+
+        platformSocketConnection.openConnectionAsync(true).await()
     }
 
     suspend fun awaitSocketClose() {

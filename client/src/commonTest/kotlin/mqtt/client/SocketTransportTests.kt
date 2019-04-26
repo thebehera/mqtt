@@ -2,9 +2,7 @@
 
 package mqtt.client
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeout
@@ -16,7 +14,9 @@ import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.Open
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.platform.PlatformSocketConnection
+import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.time.currentTimestampMs
+import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
@@ -150,44 +150,35 @@ class SocketTransportTests {
             withTimeout(50000) {
                 val publishClient = buildConnection("pubClient")
                 val recvClientSession1 = buildConnection("client1")
-                println("connected clients")
                 val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
                 recvClientSession1.clientToServer.send(subscribe)
-                println("sent subscribe")
                 recvClientSession1.closeAsync().await()
 
                 val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) })
                 publishClient.clientToServer.send(publish)
-                println("create new session")
                 val mutex = Mutex(true)
                 val recvClientSession2Params = buildParams("client1")
                 val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params, ctx)
-                launch(Dispatchers.Unconfined) {
-                    try {
-                        println("listing22 ${recvClientSession2Connection.serverToClient} ${recvClientSession2Connection.parameters.connectionRequest.clientIdentifier}")
-                        for (msg in recvClientSession2Connection.serverToClient) {
-                            println("listend22: $msg")
-                            if (msg is PublishMessage) {
-                                break
-                            } else {
-                                fail("received wrong message: $msg")
+                recvClientSession2Connection.messageReceiveCallback = object : OnMessageReceivedCallback {
+                    override fun onMessage(controlPacket: ControlPacket) {
+                        try {
+                            if (controlPacket is ConnectionAcknowledgment) {
+                                return
                             }
+                            if (controlPacket !is PublishMessage) {
+                                fail("received wrong message: $controlPacket")
+                            }
+                            recvMessage = true
+                            mutex.unlock()
+                        } catch (e: Exception) {
+                            fail(e.message)
                         }
-                        recvMessage = true
-                        mutex.unlock()
-                    } catch (e: Exception) {
-                        fail(e.message)
-                    } finally {
-                        println("done 22")
                     }
                 }
                 val job = recvClientSession2Connection.openConnectionAsync()
                 job.await()
-                println("wait")
                 mutex.withLock {} // lock until we get a message
-                println("unlocked")
                 assertTrue(recvMessage)
-                println("closing")
                 recvClientSession2Connection.closeAsync().await()
             }
         }
@@ -204,14 +195,15 @@ class SocketTransportTests {
             withTimeout(5000) {
                 result.await()
                 val mutex = Mutex(true)
-                launch(Dispatchers.Unconfined) {
-                    try {
-                        val controlPacket = connection.serverToClient.receive()
-                        assertTrue(controlPacket is SubscribeAcknowledgement)
-                        recvMessage = true
-                        mutex.unlock()
-                    } catch (e: Exception) {
-                        fail(e.message)
+                connection.messageReceiveCallback = object : OnMessageReceivedCallback {
+                    override fun onMessage(controlPacket: ControlPacket) {
+                        try {
+                            assertTrue(controlPacket is SubscribeAcknowledgement)
+                            recvMessage = true
+                            mutex.unlock()
+                        } catch (e: Exception) {
+                            fail(e.message)
+                        }
                     }
                 }
                 val subscribeRequest = SubscribeRequest(19.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
