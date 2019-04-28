@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IPublishReceived
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
@@ -20,9 +21,10 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * A PUBREC packet is the response to a PUBLISH packet with QoS 2. It is the second packet of the QoS 2 protocol exchange.
  */
 data class PublishReceived(val variable: VariableHeader)
-    : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL) {
-
+    : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL), IPublishReceived {
+    override fun expectedResponse() = PublishRelease(variable.packetIdentifier)
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
+    override val packetIdentifier: UShort = variable.packetIdentifier
 
     data class VariableHeader(val packetIdentifier: UShort,
                               /**

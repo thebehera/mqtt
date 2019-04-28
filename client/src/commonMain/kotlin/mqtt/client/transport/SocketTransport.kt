@@ -189,14 +189,8 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         try {
             val input = transport.input
             while (isOpenAndActive()) {
-                val controlPacket = input.read()
-                setLastMessageReceived(currentTimestampMs())
-                val callback = messageReceiveCallback
-                if (callback != null) {
-                    callback.onMessage(controlPacket)
-                } else {
-                    println("IN: $controlPacket")
-                }
+                val msg = input.read()
+                readControlPacket(msg)
             }
         } catch (e: ClosedReceiveChannelException) {
             hardClose(e)
@@ -205,6 +199,16 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             if (state.value !is Closed) {
                 hardClose()
             }
+        }
+    }
+
+    private fun readControlPacket(controlPacket: ControlPacket) {
+        setLastMessageReceived(currentTimestampMs())
+        val callback = messageReceiveCallback
+        if (callback != null) {
+            callback.onMessage(controlPacket)
+        } else {
+            println("IN: $controlPacket")
         }
     }
 

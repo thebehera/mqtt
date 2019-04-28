@@ -11,6 +11,7 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader
+import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties.Companion.from
 import mqtt.wire5.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -24,120 +25,107 @@ class SubscribeAcknowledgementTests {
 
     @Test
     fun packetIdentifier() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = GRANTED_QOS_0
-        val puback = SubscribeAcknowledgement(variableHeader, payload)
+        val puback = SubscribeAcknowledgement(packetIdentifier, payload)
         val data = puback.serialize()
         val pubackResult = ControlPacketV5.from(data) as SubscribeAcknowledgement
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
-        assertEquals(pubackResult.payload, GRANTED_QOS_0)
+        assertEquals(pubackResult.payload.first(), GRANTED_QOS_0)
     }
 
     @Test
     fun grantedQos1() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = GRANTED_QOS_1
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, GRANTED_QOS_1)
+        assertEquals(result.payload.first(), GRANTED_QOS_1)
     }
 
     @Test
     fun grantedQos2() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = GRANTED_QOS_2
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, GRANTED_QOS_2)
+        assertEquals(result.payload.first(), GRANTED_QOS_2)
     }
 
     @Test
     fun unspecifiedError() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = UNSPECIFIED_ERROR
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, UNSPECIFIED_ERROR)
+        assertEquals(result.payload.first(), UNSPECIFIED_ERROR)
     }
 
     @Test
     fun implementationSpecificError() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = IMPLEMENTATION_SPECIFIC_ERROR
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, IMPLEMENTATION_SPECIFIC_ERROR)
+        assertEquals(result.payload.first(), IMPLEMENTATION_SPECIFIC_ERROR)
     }
 
     @Test
     fun notAuthorized() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = NOT_AUTHORIZED
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, NOT_AUTHORIZED)
+        assertEquals(result.payload.first(), NOT_AUTHORIZED)
     }
 
     @Test
     fun topicFilterInvalid() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = TOPIC_FILTER_INVALID
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, TOPIC_FILTER_INVALID)
+        assertEquals(result.payload.first(), TOPIC_FILTER_INVALID)
     }
 
     @Test
     fun packetIdentifierInUse() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = PACKET_IDENTIFIER_IN_USE
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, PACKET_IDENTIFIER_IN_USE)
+        assertEquals(result.payload.first(), PACKET_IDENTIFIER_IN_USE)
     }
 
     @Test
     fun quotaExceeded() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = QUOTA_EXCEEDED
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, QUOTA_EXCEEDED)
+        assertEquals(result.payload.first(), QUOTA_EXCEEDED)
     }
 
     @Test
     fun sharedSubscriptionsNotSupported() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, SHARED_SUBSCRIPTIONS_NOT_SUPPORTED)
+        assertEquals(result.payload.first(), SHARED_SUBSCRIPTIONS_NOT_SUPPORTED)
     }
 
     @Test
     fun subscriptionIdentifiersNotSupported() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED)
+        assertEquals(result.payload.first(), SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED)
     }
 
     @Test
     fun wildcardSubscriptionsNotSupported() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
-        val obj = SubscribeAcknowledgement(variableHeader, payload)
+        val obj = SubscribeAcknowledgement(packetIdentifier, payload)
         val result = ControlPacketV5.from(obj.serialize()) as SubscribeAcknowledgement
-        assertEquals(result.payload, WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED)
+        assertEquals(result.payload.first(), WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED)
     }
 
     @Test
     fun invalidVariableHeaderPayload() {
-        val variableHeader = VariableHeader(packetIdentifier)
         val payload = MALFORMED_PACKET
         try {
-            SubscribeAcknowledgement(variableHeader, payload)
+            SubscribeAcknowledgement(packetIdentifier, payload)
             fail()
         } catch (e: ProtocolError) {
         }
@@ -146,8 +134,7 @@ class SubscribeAcknowledgementTests {
     @Test
     fun reasonString() {
         val props = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
-        val header = VariableHeader(packetIdentifier, properties = props)
-        val actual = SubscribeAcknowledgement(header, GRANTED_QOS_1)
+        val actual = SubscribeAcknowledgement(packetIdentifier, props, GRANTED_QOS_1)
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as SubscribeAcknowledgement
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
@@ -166,7 +153,7 @@ class SubscribeAcknowledgementTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -175,7 +162,7 @@ class SubscribeAcknowledgementTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
             assertEquals(key.getValueOrThrow(), "key")
@@ -183,7 +170,7 @@ class SubscribeAcknowledgementTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = SubscribeAcknowledgement(VariableHeader(packetIdentifier, properties = props), WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED).serialize()
+        val request = SubscribeAcknowledgement(packetIdentifier, props, WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED).serialize()
         val requestRead = ControlPacketV5.from(request.copy()) as SubscribeAcknowledgement
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")

@@ -24,7 +24,7 @@ typealias CONNACK = ConnectionAcknowledgment
  */
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV4(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
-
+    override val sessionPresent: Boolean = header.sessionPresent
     override val variableHeaderPacket: ByteReadPacket = header.packet()
     override val isSuccessful: Boolean = header.connectReason == CONNECTION_ACCEPTED
     override val connectionReason: String = header.connectReason.name

@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IPublishComplete
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
@@ -19,10 +20,13 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
  */
-data class PublishComplete(val variable: VariableHeader) : ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL) {
+data class PublishComplete(val variable: VariableHeader) :
+        ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
 
+    constructor(packetIdentifier: UShort, reasonCode: ReasonCode = ReasonCode.SUCCESS)
+            : this(VariableHeader(packetIdentifier, reasonCode))
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-
+    override val packetIdentifier: UShort = variable.packetIdentifier
     /**
      * 3.7.2 PUBCOMP Variable Header
      *

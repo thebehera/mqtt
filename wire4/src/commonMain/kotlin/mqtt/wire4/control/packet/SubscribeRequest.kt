@@ -37,6 +37,10 @@ data class SubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacket
     override val variableHeaderPacket = buildPacket { writeUShort(payloadSubs.remaining.toUShort()) }
     override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
 
+    override fun expectedResponse(): SubscribeAcknowledgement {
+        val returnCodes = subscriptions.map { SubscribeAcknowledgement.ReturnCode.valueOf(it.maximumQos.name) }
+        return SubscribeAcknowledgement(packetIdentifier, returnCodes)
+    }
     companion object {
         fun from(buffer: ByteReadPacket): SubscribeRequest {
             val packetIdentifier = buffer.readUShort()

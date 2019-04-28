@@ -3,12 +3,9 @@ package mqtt.client
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.runBlocking
 import mqtt.client.platform.PlatformSocketConnection
-import java.util.concurrent.atomic.AtomicBoolean
 
 class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconnecting clients") {
     private val connections = HashSet<PlatformSocketConnection>()
-    val isShuttingDown = AtomicBoolean(false)
-
     init {
         Runtime.getRuntime().addShutdownHook(this)
     }
@@ -20,7 +17,6 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
         if (connections.isEmpty()) {
             return
         }
-//        println("Attempting to shutdown ${connections.size} connections")
         val localConnections = HashSet(connections)
         connections.clear()
         val jobs = mutableListOf<Deferred<Boolean>>()
@@ -30,7 +26,6 @@ class ShutdownHook : Thread("MQTT Global Connection Shutdown Hook, clean disconn
         runBlocking {
             jobs.forEach { it.await() }
         }
-//        println("Successfully disconnected ${jobs.size} connections due to shutdown signal")
         if (jobs.isNotEmpty()) {
             run()
         }

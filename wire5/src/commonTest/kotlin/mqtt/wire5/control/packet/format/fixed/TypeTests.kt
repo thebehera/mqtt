@@ -55,7 +55,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBACK() =
-            assertEquals(9, SubscribeAcknowledgement(SubscribeAcknowledgement.VariableHeader(packetIdentifier), GRANTED_QOS_0).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(9, SubscribeAcknowledgement(packetIdentifier, GRANTED_QOS_0).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBSCRIBE() =
@@ -119,7 +119,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBACK() =
-            assertEquals(SERVER_TO_CLIENT, SubscribeAcknowledgement(SubscribeAcknowledgement.VariableHeader(packetIdentifier), GRANTED_QOS_0).direction, controlPacketSpectMatchError)
+            assertEquals(SERVER_TO_CLIENT, SubscribeAcknowledgement(packetIdentifier, GRANTED_QOS_0).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBSCRIBE() =

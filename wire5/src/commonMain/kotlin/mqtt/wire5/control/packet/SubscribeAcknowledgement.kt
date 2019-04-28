@@ -5,9 +5,11 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
+import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.format.variable.property.Property
@@ -23,14 +25,21 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * A SUBACK packet contains a list of Reason Codes, that specify the maximum QoS level that was granted or the
  * error which was found for each Subscription that was requested by the SUBSCRIBE.
  */
-data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: ReasonCode)
-    : ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT) {
-    override val variableHeaderPacket: ByteReadPacket = variable.packet
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { writeUByte(payload.byte) }
+data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: List<ReasonCode>)
+    : ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
+    constructor(packetIdentifier: UShort, properties: Properties = Properties(), payload: ReasonCode = SUCCESS)
+            : this(VariableHeader(packetIdentifier, properties), listOf(payload))
 
+    constructor(packetIdentifier: UShort, payload: ReasonCode = SUCCESS, properties: Properties = Properties())
+            : this(VariableHeader(packetIdentifier, properties), listOf(payload))
+    override val variableHeaderPacket: ByteReadPacket = variable.packet
+    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
+    override val packetIdentifier: UShort = variable.packetIdentifier
     init {
-        if (!validSubscribeCodes.contains(payload)) {
-            throw ProtocolError("Invalid SUBACK reason code ${payload.byte}")
+        payload.forEach {
+            if (!validSubscribeCodes.contains(it)) {
+                throw ProtocolError("Invalid SUBACK reason code ${it.byte}")
+            }
         }
     }
 
@@ -136,24 +145,27 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: R
     companion object {
         fun from(buffer: ByteReadPacket): SubscribeAcknowledgement {
             val variableHeader = VariableHeader.from(buffer)
-            val reasonCodeByte = buffer.readUByte()
-            val reasonCode = when (reasonCodeByte) {
-                GRANTED_QOS_0.byte -> GRANTED_QOS_0
-                GRANTED_QOS_1.byte -> GRANTED_QOS_1
-                GRANTED_QOS_2.byte -> GRANTED_QOS_2
-                UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
-                IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
-                NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
-                TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
-                PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
-                QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
-                SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
-                SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
-                WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
-                else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte " +
-                        "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478")
+            val codes = ArrayList<ReasonCode>(buffer.remaining.toInt())
+            while (buffer.remaining > 0) {
+                val reasonCode = when (val reasonCodeByte = buffer.readUByte()) {
+                    GRANTED_QOS_0.byte -> GRANTED_QOS_0
+                    GRANTED_QOS_1.byte -> GRANTED_QOS_1
+                    GRANTED_QOS_2.byte -> GRANTED_QOS_2
+                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
+                    IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
+                    NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
+                    TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
+                    PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
+                    QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
+                    SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
+                    SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
+                    WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
+                    else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte " +
+                            "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478")
+                }
+                codes += reasonCode
             }
-            return SubscribeAcknowledgement(variableHeader, reasonCode)
+            return SubscribeAcknowledgement(variableHeader, codes)
         }
     }
 }

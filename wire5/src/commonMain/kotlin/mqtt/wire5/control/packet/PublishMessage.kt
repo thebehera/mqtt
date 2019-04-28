@@ -8,15 +8,13 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
  * Creates an MQTT PUBLISH
- * @param dup Duplicate delivery of a PublishMessage packet
- * @param qos PublishMessage Quality of Service
- * @param retain PublishMessage retained message flag
- * @param packetIdentifier Packet Identifier for QOS > 0 packet identifier
+ *
  */
 data class PublishMessage(
         val fixed: FixedHeader = FixedHeader(),
@@ -31,8 +29,19 @@ data class PublishMessage(
         }
     }
 
+    override val qualityOfService: QualityOfService = fixed.qos
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
+
+    override fun expectedResponse() = when {
+        fixed.qos == AT_LEAST_ONCE -> {
+            PublishAcknowledgment(variable.packetIdentifier!!)
+        }
+        fixed.qos == QualityOfService.EXACTLY_ONCE -> {
+            PublishRelease(variable.packetIdentifier!!)
+        }
+        else -> null
+    }
 
     data class FixedHeader(
             /**

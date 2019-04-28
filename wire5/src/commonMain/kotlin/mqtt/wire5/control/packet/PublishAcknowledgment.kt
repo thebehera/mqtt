@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IPublishAcknowledgment
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
@@ -21,9 +22,12 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * A PUBACK packet is the response to a PUBLISH packet with QoS 1.
  */
 data class PublishAcknowledgment(val variable: VariableHeader)
-    : ControlPacketV5(4, DirectionOfFlow.BIDIRECTIONAL) {
+    : ControlPacketV5(4, DirectionOfFlow.BIDIRECTIONAL), IPublishAcknowledgment {
+
+    constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier))
 
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
+    override val packetIdentifier: UShort = variable.packetIdentifier
 
     data class VariableHeader(val packetIdentifier: UShort,
                               /**

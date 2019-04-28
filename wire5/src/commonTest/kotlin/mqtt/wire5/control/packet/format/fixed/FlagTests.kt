@@ -188,7 +188,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =
-            assertEquals(SubscribeAcknowledgement(SubscribeAcknowledgement.VariableHeader(packetIdentifier), GRANTED_QOS_0).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(SubscribeAcknowledgement(packetIdentifier, GRANTED_QOS_0).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =

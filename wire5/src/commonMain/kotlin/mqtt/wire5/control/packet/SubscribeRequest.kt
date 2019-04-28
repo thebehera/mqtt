@@ -11,6 +11,7 @@ import mqtt.wire.data.*
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
+import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -46,10 +47,11 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
     override val variableHeaderPacket = variable.packet()
     private val payload by lazy {
         buildPacket {
-        subscriptions.forEach { writePacket(it.packet) }
+            subscriptions.forEach { writePacket(it.packet) }
         }
     }
 
+    override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier, ReasonCode.SUCCESS)
     override fun payloadPacket(sendDefaults: Boolean) = payload
 
     /**

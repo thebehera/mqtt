@@ -35,6 +35,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
     override val variableHeaderPacket: ByteReadPacket = header.packet()
     override val isSuccessful: Boolean = header.connectReason == SUCCESS
     override val connectionReason: String = header.connectReason.name
+    override val sessionPresent: Boolean = header.sessionPresent
     /**
      * The Variable Header of the CONNACK Packet contains the following fields in the order: Connect Acknowledge Flags,
      * Connect Reason Code, and Properties. The rules for encoding Properties are described in section 2.2.2.

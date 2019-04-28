@@ -10,17 +10,17 @@ import mqtt.wire.data.MqttUtf8String
 class MemoryKeyValuePersistence : KeyValuePersistence {
     private var map: MutableMap<UShort, ControlPacket>? = null
     private fun getMapIfOpen() = this.map ?: throw MqttPersistenceException("KeyValuePersistence is closed")
-    override fun open(clientId: MqttUtf8String, server: Url) {
+    override suspend fun open(clientId: MqttUtf8String, server: Url) {
         map = HashMap()
     }
 
-    override fun containsKey(key: UShort) = getMapIfOpen().containsKey(key)
-    override fun keys(): Set<UShort> = getMapIfOpen().keys
-    override fun put(key: UShort, value: ControlPacket) = getMapIfOpen().put(key, value)
-    override fun get(key: UShort) = getMapIfOpen()[key]
-    override fun remove(key: UShort) = getMapIfOpen().remove(key)
-    override fun clear() = getMapIfOpen().clear()
-    override fun close() {
+    override suspend fun containsKey(key: UShort) = getMapIfOpen().containsKey(key)
+    override suspend fun keys(): Set<UShort> = getMapIfOpen().keys
+    override suspend fun put(key: UShort, value: ControlPacket) = getMapIfOpen().put(key, value)
+    override suspend fun get(key: UShort) = getMapIfOpen()[key]
+    override suspend fun remove(key: UShort) = getMapIfOpen().remove(key)
+    override suspend fun clear() = getMapIfOpen().clear()
+    override suspend fun close() {
         map = null
     }
 }

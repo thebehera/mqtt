@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IPublishRelease
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
@@ -20,10 +21,12 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * A PUBREL packet is the response to a PUBREC packet. It is the third packet of the QoS 2 protocol exchange.
  */
 data class PublishRelease(val variable: VariableHeader)
-    : ControlPacketV5(6, DirectionOfFlow.BIDIRECTIONAL, 0b10) {
+    : ControlPacketV5(6, DirectionOfFlow.BIDIRECTIONAL, 0b10), IPublishRelease {
 
+    constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier))
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-
+    override val packetIdentifier: UShort = variable.packetIdentifier
+    override fun expectedResponse() = PublishComplete(packetIdentifier)
     /**
      * 3.6.2 PUBREL Variable Header
      *

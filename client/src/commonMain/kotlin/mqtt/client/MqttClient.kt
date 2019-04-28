@@ -5,6 +5,7 @@ import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.Open
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
+import mqtt.client.session.ClientSessionState
 import mqtt.wire.control.packet.findSerializer
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
@@ -16,18 +17,20 @@ import kotlin.coroutines.CoroutineContext
 class MqttClient(val params: ConnectionParameters) : CoroutineScope {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
+    val state = ClientSessionState()
     override val coroutineContext: CoroutineContext = job + dispatcher
     var connectionCount = 0
-    val session = ClientSession(params, Job(job))
+    val session = ClientSession(params, Job(job), state)
 
     fun startAsync(newConnectionCb: Runnable? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
             return@async true
         }
+
         return@async retryIO(params.maxNumberOfRetries) {
             val result = try {
                 if (isActive) {
-                    val result = session.connectAsync().await()
+                    val result = session.connect()
                     connectionCount++
                     newConnectionCb?.run()
                     session.awaitSocketClose()
@@ -54,20 +57,21 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
             serializer.serialize(payload)
         }
         val publish = PublishMessage(topic, qos, actualPayload)
-        session.send(publish)
+        launch { session.send(publish) }
     }
 
     fun <T> subscribe(topics: List<String>, qos: List<QualityOfService>) {
         val subscription = SubscribeRequest(topics, qos)
-        session.send(subscription)
+        launch { session.send(subscription) }
+
     }
 
     fun unsubscribe(topics: List<String>) {
         val unsubscribeRequest = UnsubscribeRequest(topics = topics.map { MqttUtf8String(it) })
-        session.send(unsubscribeRequest)
+        launch { session.send(unsubscribeRequest) }
     }
 
-    fun stop(): Deferred<Boolean>? {
-        return session.disconnectAsync()
+    fun stopAsync() = async {
+        session.disconnectAsync()
     }
 }

@@ -1,3 +1,8 @@
 package mqtt.wire.control.packet
 
-interface IPublishMessage : ControlPacket
+import mqtt.wire.data.QualityOfService
+
+interface IPublishMessage : ControlPacket {
+    val qualityOfService: QualityOfService
+    fun expectedResponse(): ControlPacket?
+}

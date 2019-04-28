@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 class ClientTests {
 
     @Test
-    fun canConnect() {
+    fun reconnectsAfterSocketConnectionFailure() {
         val request = ConnectionRequest(getClientId())
         val invalidBadPort = 1
         val params = ConnectionParameters("localhost", invalidBadPort, false, request,
@@ -20,4 +20,17 @@ class ClientTests {
         }
         assertEquals(3, client.connectionCount)
     }
+
+//    @Test
+//    fun publishAutomaticallySent() {
+//        val request = ConnectionRequest(getClientId())
+//        val params = ConnectionParameters("localhost", 60000, false, request)
+//        val client = MqttClient(params)
+//        val job = client.startAsync()
+//        block {
+//            job.await()
+//
+//        }
+//        assertEquals(3, client.connectionCount)
+//    }
 }

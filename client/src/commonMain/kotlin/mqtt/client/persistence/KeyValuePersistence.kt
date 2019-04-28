@@ -7,12 +7,12 @@ import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.MqttUtf8String
 
 interface KeyValuePersistence {
-    fun open(clientId: MqttUtf8String, server: Url)
-    fun containsKey(key: UShort): Boolean
-    fun keys(): Collection<UShort>
-    fun put(key: UShort, value: ControlPacket): ControlPacket?
-    fun get(key: UShort): ControlPacket?
-    fun remove(key: UShort): ControlPacket?
-    fun clear()
-    fun close()
+    suspend fun open(clientId: MqttUtf8String, server: Url)
+    suspend fun containsKey(key: UShort): Boolean
+    suspend fun keys(): Collection<UShort>
+    suspend fun put(key: UShort, value: ControlPacket): ControlPacket?
+    suspend fun get(key: UShort): ControlPacket?
+    suspend fun remove(key: UShort): ControlPacket?
+    suspend fun clear()
+    suspend fun close()
 }

@@ -9,7 +9,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
+import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.readMqttUtf8String
 import mqtt.wire.data.writeMqttUtf8String
 
@@ -44,8 +44,19 @@ data class PublishMessage(
         }
     }
 
+    override val qualityOfService: QualityOfService = fixed.qos
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload
+
+    override fun expectedResponse() = when {
+        fixed.qos == AT_LEAST_ONCE -> {
+            PublishAcknowledgment(variable.packetIdentifier!!)
+        }
+        fixed.qos == EXACTLY_ONCE -> {
+            PublishRelease(variable.packetIdentifier!!)
+        }
+        else -> null
+    }
 
     data class FixedHeader(
             /**
