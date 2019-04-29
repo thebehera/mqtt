@@ -4,10 +4,11 @@ package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
 import mqtt.wire.control.packet.ISubscribeRequest
+import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
+import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.readMqttFilter
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.writeMqttFilter
@@ -23,14 +24,15 @@ import mqtt.wire.data.writeMqttFilter
  * Bits 3,2,1 and 0 of the Fixed Header of the SUBSCRIBE packet are reserved and MUST be set to 0,0,1 and 0
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
-data class SubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacketIdentifier(),
-                            val subscriptions: Collection<Subscription>)
+data class SubscribeRequest(override val packetIdentifier: UShort = getAndIncrementPacketIdentifier(),
+                            val subscriptions: List<Subscription>)
     : ControlPacketV4(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
     constructor(topic: Filter, qos: QualityOfService)
             : this(subscriptions = listOf(Subscription(topic, qos)))
 
-    constructor(topics: List<String>, qos: List<QualityOfService>)
+
+    constructor(topics: List<Filter>, qos: List<QualityOfService>)
             : this(subscriptions = Subscription.from(topics, qos))
 
     private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
@@ -38,9 +40,19 @@ data class SubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacket
     override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
 
     override fun expectedResponse(): SubscribeAcknowledgement {
-        val returnCodes = subscriptions.map { SubscribeAcknowledgement.ReturnCode.valueOf(it.maximumQos.name) }
+        val returnCodes = subscriptions.map {
+            when (it.maximumQos) {
+                AT_MOST_ONCE -> ReasonCode.GRANTED_QOS_0
+                AT_LEAST_ONCE -> ReasonCode.GRANTED_QOS_1
+                EXACTLY_ONCE -> ReasonCode.GRANTED_QOS_2
+                else -> ReasonCode.UNSPECIFIED_ERROR
+            }
+        }
         return SubscribeAcknowledgement(packetIdentifier, returnCodes)
     }
+
+    override fun getTopics() = subscriptions.map { it.topicFilter }
+
     companion object {
         fun from(buffer: ByteReadPacket): SubscribeRequest {
             val packetIdentifier = buffer.readUShort()
@@ -66,8 +78,8 @@ data class Subscription(val topicFilter: Filter,
     }
 
     companion object {
-        fun fromMany(buffer: ByteReadPacket): Collection<Subscription> {
-            val subscriptions = HashSet<Subscription>()
+        fun fromMany(buffer: ByteReadPacket): List<Subscription> {
+            val subscriptions = ArrayList<Subscription>()
             while (buffer.remaining != 0.toLong()) {
                 subscriptions.add(from(buffer))
             }
@@ -83,13 +95,13 @@ data class Subscription(val topicFilter: Filter,
             return Subscription(topicFilter, qos)
         }
 
-        fun from(topics: List<String>, qos: List<QualityOfService>): List<Subscription> {
+        fun from(topics: List<Filter>, qos: List<QualityOfService>): List<Subscription> {
             if (topics.size != qos.size) {
                 throw IllegalArgumentException("Non matching topics collection size with the QoS collection size")
             }
             val subscriptions = mutableListOf<Subscription>()
             topics.forEachIndexed { index, topic ->
-                subscriptions += Subscription(Filter(topic), qos[index])
+                subscriptions += Subscription(topic, qos[index])
             }
             return subscriptions
         }

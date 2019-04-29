@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
@@ -13,9 +14,6 @@ import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties.Authentication
-import mqtt.wire5.control.packet.format.ReasonCode
-import mqtt.wire5.control.packet.format.ReasonCode.SUCCESS
-import mqtt.wire5.control.packet.format.ReasonCode.UNSPECIFIED_ERROR
 import mqtt.wire5.control.packet.format.variable.property.*
 import kotlin.test.*
 
@@ -326,7 +324,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
             assertEquals(key.getValueOrThrow(), "key")
@@ -583,7 +581,7 @@ class ConnectionAcknowledgmentTests {
     fun invalidPropertyOnVariableHeaderThrowsMalformedPacketException() {
         val method = WillDelayInterval(3.toUInt())
         try {
-            VariableHeader.Properties.from(listOf(method, method))
+            Properties.from(listOf(method, method))
             fail()
         } catch (e: MalformedPacketException) {
         }
@@ -593,7 +591,7 @@ class ConnectionAcknowledgmentTests {
     fun connectionReasonByteOnVariableHeaderIsInvalidThrowsMalformedPacketException() {
         val buffer = buildPacket {
             writeByte(1)
-            writeUByte(ReasonCode.SERVER_SHUTTING_DOWN.byte)
+            writeUByte(SERVER_SHUTTING_DOWN.byte)
         }
         try {
             VariableHeader.from(buffer)

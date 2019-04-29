@@ -8,12 +8,11 @@ import kotlinx.io.core.writeFully
 import kotlinx.io.core.writeUByte
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.DisconnectNotification.VariableHeader
 import mqtt.wire5.control.packet.DisconnectNotification.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.ReasonCode
-import mqtt.wire5.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.format.variable.property.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -41,7 +40,7 @@ class DisconnectTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            Properties.from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -70,7 +69,7 @@ class DisconnectTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            Properties.from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -78,7 +77,7 @@ class DisconnectTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(
+        val props = Properties.from(
                 setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value")),
                         UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
         val userPropertyResult = props.userProperty
@@ -100,7 +99,7 @@ class DisconnectTests {
         val variable = VariableHeader(NORMAL_DISCONNECTION)
         val packet = buildPacket {
             writePacket(variable.packet)
-            writeUByte(ReasonCode.BANNED.byte)
+            writeUByte(BANNED.byte)
         }
         try {
             DisconnectNotification.from(packet)
@@ -111,7 +110,7 @@ class DisconnectTests {
     @Test
     fun serverReference() {
         val actual = DisconnectNotification(
-                VariableHeader(properties = VariableHeader.Properties(serverReference = MqttUtf8String("yolo"))))
+                VariableHeader(properties = Properties(serverReference = MqttUtf8String("yolo"))))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as DisconnectNotification
         assertEquals(expected.variable.properties.serverReference, MqttUtf8String("yolo"))
@@ -130,7 +129,7 @@ class DisconnectTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            Properties.from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }

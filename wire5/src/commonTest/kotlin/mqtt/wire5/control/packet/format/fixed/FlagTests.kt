@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet.format.fixed
 
 import kotlinx.io.core.readBytes
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.*
@@ -10,7 +11,6 @@ import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
-import mqtt.wire5.control.packet.format.ReasonCode.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

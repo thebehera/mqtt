@@ -3,6 +3,7 @@ package mqtt.client
 import mqtt.client.subscription.SubscriptionCallback
 import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.TopicLevelNode
 import kotlin.test.Test
@@ -20,7 +21,7 @@ class SubscriptionManagerTests {
                 cbFired = true
             }
         }
-        subManger.register("hello", original)
+        subManger.register(Filter("hello"), original)
         val sub = subManger.getSubscription<String>(TopicLevelNode.parse("hello")!!)
         assertEquals(original, sub)
         sub!!.onMessageReceived(Name("yolo"), QualityOfService.AT_MOST_ONCE, "")
@@ -34,7 +35,7 @@ class SubscriptionManagerTests {
         val original = object : SubscriptionCallback<String> {
             override fun onMessageReceived(topic: Name, qos: QualityOfService, message: String) {}
         }
-        subManger.register("hello", original)
+        subManger.register(Filter("hello"), original)
         subManger.deregister("hello")
         assertTrue(subManger.rootNodeSubscriptions.isEmpty())
     }

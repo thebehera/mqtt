@@ -6,12 +6,12 @@ import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
+import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -44,6 +44,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
             : this(VariableHeader(packetIdentifier, props),
             Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList))
 
+    override val packetIdentifier = variable.packetIdentifier
     override val variableHeaderPacket = variable.packet()
     private val payload by lazy {
         buildPacket {
@@ -53,6 +54,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
 
     override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier, ReasonCode.SUCCESS)
     override fun payloadPacket(sendDefaults: Boolean) = payload
+    override fun getTopics() = subscriptions.map { it.topicFilter }
 
     /**
      * 3.8.2 SUBSCRIBE Variable Header

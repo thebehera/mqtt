@@ -6,10 +6,11 @@ import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishReceived
+import mqtt.wire.control.packet.format.ReasonCode
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -36,7 +37,7 @@ data class PublishReceived(val variable: VariableHeader)
                                * Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBREC
                                * has a Remaining Length of 2.
                                */
-                              val reasonCode: ReasonCode = ReasonCode.SUCCESS,
+                              val reasonCode: ReasonCode = SUCCESS,
                               /**
                                * 3.4.2.2 PUBACK Properties
                                */
@@ -51,7 +52,7 @@ data class PublishReceived(val variable: VariableHeader)
         }
 
         fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-            val canOmitReasonCodeAndProperties = (reasonCode == ReasonCode.SUCCESS
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
                     && properties.userProperty.isEmpty()
                     && properties.reasonString == null)
 
@@ -142,15 +143,15 @@ data class PublishReceived(val variable: VariableHeader)
                 } else {
                     val reasonCodeByte = buffer.readUByte()
                     val reasonCode = when (reasonCodeByte) {
-                        ReasonCode.SUCCESS.byte -> ReasonCode.SUCCESS
-                        ReasonCode.NO_MATCHING_SUBSCRIBERS.byte -> ReasonCode.NO_MATCHING_SUBSCRIBERS
-                        ReasonCode.UNSPECIFIED_ERROR.byte -> ReasonCode.UNSPECIFIED_ERROR
-                        ReasonCode.IMPLEMENTATION_SPECIFIC_ERROR.byte -> ReasonCode.IMPLEMENTATION_SPECIFIC_ERROR
-                        ReasonCode.NOT_AUTHORIZED.byte -> ReasonCode.NOT_AUTHORIZED
-                        ReasonCode.TOPIC_NAME_INVALID.byte -> ReasonCode.TOPIC_NAME_INVALID
-                        ReasonCode.PACKET_IDENTIFIER_IN_USE.byte -> ReasonCode.PACKET_IDENTIFIER_IN_USE
-                        ReasonCode.QUOTA_EXCEEDED.byte -> ReasonCode.QUOTA_EXCEEDED
-                        ReasonCode.PAYLOAD_FORMAT_INVALID.byte -> ReasonCode.PAYLOAD_FORMAT_INVALID
+                        SUCCESS.byte -> SUCCESS
+                        NO_MATCHING_SUBSCRIBERS.byte -> NO_MATCHING_SUBSCRIBERS
+                        UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
+                        IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
+                        NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
+                        TOPIC_NAME_INVALID.byte -> TOPIC_NAME_INVALID
+                        PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
+                        QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
+                        PAYLOAD_FORMAT_INVALID.byte -> PAYLOAD_FORMAT_INVALID
                         else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte" +
                                 "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477424")
                     }

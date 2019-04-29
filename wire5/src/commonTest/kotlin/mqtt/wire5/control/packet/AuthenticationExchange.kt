@@ -8,13 +8,13 @@ import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.ReasonCode.BANNED
+import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.ReasonCode.BANNED
-import mqtt.wire5.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire5.control.packet.format.variable.property.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -42,8 +42,8 @@ class AuthenticationExchangeTests {
 
     @Test
     fun reasonString() {
-        val props = AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("2"), reasonString = MqttUtf8String("yolo"))
-        val header = AuthenticationExchange.VariableHeader(SUCCESS, properties = props)
+        val props = Properties(MqttUtf8String("2"), reasonString = MqttUtf8String("yolo"))
+        val header = VariableHeader(SUCCESS, properties = props)
         val actual = AuthenticationExchange(header)
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as AuthenticationExchange
@@ -63,7 +63,7 @@ class AuthenticationExchangeTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            AuthenticationExchange.VariableHeader.Properties.from(props.readProperties())
+            Properties.from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -71,7 +71,7 @@ class AuthenticationExchangeTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = AuthenticationExchange.VariableHeader.Properties.from(
+        val props = Properties.from(
                 setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value")),
                         UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
         val userPropertyResult = props.userProperty
@@ -81,7 +81,7 @@ class AuthenticationExchangeTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = AuthenticationExchange(AuthenticationExchange.VariableHeader(SUCCESS, properties = props)).serialize()
+        val request = AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize()
         val requestRead = ControlPacketV5.from(request.copy()) as AuthenticationExchange
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
@@ -101,7 +101,7 @@ class AuthenticationExchangeTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            AuthenticationExchange.VariableHeader.Properties.from(props.readProperties())
+            Properties.from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -120,7 +120,7 @@ class AuthenticationExchangeTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            AuthenticationExchange.VariableHeader.Properties.from(props.readProperties())
+            Properties.from(props.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }

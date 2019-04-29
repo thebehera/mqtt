@@ -8,11 +8,10 @@ import kotlinx.io.core.writeFully
 import kotlinx.io.core.writeUByte
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.UnsubscribeAcknowledgment.VariableHeader
-import mqtt.wire5.control.packet.format.ReasonCode
-import mqtt.wire5.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readProperties
@@ -140,7 +139,7 @@ class UnsubscribeAcknowledgmentTests {
         val variable = VariableHeader(packetIdentifier)
         val packet = buildPacket {
             writePacket(variable.packet)
-            writeUByte(ReasonCode.BANNED.byte)
+            writeUByte(BANNED.byte)
         }
         try {
             UnsubscribeAcknowledgment.from(packet)

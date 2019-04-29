@@ -6,11 +6,11 @@ import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.writeFully
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
+import mqtt.wire.control.packet.format.ReasonCode.RECEIVE_MAXIMUM_EXCEEDED
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.PublishRelease.VariableHeader
-import mqtt.wire5.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
-import mqtt.wire5.control.packet.format.ReasonCode.RECEIVE_MAXIMUM_EXCEEDED
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readProperties

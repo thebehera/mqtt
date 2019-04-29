@@ -2,6 +2,7 @@
 
 package mqtt.client.subscription
 
+import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.TopicLevelNode
 import mqtt.wire.data.topic.minusAssign
 import mqtt.wire.data.topic.plusAssign
@@ -13,18 +14,18 @@ class SubscriptionManager {
     val rootNodeSubscriptions = HashMap<String, TopicLevelNode>()
 
 
-    inline fun <reified T : Any> register(topic: String, callback: SubscriptionCallback<T>) {
-        val rootTopicNode = TopicLevelNode.parse(topic) ?: throw IllegalArgumentException("Topic is invalid: $topic")
-        val rootTopicValue = rootTopicNode.value.value
+    inline fun <reified T : Any> register(rootTopicNode: Filter, callback: SubscriptionCallback<T>) {
+        val validated = rootTopicNode.validate() ?: return
+        val rootTopicValue = validated.value.value
         val previouslyFoundRootNode = rootNodeSubscriptions[rootTopicValue]
         if (previouslyFoundRootNode == null) {
-            rootNodeSubscriptions[rootTopicValue] = rootTopicNode
+            rootNodeSubscriptions[rootTopicValue] = validated
         } else {
-            previouslyFoundRootNode += rootTopicNode
+            previouslyFoundRootNode += validated
         }
-        registerInternal(rootTopicNode.getAllBottomLevelChildren().first(), callback, T::class)
-
+        registerInternal(validated.getAllBottomLevelChildren().first(), callback, T::class)
     }
+
 
     fun deregister(topic: String) {
         val rootTopicNode = TopicLevelNode.parse(topic) ?: throw IllegalArgumentException("Topic is invalid: $topic")

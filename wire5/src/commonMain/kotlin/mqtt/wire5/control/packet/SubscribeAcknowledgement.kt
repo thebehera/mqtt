@@ -6,12 +6,12 @@ import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
+import mqtt.wire.control.packet.format.ReasonCode
+import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.ReasonCode
-import mqtt.wire5.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty

@@ -6,10 +6,12 @@ import kotlinx.io.core.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishComplete
+import mqtt.wire.control.packet.format.ReasonCode
+import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
+import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.ReasonCode
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -23,7 +25,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
 data class PublishComplete(val variable: VariableHeader) :
         ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
 
-    constructor(packetIdentifier: UShort, reasonCode: ReasonCode = ReasonCode.SUCCESS)
+    constructor(packetIdentifier: UShort, reasonCode: ReasonCode = SUCCESS)
             : this(VariableHeader(packetIdentifier, reasonCode))
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override val packetIdentifier: UShort = variable.packetIdentifier
@@ -46,7 +48,7 @@ data class PublishComplete(val variable: VariableHeader) :
                                * Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBCOMP
                                * has a Remaining Length of 2.
                                */
-                              val reasonCode: ReasonCode = ReasonCode.SUCCESS,
+                              val reasonCode: ReasonCode = SUCCESS,
                               /**
                                * 3.4.2.2 PUBACK Properties
                                */
@@ -61,7 +63,7 @@ data class PublishComplete(val variable: VariableHeader) :
         }
 
         fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-            val canOmitReasonCodeAndProperties = (reasonCode == ReasonCode.SUCCESS
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
                     && properties.userProperty.isEmpty()
                     && properties.reasonString == null)
 
@@ -153,8 +155,8 @@ data class PublishComplete(val variable: VariableHeader) :
                 } else {
                     val reasonCodeByte = buffer.readUByte()
                     val reasonCode = when (reasonCodeByte) {
-                        ReasonCode.SUCCESS.byte -> ReasonCode.SUCCESS
-                        ReasonCode.PACKET_IDENTIFIER_NOT_FOUND.byte -> ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
+                        SUCCESS.byte -> SUCCESS
+                        PACKET_IDENTIFIER_NOT_FOUND.byte -> PACKET_IDENTIFIER_NOT_FOUND
                         else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte" +
                                 "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477444")
                     }
