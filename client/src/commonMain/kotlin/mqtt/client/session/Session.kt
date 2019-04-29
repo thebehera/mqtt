@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.client.session
 
 import kotlinx.coroutines.CoroutineScope
@@ -22,6 +24,7 @@ class ClientSession(val params: ConnectionParameters,
                     val state: ClientSessionState) : CoroutineScope, OnMessageReceivedCallback {
     var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null
+    var everyRecvMessageCallback: OnMessageReceivedCallback? = null
 
     suspend fun connect(): ConnectionState {
         val transportLocal = transport
@@ -40,12 +43,22 @@ class ClientSession(val params: ConnectionParameters,
         return state.value
     }
 
+    private fun fireCallbackOrPrint(controlPacket: ControlPacket, callback: OnMessageReceivedCallback?) {
+        if (callback == null) {
+            println("IN: $controlPacket")
+        } else {
+            callback.onMessage(controlPacket)
+        }
+    }
+
     override fun onMessage(controlPacket: ControlPacket) {
         launch {
+            var printed = false
             try {
                 when (controlPacket) {
                     is IPublishMessage -> {
-                        callback?.onMessage(controlPacket)
+                        fireCallbackOrPrint(controlPacket, callback)
+                        printed = true
                         val response = controlPacket.expectedResponse() ?: return@launch
                         send(response)
                     }
@@ -65,11 +78,21 @@ class ClientSession(val params: ConnectionParameters,
                     is IPublishComplete ->
                         state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier)
                     is ISubscribeAcknowledgement -> state.subscriptionAcknowledgementReceived(controlPacket)
-                    else -> callback?.onMessage(controlPacket)
+                    else -> {
+                        fireCallbackOrPrint(controlPacket, callback)
+                        printed = true
+                    }
                 }
             } catch (e: Exception) {
                 println("Application failed to process $controlPacket")
                 println(e)
+            } finally {
+                if (printed) {
+                    everyRecvMessageCallback?.onMessage(controlPacket)
+                } else {
+                    println("IN: $controlPacket")
+                    fireCallbackOrPrint(controlPacket, everyRecvMessageCallback)
+                }
             }
         }
     }
@@ -79,10 +102,13 @@ class ClientSession(val params: ConnectionParameters,
         this.transport = null
     }
 
-    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, payload: T?) {
-        val actualPayload = if (payload == null) {
-            null
-        } else {
+    suspend fun publish(topic: String, qos: QualityOfService,
+                        packetIdentifier: UShort = getAndIncrementPacketIdentifier()) {
+        send(PublishMessage(topic, qos, packetIdentifier))
+    }
+
+    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, payload: T) {
+        val actualPayload = run {
             val serializer = findSerializer<T>() ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }

@@ -36,6 +36,10 @@ data class PublishMessage(
                 packetIdentifier: UShort = getAndIncrementPacketIdentifier(), dup: Boolean = false, retain: Boolean = false)
             : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier), payload)
 
+    constructor(topic: String, qos: QualityOfService,
+                packetIdentifier: UShort = getAndIncrementPacketIdentifier(), dup: Boolean = false, retain: Boolean = false)
+            : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier), null)
+
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")
