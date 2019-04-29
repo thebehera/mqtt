@@ -2,6 +2,7 @@ package mqtt.client
 
 import io.ktor.http.Url
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
 import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.Open
 import mqtt.client.platform.PlatformCoroutineDispatcher
@@ -24,6 +25,14 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
     var connectionCount = 0
     val session by lazy { ClientSession(params, Job(job), state) }
 
+    fun startAsyncWaitUntilFirstConnection() = async {
+        val lock = Mutex(true)
+        @Suppress("DeferredResultUnused")
+        startAsync(Runnable {
+            lock.unlock()
+        })
+        lock.lock()
+    }
     fun startAsync(newConnectionCb: Runnable? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
             return@async true

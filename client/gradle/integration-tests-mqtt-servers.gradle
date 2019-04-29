@@ -12,7 +12,7 @@ class MosquittoServer extends DefaultTask {
     @TaskAction void startServer() {
         ProcessBuilder pb = new ProcessBuilder()
                 .directory(configurationDirectory)
-                .command "/usr/local/sbin/mosquitto", "-c", configurationFileName, "-v"
+                .command "mosquitto", "-c", configurationFileName, "-v"
         pb.redirectErrorStream(true)
         process = pb.start()
         BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))
