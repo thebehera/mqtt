@@ -7,13 +7,13 @@ import kotlinx.coroutines.launch
 import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.ConnectionState
 import mqtt.client.platform.PlatformSocketConnection
-import mqtt.client.subscription.SubscriptionCallback
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.client.transport.SocketTransport
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
+import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.PublishMessage
 import mqtt.wire4.control.packet.SubscribeRequest
 import mqtt.wire4.control.packet.UnsubscribeRequest
@@ -45,7 +45,9 @@ class ClientSession(val params: ConnectionParameters,
 
     private fun fireCallbackOrPrint(controlPacket: ControlPacket, callback: OnMessageReceivedCallback?) {
         if (callback == null) {
-            println("IN: $controlPacket")
+            if (controlPacket is IPublishMessage && params.logIncomingPublish || params.logIncomingControlPackets) {
+                println("IN: $controlPacket")
+            }
         } else {
             callback.onMessage(controlPacket)
         }
@@ -58,6 +60,12 @@ class ClientSession(val params: ConnectionParameters,
                 when (controlPacket) {
                     is IPublishMessage -> {
                         fireCallbackOrPrint(controlPacket, callback)
+                        val topicName = controlPacket.topic.validateTopic()
+                        if (topicName == null) {
+                            println("Failed to validate the topic")
+                            return@launch
+                        }
+                        state.subscriptionManager.handleIncomingPublish(controlPacket)
                         printed = true
                         val response = controlPacket.expectedResponse() ?: return@launch
                         send(response)
@@ -90,7 +98,6 @@ class ClientSession(val params: ConnectionParameters,
                 if (printed) {
                     everyRecvMessageCallback?.onMessage(controlPacket)
                 } else {
-                    println("IN: $controlPacket")
                     fireCallbackOrPrint(controlPacket, everyRecvMessageCallback)
                 }
             }
@@ -116,21 +123,23 @@ class ClientSession(val params: ConnectionParameters,
     }
 
 
-    suspend fun subscribe(topic: Filter, qos: QualityOfService, callback: SubscriptionCallback<Any>) {
-        val subscription = SubscribeRequest(listOf(topic), listOf(qos))
-        state.subscriptionManager.register(topic, callback)
+    suspend inline fun <reified T : Any> subscribe(topic: Filter, qos: QualityOfService, callback: SubscriptionCallback<T>) {
+        val node = topic.validate() ?: return
+        state.subscriptionManager.register(node, callback)
+        val subscription = SubscribeRequest(10.toUShort(), topic, qos)
         send(subscription)
         state.sentSubscriptionRequest(subscription, listOf(callback))
     }
 
-    suspend fun subscribe(topics: List<Filter>, qos: List<QualityOfService>, callbacks: List<SubscriptionCallback<Any>>) {
+    suspend inline fun <reified T : Any> subscribe(topics: List<Filter>, qos: List<QualityOfService>, callbacks: List<SubscriptionCallback<T>>) {
         if (topics.size != qos.size && qos.size != callbacks.size) {
             throw IllegalArgumentException("Failed to subscribe: Topics.size != qos.size != callbacks.size")
         }
         val size = topics.size
         val subscription = SubscribeRequest(topics, qos)
         for (index in 0..size) {
-            state.subscriptionManager.register(topics[index], callbacks[index])
+            val node = topics[index].validate() ?: return
+            state.subscriptionManager.register(node, callbacks[index])
         }
         send(subscription)
         state.sentSubscriptionRequest(subscription, callbacks)

@@ -15,6 +15,21 @@ import mqtt.wire.data.MqttUtf8String
  */
 inline class Name(val topic: String) {
 
+    fun validate(asServer: Boolean = false): Node? {
+        return try {
+            val rootNode = Node.from(MqttUtf8String(topic))
+            if (rootNode.isWildcard) {
+                return null
+            }
+            if (!asServer && rootNode.level.value.startsWith('$')) {
+                return null
+            }
+            rootNode
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /**
      * Validate and convert the string topic into a TopicLevelNode structure
      */
@@ -32,4 +47,6 @@ inline class Name(val topic: String) {
             null
         }
     }
+
+    fun toFilter() = Filter(topic)
 }

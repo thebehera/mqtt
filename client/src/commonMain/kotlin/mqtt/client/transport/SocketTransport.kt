@@ -11,8 +11,7 @@ import mqtt.client.connection.*
 import mqtt.client.read
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
-import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.control.packet.IConnectionAcknowledgment
+import mqtt.wire.control.packet.*
 import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
@@ -105,8 +104,9 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             output.writePacket(connectionRequestPacket)
             val postWriteTime = currentTimestampMs()
             val socketWriteTime = postWriteTime - serializationTime
-            println("OUT [$size][$socketWriteTime]: ${parameters.connectionRequest}")
-
+            if (parameters.logConnectionAttempt) {
+                println("OUT [$size][$socketWriteTime]: ${parameters.connectionRequest}")
+            }
             return@async null
         } catch (e: Exception) {
             val failureState = ConnectionFailure(e)
@@ -128,7 +128,10 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                     val writeComplete = currentTimestampMs()
                     setLastMessageReceived(writeComplete)
                     val sendTime = writeComplete - start
-                    println("OUT [$size][$sendTime]: $messageToSend")
+                    if ((messageToSend is IPublishMessage || messageToSend is ISubscribeRequest
+                                    || messageToSend is IUnsubscribeRequest) && parameters.logOutgoingPublishOrSubscribe) {
+                        println("OUT [$size][$sendTime]: $messageToSend")
+                    }
                     if (messageToSend is DisconnectNotification) {
                         hardClose()
                         return@launch
@@ -167,7 +170,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                 val callback = messageReceiveCallback
                 if (callback != null) {
                     callback.onMessage(controlPacket)
-                } else {
+                } else if (parameters.logConnectionAttempt) {
                     println("IN: $controlPacket")
                 }
                 if (!state.compareAndSet(Connecting, Open)) {
@@ -208,7 +211,10 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         if (callback != null) {
             callback.onMessage(controlPacket)
         } else {
-            println("IN: $controlPacket")
+            if ((controlPacket is IPublishMessage && parameters.logIncomingPublish) ||
+                    parameters.logIncomingControlPackets) {
+                println("IN: $controlPacket")
+            }
         }
     }
 

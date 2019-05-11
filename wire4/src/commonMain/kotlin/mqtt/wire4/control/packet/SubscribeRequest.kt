@@ -32,11 +32,17 @@ data class SubscribeRequest(override val packetIdentifier: UShort = getAndIncrem
             : this(subscriptions = listOf(Subscription(topic, qos)))
 
 
+    constructor(packetIdentifier: UShort = getAndIncrementPacketIdentifier(), topic: Filter, qos: QualityOfService)
+            : this(packetIdentifier, listOf(Subscription(topic, qos)))
+
+
     constructor(topics: List<Filter>, qos: List<QualityOfService>)
             : this(subscriptions = Subscription.from(topics, qos))
-
     private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
-    override val variableHeaderPacket = buildPacket { writeUShort(payloadSubs.remaining.toUShort()) }
+    override val variableHeaderPacket = buildPacket {
+        writeUShort(packetIdentifier)
+    }
+
     override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
 
     override fun expectedResponse(): SubscribeAcknowledgement {

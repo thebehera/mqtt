@@ -4,8 +4,7 @@ package mqtt.wire4.control.packet
 
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
-import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
-import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
+import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -98,6 +97,17 @@ class SubscribeRequestTest {
     }
 
     @Test
+    fun packetIdentifierIsCorrect() {
+        val subscription = SubscribeRequest(10.toUShort(), Filter("a/b"), AT_MOST_ONCE)
+        assertEquals(10.toUShort(), subscription.packetIdentifier)
+        val stream = subscription.serialize()
+        stream.readByte()
+        stream.readByte()
+        val packetIdentifer = stream.readUShort()
+        assertEquals(10.toUShort(), packetIdentifer)
+    }
+
+    @Test
     fun serialized() {
         val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
         val request = SubscribeRequest(10.toUShort(), subscriptions)
@@ -116,7 +126,7 @@ class SubscribeRequestTest {
 
         // byte 2 variable header
 //        assertEquals(10, readPacket.remaining)
-        assertEquals(12.toUByte(), readPacket.readUByte())
+        assertEquals(10.toUByte(), readPacket.readUByte())
 
         // Payload 12 bytes
         // Topic Filter ("a/b")

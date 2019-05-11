@@ -9,6 +9,10 @@ import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.ClientSessionState
 import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.topic.Filter
+import mqtt.wire.data.topic.Name
+import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 
 class MqttClient(val params: ConnectionParameters) : CoroutineScope {
@@ -54,6 +58,20 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
             }
             result
         }
+    }
+
+    inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,
+                                           callback: SubscriptionCallback<T>) = launch {
+
+        session.subscribe(Filter(topicFilter), qos, callback)
+    }
+
+    inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,
+                                           crossinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit) = launch {
+        val subscriptionCallback = object : SubscriptionCallback<T> {
+            override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) = callback(topic, qos, message)
+        }
+        session.subscribe(Filter(topicFilter), qos, subscriptionCallback)
     }
 
     fun stopAsync() = async {

@@ -7,11 +7,11 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.readMqttUtf8String
-import mqtt.wire.data.writeMqttUtf8String
+import mqtt.wire.data.topic.Name
+import mqtt.wire.data.writeMqttName
 
 /**
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
@@ -27,18 +27,22 @@ data class PublishMessage(
      * Build a QOS 0 At most once publish message
      */
     constructor(topic: String, payload: ByteReadPacket? = null, dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, retain = retain), VariableHeader(MqttUtf8String(topic)), payload)
+            : this(FixedHeader(dup, retain = retain), VariableHeader(Name(topic)), payload)
+
+    constructor(topic: String, payload: String, dup: Boolean = false, retain: Boolean = false)
+            : this(FixedHeader(dup, retain = retain), VariableHeader(Name(topic)),
+            buildPacket { writeStringUtf8(payload) })
 
     /**
      * Build a QOS 1 or 2 publish message
      */
     constructor(topic: String, qos: QualityOfService, payload: ByteReadPacket? = null,
                 packetIdentifier: UShort = getAndIncrementPacketIdentifier(), dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier), payload)
+            : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier), payload)
 
     constructor(topic: String, qos: QualityOfService,
                 packetIdentifier: UShort = getAndIncrementPacketIdentifier(), dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, qos, retain), VariableHeader(MqttUtf8String(topic), packetIdentifier), null)
+            : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier), null)
 
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
@@ -61,6 +65,8 @@ data class PublishMessage(
         }
         else -> null
     }
+
+    override val topic: Name = variable.topicName
 
     data class FixedHeader(
             /**
@@ -186,7 +192,7 @@ data class PublishMessage(
              * [MQTT-3.3.2-3]. However, since the Server is permitted to override the Topic Name, it might not be the
              * same as the Topic Name in the original PUBLISH Packet.
              */
-            val topicName: MqttUtf8String,
+            val topicName: Name,
             /**
              * The Packet Identifier field is only present in PUBLISH Packets where the QoS level is 1 or 2. Section
              * 2.3.1 provides more information about Packet Identifiers.
@@ -194,7 +200,7 @@ data class PublishMessage(
             val packetIdentifier: UShort? = null) {
 
         fun packet() = buildPacket {
-            writeMqttUtf8String(topicName)
+            writeMqttName(topicName)
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier)
             }
@@ -204,7 +210,7 @@ data class PublishMessage(
             fun from(buffer: ByteReadPacket, isQos0: Boolean): VariableHeader {
                 val topicName = buffer.readMqttUtf8String()
                 val packetIdentifier = if (isQos0) null else buffer.readUShort()
-                return VariableHeader(topicName, packetIdentifier)
+                return VariableHeader(Name(topicName.getValueOrThrow()), packetIdentifier)
             }
         }
     }

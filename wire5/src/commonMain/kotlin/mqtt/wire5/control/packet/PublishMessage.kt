@@ -10,6 +10,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.*
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
+import mqtt.wire.data.topic.Name
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -32,7 +33,7 @@ data class PublishMessage(
     override val qualityOfService: QualityOfService = fixed.qos
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
-
+    override val topic = variable.topicName
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
             PublishAcknowledgment(variable.packetIdentifier!!)
@@ -184,7 +185,7 @@ data class PublishMessage(
      * The Variable Header of the PUBLISH Packet contains the following fields in the order: Topic Name, Packet
      * Identifier, and Properties. The rules for encoding Properties are described in section 2.2.2.
      */
-    data class VariableHeader(val topicName: MqttUtf8String,
+    data class VariableHeader(val topicName: Name,
                               val packetIdentifier: UShort? = null,
                               val properties: Properties = Properties()) {
         init {
@@ -195,7 +196,7 @@ data class PublishMessage(
         }
 
         fun packet(sendDefaults: Boolean = false) = buildPacket {
-            writeMqttUtf8String(topicName)
+            writeMqttName(topicName)
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier)
             }
@@ -532,7 +533,7 @@ data class PublishMessage(
                 val topicName = buffer.readMqttUtf8String()
                 val packetIdentifier = if (isQos0) null else buffer.readUShort()
                 val props = Properties.from(buffer.readProperties())
-                return VariableHeader(topicName, packetIdentifier, props)
+                return VariableHeader(Name(topicName.getValueOrThrow()), packetIdentifier, props)
             }
         }
     }

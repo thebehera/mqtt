@@ -6,13 +6,12 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
 import mqtt.client.connection.ConnectionParameters
 import mqtt.client.transport.OnMessageReceivedCallback
-import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.control.packet.IPublishAcknowledgment
-import mqtt.wire.control.packet.IPublishComplete
-import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
+import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
-import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
+import mqtt.wire.data.QualityOfService.*
+import mqtt.wire.data.topic.Filter
+import mqtt.wire.data.topic.Name
+import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,10 +35,16 @@ class ClientTests {
 
     fun createClient(): Pair<MqttClient, Deferred<Unit>> {
         val request = ConnectionRequest(getClientId())
-        val params = ConnectionParameters("localhost", 60000, false, request)
+        val params = ConnectionParameters("localhost", 60000, secure = false, connectionRequest = request)
         val client = MqttClient(params)
         val job = client.startAsyncWaitUntilFirstConnection()
         return Pair(client, job)
+    }
+
+    suspend fun createClientAwaitConnection(): MqttClient {
+        val (client, job) = createClient()
+        job.await()
+        return client
     }
 
     inline fun <reified T> blockUntilMessageReceived(topic: String, qos: QualityOfService,
@@ -86,4 +91,44 @@ class ClientTests {
                     }
                 })
     }
+
+
+    @Test
+    fun subscribeAckReceived() {
+        val (client, job) = createClient()
+        blockWithTimeout(5000) {
+            job.await()
+            val pubCompMutex = Mutex(true)
+            client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
+                override fun onMessage(controlPacket: ControlPacket) {
+                    if (controlPacket is ISubscribeAcknowledgement) {
+                        pubCompMutex.unlock()
+                    }
+                }
+            }
+            client.session.subscribe(Filter("hello"), AT_LEAST_ONCE, object : SubscriptionCallback<String> {
+                override fun onMessageReceived(topic: Name, qos: QualityOfService, message: String?) {
+                    println(message)
+                }
+            })
+            pubCompMutex.lock()
+        }
+    }
+
+    @Test
+    fun subscribeOnePublishAnotherWorks() {
+        val ogMessage = "Hello2"
+        blockWithTimeout(50000) {
+            val client1Session1 = createClientAwaitConnection()
+            val client2 = createClientAwaitConnection()
+            val mutex = Mutex(true)
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
+                assertEquals(ogMessage, message)
+                mutex.unlock()
+            }
+            client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
+            mutex.lock()
+        }
+    }
+
 }

@@ -7,11 +7,11 @@ import mqtt.client.persistence.KeyValuePersistence
 import mqtt.client.persistence.MemoryKeyValuePersistence
 import mqtt.client.persistence.MemoryQueuedPersistence
 import mqtt.client.persistence.QueuedPersistence
-import mqtt.client.subscription.SubscriptionCallback
 import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.topic.SubscriptionCallback
 
 class ClientSessionState(
         val messagesNotSent: QueuedPersistence = MemoryQueuedPersistence(),
@@ -25,11 +25,16 @@ class ClientSessionState(
         qos2MessagesRecevedButNotCompletelyAcked.open(clientId, server)
     }
 
-    fun sentSubscriptionRequest(msg: ISubscribeRequest, callbacks: List<SubscriptionCallback<Any>>) {
+    inline fun <reified T : Any> sentSubscriptionRequest(msg: ISubscribeRequest, callbacks: List<SubscriptionCallback<T>>) {
         unacknowledgedSubscriptions[msg.packetIdentifier] = msg
         val topics = msg.getTopics()
         topics.forEachIndexed { index, filter ->
-            subscriptionManager.register(filter, callbacks[index])
+            val node = filter.validate()
+            if (node == null) {
+                println("Failed to validate $filter")
+            } else {
+                subscriptionManager.register(node, callbacks[index])
+            }
         }
     }
 

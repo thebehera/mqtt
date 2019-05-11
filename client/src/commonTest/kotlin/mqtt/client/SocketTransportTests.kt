@@ -215,11 +215,15 @@ class SocketTransportTests {
     }
 }
 
-fun getClientId(): String {
-    val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
-    val randomString = (1..10)
-            .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
-            .map(charPool::get)
-            .joinToString("")
+fun getClientId(name: String? = null): String {
+    val randomString = if (name == null) {
+        val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
+        (1..10)
+                .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
+                .map(charPool::get)
+                .joinToString("")
+    } else {
+        name
+    }
     return "MqttClientTests${currentTimestampMs()}_$randomString"
 }

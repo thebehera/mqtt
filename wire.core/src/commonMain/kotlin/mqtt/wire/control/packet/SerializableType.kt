@@ -45,9 +45,3 @@ fun <T : Any> findSerializer(kClass: KClass<T>): MqttSerializable<T>? {
 inline fun <reified T : Any> installSerializer(serializable: MqttSerializable<T>) {
     serializers[T::class] = serializable
 }
-
-fun main() {
-    val serializer = findSerializer<String>()
-
-    serializer.toString()
-}
