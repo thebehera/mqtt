@@ -23,6 +23,14 @@ abstract class ControlPacketV4(override val controlPacketValue: Byte,
     override val mqttVersion: Byte = 4
 
     companion object {
+        fun from(byteArray: ByteArray): List<ControlPacket> {
+            val packet = ByteReadPacket(byteArray)
+            val packets = mutableListOf<ControlPacket>()
+            while (packet.remaining > 0) {
+                packets += from(packet, false)
+            }
+            return packets
+        }
         fun from(buffer: ByteReadPacket, throwOnWarning: Boolean = true): ControlPacketV4 {
             val byte1 = buffer.readUByte()
             val remainingStart = buffer.remaining

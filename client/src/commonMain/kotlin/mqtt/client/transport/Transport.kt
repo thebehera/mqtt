@@ -1,11 +1,11 @@
 package mqtt.client.transport
 
-import kotlinx.coroutines.io.ByteReadChannel
-import kotlinx.coroutines.io.ByteWriteChannel
+import kotlinx.io.core.ByteReadPacket
+import mqtt.wire.control.packet.ControlPacket
 
 interface Transport {
-    val output: ByteWriteChannel
-    val input: ByteReadChannel
+    suspend fun writePacket(packet: ByteReadPacket)
+    suspend fun read(): ControlPacket
     fun dispose()
     suspend fun awaitClosed()
     val isClosed: Boolean

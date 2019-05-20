@@ -33,16 +33,28 @@ class ClientTests {
         assertEquals(3, client.connectionCount)
     }
 
-    fun createClient(): Pair<MqttClient, Deferred<Unit>> {
-        val request = ConnectionRequest(getClientId())
-        val params = ConnectionParameters("localhost", 60000, secure = false, connectionRequest = request)
+    fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Unit>> {
+        val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
+        val port = if (websockets) {
+            60002
+        } else {
+            60000
+        }
+        val params = ConnectionParameters("172.16.74.128", port, secure = false,
+                connectionRequest = request, useWebsockets = websockets,
+                logIncomingControlPackets = true,
+                logOutgoingControlPackets = true,
+                logConnectionAttempt = true,
+                logIncomingPublish = true,
+                logOutgoingPublishOrSubscribe = true,
+                connectionTimeoutMilliseconds = 15000)
         val client = MqttClient(params)
         val job = client.startAsyncWaitUntilFirstConnection()
         return Pair(client, job)
     }
 
-    suspend fun createClientAwaitConnection(): MqttClient {
-        val (client, job) = createClient()
+    suspend fun createClientAwaitConnection(websockets: Boolean = false, clientId: String = getClientId()): MqttClient {
+        val (client, job) = createClient(websockets, clientId)
         job.await()
         return client
     }
@@ -51,7 +63,7 @@ class ClientTests {
                                                      publishMessageNumber: UShort = getAndIncrementPacketIdentifier(),
                                                      cb: OnMessageReceivedCallback? = null) {
         val (client, job) = createClient()
-        blockWithTimeout(5000) {
+        blockWithTimeout {
             job.await()
             val pubCompMutex = Mutex(true)
             client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
@@ -96,7 +108,7 @@ class ClientTests {
     @Test
     fun subscribeAckReceived() {
         val (client, job) = createClient()
-        blockWithTimeout(5000) {
+        blockWithTimeout {
             job.await()
             val pubCompMutex = Mutex(true)
             client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
@@ -118,8 +130,40 @@ class ClientTests {
     @Test
     fun subscribeOnePublishAnotherWorks() {
         val ogMessage = "Hello2"
-        blockWithTimeout(50000) {
+        blockWithTimeout {
             val client1Session1 = createClientAwaitConnection()
+            val client2 = createClientAwaitConnection()
+            val mutex = Mutex(true)
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
+                assertEquals(ogMessage, message)
+                mutex.unlock()
+            }
+            client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
+            mutex.lock()
+        }
+    }
+
+    @Test
+    fun subscribeOnePublishAnotherWorksWebSocketPublisher() {
+        val ogMessage = "Hello2"
+        blockWithTimeout {
+            val client1Session1 = createClientAwaitConnection()
+            val client2 = createClientAwaitConnection(true)
+            val mutex = Mutex(true)
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
+                assertEquals(ogMessage, message)
+                mutex.unlock()
+            }
+            client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
+            mutex.lock()
+        }
+    }
+
+    @Test
+    fun subscribeOnePublishAnotherWorksWebSocketSubscriber() {
+        val ogMessage = "Hello2"
+        blockWithTimeout {
+            val client1Session1 = createClientAwaitConnection(true)
             val client2 = createClientAwaitConnection()
             val mutex = Mutex(true)
             client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->

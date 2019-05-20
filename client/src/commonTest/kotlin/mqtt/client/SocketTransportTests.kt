@@ -5,7 +5,6 @@ package mqtt.client
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeout
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
@@ -37,21 +36,19 @@ class SocketTransportTests {
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
-        block {
-            withTimeout(5000) {
-                println("connect startAsync")
-                val connectionResult = result.await().value
-                assertEquals(Open, connectionResult)
-                assertNotNull(connection.connack)
+        blockWithTimeout(5000) {
+            println("connect startAsync")
+            val connectionResult = result.await().value
+            assertEquals(Open, connectionResult)
+            assertNotNull(connection.connack)
 
-                println("connect close")
-                val connectionState = connection.closeAsync().await()
+            println("connect close")
+            val connectionState = connection.closeAsync().await()
 
-                println("connect close done")
-                assertTrue(connectionState)
-                val state = connection.state.value
-                assertTrue(state is Closed, "$state is not closed")
-            }
+            println("connect close done")
+            assertTrue(connectionState)
+            val state = connection.state.value
+            assertTrue(state is Closed, "$state is not closed")
         }
     }
 
@@ -61,16 +58,14 @@ class SocketTransportTests {
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
-        block {
-            withTimeout(5000) {
-                result.await()
-                connection.closeAsync().await()
-                val newParams = params.copy()
-                val newConnection = PlatformSocketConnection(newParams, ctx)
-                val newResult = newConnection.openConnectionAsync(true)
-                newResult.await()
-                newConnection.closeAsync().await()
-            }
+        blockWithTimeout {
+            result.await()
+            connection.closeAsync().await()
+            val newParams = params.copy()
+            val newConnection = PlatformSocketConnection(newParams, ctx)
+            val newResult = newConnection.openConnectionAsync(true)
+            newResult.await()
+            newConnection.closeAsync().await()
         }
     }
 
@@ -110,15 +105,14 @@ class SocketTransportTests {
 
         val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
         val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) }, retain = true)
-        block {
-            withTimeout(50000) {
-                client1SocketConnection1.openConnectionAsync().await()
-                client2SocketConnection.openConnectionAsync().await()
+        blockWithTimeout {
+            client1SocketConnection1.openConnectionAsync().await()
+            client2SocketConnection.openConnectionAsync().await()
 
-                println("CLIENT 1 SENDING SUBSCRIBE")
-                client1SocketConnection1.clientToServer.send(subscribe)
-                println("CLIENT 2 SENDING PUBLISH")
-                client2SocketConnection.clientToServer.send(publish)
+            println("CLIENT 1 SENDING SUBSCRIBE")
+            client1SocketConnection1.clientToServer.send(subscribe)
+            println("CLIENT 2 SENDING PUBLISH")
+            client2SocketConnection.clientToServer.send(publish)
 //                client1SocketConnection1.cancel()
 //                delay(5000)
 //                val client1SocketConnection2 = PlatformSocketConnection(client2Params.copy())
@@ -127,8 +121,8 @@ class SocketTransportTests {
 ////                client1SocketConnection2.clientToServer.send(subscribe.copy())
 //                delay(20000)
 //                mutex.withLock {} // lock until we get a message
-            }
         }
+
     }
 
     fun buildParams(clientId: String = getClientId()): ConnectionParameters {
@@ -146,41 +140,40 @@ class SocketTransportTests {
     @Test
     fun publishQos1() {
         var recvMessage = false
-        block {
-            withTimeout(50000) {
-                val publishClient = buildConnection("pubClient")
-                val recvClientSession1 = buildConnection("client1")
-                val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
-                recvClientSession1.clientToServer.send(subscribe)
-                recvClientSession1.closeAsync().await()
+        blockWithTimeout {
+            val publishClient = buildConnection("pubClient")
+            val recvClientSession1 = buildConnection("client1")
+            val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
+            recvClientSession1.clientToServer.send(subscribe)
+            recvClientSession1.closeAsync().await()
 
-                val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) })
-                publishClient.clientToServer.send(publish)
-                val mutex = Mutex(true)
-                val recvClientSession2Params = buildParams("client1")
-                val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params, ctx)
-                recvClientSession2Connection.messageReceiveCallback = object : OnMessageReceivedCallback {
-                    override fun onMessage(controlPacket: ControlPacket) {
-                        try {
-                            if (controlPacket is ConnectionAcknowledgment) {
-                                return
-                            }
-                            if (controlPacket !is PublishMessage) {
-                                fail("received wrong message: $controlPacket")
-                            }
-                            recvMessage = true
-                            mutex.unlock()
-                        } catch (e: Exception) {
-                            fail(e.message)
+            val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) })
+            publishClient.clientToServer.send(publish)
+            val mutex = Mutex(true)
+            val recvClientSession2Params = buildParams("client1")
+            val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params, ctx)
+            recvClientSession2Connection.messageReceiveCallback = object : OnMessageReceivedCallback {
+                override fun onMessage(controlPacket: ControlPacket) {
+                    try {
+                        if (controlPacket is ConnectionAcknowledgment) {
+                            return
                         }
+                        if (controlPacket !is PublishMessage) {
+                            fail("received wrong message: $controlPacket")
+                        }
+                        recvMessage = true
+                        mutex.unlock()
+                    } catch (e: Exception) {
+                        fail(e.message)
                     }
                 }
-                val job = recvClientSession2Connection.openConnectionAsync()
-                job.await()
-                mutex.withLock {} // lock until we get a message
-                assertTrue(recvMessage)
-                recvClientSession2Connection.closeAsync().await()
             }
+            val job = recvClientSession2Connection.openConnectionAsync()
+            job.await()
+            mutex.withLock {} // lock until we get a message
+            assertTrue(recvMessage)
+            recvClientSession2Connection.closeAsync().await()
+
         }
     }
 
@@ -191,26 +184,25 @@ class SocketTransportTests {
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
-        block {
-            withTimeout(5000) {
-                result.await()
-                val mutex = Mutex(true)
-                connection.messageReceiveCallback = object : OnMessageReceivedCallback {
-                    override fun onMessage(controlPacket: ControlPacket) {
-                        try {
-                            assertTrue(controlPacket is SubscribeAcknowledgement)
-                            recvMessage = true
-                            mutex.unlock()
-                        } catch (e: Exception) {
-                            fail(e.message)
-                        }
+        blockWithTimeout {
+            result.await()
+            val mutex = Mutex(true)
+            connection.messageReceiveCallback = object : OnMessageReceivedCallback {
+                override fun onMessage(controlPacket: ControlPacket) {
+                    try {
+                        assertTrue(controlPacket is SubscribeAcknowledgement)
+                        recvMessage = true
+                        mutex.unlock()
+                    } catch (e: Exception) {
+                        fail(e.message)
                     }
                 }
-                val subscribeRequest = SubscribeRequest(19.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
-                connection.clientToServer.send(subscribeRequest)
-                mutex.withLock {} // lock until we get a message
-                assertTrue(recvMessage)
             }
+            val subscribeRequest = SubscribeRequest(19.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
+            connection.clientToServer.send(subscribeRequest)
+            mutex.withLock {} // lock until we get a message
+            assertTrue(recvMessage)
+
         }
     }
 }
@@ -225,5 +217,5 @@ fun getClientId(name: String? = null): String {
     } else {
         name
     }
-    return "MqttClientTests${currentTimestampMs()}_$randomString"
+    return "MqttClientTests${currentTimestampMs()}$randomString"
 }

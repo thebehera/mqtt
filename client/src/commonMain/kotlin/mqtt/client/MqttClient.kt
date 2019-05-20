@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.client
 
 import io.ktor.http.Url
@@ -37,6 +39,7 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
         })
         lock.lock()
     }
+
     fun startAsync(newConnectionCb: Runnable? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
             return@async true
@@ -66,13 +69,15 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
         session.subscribe(Filter(topicFilter), qos, callback)
     }
 
-    inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,
-                                           crossinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit) = launch {
+    suspend inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,
+                                                   crossinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit) {
         val subscriptionCallback = object : SubscriptionCallback<T> {
             override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) = callback(topic, qos, message)
         }
         session.subscribe(Filter(topicFilter), qos, subscriptionCallback)
     }
+
+    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, message: T) = session.publishGeneric(topic, qos, message)
 
     fun stopAsync() = async {
         session.disconnectAsync()

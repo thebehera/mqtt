@@ -1,5 +1,12 @@
 package mqtt.client.transport
 
+import io.ktor.client.HttpClient
+import io.ktor.client.features.websocket.WebSockets
+import io.ktor.client.features.websocket.webSocketSession
+import io.ktor.client.request.request
+import io.ktor.http.URLProtocol.Companion.WS
+import io.ktor.http.URLProtocol.Companion.WSS
+import io.ktor.util.KtorExperimentalAPI
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
@@ -8,7 +15,6 @@ import kotlinx.coroutines.io.ClosedWriteChannelException
 import mqtt.client.ConnectionTimeout
 import mqtt.client.FailedToReadConnectionAck
 import mqtt.client.connection.*
-import mqtt.client.read
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.*
@@ -16,6 +22,7 @@ import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.coroutines.CoroutineContext
 
+@KtorExperimentalAPI
 abstract class SocketTransport(override val coroutineContext: CoroutineContext) : CoroutineScope {
     abstract val parameters: ConnectionParameters
     val state = atomic<ConnectionState>(Initializing)
@@ -30,7 +37,32 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
     private val lastMessageBetweenClientAndServer = atomic(0L)
     fun setLastMessageReceived(time: Long) = lastMessageBetweenClientAndServer.lazySet(time)
 
-    abstract suspend fun buildSocket(): Transport
+    val httpClient by lazy {
+        HttpClient {
+            install(WebSockets)
+        }
+    }
+
+    abstract suspend fun buildNativeSocket(): Transport
+
+    suspend fun buildSocket(): Transport {
+        if (parameters.useWebsockets) {
+            val session = httpClient.webSocketSession(host = parameters.hostname, port = parameters.port, path = "/mqtt") {
+                request {
+                    url.protocol = if (parameters.secure) {
+                        WSS
+                    } else {
+                        WS
+                    }
+                }
+                headers["Sec-WebSocket-Protocol"] = "mqttv3.1"
+            }
+            session.flush()
+            return WebSocketTransport(session, coroutineContext)
+        } else {
+            return buildNativeSocket()
+        }
+    }
 
     /**
      * Open the transport.
@@ -46,6 +78,8 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             try {
                 buildSocket()
             } catch (e: Exception) {
+                println(parameters)
+                println(e)
                 return@withTimeoutOrNull null
             }
         }
@@ -97,11 +131,10 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     private fun writeConnectionRequestAsync(transport: Transport) = async {
         try {
-            val output = transport.output
             val connectionRequestPacket = parameters.connectionRequest.copy().serialize()
             val size = connectionRequestPacket.remaining
             val serializationTime = currentTimestampMs()
-            output.writePacket(connectionRequestPacket)
+            transport.writePacket(connectionRequestPacket)
             val postWriteTime = currentTimestampMs()
             val socketWriteTime = postWriteTime - serializationTime
             if (parameters.logConnectionAttempt) {
@@ -124,7 +157,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                     val sendMessage = messageToSend.serialize()
                     val size = sendMessage.remaining
                     val start = currentTimestampMs()
-                    transport.output.writePacket(sendMessage)
+                    transport.writePacket(sendMessage)
                     val writeComplete = currentTimestampMs()
                     setLastMessageReceived(writeComplete)
                     val sendTime = writeComplete - start
@@ -162,8 +195,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     private suspend fun readConnectionAck(transport: Transport): ConnectionFailure? {
         try {
-            val input = transport.input
-            val controlPacket = input.read()
+            val controlPacket = transport.read()
             setLastMessageReceived(currentTimestampMs())
             if (controlPacket is IConnectionAcknowledgment) {
                 connack = controlPacket
@@ -190,9 +222,8 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     private fun readControlPackets(transport: Transport) = launch {
         try {
-            val input = transport.input
             while (isOpenAndActive()) {
-                val msg = input.read()
+                val msg = transport.read()
                 readControlPacket(msg)
             }
         } catch (e: ClosedReceiveChannelException) {

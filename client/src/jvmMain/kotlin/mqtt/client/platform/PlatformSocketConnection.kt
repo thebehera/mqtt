@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_OVERRIDE")
+
 package mqtt.client.platform
 
 import io.ktor.network.selector.ActorSelectorManager
@@ -18,7 +20,7 @@ actual class PlatformSocketConnection actual constructor(override val parameters
     : SocketTransport(ctx) {
 
 
-    override suspend fun buildSocket(): Transport {
+    override suspend fun buildNativeSocket(): Transport {
         @Suppress("EXPERIMENTAL_API_USAGE")
         val socketBuilder = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
         val tmpSocketRef = socketBuilder.connect(parameters.hostname, parameters.port)

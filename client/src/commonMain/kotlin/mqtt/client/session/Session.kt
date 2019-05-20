@@ -114,6 +114,8 @@ class ClientSession(val params: ConnectionParameters,
         send(PublishMessage(topic, qos, packetIdentifier))
     }
 
+    suspend inline fun <reified T : Any> publishGeneric(topic: String, qos: QualityOfService, payload: T) = publish(topic, qos, payload)
+
     suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, payload: T) {
         val actualPayload = run {
             val serializer = findSerializer<T>() ?: throw RuntimeException("Failed to find serializer for $payload")

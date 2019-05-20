@@ -14,4 +14,5 @@ data class ConnectionParameters(
         val logOutgoingControlPackets: Boolean = false,
         val logIncomingControlPackets: Boolean = false,
         val logIncomingPublish: Boolean = false,
+        val useWebsockets: Boolean = false,
         val maxNumberOfRetries: Int = Int.MAX_VALUE)
