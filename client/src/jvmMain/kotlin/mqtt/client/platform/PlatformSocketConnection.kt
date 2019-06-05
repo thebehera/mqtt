@@ -19,6 +19,7 @@ actual class PlatformSocketConnection actual constructor(override val parameters
                                                          ctx: CoroutineContext)
     : SocketTransport(ctx) {
 
+    override val supportsNativeSockets = true
 
     override suspend fun buildNativeSocket(): Transport {
         @Suppress("EXPERIMENTAL_API_USAGE")

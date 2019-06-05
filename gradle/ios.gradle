@@ -1,6 +1,6 @@
 // ==== CONFIGURE ios =====
 task iOSTest {
-    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone XR"
+    def device = project.findProperty("iosDevice")?.toString() ?: "iPhone X"
     dependsOn 'linkTestIOS'
     group = JavaBasePlugin.VERIFICATION_GROUP
     description = "Runs tests for target 'iOS' on an iOS simulator"

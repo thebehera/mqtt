@@ -2,7 +2,7 @@ package mqtt.client.transport
 
 import io.ktor.client.features.websocket.DefaultClientWebSocketSession
 import io.ktor.http.cio.websocket.Frame
-import io.ktor.http.cio.websocket.FrameType.BINARY
+import io.ktor.http.cio.websocket.FrameType
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
@@ -59,7 +59,7 @@ class WebSocketTransport(private val websocket: DefaultClientWebSocketSession,
     override suspend fun writePacket(packet: ByteReadPacket) {
         val data = ByteArray(packet.remaining.toInt())
         packet.readFully(data)
-        websocket.outgoing.send(Frame.byType(true, BINARY, data))
+        websocket.outgoing.send(Frame.byType(true, FrameType.BINARY, data))
         websocket.flush()
     }
 

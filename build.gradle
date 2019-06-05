@@ -13,13 +13,15 @@ plugins {
     id "com.jfrog.bintray" version "1.8.4"
 }
 ext {
-    kotlinx_io_version = '0.1.6'
-    ktor_version = '1.2.0-alpha-2'
+    kotlinx_io_version = '0.1.8'
+    ktor_version = '1.2.1'
+    coroutines_version = '1.2.1'
 }
 allprojects {
     repositories {
         jcenter()
         mavenLocal()
+        maven { url "https://dl.bintray.com/kotlin/ktor" }
         maven {
             url "https://dl.bintray.com/thebehera/mqtt"
             credentials {

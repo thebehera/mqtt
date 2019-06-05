@@ -32,7 +32,7 @@ private val shouldNotIncludeCharRange2 by lazy { '\u007F'..'\u009F' }
  */
 private val privateUseCharRange by lazy { '\uE000'..'\uF8FF' }
 
-inline class MqttUtf8String(private val value: String) {
+inline class MqttUtf8String(internal val value: String) {
     fun getValueOrThrow(includeWarnings: Boolean = true): String {
         val ex = exception
         if (ex != null) {
@@ -73,11 +73,36 @@ inline class MqttUtf8String(private val value: String) {
         }
 }
 
-fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String) {
-    val validatedString = string.getValueOrThrow()
-    val len = validatedString.length.toUShort()
+fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String, validate: Boolean = true) {
+    val validatedString = if (validate) {
+        string.getValueOrThrow()
+    } else {
+        string.value
+    }
+
+    val len = validatedString.utf8Length().toUShort()
     writeUShort(len)
     writeStringUtf8(validatedString)
+}
+
+fun String.utf8Length(): Int {
+    var count = 0
+    var i = 0
+    val len = length
+    while (i < len) {
+        val ch = get(i)
+        when {
+            ch.toInt() <= 0x7F -> count++
+            ch.toInt() <= 0x7FF -> count += 2
+            ch >= Char.MIN_HIGH_SURROGATE && ch.toInt() < Char.MAX_HIGH_SURROGATE.toInt() + 1 -> {
+                count += 4
+                ++i
+            }
+            else -> count += 3
+        }
+        i++
+    }
+    return count
 }
 
 
@@ -97,7 +122,7 @@ fun ByteReadPacket.readMqttUtf8String() :MqttUtf8String {
     if (stringLength == 0) {
         return MqttUtf8String("")
     }
-    val text = readTextExactBytes(bytes = stringLength)
+    val text = readTextExactBytes(bytesCount = stringLength)
     return MqttUtf8String(text)
 }
 
@@ -107,7 +132,7 @@ fun ByteReadPacket.readMqttFilter(): Filter {
     if (stringLength == 0) {
         return Filter("")
     }
-    val text = readTextExactBytes(bytes = stringLength)
+    val text = readTextExactBytes(bytesCount = stringLength)
     return Filter(text)
 }
 

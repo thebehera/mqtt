@@ -4,11 +4,33 @@ package mqtt.wire.data
 
 import kotlinx.io.core.readBytes
 import mqtt.wire.MalformedInvalidVariableByteInteger
+import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class VariableByteIntegerTests {
+
+    @Test
+    @JsName("encodedValueMustUseMinNumberOfBytes")
+    fun `MQTT Conformance The encoded value MUST use the minimum number of bytes necessary to represent the value`() {
+        val oneMin = VariableByteInteger(0.toUInt())
+        assertEquals(1, oneMin.encodedValue().remaining.toInt())
+        val oneMax = VariableByteInteger(127.toUInt())
+        assertEquals(1, oneMax.encodedValue().remaining.toInt())
+        val twoMin = VariableByteInteger(128.toUInt())
+        assertEquals(2, twoMin.encodedValue().remaining.toInt())
+        val twoMax = VariableByteInteger(16_383.toUInt())
+        assertEquals(2, twoMax.encodedValue().remaining.toInt())
+        val threeMin = VariableByteInteger(16_384.toUInt())
+        assertEquals(3, threeMin.encodedValue().remaining.toInt())
+        val threeMax = VariableByteInteger(2_097_151.toUInt())
+        assertEquals(3, threeMax.encodedValue().remaining.toInt())
+        val fourMin = VariableByteInteger(2_097_152.toUInt())
+        assertEquals(4, fourMin.encodedValue().remaining.toInt())
+        val fourMax = VariableByteInteger(268_435_455.toUInt())
+        assertEquals(4, fourMax.encodedValue().remaining.toInt())
+    }
 
     @Test
     fun encodeAndDecode() {

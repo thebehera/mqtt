@@ -20,6 +20,7 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.*
 import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
+import platform.Platform
 import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI
@@ -33,7 +34,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     val clientToServer: Channel<ControlPacket> = Channel()
     var messageReceiveCallback: OnMessageReceivedCallback? = null
-
+    open val supportsNativeSockets: Boolean = false
     private val lastMessageBetweenClientAndServer = atomic(0L)
     fun setLastMessageReceived(time: Long) = lastMessageBetweenClientAndServer.lazySet(time)
 
@@ -43,10 +44,14 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         }
     }
 
-    abstract suspend fun buildNativeSocket(): Transport
+    open suspend fun buildNativeSocket(): Transport =
+        throw UnsupportedOperationException("Native sockets are not supported on ${Platform.name} yet")
 
     suspend fun buildSocket(): Transport {
-        if (parameters.useWebsockets) {
+        if (parameters.useWebsockets || !supportsNativeSockets) {
+            if (!supportsNativeSockets) {
+                println("W: Platform does not currently support native sockets, defaulting to websockets")
+            }
             val session = httpClient.webSocketSession(host = parameters.hostname, port = parameters.port, path = "/mqtt") {
                 request {
                     url.protocol = if (parameters.secure) {
