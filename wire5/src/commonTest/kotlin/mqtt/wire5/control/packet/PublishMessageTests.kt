@@ -12,6 +12,7 @@ import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.VariableByteInteger
+import mqtt.wire.data.topic.Name
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.*
@@ -37,7 +38,7 @@ class PublishMessageTests {
     @Test
     fun payloadFormatIndicatorDefault() {
         val props = VariableHeader.Properties()
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertFalse(publish.variable.properties.payloadFormatIndicator)
@@ -46,7 +47,7 @@ class PublishMessageTests {
     @Test
     fun payloadFormatIndicatorTrue() {
         val props = VariableHeader.Properties(true)
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertTrue(publish.variable.properties.payloadFormatIndicator)
@@ -55,7 +56,7 @@ class PublishMessageTests {
     @Test
     fun payloadFormatIndicatorFalse() {
         val props = VariableHeader.Properties(false)
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertFalse(publish.variable.properties.payloadFormatIndicator)
@@ -83,7 +84,7 @@ class PublishMessageTests {
     @Test
     fun messageExpiryInterval() {
         val props = VariableHeader.Properties(messageExpiryInterval = 2.toUInt())
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertEquals(2.toUInt(), publish.variable.properties.messageExpiryInterval)
@@ -111,7 +112,7 @@ class PublishMessageTests {
     @Test
     fun topicAlias() {
         val props = VariableHeader.Properties(topicAlias = 2.toUShort())
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertEquals(2.toUShort(), publish.variable.properties.topicAlias)
@@ -162,7 +163,7 @@ class PublishMessageTests {
     @Test
     fun responseTopic() {
         val props = VariableHeader.Properties(responseTopic = MqttUtf8String("t/as"))
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertEquals("t/as", publish.variable.properties.responseTopic?.getValueOrThrow())
@@ -190,7 +191,7 @@ class PublishMessageTests {
     @Test
     fun correlationData() {
         val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper("t/as".toByteArray()))
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertEquals(ByteArrayWrapper("t/as".toByteArray()), publish.variable.properties.coorelationData)
@@ -225,7 +226,7 @@ class PublishMessageTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = PublishMessage(variable = VariableHeader(MqttUtf8String("t"), properties = props)).serialize()
+        val request = PublishMessage(variable = VariableHeader(Name("t"), properties = props)).serialize()
         val requestRead = ControlPacketV5.from(request.copy()) as PublishMessage
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow(), "key")
@@ -235,7 +236,7 @@ class PublishMessageTests {
     @Test
     fun subscriptionIdentifier() {
         val props = VariableHeader.Properties(subscriptionIdentifier = setOf(2.toUInt()))
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertEquals(2.toUInt(), publish.variable.properties.subscriptionIdentifier.first())
@@ -261,7 +262,7 @@ class PublishMessageTests {
     @Test
     fun contentType() {
         val props = VariableHeader.Properties(contentType = MqttUtf8String("t/as"))
-        val variableHeader = VariableHeader(MqttUtf8String("t"), properties = props)
+        val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
         assertEquals("t/as", publish.variable.properties.contentType?.getValueOrThrow())
@@ -299,7 +300,7 @@ class PublishMessageTests {
     @Test
     fun qos0AndPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
-        val variable = VariableHeader(MqttUtf8String("t"), 2.toUShort())
+        val variable = VariableHeader(Name("t"), 2.toUShort())
         try {
             PublishMessage(fixed, variable)
             fail()
@@ -310,7 +311,7 @@ class PublishMessageTests {
     @Test
     fun qos1WithoutPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.AT_LEAST_ONCE)
-        val variable = VariableHeader(MqttUtf8String("t"))
+        val variable = VariableHeader(Name("t"))
         try {
             PublishMessage(fixed, variable)
             fail()
@@ -321,7 +322,7 @@ class PublishMessageTests {
     @Test
     fun qos2WithoutPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.EXACTLY_ONCE)
-        val variable = VariableHeader(MqttUtf8String("t"))
+        val variable = VariableHeader(Name("t"))
         try {
             PublishMessage(fixed, variable)
             fail()

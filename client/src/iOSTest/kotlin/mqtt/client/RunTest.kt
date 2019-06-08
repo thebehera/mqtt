@@ -1,12 +1,17 @@
 package mqtt.client
 
 import kotlinx.coroutines.*
+import platform.Foundation.NSRunLoop
+import platform.Foundation.performBlock
 import platform.darwin.*
 import kotlin.coroutines.CoroutineContext
 
 actual fun <T> block(body: suspend CoroutineScope.() -> T) {
-    println("run blocking")
-    runBlocking(MainLoopDispatcher, body)
+    runBlocking(MainLoopDispatcher) {
+        println("b starting")
+        body()
+        println("b ending")
+    }
 }
 
 @UseExperimental(InternalCoroutinesApi::class)

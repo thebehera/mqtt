@@ -48,6 +48,7 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
         return@async retryIO(params.maxNumberOfRetries) {
             val result = try {
                 if (isActive) {
+                    println("connecting session")
                     val result = session.connect()
                     connectionCount++
                     newConnectionCb?.run()
@@ -59,6 +60,7 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
             } catch (e: Exception) {
                 false
             }
+            println("done connecting?")
             result
         }
     }

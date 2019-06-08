@@ -178,7 +178,7 @@ class SubscribeRequestTest {
         val request = SubscribeRequest(10.toUShort(), subscriptions)
         val variableHeaderBytes = request.variableHeaderPacket
         assertEquals(2, variableHeaderBytes.remaining)
-        assertEquals(12.toUShort(), variableHeaderBytes.readUShort())
+        assertEquals(10.toUShort(), variableHeaderBytes.readUShort())
     }
 
     @Test
@@ -212,13 +212,13 @@ class SubscribeRequestTest {
         val firstSub = subs.first()
         val filter = firstSub.topicFilter
         val validated = filter.validate()!!
-        assertEquals(validated.value.value, "test")
+        assertEquals(validated.level.value, "test")
         val subscribeRequestData = subscribeRequest.serialize()
         val requestRead = ControlPacketV4.from(subscribeRequestData) as SubscribeRequest
         val subs1 = requestRead.subscriptions
         val firstSub1 = subs1.first()
         val filter1 = firstSub1.topicFilter
         val validated1 = filter1.validate()!!
-        assertEquals(validated1.value.value, "test")
+        assertEquals(validated1.level.value, "test")
     }
 }

@@ -4,8 +4,8 @@ package mqtt.wire4.control.packet
 
 import kotlinx.io.core.buildPacket
 import mqtt.wire.MalformedPacketException
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.topic.Name
 import mqtt.wire4.control.packet.PublishMessage.FixedHeader
 import mqtt.wire4.control.packet.PublishMessage.VariableHeader
 import kotlin.test.Test
@@ -31,7 +31,7 @@ class PublishMessageTests {
     @Test
     fun qos0AndPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
-        val variable = VariableHeader(MqttUtf8String("t"), 2.toUShort())
+        val variable = VariableHeader(Name("t"), 2.toUShort())
         try {
             PublishMessage(fixed, variable)
             fail()
@@ -42,7 +42,7 @@ class PublishMessageTests {
     @Test
     fun qos1WithoutPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.AT_LEAST_ONCE)
-        val variable = VariableHeader(MqttUtf8String("t"))
+        val variable = VariableHeader(Name("t"))
         try {
             PublishMessage(fixed, variable)
             fail()
@@ -53,7 +53,7 @@ class PublishMessageTests {
     @Test
     fun qos2WithoutPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.EXACTLY_ONCE)
-        val variable = VariableHeader(MqttUtf8String("t"))
+        val variable = VariableHeader(Name("t"))
         try {
             PublishMessage(fixed, variable)
             fail()

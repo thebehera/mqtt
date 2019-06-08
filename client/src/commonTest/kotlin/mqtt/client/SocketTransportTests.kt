@@ -20,10 +20,7 @@ import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
-import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
-import kotlin.test.fail
+import kotlin.test.*
 
 /**
  * These tests require running mosquitto servers with the configurations in the ./client/gradle/configurations path
@@ -33,7 +30,7 @@ class SocketTransportTests {
 
     private val ctx = Job() + PlatformCoroutineDispatcher.dispatcher
 
-    //@Test
+    @Test
     fun connectDisconnect() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
@@ -55,7 +52,7 @@ class SocketTransportTests {
         }
     }
 
-    //@Test
+    @Test
     fun reconnectOnce() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort(), cleanSession = true)
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
@@ -72,7 +69,7 @@ class SocketTransportTests {
         }
     }
 
-    //@Test
+    @Test
     fun socketCloseAutomatically() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
@@ -83,7 +80,7 @@ class SocketTransportTests {
         }
     }
 
-    //@Test
+    @Test
     fun publishSingleMessageQos0() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 50.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
@@ -97,7 +94,7 @@ class SocketTransportTests {
         }
     }
 
-    //@Test
+    @Test
     fun testQos1() {
         val clientId1 = "Client1"
         val client1Params = buildParams(clientId1)
@@ -140,7 +137,7 @@ class SocketTransportTests {
         return connection
     }
 
-    //@Test
+    @Test
     fun publishQos1() {
         var recvMessage = false
         blockWithTimeout {
@@ -180,7 +177,7 @@ class SocketTransportTests {
         }
     }
 
-    //@Test
+    @Test
     fun subscribeAndReceiveSuback() {
         val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5000.toUShort())
         val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
