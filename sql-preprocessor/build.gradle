@@ -30,6 +30,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
+                implementation project(':sql-annotation')
             }
         }
         commonTest {
@@ -41,6 +42,7 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk8')
+                implementation kotlin('reflect')
             }
         }
         jvmTest {
