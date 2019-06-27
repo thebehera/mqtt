@@ -24,8 +24,10 @@ inline fun <reified T> createTable(
             }
         }
     }
+    val foreignKeys = LinkedHashMap<String, ForeignKey>()
     val sql = StringBuilder("CREATE TABLE '$tableName'(\n")
 
+    val spacer = ' '
     members.forEachIndexed { index, it ->
         val property = it as KProperty<*>
         val classifier = property.returnType.classifier!!
@@ -46,29 +48,65 @@ inline fun <reified T> createTable(
             ByteArray::class, UByteArray::class -> "BLOB"
             else -> nativeClasses(property) ?: property.returnType.toString() // BLOB AKA NONE
         }
+        sql.append(spacer)
         if (SQLITE_KEY_WORDS.contains(it.name.toUpperCase())) {
-            sql.append(" `${it.name}` $returnType")
+            sql.append("`${it.name}` $returnType")
         } else {
-            sql.append(" ${it.name} $returnType")
+            sql.append("${it.name} $returnType")
         }
         val annotations = annotationsMap[it.name] ?: emptyList()
         val isPrimaryKey = annotations.findInstanceOf<PrimaryKey>() != null
         if (!it.returnType.isMarkedNullable) {
-            if (sql[sql.lastIndex] != ' ') {
-                sql.append(' ')
+            if (sql[sql.lastIndex] != spacer) {
+                sql.append(spacer)
             }
             sql.append("NOT NULL")
         }
         if (isPrimaryKey) {
-            if (sql[sql.lastIndex] != ' ') {
-                sql.append(' ')
+            if (sql[sql.lastIndex] != spacer) {
+                sql.append(spacer)
             }
             sql.append("PRIMARY KEY")
         }
-        if (index < members.size - 1) {
+        if (annotations.findInstanceOf<Unique>() != null) {
+            if (sql[sql.lastIndex] != spacer) {
+                sql.append(spacer)
+            }
+            sql.append("UNIQUE")
+        }
+        val checkConstraint = annotations.findInstanceOf<Check>()
+        if (checkConstraint is Check) {
+            if (sql[sql.lastIndex] != spacer) {
+                sql.append(' ')
+            }
+            sql.append("CHECK(${checkConstraint.expression})")
+        }
+        val foreignKey = annotations.findInstanceOf<ForeignKey>()
+        if (foreignKey is ForeignKey) {
+            foreignKeys[it.name] = foreignKey
+        }
+        val isNotLast = index < members.size - 1
+        if (foreignKeys.isNotEmpty() || isNotLast) {
             sql.append(",\n")
         } else {
             sql.append("\n")
+        }
+    }
+
+    val lastKey = foreignKeys.keys.lastOrNull()
+    for ((childColumn, parent) in foreignKeys) {
+        sql.append("${spacer}FOREIGN KEY($childColumn) REFERENCES `${parent.table.qualifiedName}`(${parent.column})")
+        if (parent.onDelete != ForeignKeyActions.NoAction) {
+            sql.append(" ON DELETE ${parent.onDelete.action}")
+        }
+        if (parent.onUpdate != ForeignKeyActions.NoAction) {
+            sql.append(" ON UPDATE ${parent.onUpdate.action}")
+        }
+        val isLast = childColumn == lastKey
+        if (isLast) {
+            sql.append('\n')
+        } else {
+            sql.append(",\n")
         }
     }
     sql.append(");")
@@ -90,8 +128,6 @@ inline fun <reified T> insertInto(tableName: String? = T::class.qualifiedName): 
     return sql.toString()
 }
 
-inline fun <I, reified T> selectData(tableName: String? = T::class.qualifiedName, identifier: I) =
-    "SELECT * FROM '$tableName'"
 
 inline fun <reified T> List<Annotation>.findInstanceOf(): Annotation? {
     for (annotation in this) {
@@ -191,16 +227,7 @@ fun KClass<*>.printAnnotations(prefix: String = "") {
 
 annotation class PrimaryKey
 
-@SQLTable
-interface Y {
-    @PrimaryKey
-    val x: Int
-    val y: String
-}
 
-fun main() {
-    println(createTable<Y>())
-}
 
 annotation class Meow
 annotation class Meow2

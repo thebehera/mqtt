@@ -1,6 +1,8 @@
 package mqtt.sql
 
+import mqtt.sql.ForeignKeyActions.NoAction
 import kotlin.annotation.AnnotationTarget.FIELD
+import kotlin.reflect.KClass
 
 @MustBeDocumented
 annotation class SQLTable(
@@ -9,13 +11,28 @@ annotation class SQLTable(
     val primaryKeys: Array<String> = []
 )
 
-@Target(FIELD)
-annotation class UniqueConstraint
+annotation class Unique
 
 annotation class PrimaryKey
 
-@Target(FIELD)
-annotation class CheckConstraint
+
+annotation class Check(val expression: String)
 
 @Target(FIELD)
 annotation class SQLColumn(val name: String = "", val primaryKey: Boolean = false)
+
+enum class ForeignKeyActions(val action: String) {
+    NoAction("NO ACTION"),
+    Restrict("RESTRICT"),
+    SetNull("SET NULL"),
+    SetDefault("SET DEFAULT"),
+    Cascade("CASCADE")
+
+}
+
+annotation class ForeignKey(
+    val table: KClass<*>,
+    val column: String,
+    val onDelete: ForeignKeyActions = NoAction,
+    val onUpdate: ForeignKeyActions = NoAction
+)
