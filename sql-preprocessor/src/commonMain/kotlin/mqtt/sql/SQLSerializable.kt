@@ -128,6 +128,33 @@ inline fun <reified T> insertInto(tableName: String? = T::class.qualifiedName): 
     return sql.toString()
 }
 
+inline fun <reified Parent : Any, reified Child : Any> createView(
+    parentTable: KClass<Parent>,
+    parentColumn: String,
+    parentSortChild: String,
+    childTable: KClass<Child>,
+    childColumn: String,
+    limit: Int = 1
+): CharSequence {
+    /**
+     * SELECT `mqtt.simpleTest.Queued`.messageId, `mqtt.SimpleTest.NonKeyedChild`.*
+     * FROM `mqtt.simpleTest.Queued`
+     * INNER JOIN `mqtt.SimpleTest.NonKeyedChild` ON `mqtt.simpleTest.Queued`.queuedObject = `mqtt.SimpleTest.NonKeyedChild`.mqtt_inserted_id
+     * ORDER BY `mqtt.simpleTest.Queued`.queuedObject
+     * LIMIT 1;
+     */
+    val parentTableName = parentTable.qualifiedName
+    val childTableName = childTable.qualifiedName
+    val viewName = "`${parentTableName}_$childTableName`"
+    val sql = StringBuilder("CREATE VIEW $viewName\nAS\nSELECT\n")
+    sql.append("`$parentTableName`.$parentColumn, `$childTableName`.*\n")
+    sql.append("FROM `$parentTableName`\n")
+    sql.append("INNER JOIN `$childTableName` ON `$parentTableName`.$parentColumn = `$childTableName`.$childColumn\n")
+    sql.append("ORDER BY `$parentTableName`.$parentSortChild\n")
+    sql.append("LIMIT $limit;")
+    return sql
+}
+
 
 inline fun <reified T> List<Annotation>.findInstanceOf(): Annotation? {
     for (annotation in this) {

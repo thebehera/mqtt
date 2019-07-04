@@ -44,7 +44,7 @@ class SimpleTest {
     @SQLTable
     interface NonKeyedChild {
         @ForeignKey(Queued::class, "queuedObject", Cascade)
-        val mqtt_messageId: UShort
+        val mqtt_inserted_id: UShort
         // generate an mqtt id field to track this
         val value: Int
     }
@@ -100,5 +100,25 @@ class SimpleTest {
         }))
         println(createTable<NonKeyedChild>())
         println(createTable<PrimaryKeyChild>())
+
+        // deleting from the queue deletes from the child table
+        println(insertInto<Queued>())
+        println(insertInto<NonKeyedChild>())
+        println(insertInto<PrimaryKeyChild>())
+
+
+        // we need to pop from the queue
+        /**
+         * SELECT `mqtt.simpleTest.Queued`.messageId, `mqtt.SimpleTest.NonKeyedChild`.*
+         * FROM `mqtt.simpleTest.Queued`
+         * INNER JOIN `mqtt.SimpleTest.NonKeyedChild` ON `mqtt.simpleTest.Queued`.queuedObject = `mqtt.SimpleTest.NonKeyedChild`.mqtt_inserted_id
+         * ORDER BY `mqtt.simpleTest.Queued`.queuedObject
+         * LIMIT 1;
+         */
+
+        println(createView(Queued::class, "queuedObject", "messageId", NonKeyedChild::class, "mqtt_inserted_id"))
+
+        // then delete later from the queue
+
     }
 }
