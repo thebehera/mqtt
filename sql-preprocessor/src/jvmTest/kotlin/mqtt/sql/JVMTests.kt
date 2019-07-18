@@ -52,7 +52,7 @@ class JVMTests {
     fun bigIntTest() {
         val xb: KClass<XB> = XB::class
         println(xb.getAnnotationsIncludingSuperclass())
-        println(createTable<XB> {
+        println(createTable(XB::class) {
             val nonNullReturnType = it.returnType.withNullability(false)
             when {
                 nonNullReturnType.isSubtypeOf(BigInteger::class.starProjectedType.withNullability(false)) ->

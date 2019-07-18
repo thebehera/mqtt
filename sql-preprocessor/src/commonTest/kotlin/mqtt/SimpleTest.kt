@@ -2,6 +2,7 @@ package mqtt
 
 import mqtt.sql.*
 import mqtt.sql.ForeignKeyActions.Cascade
+import kotlin.reflect.KClass
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -12,9 +13,7 @@ class SimpleTest {
 
     @Test
     fun ensureSimpleTableCreation() {
-        @SQLTable
-        data class Yolo(val x: String = "x")
-
+        main()
     }
 
     @SQLTable
@@ -25,8 +24,8 @@ class SimpleTest {
     }
 
     @SQLTable
-    interface ObjectWithPrimaryKeyObjectReference {
-        val child: PrimaryKeyChild
+    interface ObjectWithFlatKeyedReference {
+        val child: FlatObjectKeyed
     }
 
     interface PrimaryKeyChild {
@@ -78,6 +77,7 @@ class SimpleTest {
 
     @SQLTable
     interface Car : Vehicle {
+        @ForeignKey(Vehicle::class, "identificationNumber", Cascade)
         val licensePlate: String
         val state: String
     }
@@ -85,28 +85,36 @@ class SimpleTest {
 
     @SQLTable
     interface CommercialTruck : Vehicle {
+        @ForeignKey(Vehicle::class, "identificationNumber", Cascade)
         val usDotNumber: String
+    }
+
+    @Test
+    fun objectsWithChildren() {
+        createTableInheritence<Vehicle>(CommercialTruck::class, Car::class).forEach { println(it) }
     }
 
 
     @Test
     fun main() {
-        println(createTable<Queued>({
+        println("/* Create Tables for queued objects */")
+        println(createTable(Queued::class, {
             if (it.name == "queuedObject") {
                 "TEXT"
             } else {
                 null
             }
         }))
-        println(createTable<NonKeyedChild>())
-        println(createTable<PrimaryKeyChild>())
+        println(createTable(NonKeyedChild::class))
+        println(createTable(PrimaryKeyChild::class))
+        println("\n\n/* Insert into for queued objects */")
 
         // deleting from the queue deletes from the child table
         println(insertInto<Queued>())
         println(insertInto<NonKeyedChild>())
         println(insertInto<PrimaryKeyChild>())
 
-
+        println("\n\n/* Create Views for queued objects */")
         // we need to pop from the queue
         /**
          * SELECT `mqtt.simpleTest.Queued`.messageId, `mqtt.SimpleTest.NonKeyedChild`.*
@@ -117,8 +125,27 @@ class SimpleTest {
          */
 
         println(createView(Queued::class, "queuedObject", "messageId", NonKeyedChild::class, "mqtt_inserted_id"))
+        println()
+        println(createView(Queued::class, "queuedObject", "messageId", PrimaryKeyChild::class, "identifier"))
 
-        // then delete later from the queue
+
+        // Create triggers so if an item is
+        println("\n\n/* Delete the objects from the queued table as a trigger */")
+        val childTriggers = HashMap<KClass<*>, String>(2)
+        childTriggers[NonKeyedChild::class] = "mqtt_inserted_id"
+        childTriggers[PrimaryKeyChild::class] = "identifier"
+        createChildMappingDeleteTrigger(Queued::class, "queuedObject", childTriggers).forEach {
+            println(it)
+        }
+        // delete later from the queue
+        println("\n\n/* Delete the queued objects */")
+        println(delete("messageId", Queued::class.qualifiedName!!))
+        println(delete("mqtt_inserted_id", NonKeyedChild::class.qualifiedName!!))
+        println(delete("identifier", PrimaryKeyChild::class.qualifiedName!!))
+
+        println("\n\n/* Inherited objects */")
+        createTableInheritence<Vehicle>(CommercialTruck::class, Car::class).forEach { println(it) }
+
 
     }
 }

@@ -8,7 +8,8 @@ import kotlin.reflect.KClass
 annotation class SQLTable(
     val database: String = "app.db",
     val tableName: String = "",
-    val primaryKeys: Array<String> = []
+    val primaryKeys: Array<String> = [],
+    val subclasses: Array<KClass<out Any>> = []
 )
 
 annotation class Unique
