@@ -1,8 +1,9 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.sql
 
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
-
 
 inline fun <reified Annotation : kotlin.Annotation> findMemberWithAnnotationOf(type: KClass<*>): String? {
     var primaryKey: String? = null
@@ -20,17 +21,6 @@ inline fun <reified Annotation : kotlin.Annotation> findMemberWithAnnotationOf(t
     return primaryKey
 }
 
-@ExperimentalUnsignedTypes
-fun createSimpleRelationship(parent: KClass<*>): List<String> {
-    // create
-    createTable(parent)
-    // update
-    // delete
-    delete("")
-    // delete trigger
-}
-
-@ExperimentalUnsignedTypes
 inline fun <reified Parent : Any> createTableInheritence(vararg childTables: KClass<*>)
         : List<CharSequence> {
     val parentClass = Parent::class
@@ -64,7 +54,6 @@ inline fun <reified Parent : Any> createTableInheritence(vararg childTables: KCl
     return tables
 }
 
-@ExperimentalUnsignedTypes
 fun <T : Any> createTable(
     type: KClass<T>,
     customClasses: (KProperty<*>) -> CharSequence? = { null },
@@ -86,7 +75,7 @@ fun <T : Any> createTable(
             }
         }
     }
-    val foreignKeys = LinkedHashMap<String, ForeignKey>()\
+    val foreignKeys = LinkedHashMap<String, ForeignKey>()
     val sql = StringBuilder("CREATE TABLE '$tableName'(\n")
 
     val spacer = ' '
@@ -367,14 +356,6 @@ fun KClass<*>.printAnnotations(prefix: String = "") {
     }
     println("member annotations $memberAnnotations\n\n")
 }
-
-annotation class PrimaryKey
-
-
-
-annotation class Meow
-annotation class Meow2
-
 
 val SQLITE_KEY_WORDS = setOf(
     "ABORT", "ACTION", "ADD", "AFTER", "ALL", "ALTER", "ANALYZE", "AND", "AS", "ASC", "ATTACH",

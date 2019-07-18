@@ -12,20 +12,6 @@ apply plugin: 'signing'
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    js() {
-        tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
-    }
-    // For ARM, should be changed to iosArm32 or iosArm64
-    // For Linux, should be changed to e.g. linuxX64
-    // For MacOS, should be changed to e.g. macosX64
-    // For Windows, should be changed to e.g. mingwX64
-    macosX64("macos")
-    linuxX64("linux")
-    mingwX64("windows")
-    targets {
-        final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") ? presets.iosArm64 : presets.iosX64
-        fromPreset(iOSTarget, 'iOS')
-    }
     sourceSets {
         commonMain {
             dependencies {
@@ -50,42 +36,13 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        jsMain {
-            dependencies {
-                implementation kotlin('stdlib-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
-            }
-        }
-        jsTest {
-            dependencies {
-                implementation kotlin('test-js')
-            }
-        }
-
-        nativeMain {
-            dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
-            }
-        }
-        macosMain {
-            dependsOn nativeMain
-        }
-        iOSMain {
-            dependsOn nativeMain
-        }
-        windowsMain {
-            dependsOn nativeMain
-        }
-        linuxMain {
-            dependsOn nativeMain
-        }
     }
 
     // Given that `-PisLinux=true` command line argument is passed when running on Linux,
     // these targets get published only from a Linux machine.
     // Note that the Kotlin metadata is here, too.
     // The mingwx64() target is automatically skipped as incompatible in Linux builds.
-    configure([targets["metadata"], jvm(), js()]) {
+    configure([targets["metadata"], jvm()]) {
         mavenPublication { linuxOnlyPublication ->
             tasks.withType(AbstractPublishToMaven).all {
                 onlyIf {
@@ -114,7 +71,5 @@ publishing.publications {
     }
 }
 
-apply from: file("$projectDir/gradle/js-main.gradle")
-apply from: file("$rootProject.projectDir/gradle/ios.gradle")
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")

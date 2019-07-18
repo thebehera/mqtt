@@ -20,6 +20,8 @@ import kotlin.test.fail
 
 class ClientTests {
 
+    val areWebsocketTestsEnabled = false
+
     @Test
     fun reconnectsAfterSocketConnectionFailure() {
         val request = ConnectionRequest(getClientId())
@@ -39,14 +41,14 @@ class ClientTests {
         val port = if (websockets) {
             60002
         } else {
-            60000
+            1883
         }
         var ws = websockets
         if (Platform.name == "JS") {
             ws = true
         }
         val params = ConnectionParameters(
-            "172.16.74.128", port, secure = false,
+            "192.168.1.223", port, secure = false,
             connectionRequest = request, useWebsockets = ws,
             logIncomingControlPackets = true,
             logOutgoingControlPackets = true,
@@ -158,6 +160,10 @@ class ClientTests {
 
     @Test
     fun subscribeOnePublishAnotherWorksWebSocketPublisher() {
+        if (!areWebsocketTestsEnabled) {
+            println("Warning:: Websocket tests are disabled")
+            return
+        }
         val ogMessage = "Hello2"
         blockWithTimeout {
             val client1Session1 = createClientAwaitConnection()
@@ -174,6 +180,10 @@ class ClientTests {
 
     @Test
     fun subscribeOnePublishAnotherWorksWebSocketSubscriber() {
+        if (!areWebsocketTestsEnabled) {
+            println("Warning:: Websocket tests are disabled")
+            return
+        }
         val ogMessage = "Hello2"
         val mutex = Mutex(true)
         blockWithTimeout {

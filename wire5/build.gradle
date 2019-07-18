@@ -15,22 +15,25 @@ kotlin {
     js() {
         tasks[compilations.main.compileKotlinTaskName].kotlinOptions.moduleKind = "umd"
     }
-    // For ARM, should be changed to iosArm32 or iosArm64
-    // For Linux, should be changed to e.g. linuxX64
-    // For MacOS, should be changed to e.g. macosX64
-    // For Windows, should be changed to e.g. mingwX64
-    macosX64("macos")
     linuxX64("linux")
     mingwX64("windows")
     targets {
-        final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") ? presets.iosArm64 : presets.iosX64
-        fromPreset(iOSTarget, 'iOS')
+        final def iOSTarget = System.getenv('SDK_NAME')?.startsWith("iphoneos") \
+                              ? presets.iosArm64 : presets.iosX64
+
+        fromPreset(iOSTarget, 'iOS') {
+            binaries {
+                framework('SharedCode')
+            }
+        }
+
+        fromPreset(presets.jvm, 'android')
     }
     sourceSets {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation project(':wire.core')
+                implementation project(':wire-core')
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
@@ -68,9 +71,6 @@ kotlin {
             dependencies {
                 implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
             }
-        }
-        macosMain {
-            dependsOn nativeMain
         }
         iOSMain {
             dependsOn nativeMain
@@ -116,7 +116,31 @@ publishing.publications {
     }
 }
 
+configurations {
+    compileClasspath
+}
+
+task packForXCode(type: Sync) {
+    final File frameworkDir = new File(buildDir, "xcode-frameworks")
+    final String mode = project.findProperty("XCODE_CONFIGURATION")?.toUpperCase() ?: 'DEBUG'
+    final def framework = kotlin.targets.iOS.binaries.getFramework("SharedCode", mode)
+
+    inputs.property "mode", mode
+    dependsOn framework.linkTask
+
+    from { framework.outputFile.parentFile }
+    into frameworkDir
+
+    doLast {
+        new File(frameworkDir, 'gradlew').with {
+            text = "#!/bin/bash\nexport 'JAVA_HOME=${System.getProperty("java.home")}'\ncd '${rootProject.rootDir}'\n./gradlew \$@\n"
+            setExecutable(true)
+        }
+    }
+}
+tasks.build.dependsOn packForXCode
+
 apply from: file("$projectDir/gradle/js-main.gradle")
-apply from: file("$rootProject.projectDir/gradle/ios.gradle")
+//apply from: file("$rootProject.projectDir/gradle/ios.gradle")
 apply from: file("$rootProject.projectDir/gradle/bintray.gradle")
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")

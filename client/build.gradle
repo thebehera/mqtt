@@ -36,7 +36,7 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-common')
                 compileOnly project(":wire4")
-                implementation project(":wire.core")
+                implementation project(":wire-core")
                 implementation project(":time")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"

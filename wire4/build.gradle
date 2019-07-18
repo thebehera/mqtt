@@ -30,7 +30,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation project(':wire.core')
+                implementation project(':wire-core')
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
