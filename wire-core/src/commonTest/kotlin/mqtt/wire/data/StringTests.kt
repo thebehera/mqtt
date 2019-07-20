@@ -5,12 +5,12 @@ package mqtt.wire.data
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.readUShort
-import kotlin.js.JsName
+//import kotlin.js.JsName
 import kotlin.test.*
 
 class StringTests {
     @Test
-    @JsName("Utf8EncodedStringIsWellFormed_1_5_4")
+//    @JsName("Utf8EncodedStringIsWellFormed_1_5_4")
     fun `MQTT Conformance Character data in a UTF-8 Encoded String MUST be well-formed UTF-8 as defined by the Unicode specification Unicode and restated in RFC 3629`() {
         invalidMqttString()
         validMqttString()
@@ -114,7 +114,7 @@ class StringTests {
 
 
     @Test
-    @JsName("utf8DoesNotHaveNull")
+//    @JsName("utf8DoesNotHaveNull")
     fun `MQTT Conformance A UTF-8 Encoded String MUST NOT include an encoding of the null character U+0000`() {
         val string = MqttUtf8String("\u0000")
         try {
@@ -125,7 +125,7 @@ class StringTests {
     }
 
     @Test
-    @JsName("zeroWidthNoBreakSpace")
+//    @JsName("zeroWidthNoBreakSpace")
     fun `MQTT Conformance A UTF-8 encoded sequence 0xEF 0xBB 0xBF is always interpreted as U+FEFF (ZERO WIDTH NO-BREAK SPACE) wherever it appears in a string and MUST NOT be skipped over or stripped off by a packet receiver `() {
         val string = MqttUtf8String("\uFEFF")
         val actual = string.getValueOrThrow()
@@ -140,7 +140,7 @@ class StringTests {
     }
 
     @Test
-    @JsName("latinCaptialNoNormativeTest")
+    //@JsName("latinCaptialNoNormativeTest")
     fun `The string AuD869uDED4 which is LATIN CAPITAL Letter A followed by the code point U+2A6D4 (which represents a CJK IDEOGRAPH EXTENSION B character) is encoded`() {
 //        val string = MqttUtf8String("A\uD869\uDED4")
 //        val actual = string.getValueOrThrow()

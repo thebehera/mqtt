@@ -9,11 +9,11 @@ repositories {
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
+
     sourceSets {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
-                implementation project(':wire-core')
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
@@ -21,6 +21,7 @@ kotlin {
             dependencies {
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
+                implementation project(':wire4')
             }
         }
         jvmMain {
@@ -47,6 +48,7 @@ kotlin {
             }
         }
     }
+
 
     targets.all {
         compilations.all {

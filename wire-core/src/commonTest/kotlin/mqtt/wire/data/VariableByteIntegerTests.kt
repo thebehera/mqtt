@@ -4,7 +4,7 @@ package mqtt.wire.data
 
 import kotlinx.io.core.readBytes
 import mqtt.wire.MalformedInvalidVariableByteInteger
-import kotlin.js.JsName
+//import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -12,7 +12,7 @@ import kotlin.test.fail
 class VariableByteIntegerTests {
 
     @Test
-    @JsName("encodedValueMustUseMinNumberOfBytes")
+    //@JsName("encodedValueMustUseMinNumberOfBytes")
     fun `MQTT Conformance The encoded value MUST use the minimum number of bytes necessary to represent the value`() {
         val oneMin = VariableByteInteger(0.toUInt())
         assertEquals(1, oneMin.encodedValue().remaining.toInt())

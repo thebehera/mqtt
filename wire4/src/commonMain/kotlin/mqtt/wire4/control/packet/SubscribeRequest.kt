@@ -51,7 +51,6 @@ data class SubscribeRequest(override val packetIdentifier: UShort = getAndIncrem
                 AT_MOST_ONCE -> ReasonCode.GRANTED_QOS_0
                 AT_LEAST_ONCE -> ReasonCode.GRANTED_QOS_1
                 EXACTLY_ONCE -> ReasonCode.GRANTED_QOS_2
-                else -> ReasonCode.UNSPECIFIED_ERROR
             }
         }
         return SubscribeAcknowledgement(packetIdentifier, returnCodes)
