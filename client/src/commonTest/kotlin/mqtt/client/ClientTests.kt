@@ -18,6 +18,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
+val domain = "localhost"
+val port = 60000
+
 class ClientTests {
 
     val areWebsocketTestsEnabled = false
@@ -38,17 +41,12 @@ class ClientTests {
 
     fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Unit>> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
-        val port = if (websockets) {
-            60002
-        } else {
-            1883
-        }
         var ws = websockets
         if (Platform.name == "JS") {
             ws = true
         }
         val params = ConnectionParameters(
-            "192.168.1.223", port, secure = false,
+            domain, port, secure = false,
             connectionRequest = request, useWebsockets = ws,
             logIncomingControlPackets = true,
             logOutgoingControlPackets = true,
@@ -151,6 +149,9 @@ class ClientTests {
             val mutex = Mutex(true)
             client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
                 assertEquals(ogMessage, message)
+                if (!mutex.isLocked) {
+                    return@subscribe
+                }
                 mutex.unlock()
             }
             client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)

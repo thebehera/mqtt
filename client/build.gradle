@@ -63,12 +63,12 @@ kotlin {
 
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
-//jvmTest {
-//    dependsOn startMosquittoTLS60001
-//    dependsOn startMosquitto60000Default
-//    finalizedBy stopMosquittoTLS60001
-//    finalizedBy stopMosquitto60000Default
-//}
+jvmTest {
+    dependsOn startMosquittoTLS60001
+    dependsOn startMosquitto60000Default
+    finalizedBy stopMosquittoTLS60001
+    finalizedBy stopMosquitto60000Default
+}
 String osName = System.getProperty("os.name").toLowerCase()
 if (osName.contains("linux")) {
     bintrayUpload.dependsOn jvmTest

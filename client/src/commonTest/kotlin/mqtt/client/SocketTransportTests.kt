@@ -32,8 +32,7 @@ class SocketTransportTests {
 
     @Test
     fun connectDisconnect() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
+        val params = buildParams()
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         blockWithTimeout(5000) {
@@ -54,8 +53,7 @@ class SocketTransportTests {
 
     @Test
     fun reconnectOnce() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort(), cleanSession = true)
-        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
+        val params = buildParams()
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         blockWithTimeout {
@@ -71,8 +69,7 @@ class SocketTransportTests {
 
     @Test
     fun socketCloseAutomatically() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5.toUShort())
-        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
+        val params = buildParams()
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         block {
@@ -82,11 +79,10 @@ class SocketTransportTests {
 
     @Test
     fun publishSingleMessageQos0() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 50.toUShort())
-        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
+        val params = buildParams()
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
-        block {
+        blockWithTimeout {
             result.await()
             val publishMessage = PublishMessage("yolo", buildPacket { writeFully("asdf".toByteArray()) })
             connection.clientToServer.send(publishMessage)
@@ -127,7 +123,7 @@ class SocketTransportTests {
 
     fun buildParams(clientId: String = getClientId()): ConnectionParameters {
         val connectionRequest = ConnectionRequest(clientId = clientId, keepAliveSeconds = 5000.toUShort())
-        return ConnectionParameters("localhost", 60000, false, connectionRequest)
+        return ConnectionParameters(domain, port, false, connectionRequest)
     }
 
     suspend fun buildConnection(clientId: String = getClientId()): PlatformSocketConnection {
@@ -140,7 +136,7 @@ class SocketTransportTests {
     @Test
     fun publishQos1() {
         var recvMessage = false
-        blockWithTimeout {
+        blockWithTimeout(5000) {
             val publishClient = buildConnection("pubClient")
             val recvClientSession1 = buildConnection("client1")
             val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
@@ -161,6 +157,9 @@ class SocketTransportTests {
                         if (controlPacket !is PublishMessage) {
                             fail("received wrong message: $controlPacket")
                         }
+                        if (!mutex.isLocked || recvMessage) {
+                            return
+                        }
                         recvMessage = true
                         mutex.unlock()
                     } catch (e: Exception) {
@@ -179,19 +178,20 @@ class SocketTransportTests {
 
     @Test
     fun subscribeAndReceiveSuback() {
-        val connectionRequest = ConnectionRequest(clientId = getClientId(), keepAliveSeconds = 5000.toUShort())
-        val params = ConnectionParameters("localhost", 60000, false, connectionRequest)
+        val params = buildParams()
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
         var recvMessage = false
         blockWithTimeout {
             result.await()
+            println("awaited result")
             val mutex = Mutex(true)
             connection.messageReceiveCallback = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {
                     try {
                         assertTrue(controlPacket is SubscribeAcknowledgement)
                         recvMessage = true
+                        println("unlock")
                         mutex.unlock()
                     } catch (e: Exception) {
                         fail(e.message)
