@@ -1,50 +1,50 @@
 package mqtt.sql
 
-//@SQLTable(
-//    subclasses = [
-//        Child1KeyedAtChild::class, Child2KeyedAtChild::class,
-//        ChildWithCollectionKeyedAtChild::class, ChildWithMapKeyedAtChild::class
-//    ]
-//)
-//interface SupertypeKeyedAtChild {
-//    val superParameter: CharSequence
-//    val property: FlatAllTypesIncludingNullableKeyedAtChild
-//}
-//
-//@SQLTable(
-//    subclasses = [
-//        Child1KeyedAtChild::class, Child2KeyedAtChild::class,
-//        ChildWithCollectionKeyedAtChild::class, ChildWithMapKeyedAtChild::class
-//    ]
-//)
-//interface InterfaceWithGenericChildKeyedAtChild<Type : SupertypeKeyedAtChild> {
-//    val child: Type
-//    val property: FlatAllTypesIncludingNullableKeyedAtChild
-//}
-//
-//interface Child1KeyedAtChild : SupertypeKeyedAtChild {
-//    @PrimaryKey
-//    val propertyChild1: String?
-//}
-//
-//interface Child2KeyedAtChild : SupertypeKeyedAtChild {
-//    @PrimaryKey
-//    val propertyChild2: Int
-//}
-//
-//interface ChildWithCollectionKeyedAtChild : SupertypeKeyedAtChild {
-//    @PrimaryKey
-//    val key: String
-//    val propertyChild2: Collection<String>
-//}
-//
-//interface ChildWithMapKeyedAtChild : SupertypeKeyedAtChild {
-//    @PrimaryKey
-//    val key: Int
-//    val propertyChild2: Map<String, String>
-//}
+@SQLTable(
+    subclasses = [
+        Child1KeyedAtChild::class, Child2KeyedAtChild::class,
+        ChildWithCollectionKeyedAtChild::class, ChildWithMapKeyedAtChild::class
+    ]
+)
+interface SupertypeKeyedAtChild {
+    val superParameter: CharSequence
+    val property: FlatAllTypesIncludingNullableKeyedAtChild
+}
 
-//@SQLTable
+@SQLTable(
+    subclasses = [
+        Child1KeyedAtChild::class, Child2KeyedAtChild::class,
+        ChildWithCollectionKeyedAtChild::class, ChildWithMapKeyedAtChild::class
+    ]
+)
+interface InterfaceWithGenericChildKeyedAtChild<Type : SupertypeKeyedAtChild> {
+    val child: Type
+    val property: FlatAllTypesIncludingNullableKeyedAtChild
+}
+
+interface Child1KeyedAtChild : SupertypeKeyedAtChild {
+    @PrimaryKey
+    val propertyChild1: String?
+}
+
+interface Child2KeyedAtChild : SupertypeKeyedAtChild {
+    @PrimaryKey
+    val propertyChild2: Int
+}
+
+interface ChildWithCollectionKeyedAtChild : SupertypeKeyedAtChild {
+    @PrimaryKey
+    val key: String
+    val propertyChild2: Collection<String>
+}
+
+interface ChildWithMapKeyedAtChild : SupertypeKeyedAtChild {
+    @PrimaryKey
+    val key: Int
+    val propertyChild2: Map<String, String>
+}
+
+@SQLTable
 interface FlatAllTypesIncludingNullableKeyedAtChild {
     val bool: Boolean
     val byte: Byte
