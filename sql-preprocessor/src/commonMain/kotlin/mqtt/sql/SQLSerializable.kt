@@ -103,7 +103,10 @@ fun KClass<*>.printAnnotations(prefix: String = "") {
 }
 
 fun String.escapeNameIfNeeded() =
-    if (SQLITE_KEY_WORDS.contains(toUpperCase())) {
+    if (contains(".")
+        || contains("(")
+        || SQLITE_KEY_WORDS.contains(toUpperCase())
+    ) {
         "`$this`"
     } else {
         this

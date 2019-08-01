@@ -1,44 +1,5 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
-
 package mqtt.sql
-
-@SQLTable(
-    subclasses = [
-        Child1Unkeyed::class, Child2Unkeyed::class,
-        ChildWithCollectionUnkeyed::class, ChildWithMapUnkeyed::class
-    ]
-)
-interface SupertypeUnkeyed {
-    val superParameter: CharSequence
-    val property: FlatAllTypesIncludingNullableUnkeyed
-}
-
-@SQLTable(
-    subclasses = [
-        Child1Unkeyed::class, Child2Unkeyed::class,
-        ChildWithCollectionUnkeyed::class, ChildWithMapUnkeyed::class
-    ]
-)
-interface InterfaceWithGenericChildUnkeyed<Type : SupertypeUnkeyed> {
-    val child: Type
-    val property: FlatAllTypesIncludingNullableUnkeyed
-}
-
-interface Child1Unkeyed : SupertypeUnkeyed {
-    val propertyChild1: String?
-}
-
-interface Child2Unkeyed : SupertypeUnkeyed {
-    val propertyChild2: Int
-}
-
-interface ChildWithCollectionUnkeyed : SupertypeUnkeyed {
-    val propertyChild2: Collection<String>
-}
-
-interface ChildWithMapUnkeyed : SupertypeUnkeyed {
-    val propertyChild2: Map<String, String>
-}
 
 @SQLTable
 interface FlatAllTypesIncludingNullableUnkeyed {

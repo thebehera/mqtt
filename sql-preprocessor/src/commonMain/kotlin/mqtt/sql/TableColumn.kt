@@ -7,14 +7,14 @@ import kotlin.reflect.KProperty
 data class TableColumn(
     val parent: TableMetadata<*>,
     val property: KProperty<*>,
-    val customClasses: (KProperty<*>) -> CharSequence? = { null },
-    val nativeClasses: (KProperty<*>) -> CharSequence? = { null },
-    val spacer: CharSequence
+    val customClasses: (KProperty<*>) -> Pair<CharSequence, BindType>? = { null },
+    val nativeClasses: (KProperty<*>) -> Pair<CharSequence, BindType>? = { null },
+    val spacer: CharSequence = parent.spacer
 ) {
 
     private val returnType by lazy {
         val classifier = property.returnType.classifier!!
-        customClasses(property) ?: when (classifier) {
+        customClasses(property)?.first ?: when (classifier) {
             Boolean::class -> "BIT(1)"
             Byte::class -> "TINYINT"
             UByte::class -> "TINYINT UNSIGNED"
@@ -33,10 +33,31 @@ data class TableColumn(
             ShortArray::class, UShortArray::class,
             IntArray::class, UIntArray::class,
             LongArray::class, ULongArray::class -> "BLOB"
-            else -> nativeClasses(property) ?: property.returnType.toString() // BLOB AKA NONE
+            else -> nativeClasses(property)?.first ?: property.returnType.toString()
         }
     }
 
+    val bindType by lazy {
+        val classifier = property.returnType.classifier!!
+        customClasses(property)?.second ?: when (classifier) {
+            Boolean::class,
+            Byte::class, UByte::class,
+            Short::class, UShort::class,
+            Int::class, UInt::class,
+            Long::class -> BindType.Long
+            Float::class,
+            Double::class -> BindType.Double
+            Char::class,
+            Number::class,
+            ULong::class,
+            String::class, CharSequence::class, StringBuilder::class -> BindType.String
+            ByteArray::class, UByteArray::class,
+            ShortArray::class, UShortArray::class,
+            IntArray::class, UIntArray::class,
+            LongArray::class, ULongArray::class -> BindType.Blob
+            else -> nativeClasses(property)?.second ?: BindType.String
+        }
+    }
 
     val annotations = parent.nameAnnotationsMap[property.name] ?: emptyList<Annotation>()
     val isNullable = property.returnType.isMarkedNullable
@@ -50,6 +71,7 @@ data class TableColumn(
     val hasForeignKey = foreignKey != null
     val rawPropertyName = property.name
     val name by lazy { rawPropertyName.escapeNameIfNeeded() }
+
 
     fun create(): CharSequence {
         val sql = StringBuilder()
@@ -80,4 +102,6 @@ data class TableColumn(
         }
         return sql
     }
+
+
 }
