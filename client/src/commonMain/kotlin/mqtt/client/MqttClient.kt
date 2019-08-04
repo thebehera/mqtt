@@ -17,7 +17,7 @@ import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 
-class MqttClient(val params: ConnectionParameters) : CoroutineScope {
+data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
@@ -63,12 +63,6 @@ class MqttClient(val params: ConnectionParameters) : CoroutineScope {
             println("done connecting?")
             result
         }
-    }
-
-    inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,
-                                           callback: SubscriptionCallback<T>) = launch {
-
-        session.subscribe(Filter(topicFilter), qos, callback)
     }
 
     suspend inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,

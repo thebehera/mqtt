@@ -31,7 +31,7 @@ class PublishMessageTests {
     @Test
     fun qos0AndPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
-        val variable = VariableHeader(Name("t"), 2.toUShort())
+        val variable = VariableHeader(Name("t"), 2)
         try {
             PublishMessage(fixed, variable)
             fail()

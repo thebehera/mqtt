@@ -5,11 +5,12 @@ package mqtt.wire.control.packet
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.writeUByte
+import mqtt.Parcelable
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.VariableByteInteger
 
-interface ControlPacket {
+interface ControlPacket : Parcelable {
     val controlPacketValue: Byte
     val direction: DirectionOfFlow
     val flags: Byte get() = 0b0

@@ -5,7 +5,7 @@ import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 
 data class Node internal constructor(val level: TopicLevel) {
-    internal val children = mutableMapOf<TopicLevel, Node>()
+    val children = mutableMapOf<TopicLevel, Node>()
     private var parent: Node? = null
     private val isRoot = level.value == ROOT_TOPIC_NODE_VALUE
     val isWildcard = level is LevelWildcard

@@ -18,6 +18,7 @@ import mqtt.wire4.control.packet.PublishMessage
 import mqtt.wire4.control.packet.SubscribeRequest
 import mqtt.wire4.control.packet.UnsubscribeRequest
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 class ClientSession(val params: ConnectionParameters,
                     override val coroutineContext: CoroutineContext,
@@ -123,6 +124,16 @@ class ClientSession(val params: ConnectionParameters,
         }
         send(PublishMessage(topic, qos, actualPayload))
     }
+
+    suspend fun publish(topic: String, qos: QualityOfService, payload: Any, payloadType: KClass<Any>) {
+        val actualPayload = run {
+            val serializer =
+                findSerializer(payloadType) ?: throw RuntimeException("Failed to find serializer for $payload")
+            serializer.serialize(payload)
+        }
+        send(PublishMessage(topic, qos, actualPayload))
+    }
+
 
 
     suspend inline fun <reified T : Any> subscribe(topic: Filter, qos: QualityOfService, callback: SubscriptionCallback<T>) {

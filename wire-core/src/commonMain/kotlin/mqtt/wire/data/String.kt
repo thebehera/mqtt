@@ -3,6 +3,8 @@
 package mqtt.wire.data
 
 import kotlinx.io.core.*
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
@@ -32,7 +34,8 @@ private val shouldNotIncludeCharRange2 by lazy { '\u007F'..'\u009F' }
  */
 private val privateUseCharRange by lazy { '\uE000'..'\uF8FF' }
 
-inline class MqttUtf8String(internal val value: String) {
+@Parcelize
+inline class MqttUtf8String(internal val value: String) : Parcelable {
     fun getValueOrThrow(includeWarnings: Boolean = true): String {
         val ex = exception
         if (ex != null) {

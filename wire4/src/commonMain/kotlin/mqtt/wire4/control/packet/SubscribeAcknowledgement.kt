@@ -3,6 +3,7 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.format.ReasonCode
@@ -17,6 +18,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  * A SUBACK Packet contains a list of return codes, that specify the maximum QoS level that was granted in each
  * Subscription that was requested by the SUBSCRIBE.
  */
+@Parcelize
 data class SubscribeAcknowledgement(override val packetIdentifier: UShort, val payload: List<ReasonCode>)
     : ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }

@@ -6,6 +6,8 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -22,6 +24,7 @@ typealias CONNACK = ConnectionAcknowledgment
  * SHOULD close the Network Connection. A "reasonable" amount of time depends on the type of application and the
  * communications infrastructure.
  */
+@Parcelize
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV4(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
     override val sessionPresent: Boolean = header.sessionPresent
@@ -36,6 +39,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Properties">
      *     Section 2.2.2</a>
      */
+    @Parcelize
     data class VariableHeader(
             /**
              * 3.2.2.2 Session Present
@@ -84,7 +88,8 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              * in the case where an error is found on the CONNECT. For instance, when on a public network and
              * the connection has not been authorized it might be unwise to indicate that this is an MQTT Server.
              */
-            val connectReason: ReturnCode = CONNECTION_ACCEPTED) {
+            val connectReason: ReturnCode = CONNECTION_ACCEPTED
+    ) : Parcelable {
 
         enum class ReturnCode(val value: UByte) {
             CONNECTION_ACCEPTED(0.toUByte()),

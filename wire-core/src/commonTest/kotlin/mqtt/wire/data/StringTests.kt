@@ -2,10 +2,10 @@
 
 package mqtt.wire.data
 
+//import kotlin.js.JsName
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.readUShort
-//import kotlin.js.JsName
 import kotlin.test.*
 
 class StringTests {

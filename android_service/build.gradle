@@ -1,0 +1,40 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+androidExtensions {
+    experimental = true
+}
+android {
+    compileSdkVersion 29
+    defaultConfig {
+        minSdkVersion 15
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/*.kotlin_module'
+        exclude 'io/ktor/http/cio/internals/*.kotlin_metadata'
+        exclude 'io/ktor/client/features/websocket/*.kotlin_metadata'
+        exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
+        exclude 'io/ktor/http/cio/*.kotlin_metadata'
+    }
+}
+
+lint.enabled = false
+
+dependencies {
+    implementation project(":client")
+    implementation project(":wire-core")
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    testImplementation 'junit:junit:4.12'
+    androidTestImplementation 'com.android.support.test:runner:1.0.2'
+    androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+}
