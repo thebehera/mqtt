@@ -13,7 +13,7 @@ import mqtt.client.connection.ConnectionParameters
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 
-class ConnectionManager : Service(), CoroutineScope {
+class ConnectionManager : Service(), CoroutineScope, OnClientMessageReceived {
     private val job: Job = Job()
     override val coroutineContext = job + Dispatchers.Main
 
@@ -22,6 +22,15 @@ class ConnectionManager : Service(), CoroutineScope {
     private lateinit var log: Log
 
     override fun onBind(intent: Intent): IBinder = messenger.binder
+
+
+    override fun onMessage(obj: Any) {
+        when (obj) {
+            is Number -> {
+
+            }
+        }
+    }
 
     suspend fun connect(params: ConnectionParameters) {
         if (connections.containsKey(params)) {

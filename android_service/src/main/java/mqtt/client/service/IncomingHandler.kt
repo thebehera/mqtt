@@ -1,12 +1,12 @@
 package mqtt.client.service
 
-import android.content.Context
 import android.os.Handler
 import android.os.Message
 
-internal class IncomingHandler(context: Context) : Handler() {
+internal class IncomingHandler(private val context: OnClientMessageReceived) : Handler() {
     override fun handleMessage(msg: Message) {
         super.handleMessage(msg)
-        println("Got message $msg")
+        val obj = msg.obj ?: return
+        context.onMessage(obj)
     }
 }

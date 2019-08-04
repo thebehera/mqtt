@@ -6,9 +6,6 @@ repositories {
     jcenter()
 }
 
-apply plugin: 'maven-publish'
-apply plugin: 'signing'
-
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
@@ -34,20 +31,6 @@ kotlin {
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
-            }
-        }
-    }
-
-    // Given that `-PisLinux=true` command line argument is passed when running on Linux,
-    // these targets get published only from a Linux machine.
-    // Note that the Kotlin metadata is here, too.
-    // The mingwx64() target is automatically skipped as incompatible in Linux builds.
-    configure([targets["metadata"], jvm()]) {
-        mavenPublication { linuxOnlyPublication ->
-            tasks.withType(AbstractPublishToMaven).all {
-                onlyIf {
-                    publication != linuxOnlyPublication || findProperty("isLinux") == "true"
-                }
             }
         }
     }
