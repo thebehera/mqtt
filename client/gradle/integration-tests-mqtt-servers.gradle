@@ -72,3 +72,11 @@ task stopMosquitto60000Default() {
 task startMosquitto60000Default(type: MosquittoServer) {
     configurationFileName = "mosquitto_default_60000.conf"
 }
+
+jvmTest {
+    dependsOn startMosquittoTLS60001
+    dependsOn startMosquitto60000Default
+    finalizedBy stopMosquittoTLS60001
+    finalizedBy stopMosquitto60000Default
+}
+

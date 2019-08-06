@@ -9,7 +9,6 @@ repositories {
     }
 }
 apply from: "../gradle/experimental.gradle"
-apply from: "./gradle/integration-tests-mqtt-servers.gradle"
 apply from: "../gradle/android.gradle"
 kotlin {
     jvm()
@@ -70,12 +69,8 @@ kotlin {
 
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
-jvmTest {
-    dependsOn startMosquittoTLS60001
-    dependsOn startMosquitto60000Default
-    finalizedBy stopMosquittoTLS60001
-    finalizedBy stopMosquitto60000Default
-}
+apply from: "./gradle/integration-tests-mqtt-servers.gradle"
+
 String osName = System.getProperty("os.name").toLowerCase()
 if (osName.contains("linux")) {
     bintrayUpload.dependsOn jvmTest
