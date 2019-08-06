@@ -30,12 +30,15 @@ class ClientSession(val params: ConnectionParameters,
     suspend fun connect(): ConnectionState {
         val transportLocal = transport
         if (transportLocal != null) {
+            println("transportLocal $transportLocal")
             return transportLocal.state.value
         }
         val platformSocketConnection = PlatformSocketConnection(params, coroutineContext)
         this@ClientSession.transport = platformSocketConnection
         platformSocketConnection.messageReceiveCallback = this@ClientSession
+        println("open connection")
         val state = platformSocketConnection.openConnectionAsync(true).await()
+        println("awaited")
         val connack = platformSocketConnection.connack
 
         if (!params.connectionRequest.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {

@@ -10,10 +10,10 @@ repositories {
 }
 apply from: "../gradle/experimental.gradle"
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
-
+apply from: "../gradle/android.gradle"
 kotlin {
     jvm()
-
+    android()
     sourceSets {
         commonMain {
             dependencies {
@@ -48,6 +48,13 @@ kotlin {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
             }
+        }
+        androidMain {
+            dependsOn(jvmMain)
+        }
+        androidTest {
+            dependsOn(jvmTest)
+            dependsOn(jvmMain)
         }
     }
     targets.all {
