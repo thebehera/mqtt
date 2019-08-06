@@ -6,7 +6,6 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
-import mqtt.Parcelize
 import mqtt.wire.control.packet.IPublishComplete
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
@@ -15,7 +14,6 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
  */
-@Parcelize
 data class PublishComplete(override val packetIdentifier: UShort)
     : ControlPacketV4(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }

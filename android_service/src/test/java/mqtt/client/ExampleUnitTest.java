@@ -1,4 +1,4 @@
-package mqtt.service;
+package mqtt.client;
 
 import org.junit.Test;
 

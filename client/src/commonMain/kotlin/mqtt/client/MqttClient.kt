@@ -31,20 +31,23 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
     var connectionCount = 0
     val session by lazy { ClientSession(params, Job(job), state) }
 
-    fun startAsyncWaitUntilFirstConnection() = async {
+    fun connectAsync() = async {
         val lock = Mutex(true)
-        @Suppress("DeferredResultUnused")
-        startAsync(Runnable {
-            lock.unlock()
-        })
-        lock.lock()
+        try {
+            return@async startAsync(Runnable {
+                lock.unlock()
+            }).await()
+        } finally {
+            lock.lock()
+        }
     }
 
-    fun startAsync(newConnectionCb: Runnable? = null) = async {
+    internal fun startAsync(newConnectionCb: Runnable? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
             return@async true
         }
 
+        println("start async")
         return@async retryIO(params.maxNumberOfRetries) {
             val result = try {
                 if (isActive) {
@@ -58,6 +61,7 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
                     false
                 }
             } catch (e: Exception) {
+                println(e)
                 false
             }
             println("done connecting?")
@@ -75,7 +79,7 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
 
     suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, message: T) = session.publishGeneric(topic, qos, message)
 
-    fun stopAsync() = async {
+    fun disconnectAsync() = async {
         session.disconnectAsync()
     }
 }

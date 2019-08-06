@@ -6,7 +6,6 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
-import mqtt.Parcelize
 import mqtt.wire.control.packet.IPublishRelease
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
@@ -15,7 +14,6 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * A PUBREL packet is the response to a PUBREC packet. It is the third packet of the QoS 2 protocol exchange.
  */
-@Parcelize
 data class PublishRelease(override val packetIdentifier: UShort)
     : ControlPacketV4(6, DirectionOfFlow.BIDIRECTIONAL, 0b10), IPublishRelease {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }

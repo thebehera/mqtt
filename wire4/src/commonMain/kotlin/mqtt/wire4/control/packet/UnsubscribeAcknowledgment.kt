@@ -6,10 +6,8 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
-import mqtt.Parcelize
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
-@Parcelize
 data class UnsubscribeAcknowledgment(val packetIdentifier: UShort) : ControlPacketV4(11, DirectionOfFlow.SERVER_TO_CLIENT) {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
 

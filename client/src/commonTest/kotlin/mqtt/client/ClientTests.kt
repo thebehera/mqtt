@@ -39,7 +39,7 @@ class ClientTests {
         assertEquals(3, client.connectionCount)
     }
 
-    fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Unit>> {
+    fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
         var ws = websockets
         if (Platform.name == "JS") {
@@ -56,7 +56,7 @@ class ClientTests {
             connectionTimeoutMilliseconds = 15000
         )
         val client = MqttClient(params)
-        val job = client.startAsyncWaitUntilFirstConnection()
+        val job = client.connectAsync()
         return Pair(client, job)
     }
 

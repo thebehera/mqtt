@@ -1,0 +1,36 @@
+plugins {
+    id 'kotlin-multiplatform'
+}
+kotlin {
+    jvm()
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin('stdlib-common')
+                implementation kotlin('reflect')
+                implementation project(':model-annotation')
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
+        }
+    }
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
+                ]
+            }
+        }
+    }
+}

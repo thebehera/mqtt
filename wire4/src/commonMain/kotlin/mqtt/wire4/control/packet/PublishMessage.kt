@@ -3,8 +3,6 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -20,7 +18,6 @@ import mqtt.wire.data.writeMqttName
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-@Parcelize
 data class PublishMessage(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
@@ -79,7 +76,6 @@ data class PublishMessage(
 
     override val topic: Name = variable.topicName
 
-    @Parcelize
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -159,7 +155,7 @@ data class PublishMessage(
          * subscriber will receive the most recent state.
          */
         val retain: Boolean = false
-    ) : Parcelable {
+    ) {
         val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
@@ -191,7 +187,6 @@ data class PublishMessage(
      *
      * The variable header contains the following fields in the order: Topic Name, Packet Identifier.
      */
-    @Parcelize
     data class VariableHeader(
             /**
              * The Topic Name identifies the information channel to which payload data is published.
@@ -212,7 +207,7 @@ data class PublishMessage(
              * 2.3.1 provides more information about Packet Identifiers.
              */
             val packetIdentifier: Int? = null
-    ) : Parcelable {
+    ) {
 
         fun packet() = buildPacket {
             writeMqttName(topicName)

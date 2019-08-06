@@ -3,8 +3,6 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
@@ -28,7 +26,6 @@ typealias CONNECT = ConnectionRequest
  * topic, Will Message, User Name and Password. All but the Client identifier are optional and their presence is
  * determined based on flags in the variable header.
  */
-@Parcelize
 data class ConnectionRequest(
         /**
          * The variable header for the CONNECT Packet consists of four fields in the following order:  Protocol Name,
@@ -100,7 +97,6 @@ data class ConnectionRequest(
         return null
     }
 
-    @Parcelize
     data class VariableHeader(
         /**
          * 3.1.2.1 Protocol Name
@@ -324,7 +320,7 @@ data class ConnectionRequest(
          *
          */
         val keepAliveSeconds: UShort = UShort.MAX_VALUE
-    ) : Parcelable {
+    ) {
         fun validateOrGetWarning(): MqttWarning? {
             if (!willFlag && willRetain) {
                 return MqttWarning("[MQTT-3.1.2-13]", "If the Will Flag is set" +
@@ -386,7 +382,6 @@ data class ConnectionRequest(
      * the flags in the variable header. These fields, if present, MUST appear in the order Client Identifier,
      * Will Topic, Will Message, User Name, Password [MQTT-3.1.3-1].
      */
-    @Parcelize
     data class Payload(
             /**
              * 3.1.3.1 Client Identifier (ClientID)
@@ -462,7 +457,7 @@ data class ConnectionRequest(
              * used by the binary data (it does not include the two bytes taken up by the length field itself).
              */
             val password: MqttUtf8String? = null
-    ) : Parcelable {
+    ) {
 
         fun packet(): ByteReadPacket {
             return buildPacket {

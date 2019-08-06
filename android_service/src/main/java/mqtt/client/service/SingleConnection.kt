@@ -13,7 +13,7 @@ class SingleConnection(
 
     val client = MqttClient(params)
 
-    fun connect() = client.startAsync()
+    fun connect() = client.connectAsync()
 
     suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, obj: T) =
         client.publish(topic, qos, obj)
@@ -23,5 +23,5 @@ class SingleConnection(
         crossinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
     ) = client.subscribe(topicFilter, qos, callback)
 
-    fun disconnect() = client.stopAsync()
+    fun disconnect() = client.disconnectAsync()
 }

@@ -1,4 +1,4 @@
-package mqtt.service;
+package mqtt.client;
 
 import android.content.Context;
 import android.support.test.InstrumentationRegistry;
