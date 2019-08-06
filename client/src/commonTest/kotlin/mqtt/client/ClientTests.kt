@@ -72,8 +72,9 @@ class ClientTests {
         cb: OnMessageReceivedCallback? = null
     ) {
         val (client, job) = createClient()
+        println("created client")
         blockWithTimeout {
-            job.await()
+            println("client connected")
             val pubCompMutex = Mutex(true)
             client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {
@@ -84,6 +85,7 @@ class ClientTests {
                 }
             }
             client.session.publish(topic, qos, publishMessageNumber)
+            println("publish")
             pubCompMutex.lock()
         }
     }
@@ -122,20 +124,22 @@ class ClientTests {
     fun subscribeAckReceived() {
         val (client, job) = createClient()
         blockWithTimeout {
-            job.await()
             val pubCompMutex = Mutex(true)
             client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {
+                    println("IN: $controlPacket")
                     if (controlPacket is ISubscribeAcknowledgement) {
                         pubCompMutex.unlock()
                     }
                 }
             }
+            println("sending subscribe")
             client.session.subscribe(Filter("hello"), AT_LEAST_ONCE, object : SubscriptionCallback<String> {
                 override fun onMessageReceived(topic: Name, qos: QualityOfService, message: String?) {
                     println(message)
                 }
             })
+            println("subscribe sent")
             pubCompMutex.lock()
         }
     }
@@ -144,8 +148,8 @@ class ClientTests {
     fun subscribeOnePublishAnotherWorks() {
         val ogMessage = "Hello2"
         blockWithTimeout {
-            val client1Session1 = createClientAwaitConnection()
-            val client2 = createClientAwaitConnection()
+            val client1Session1 = createClient().first
+            val client2 = createClient().first
             val mutex = Mutex(true)
             client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
                 assertEquals(ogMessage, message)
@@ -155,7 +159,10 @@ class ClientTests {
                 mutex.unlock()
             }
             client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
-            mutex.lock()
+            if (!mutex.isLocked) {
+                mutex.lock()
+            }
+            println("continue")
         }
     }
 

@@ -35,9 +35,11 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
         val lock = Mutex(true)
         try {
             return@async startAsync(Runnable {
+                println("unlock")
                 lock.unlock()
             }).await()
         } finally {
+            println("lock")
             lock.lock()
         }
     }
@@ -53,7 +55,9 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
                 if (isActive) {
                     println("connecting session")
                     val result = session.connect()
+                    println(result)
                     connectionCount++
+                    println(newConnectionCb)
                     newConnectionCb?.run()
                     session.awaitSocketClose()
                     result is Open
