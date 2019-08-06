@@ -28,4 +28,6 @@ cache:
     - $HOME/.konan/cache
 script:
   - ./gradlew allTests
+  - ./gradlew build || true
+  - ./gradlew build
 
