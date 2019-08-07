@@ -2,7 +2,9 @@
 
 package mqtt.wire.control.packet
 
-interface IConnectionRequest : ControlPacket {
+import mqtt.Parcelable
+
+interface IConnectionRequest : ControlPacket, Parcelable {
     val keepAliveTimeoutSeconds: UShort
     val clientIdentifier: String
     val cleanStart: Boolean

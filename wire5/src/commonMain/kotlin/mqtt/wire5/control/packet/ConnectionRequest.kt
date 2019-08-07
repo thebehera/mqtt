@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
@@ -35,6 +36,7 @@ typealias CONNECT = ConnectionRequest
  * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#S4_13_Errors>
  *     Section 4.13 - Handling Errors</a>
  */
+@Parcelize
 data class ConnectionRequest(
         /**
          * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
