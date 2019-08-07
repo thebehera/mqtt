@@ -47,23 +47,13 @@ class ClientSession(val params: ConnectionParameters,
         return state.value
     }
 
-    private fun fireCallbackOrPrint(controlPacket: ControlPacket, callback: OnMessageReceivedCallback?) {
-        if (callback == null) {
-            if (controlPacket is IPublishMessage && params.logIncomingPublish || params.logIncomingControlPackets) {
-                println("IN: $controlPacket")
-            }
-        } else {
-            callback.onMessage(controlPacket)
-        }
-    }
-
     override fun onMessage(controlPacket: ControlPacket) {
         launch {
             var printed = false
             try {
                 when (controlPacket) {
                     is IPublishMessage -> {
-                        fireCallbackOrPrint(controlPacket, callback)
+                        callback?.onMessage(controlPacket)
                         val topicName = controlPacket.topic.validateTopic()
                         if (topicName == null) {
                             println("Failed to validate the topic")
@@ -91,7 +81,7 @@ class ClientSession(val params: ConnectionParameters,
                         state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier)
                     is ISubscribeAcknowledgement -> state.subscriptionAcknowledgementReceived(controlPacket)
                     else -> {
-                        fireCallbackOrPrint(controlPacket, callback)
+                        callback?.onMessage(controlPacket)
                         printed = true
                     }
                 }
@@ -102,7 +92,7 @@ class ClientSession(val params: ConnectionParameters,
                 if (printed) {
                     everyRecvMessageCallback?.onMessage(controlPacket)
                 } else {
-                    fireCallbackOrPrint(controlPacket, everyRecvMessageCallback)
+                    callback?.onMessage(controlPacket)
                 }
             }
         }

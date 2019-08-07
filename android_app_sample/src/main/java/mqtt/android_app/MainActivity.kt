@@ -13,7 +13,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         client.connectAsync(
             ConnectionParameters(
-                "192.168.1.98", 60000, false, ConnectionRequest("yoloswag")
+                "192.168.1.98", 60000, false,
+                logConnectionAttempt = true,
+                logOutgoingPublishOrSubscribe = true,
+                logOutgoingControlPackets = true,
+                logIncomingControlPackets = true,
+                logIncomingPublish = true,
+                connectionRequest = ConnectionRequest("yoloswag", keepAliveSeconds = 4.toUShort())
             )
         )
         setContentView(R.layout.activity_main)

@@ -127,7 +127,6 @@ class ClientTests {
             val pubCompMutex = Mutex(true)
             client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {
-                    println("IN: $controlPacket")
                     if (controlPacket is ISubscribeAcknowledgement) {
                         pubCompMutex.unlock()
                     }

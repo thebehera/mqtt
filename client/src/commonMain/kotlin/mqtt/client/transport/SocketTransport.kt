@@ -176,8 +176,10 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                     val writeComplete = currentTimestampMs()
                     setLastMessageReceived(writeComplete)
                     val sendTime = writeComplete - start
-                    if ((messageToSend is IPublishMessage || messageToSend is ISubscribeRequest
-                                    || messageToSend is IUnsubscribeRequest) && parameters.logOutgoingPublishOrSubscribe) {
+                    if (((messageToSend is IPublishMessage || messageToSend is ISubscribeRequest
+                                || messageToSend is IUnsubscribeRequest) && parameters.logOutgoingPublishOrSubscribe)
+                        || parameters.logOutgoingControlPackets
+                    ) {
                         println("OUT [$size][$sendTime]: $messageToSend")
                     }
                     if (messageToSend is DisconnectNotification) {
@@ -252,15 +254,20 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
     }
 
     private fun readControlPacket(controlPacket: ControlPacket) {
-        setLastMessageReceived(currentTimestampMs())
-        val callback = messageReceiveCallback
-        if (callback != null) {
-            callback.onMessage(controlPacket)
-        } else {
-            if ((controlPacket is IPublishMessage && parameters.logIncomingPublish) ||
-                    parameters.logIncomingControlPackets) {
-                println("IN: $controlPacket")
-            }
+        val newMessageReceived = currentTimestampMs()
+        val lastMsgReceivedBeforeThisPacketMs = newMessageReceived - lastMessageBetweenClientAndServer.value
+        setLastMessageReceived(newMessageReceived)
+        messageReceiveCallback?.onMessage(controlPacket)
+        if ((controlPacket is IPublishMessage && parameters.logIncomingPublish) ||
+            parameters.logIncomingControlPackets
+        ) {
+            println(
+                if (controlPacket is IPingResponse) {
+                    "IN [$lastMsgReceivedBeforeThisPacketMs]: $controlPacket "
+                } else {
+                    "IN: $controlPacket"
+                }
+            )
         }
     }
 

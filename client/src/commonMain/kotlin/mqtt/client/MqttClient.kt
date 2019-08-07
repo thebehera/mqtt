@@ -44,7 +44,7 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
         }
     }
 
-    internal fun startAsync(newConnectionCb: Runnable? = null) = async {
+    fun startAsync(newConnectionCb: Runnable? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
             return@async true
         }

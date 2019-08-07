@@ -19,7 +19,7 @@ class SingleConnectionMqttClient : ViewModel(), CoroutineScope {
         if (client != null) throw IllegalStateException("Client already exists!")
         val client = MqttClient(parameters)
         this.client = client
-        return client.connectAsync()
+        return client.startAsync()
     }
 
     suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, obj: T) =
