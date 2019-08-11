@@ -4,7 +4,8 @@ package mqtt.client
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
-import mqtt.client.connection.ConnectionParameters
+import mqtt.client.connection.parameters.ConnectionParameters
+import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService
@@ -13,13 +14,12 @@ import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.ConnectionRequest
-import platform.Platform
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
 val domain = "localhost"
-val port = 60000
+val port = 60000.toUShort()
 
 class ClientTests {
 
@@ -28,10 +28,20 @@ class ClientTests {
     @Test
     fun reconnectsAfterSocketConnectionFailure() {
         val request = ConnectionRequest(getClientId())
-        val invalidBadPort = 1
-        val params = ConnectionParameters("localhost", invalidBadPort, false, request,
-                maxNumberOfRetries = 3)
-        val client = MqttClient(params)
+        val invalidBadPort = 1.toUShort()
+        val client = MqttClient(
+            ConnectionParameters(
+                RemoteHost(
+                    "localhost",
+                    port = invalidBadPort,
+                    request = request,
+                    security = RemoteHost.Security(
+                        isTransportLayerSecurityEnabled = false
+                    ),
+                    maxNumberOfRetries = 3
+                )
+            )
+        )
         val job = client.startAsync()
         blockWithTimeout(5000) {
             job.await()
@@ -41,21 +51,19 @@ class ClientTests {
 
     fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
-        var ws = websockets
-        if (Platform.name == "JS") {
-            ws = true
-        }
-        val params = ConnectionParameters(
-            domain, port, secure = false,
-            connectionRequest = request, useWebsockets = ws,
-            logIncomingControlPackets = true,
-            logOutgoingControlPackets = true,
-            logConnectionAttempt = true,
-            logIncomingPublish = true,
-            logOutgoingPublishOrSubscribe = true,
-            connectionTimeoutMilliseconds = 15000
+        val client = MqttClient(
+            ConnectionParameters(
+                RemoteHost(
+                    "localhost",
+                    port = port,
+                    request = request,
+                    security = RemoteHost.Security(
+                        isTransportLayerSecurityEnabled = false
+                    ),
+                    maxNumberOfRetries = 3
+                )
+            )
         )
-        val client = MqttClient(params)
         val job = client.connectAsync()
         return Pair(client, job)
     }
@@ -109,6 +117,7 @@ class ClientTests {
 
     @Test
     fun publishQos1PublishAckReceived() {
+
         blockUntilMessageReceived<IPublishAcknowledgment>("yolo2", AT_LEAST_ONCE,
             cb = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {

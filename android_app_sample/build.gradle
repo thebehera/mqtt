@@ -1,8 +1,19 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
-
+apply plugin: 'kotlin-android-extensions'
+androidExtensions {
+    experimental = true
+}
 android {
     compileSdkVersion 29
+    compileOptions {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
     defaultConfig {
         applicationId "mqtt.android_app"
         minSdkVersion 15

@@ -15,6 +15,7 @@ import kotlinx.coroutines.io.ClosedWriteChannelException
 import mqtt.client.ConnectionTimeout
 import mqtt.client.FailedToReadConnectionAck
 import mqtt.client.connection.*
+import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.*
@@ -25,7 +26,8 @@ import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI
 abstract class SocketTransport(override val coroutineContext: CoroutineContext) : CoroutineScope {
-    abstract val parameters: ConnectionParameters
+    abstract val configuration: IMqttConfiguration
+
     val state = atomic<ConnectionState>(Initializing)
 
     var currentSocket: Transport? = null
@@ -48,13 +50,15 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         throw UnsupportedOperationException("Native sockets are not supported on ${Platform.name} yet")
 
     suspend fun buildSocket(): Transport {
-        if (parameters.useWebsockets || !supportsNativeSockets) {
+        val remoteHost = configuration.remoteHost
+        if (remoteHost.websocket.isEnabled || !supportsNativeSockets) {
             if (!supportsNativeSockets) {
                 println("W: Platform does not currently support native sockets, defaulting to websockets")
             }
-            val session = httpClient.webSocketSession(host = parameters.hostname, port = parameters.port, path = "/mqtt") {
+            val session =
+                httpClient.webSocketSession(host = remoteHost.name, port = remoteHost.port.toInt(), path = "/mqtt") {
                 request {
-                    url.protocol = if (parameters.secure) {
+                    url.protocol = if (configuration.remoteHost.security.isTransportLayerSecurityEnabled) {
                         WSS
                     } else {
                         WS
@@ -85,19 +89,20 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             state.lazySet(error)
             return@async state
         }
-        val platformSocketConnected = withTimeoutOrNull(parameters.connectionTimeoutMilliseconds) {
+        val host = configuration.remoteHost
+        val platformSocketConnected = withTimeoutOrNull(host.connectionTimeout) {
             try {
                 println("building socket")
                 buildSocket()
             } catch (e: Exception) {
-                println(parameters)
+                println(configuration.remoteHost)
                 println(e)
                 return@withTimeoutOrNull null
             }
         }
         currentSocket = platformSocketConnected
         if (platformSocketConnected == null) {
-            val e = ConnectionTimeout("Failed to connect within ${parameters.connectionTimeoutMilliseconds}ms")
+            val e = ConnectionTimeout("Failed to connect within ${host.connectionTimeout}ms")
             val connectionState = ConnectionFailure(e)
             state.lazySet(connectionState)
             return@async state
@@ -146,14 +151,15 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     private fun writeConnectionRequestAsync(transport: Transport) = async {
         try {
-            val connectionRequestPacket = parameters.connectionRequest.copy().serialize()
+            val host = configuration.remoteHost
+            val connectionRequestPacket = host.request.copy().serialize()
             val size = connectionRequestPacket.remaining
             val serializationTime = currentTimestampMs()
             transport.writePacket(connectionRequestPacket)
             val postWriteTime = currentTimestampMs()
             val socketWriteTime = postWriteTime - serializationTime
-            if (parameters.logConnectionAttempt) {
-                println("OUT [$size][$socketWriteTime]: ${parameters.connectionRequest}")
+            if (configuration.logConfiguration.connectionAttempt) {
+                println("OUT [$size][$socketWriteTime]: ${host.request}")
             }
             return@async null
         } catch (e: Exception) {
@@ -176,9 +182,10 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                     val writeComplete = currentTimestampMs()
                     setLastMessageReceived(writeComplete)
                     val sendTime = writeComplete - start
+                    val logConfig = configuration.logConfiguration
                     if (((messageToSend is IPublishMessage || messageToSend is ISubscribeRequest
-                                || messageToSend is IUnsubscribeRequest) && parameters.logOutgoingPublishOrSubscribe)
-                        || parameters.logOutgoingControlPackets
+                                || messageToSend is IUnsubscribeRequest) && logConfig.outgoingPublishOrSubscribe)
+                        || logConfig.outgoingControlPackets
                     ) {
                         println("OUT [$size][$sendTime]: $messageToSend")
                     }
@@ -219,7 +226,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                 val callback = messageReceiveCallback
                 if (callback != null) {
                     callback.onMessage(controlPacket)
-                } else if (parameters.logConnectionAttempt) {
+                } else if (configuration.logConfiguration.connectionAttempt) {
                     println("IN: $controlPacket")
                 }
                 if (!state.compareAndSet(Connecting, Open)) {
@@ -258,8 +265,9 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         val lastMsgReceivedBeforeThisPacketMs = newMessageReceived - lastMessageBetweenClientAndServer.value
         setLastMessageReceived(newMessageReceived)
         messageReceiveCallback?.onMessage(controlPacket)
-        if ((controlPacket is IPublishMessage && parameters.logIncomingPublish) ||
-            parameters.logIncomingControlPackets
+        val logConfig = configuration.logConfiguration
+        if ((controlPacket is IPublishMessage && logConfig.incomingPublish) ||
+            logConfig.incomingControlPackets
         ) {
             println(
                 if (controlPacket is IPingResponse) {
@@ -275,7 +283,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     private fun runKeepAlive() = launch {
         @Suppress("EXPERIMENTAL_API_USAGE")
-        val keepAliveTimeoutSeconds = parameters.connectionRequest.keepAliveTimeoutSeconds.toLong()
+        val keepAliveTimeoutSeconds = configuration.remoteHost.request.keepAliveTimeoutSeconds.toLong()
         if (keepAliveTimeoutSeconds > 0) {
             val keepAliveTimeoutMs = keepAliveTimeoutSeconds * 1000
             while (isOpenAndActive()) {

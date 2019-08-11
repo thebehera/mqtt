@@ -4,8 +4,8 @@ package mqtt.client.session
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.ConnectionState
+import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.client.transport.SocketTransport
@@ -20,9 +20,11 @@ import mqtt.wire4.control.packet.UnsubscribeRequest
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
-class ClientSession(val params: ConnectionParameters,
-                    override val coroutineContext: CoroutineContext,
-                    val state: ClientSessionState) : CoroutineScope, OnMessageReceivedCallback {
+class ClientSession(
+    val configuration: IMqttConfiguration,
+    override val coroutineContext: CoroutineContext,
+    val state: ClientSessionState
+) : CoroutineScope, OnMessageReceivedCallback {
     var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null
     var everyRecvMessageCallback: OnMessageReceivedCallback? = null
@@ -33,7 +35,7 @@ class ClientSession(val params: ConnectionParameters,
             println("transportLocal $transportLocal")
             return transportLocal.state.value
         }
-        val platformSocketConnection = PlatformSocketConnection(params, coroutineContext)
+        val platformSocketConnection = PlatformSocketConnection(configuration, coroutineContext)
         this@ClientSession.transport = platformSocketConnection
         platformSocketConnection.messageReceiveCallback = this@ClientSession
         println("open connection")
@@ -41,7 +43,7 @@ class ClientSession(val params: ConnectionParameters,
         println("awaited")
         val connack = platformSocketConnection.connack
 
-        if (!params.connectionRequest.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {
+        if (!configuration.remoteHost.request.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {
             flushQueues()
         }
         return state.value
@@ -89,11 +91,8 @@ class ClientSession(val params: ConnectionParameters,
                 println("Application failed to process $controlPacket")
                 println(e)
             } finally {
-                if (printed) {
-                    everyRecvMessageCallback?.onMessage(controlPacket)
-                } else {
-                    callback?.onMessage(controlPacket)
-                }
+                everyRecvMessageCallback?.onMessage(controlPacket)
+                callback?.onMessage(controlPacket)
             }
         }
     }
@@ -118,24 +117,32 @@ class ClientSession(val params: ConnectionParameters,
         send(PublishMessage(topic, qos, actualPayload))
     }
 
-    suspend fun publish(topic: String, qos: QualityOfService, payload: Any, payloadType: KClass<Any>) {
+    suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, payload: T) {
         val actualPayload = run {
             val serializer =
-                findSerializer(payloadType) ?: throw RuntimeException("Failed to find serializer for $payload")
+                findSerializer(typeClass) ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }
         send(PublishMessage(topic, qos, actualPayload))
     }
 
 
-
-    suspend inline fun <reified T : Any> subscribe(topic: Filter, qos: QualityOfService, callback: SubscriptionCallback<T>) {
+    suspend fun <T : Any> subscribe(
+        topic: Filter, qos: QualityOfService, typeClass: KClass<T>,
+        callback: SubscriptionCallback<T>
+    ) {
         val node = topic.validate() ?: return
-        state.subscriptionManager.register(node, callback)
+        state.subscriptionManager.register(node, typeClass, callback)
         val subscription = SubscribeRequest(10.toUShort(), topic, qos)
         send(subscription)
-        state.sentSubscriptionRequest(subscription, listOf(callback))
+        state.sentSubscriptionRequest(subscription, typeClass, listOf(callback))
     }
+
+    suspend inline fun <reified T : Any> subscribe(
+        topic: Filter,
+        qos: QualityOfService,
+        callback: SubscriptionCallback<T>
+    ) = subscribe(topic, qos, T::class, callback)
 
     suspend inline fun <reified T : Any> subscribe(topics: List<Filter>, qos: List<QualityOfService>, callbacks: List<SubscriptionCallback<T>>) {
         if (topics.size != qos.size && qos.size != callbacks.size) {

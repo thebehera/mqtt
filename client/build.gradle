@@ -66,7 +66,6 @@ kotlin {
         }
     }
 }
-
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
@@ -74,4 +73,13 @@ apply from: "./gradle/integration-tests-mqtt-servers.gradle"
 String osName = System.getProperty("os.name").toLowerCase()
 if (osName.contains("linux")) {
     bintrayUpload.dependsOn jvmTest
+}
+
+tasks.whenTaskAdded { task ->
+    if (task.name == "testDebugUnitTest") {
+        task.enabled = false
+    }
+    if(task.name == "testReleaseUnitTest") {
+        task.enabled = false
+    }
 }

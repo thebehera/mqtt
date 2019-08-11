@@ -2,8 +2,11 @@ package mqtt.wire.data
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readBytes
+import mqtt.Parcelable
+import mqtt.Parcelize
 
-data class ByteArrayWrapper(val byteArray: ByteArray) {
+@Parcelize
+data class ByteArrayWrapper(val byteArray: ByteArray) : Parcelable {
 
     constructor(packet: ByteReadPacket?) : this(packet?.readBytes() ?: ByteArray(0))
     override fun equals(other: Any?): Boolean {

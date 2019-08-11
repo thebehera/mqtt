@@ -1,0 +1,57 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
+package mqtt.client.connection.parameters
+
+import mqtt.Parcelize
+import mqtt.client.connection.parameters.IRemoteHost.ISecurityParameters
+import mqtt.client.connection.parameters.IRemoteHost.IWebsocketParameters
+import mqtt.wire.control.packet.IConnectionRequest
+
+@Parcelize
+data class ConnectionParameters(
+    override val remoteHost: IRemoteHost,
+    override val logConfiguration: ILogConfiguration = LogConfiguration()
+) : IMqttConfiguration
+
+@Parcelize
+data class RemoteHost(
+    override val name: String,
+    override val request: IConnectionRequest,
+    override val websocket: IWebsocketParameters = Websocket(),
+    override val security: ISecurityParameters = Security(),
+    override val port: UShort =
+        if (websocket.isEnabled) {
+            if (security.isTransportLayerSecurityEnabled) {
+                443
+            } else {
+                80
+            }
+        } else {
+            if (security.isTransportLayerSecurityEnabled) {
+                8883
+            } else {
+                1883
+            }
+        }.toUShort(),
+    override val connectionTimeout: Milliseconds = 10_000,
+    override val maxNumberOfRetries: Int = Int.MAX_VALUE
+) : IRemoteHost {
+
+    @Parcelize
+    data class Websocket(override val isEnabled: Boolean = false) : IWebsocketParameters
+
+    @Parcelize
+    data class Security(
+        override val isTransportLayerSecurityEnabled: Boolean = true,
+        override val acceptAllCertificates: Boolean = false
+    ) : ISecurityParameters
+}
+
+@Parcelize
+open class LogConfiguration(
+    override val connectionAttempt: Boolean = false,
+    override val outgoingPublishOrSubscribe: Boolean = false,
+    override val outgoingControlPackets: Boolean = false,
+    override val incomingControlPackets: Boolean = false,
+    override val incomingPublish: Boolean = false
+) : ILogConfiguration

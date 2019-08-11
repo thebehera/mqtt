@@ -2,7 +2,7 @@ package mqtt.client.service.ipc
 
 import android.os.Handler
 import android.os.Message
-import mqtt.client.connection.ConnectionParameters
+import mqtt.client.connection.parameters.IMqttConfiguration
 
 class EventHandler(private val listener: OnRemoteCommandListener) : Handler() {
     override fun handleMessage(msg: Message) {
@@ -14,7 +14,7 @@ class EventHandler(private val listener: OnRemoteCommandListener) : Handler() {
     }
 
     private fun forwardConnect(msg: Message) {
-        val connectionParameters = msg.obj as? ConnectionParameters
+        val connectionParameters = msg.obj as? IMqttConfiguration
         if (connectionParameters == null) {
             println("failed to read connection parameters")
             return

@@ -5,8 +5,8 @@ package mqtt.client
 import io.ktor.http.Url
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
-import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.Open
+import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.ClientSessionState
@@ -16,48 +16,56 @@ import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
-data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
+data class MqttClient(val config: IMqttConfiguration) : CoroutineScope {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
         ClientSessionState().also {
             launch {
-                it.start(MqttUtf8String(params.connectionRequest.clientIdentifier), Url(params.hostname))
+                val host = config.remoteHost
+                it.start(MqttUtf8String(host.request.clientIdentifier), Url(host.name))
             }
         }
     }
     override val coroutineContext: CoroutineContext = job + dispatcher
     var connectionCount = 0
-    val session by lazy { ClientSession(params, Job(job), state) }
+    val session by lazy { ClientSession(config, Job(job), state) }
+    val log by lazy { config.logConfiguration.getLogClass().connection }
 
     fun connectAsync() = async {
         val lock = Mutex(true)
         try {
-            return@async startAsync(Runnable {
-                println("unlock")
+            log?.verbose("connectAsync - startAsync")
+            val result = startAsync(Runnable {
+                log?.verbose("unlock")
                 lock.unlock()
-            }).await()
+                log?.verbose("unlocked")
+            })
+            log?.verbose("result startAsync = $result")
+            return@async result
         } finally {
-            println("lock")
+            log?.verbose("lock")
             lock.lock()
+            log?.verbose("unlocked")
         }
     }
 
     fun startAsync(newConnectionCb: Runnable? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
+            log?.verbose("transport is open and active")
             return@async true
         }
 
-        println("start async")
-        return@async retryIO(params.maxNumberOfRetries) {
+        log?.verbose("start async")
+        return@async retryIO(config.remoteHost.maxNumberOfRetries) {
             val result = try {
                 if (isActive) {
-                    println("connecting session")
+                    log?.verbose("connecting session")
                     val result = session.connect()
-                    println(result)
+                    log?.verbose("connected session: $result")
                     connectionCount++
-                    println(newConnectionCb)
                     newConnectionCb?.run()
                     session.awaitSocketClose()
                     result is Open
@@ -65,25 +73,45 @@ data class MqttClient(val params: ConnectionParameters) : CoroutineScope {
                     false
                 }
             } catch (e: Exception) {
-                println(e)
+                log?.exceptionCausingReconnect(e)
                 false
             }
-            println("done connecting?")
+            log?.verbose("done connecting $result")
             result
         }
     }
 
-    suspend inline fun <reified T : Any> subscribe(topicFilter: String, qos: QualityOfService,
-                                                   crossinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit) {
+    suspend fun <T : Any> subscribe(
+        topicFilter: String, qos: QualityOfService, typeClass: KClass<T>,
+        callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
+    ) {
+        log?.verbose("alloc susbscription")
         val subscriptionCallback = object : SubscriptionCallback<T> {
             override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) = callback(topic, qos, message)
         }
-        session.subscribe(Filter(topicFilter), qos, subscriptionCallback)
+        log?.verbose("subscribing to $topicFilter ($qos) with class $typeClass")
+        session.subscribe(Filter(topicFilter), qos, typeClass, subscriptionCallback)
+        log?.verbose("subscribed to $topicFilter ($qos) with class $typeClass")
     }
 
-    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, message: T) = session.publishGeneric(topic, qos, message)
+    suspend inline fun <reified T : Any> subscribe(
+        topicFilter: String, qos: QualityOfService,
+        noinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
+    ) = subscribe(topicFilter, qos, T::class, callback)
+
+    suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, message: T) {
+        log?.verbose("publish to $topic ($qos): $message")
+        session.publish(topic, qos, typeClass, message)
+        log?.verbose("published to $topic ($qos): $message")
+    }
+
+    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, message: T) =
+        publish(topic, qos, T::class, message)
 
     fun disconnectAsync() = async {
-        session.disconnectAsync()
+        log?.verbose("disconnecting")
+        val disconnect = session.disconnectAsync()
+        log?.verbose("disconnected $disconnect")
+        disconnect
     }
 }

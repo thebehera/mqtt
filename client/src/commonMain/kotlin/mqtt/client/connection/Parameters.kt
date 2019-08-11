@@ -2,7 +2,8 @@ package mqtt.client.connection
 
 import mqtt.wire.control.packet.IConnectionRequest
 
-data class ConnectionParameters(
+@Deprecated("use interfaces")
+data class ConnectionParametersOld(
         val hostname: String,
         val port: Int,
         val secure: Boolean,

@@ -9,8 +9,9 @@ import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
 import mqtt.client.connection.Closed
-import mqtt.client.connection.ConnectionParameters
 import mqtt.client.connection.Open
+import mqtt.client.connection.parameters.ConnectionParameters
+import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
@@ -118,12 +119,21 @@ class SocketTransportTests {
 //                delay(20000)
 //                mutex.withLock {} // lock until we get a message
         }
-
     }
 
     fun buildParams(clientId: String = getClientId()): ConnectionParameters {
         val connectionRequest = ConnectionRequest(clientId = clientId, keepAliveSeconds = 5000.toUShort())
-        return ConnectionParameters(domain, port, false, connectionRequest)
+        return ConnectionParameters(
+            RemoteHost(
+                domain,
+                port = port,
+                request = connectionRequest,
+                security = RemoteHost.Security(
+                    isTransportLayerSecurityEnabled = false
+                ),
+                maxNumberOfRetries = 3
+            )
+        )
     }
 
     suspend fun buildConnection(clientId: String = getClientId()): PlatformSocketConnection {
