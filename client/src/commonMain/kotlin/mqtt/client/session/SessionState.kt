@@ -5,8 +5,6 @@ package mqtt.client.session
 import io.ktor.http.Url
 import mqtt.client.persistence.KeyValuePersistence
 import mqtt.client.persistence.MemoryKeyValuePersistence
-import mqtt.client.persistence.MemoryQueuedPersistence
-import mqtt.client.persistence.QueuedPersistence
 import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -15,7 +13,6 @@ import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.reflect.KClass
 
 class ClientSessionState(
-        val messagesNotSent: QueuedPersistence = MemoryQueuedPersistence(),
         val qos1And2MessagesSentButNotAcked: KeyValuePersistence = MemoryKeyValuePersistence(),
         val qos2MessagesRecevedButNotCompletelyAcked: KeyValuePersistence = MemoryKeyValuePersistence()) {
     val subscriptionManager = SubscriptionManager()

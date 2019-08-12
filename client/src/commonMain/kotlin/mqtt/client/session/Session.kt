@@ -51,7 +51,6 @@ class ClientSession(
 
     override fun onMessage(controlPacket: ControlPacket) {
         launch {
-            var printed = false
             try {
                 when (controlPacket) {
                     is IPublishMessage -> {
@@ -62,7 +61,6 @@ class ClientSession(
                             return@launch
                         }
                         state.subscriptionManager.handleIncomingPublish(controlPacket)
-                        printed = true
                         val response = controlPacket.expectedResponse() ?: return@launch
                         send(response)
                     }
@@ -84,7 +82,6 @@ class ClientSession(
                     is ISubscribeAcknowledgement -> state.subscriptionAcknowledgementReceived(controlPacket)
                     else -> {
                         callback?.onMessage(controlPacket)
-                        printed = true
                     }
                 }
             } catch (e: Exception) {
@@ -163,12 +160,8 @@ class ClientSession(
         if (warning != null) {
             throw warning
         }
-        if (!state.messagesNotSent.offer(msg)) {
-            println("Failed to add $msg to the messages not sent queue, messages can be lost due to a power or network failure")
-        }
         val transport = transport ?: return
         transport.clientToServer.send(msg)
-        state.messagesNotSent.remove(msg)
     }
 
     private suspend fun flushQueues() {
@@ -181,18 +174,12 @@ class ClientSession(
             val msg = state.qos1And2MessagesSentButNotAcked.get(key) ?: continue
             transport.clientToServer.send(msg)
         }
-        var queuedControlPacket = state.messagesNotSent.peek()
-        while (queuedControlPacket != null) {
-            transport.clientToServer.send(queuedControlPacket)
-            state.messagesNotSent.remove(queuedControlPacket)
-            queuedControlPacket = state.messagesNotSent.peek()
-        }
     }
 
     suspend fun unsubscribe(topics: List<String>) =
             send(UnsubscribeRequest(topics = topics.map { MqttUtf8String(it) }))
 
-    suspend fun disconnectAsync(): Boolean? {
+    suspend fun disconnectAsync(): Boolean {
         val result = transport?.closeAsync()?.await() ?: false
         transport = null
         return result

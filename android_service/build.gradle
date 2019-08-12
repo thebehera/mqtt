@@ -40,6 +40,8 @@ dependencies {
     api project(":client")
     api project(":wire-core")
 
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel:2.0.0"
     implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
