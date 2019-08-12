@@ -9,7 +9,6 @@ class SingleMqttClientServiceConnection : ServiceConnection {
     /** Messenger for communicating with the service. Null if not bound  */
     private var mService: Messenger? = null
 
-
     override fun onServiceConnected(className: ComponentName, service: IBinder) {
         // This is called when the connection with the service has been
         // established, giving us the object we can use to
