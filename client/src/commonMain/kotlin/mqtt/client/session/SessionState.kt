@@ -3,8 +3,8 @@
 package mqtt.client.session
 
 import io.ktor.http.Url
-import mqtt.client.persistence.KeyValuePersistence
-import mqtt.client.persistence.MemoryKeyValuePersistence
+import mqtt.client.persistence.MemoryQueuedObjectCollection
+import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -13,8 +13,9 @@ import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.reflect.KClass
 
 class ClientSessionState(
-        val qos1And2MessagesSentButNotAcked: KeyValuePersistence = MemoryKeyValuePersistence(),
-        val qos2MessagesRecevedButNotCompletelyAcked: KeyValuePersistence = MemoryKeyValuePersistence()) {
+    val qos1And2MessagesSentButNotAcked: QueuedObjectCollection = MemoryQueuedObjectCollection(),
+    val qos2MessagesRecevedButNotCompletelyAcked: QueuedObjectCollection = MemoryQueuedObjectCollection()
+) {
     val subscriptionManager = SubscriptionManager()
     val unacknowledgedSubscriptions = HashMap<UShort, ISubscribeRequest>()
 
@@ -62,11 +63,6 @@ class ClientSessionState(
             println("Failed to find subscription request")
             return
         }
-    }
-
-    suspend fun close() {
-        qos1And2MessagesSentButNotAcked.close()
-        qos2MessagesRecevedButNotCompletelyAcked.close()
     }
 
 }
