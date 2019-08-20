@@ -40,6 +40,17 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
                 implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+                implementation "androidx.room:room-common:$room_version"
+            }
+        }
+        androidTest {
+            dependsOn(jvmTest)
+            dependsOn(androidMain)
+        }
+        androidMain {
+            dependencies {
+                implementation kotlin('stdlib-jdk7')
+                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         androidTest {
