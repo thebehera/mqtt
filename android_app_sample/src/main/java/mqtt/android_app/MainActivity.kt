@@ -7,16 +7,18 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.Log
 import mqtt.Parcelize
+import mqtt.android_app.room.initQueuedDb
 import mqtt.client.connection.parameters.ConnectionParameters
 import mqtt.client.connection.parameters.LogConfiguration
 import mqtt.client.connection.parameters.RemoteHost
-import mqtt.client.viewmodel.SingleConnectionMqttClient
+import mqtt.client.viewmodel.SimpleMqttClientViewModel
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.ConnectionRequest
 
 class MainActivity : AppCompatActivity() {
-    val client by lazy { ViewModelProviders.of(this).get(SingleConnectionMqttClient::class.java) }
+    val client by lazy { ViewModelProviders.of(this).get(SimpleMqttClientViewModel::class.java) }
     override fun onCreate(savedInstanceState: Bundle?) {
+        initQueuedDb(this)
         super.onCreate(savedInstanceState)
         val connection = client.connectAsync(
             ConnectionParameters(

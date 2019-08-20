@@ -18,7 +18,7 @@ import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
-data class MqttClient(val config: IMqttConfiguration) : CoroutineScope {
+data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClient {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
@@ -34,7 +34,8 @@ data class MqttClient(val config: IMqttConfiguration) : CoroutineScope {
     val session by lazy { ClientSession(config, Job(job), state) }
     val log by lazy { config.logConfiguration.getLogClass().connection }
 
-    fun connectAsync() = async {
+
+    override fun connectAsync() = async {
         val lock = Mutex(true)
         try {
             log?.verbose("connectAsync - startAsync")
@@ -81,7 +82,7 @@ data class MqttClient(val config: IMqttConfiguration) : CoroutineScope {
         }
     }
 
-    suspend fun <T : Any> subscribe(
+    override suspend fun <T : Any> subscribe(
         topicFilter: String, qos: QualityOfService, typeClass: KClass<T>,
         callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
     ) {
@@ -99,7 +100,7 @@ data class MqttClient(val config: IMqttConfiguration) : CoroutineScope {
         noinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
     ) = subscribe(topicFilter, qos, T::class, callback)
 
-    suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, message: T) {
+    override suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, message: T) {
         log?.verbose("publish to $topic ($qos): $message")
         session.publish(topic, qos, typeClass, message)
         log?.verbose("published to $topic ($qos): $message")
@@ -108,7 +109,7 @@ data class MqttClient(val config: IMqttConfiguration) : CoroutineScope {
     suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, message: T) =
         publish(topic, qos, T::class, message)
 
-    fun disconnectAsync() = async {
+    override fun disconnectAsync() = async {
         log?.verbose("disconnecting")
         val disconnect = session.disconnectAsync()
         log?.verbose("disconnected $disconnect")
