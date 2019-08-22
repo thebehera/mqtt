@@ -1,21 +1,12 @@
 package mqtt.client.service
 
-import android.app.Service
 import android.content.Intent
 import android.os.Messenger
-import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.client.service.ipc.EventHandler
-import mqtt.client.service.ipc.OnRemoteCommandListener
 
-class SingleConnection : Service(), OnRemoteCommandListener {
-    private val messenger = Messenger(EventHandler(this))
+class SingleConnection : CoroutineService() {
+    private val mqttConnectionManager: OnConnectionListener  by lazy { ConnectionManager() }
+    private val queueManager: OnQueueInvalidatedListener by lazy { ConnectedQueueManager() }
+    private val messenger by lazy { Messenger(EventHandler(mqttConnectionManager, queueManager)) }
     override fun onBind(intent: Intent) = messenger.binder!!
-
-    override fun connect(connectionParameters: IMqttConfiguration) {
-
-    }
-
-    override fun onQueueInvalidated() {
-
-    }
 }

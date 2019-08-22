@@ -1,8 +1,8 @@
 package mqtt.client.platform
 
 import io.ktor.util.KtorExperimentalAPI
-import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.client.transport.SocketTransport
+import mqtt.connection.IMqttConfiguration
 import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI

@@ -60,8 +60,7 @@ class SocketTransportTests {
         blockWithTimeout {
             result.await()
             connection.closeAsync().await()
-            val newParams = params.copy()
-            val newConnection = PlatformSocketConnection(newParams, ctx)
+            val newConnection = PlatformSocketConnection(params, ctx)
             val newResult = newConnection.openConnectionAsync(true)
             newResult.await()
             newConnection.closeAsync().await()

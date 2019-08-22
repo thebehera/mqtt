@@ -7,8 +7,8 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.Log
 import mqtt.Parcelize
+import mqtt.android_app.room.AndroidConfiguration
 import mqtt.android_app.room.initQueuedDb
-import mqtt.client.connection.parameters.ConnectionParameters
 import mqtt.client.connection.parameters.LogConfiguration
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.viewmodel.SimpleMqttClientViewModel
@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
         initQueuedDb(this)
         super.onCreate(savedInstanceState)
         val connection = client.connectAsync(
-            ConnectionParameters(
+            AndroidConfiguration(
                 RemoteHost(
                     "192.168.1.98",
                     ConnectionRequest(

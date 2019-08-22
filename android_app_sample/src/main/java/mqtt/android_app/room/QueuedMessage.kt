@@ -3,57 +3,33 @@
 package mqtt.android_app.room
 
 import android.content.Context
-import androidx.room.*
-
-@Entity
-data class QueuedMessage(
-    @PrimaryKey val queuedObjectId: Long,
-    val tableName: String,
-    val rowId: Long,
-    // Null until first attempt to deque
-    val messageId: UShort?,
-    val priority: Double = 0.0,
-    val deliveryState: Int
-)
-
-
-// Different states:
-// Get a message valid messageId
-@Dao
-interface QueuedDao {
-    @Insert
-    fun queue(vararg objs: QueuedMessage)
-
-    @Delete
-    fun deleteFromQueue(obj: QueuedMessage)
-
-    @Query("SELECT MAX(messageId) FROM QueuedMessage")
-    fun largestCurrentMessageId(): UShort
-
-    @Query("INSERT INTO QueuedMessage DEFAULT VALUES;")
-    fun createQueuedObject(): Long
-}
-
+import androidx.room.Database
+import androidx.room.Room
+import androidx.room.TypeConverters
+import mqtt.Parcelize
+import mqtt.client.persistence.QueuedDb
+import mqtt.client.persistence.QueuedMessage
+import mqtt.client.persistence.RoomTypeConverters
+import mqtt.connection.ILogConfiguration
+import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
+import mqtt.persistence.MqttPersistence
 
 @Database(entities = [Test1::class, QueuedMessage::class], version = 1)
-abstract class QueuedDb : RoomDatabase() {
+@TypeConverters(RoomTypeConverters::class)
+abstract class ApplicationDb : QueuedDb() {
     abstract fun test1Dao(): Test1Dao
-    abstract fun queuedDao(): QueuedDao
-
-
-    fun addConstraints() {
-        runInTransaction {
-
-        }
-    }
-
-    fun queue(obj: QueuedMessage) {
-
-        val nextMessageId = queuedDao().createQueuedObject()
-
-    }
 }
 
+@Parcelize
+class AndroidConfiguration(
+    override val remoteHost: IRemoteHost,
+    override val logConfiguration: ILogConfiguration
+) : IMqttConfiguration {
+    override fun persistenceLayer(): MqttPersistence<QueuedMessage> {
+        return queuedDb.mqttQueued()
+    }
+}
 
 lateinit var appContext: Context
 
@@ -66,5 +42,5 @@ fun initQueuedDb(context: Context): QueuedDb {
 }
 
 val queuedDb by lazy {
-    Room.databaseBuilder(appContext, QueuedDb::class.java, "testdb").build()
+    Room.databaseBuilder(appContext, ApplicationDb::class.java, "testdb").build()
 }

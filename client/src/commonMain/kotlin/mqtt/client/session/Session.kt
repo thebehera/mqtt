@@ -5,10 +5,10 @@ package mqtt.client.session
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mqtt.client.connection.ConnectionState
-import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.client.transport.SocketTransport
+import mqtt.connection.IMqttConfiguration
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService

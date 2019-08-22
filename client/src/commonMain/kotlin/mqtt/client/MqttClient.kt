@@ -6,10 +6,10 @@ import io.ktor.http.Url
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import mqtt.client.connection.Open
-import mqtt.client.connection.parameters.IMqttConfiguration
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.ClientSessionState
+import mqtt.connection.IMqttConfiguration
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter

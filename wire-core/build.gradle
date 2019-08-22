@@ -44,18 +44,10 @@ kotlin {
             }
         }
         androidTest {
-            dependsOn(jvmTest)
-            dependsOn(androidMain)
-        }
-        androidMain {
             dependencies {
-                implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
             }
-        }
-        androidTest {
-            dependsOn(jvmTest)
-            dependsOn(jvmMain)
         }
         jsMain {
             dependencies {
@@ -81,4 +73,14 @@ kotlin {
         }
     }
 
+}
+
+
+tasks.whenTaskAdded { task ->
+    if (task.name == "compileDebugUnitTestKotlinAndroid") {
+        task.enabled = false
+    }
+    if(task.name == "compileReleaseUnitTestKotlinAndroid") {
+        task.enabled = false
+    }
 }

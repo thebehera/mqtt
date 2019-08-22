@@ -2,13 +2,16 @@ package mqtt.client.service.ipc
 
 import android.os.Handler
 import android.os.Message
-import mqtt.client.connection.parameters.IMqttConfiguration
+import mqtt.client.service.OnConnectionListener
+import mqtt.client.service.OnQueueInvalidatedListener
+import mqtt.connection.IMqttConfiguration
 
-class EventHandler(private val listener: OnRemoteCommandListener) : Handler() {
+class EventHandler(private val connection: OnConnectionListener, private val queue: OnQueueInvalidatedListener) :
+    Handler() {
     override fun handleMessage(msg: Message) {
         super.handleMessage(msg)
         when (msg.what) {
-            Command.QUEUE_INSERTED.ordinal -> listener.onQueueInvalidated()
+            Command.QUEUE_INSERTED.ordinal -> queue.onQueueInvalidated()
             Command.CONNECT.ordinal -> forwardConnect(msg)
         }
     }
@@ -19,6 +22,6 @@ class EventHandler(private val listener: OnRemoteCommandListener) : Handler() {
             println("failed to read connection parameters")
             return
         }
-        listener.connect(connectionParameters)
+        connection.connect(connectionParameters)
     }
 }

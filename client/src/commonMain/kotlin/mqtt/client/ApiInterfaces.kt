@@ -2,7 +2,7 @@ package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import mqtt.client.connection.parameters.IMqttConfiguration
+import mqtt.connection.IMqttConfiguration
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import kotlin.reflect.KClass

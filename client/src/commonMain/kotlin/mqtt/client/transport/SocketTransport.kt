@@ -15,7 +15,7 @@ import kotlinx.coroutines.io.ClosedWriteChannelException
 import mqtt.client.ConnectionTimeout
 import mqtt.client.FailedToReadConnectionAck
 import mqtt.client.connection.*
-import mqtt.client.connection.parameters.IMqttConfiguration
+import mqtt.connection.IMqttConfiguration
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.*

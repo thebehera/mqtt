@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Deferred
 import mqtt.client.MqttClient
 import mqtt.client.SimpleMqttClient
-import mqtt.client.connection.parameters.IMqttConfiguration
+import mqtt.connection.IMqttConfiguration
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import kotlin.reflect.KClass
