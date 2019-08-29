@@ -23,7 +23,7 @@ import kotlin.reflect.KClass
 class ClientSession(
     val configuration: IMqttConfiguration,
     override val coroutineContext: CoroutineContext,
-    val state: ClientSessionState
+    val state: ClientSessionState = ClientSessionState()
 ) : CoroutineScope, OnMessageReceivedCallback {
     var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null

@@ -38,7 +38,7 @@ lint.enabled = false
 
 dependencies {
     api project(":wire-core")
-
+    implementation project(":client")
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel:2.0.0"

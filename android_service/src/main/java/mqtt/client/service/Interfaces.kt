@@ -5,6 +5,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import mqtt.connection.IMqttConfiguration
+import mqtt.persistence.IQueuedMessage
+import mqtt.persistence.MqttPersistence
 import kotlin.coroutines.CoroutineContext
 
 interface OnConnectionListener {
@@ -13,7 +15,8 @@ interface OnConnectionListener {
 }
 
 interface OnQueueInvalidatedListener {
-    fun onQueueInvalidated()
+
+    fun onQueueInvalidated(persistence: MqttPersistence<out IQueuedMessage>)
 }
 
 abstract class CoroutineService : Service(), CoroutineScope {
