@@ -28,6 +28,7 @@ class ClientSession(
     var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null
     var everyRecvMessageCallback: OnMessageReceivedCallback? = null
+    var connack: IConnectionAcknowledgment? = null
 
     suspend fun connect(): ConnectionState {
         val transportLocal = transport
@@ -42,7 +43,7 @@ class ClientSession(
         val state = platformSocketConnection.openConnectionAsync(true).await()
         println("awaited")
         val connack = platformSocketConnection.connack
-
+        this.connack = connack
         if (!configuration.remoteHost.request.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {
             flushQueues()
         }

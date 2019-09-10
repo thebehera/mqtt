@@ -9,9 +9,8 @@ import mqtt.persistence.IQueuedMessage
 import mqtt.persistence.MqttPersistence
 import kotlin.coroutines.CoroutineContext
 
-interface OnConnectionListener {
-    fun connect(connectionParameters: IMqttConfiguration)
-
+interface OnRemoteIpcCommand {
+    suspend fun connectOrDisconnect(connectionParameters: IMqttConfiguration?)
 }
 
 interface OnQueueInvalidatedListener {

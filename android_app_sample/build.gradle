@@ -41,6 +41,7 @@ android {
 lint.enabled = false
 dependencies {
 
+    implementation project(":android_service")
 
     api project(":android_roomdb_persistence")
 

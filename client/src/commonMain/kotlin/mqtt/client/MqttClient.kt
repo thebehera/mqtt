@@ -3,8 +3,12 @@
 package mqtt.client
 
 import io.ktor.http.Url
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import mqtt.client.connection.ConnectionState
 import mqtt.client.connection.Open
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
@@ -39,11 +43,11 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
         val lock = Mutex(true)
         try {
             log?.verbose("connectAsync - startAsync")
-            val result = startAsync(Runnable {
+            val result = startAsync {
                 log?.verbose("unlock")
                 lock.unlock()
                 log?.verbose("unlocked")
-            })
+            }
             log?.verbose("result startAsync = $result")
             return@async result
         } finally {
@@ -53,7 +57,7 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
         }
     }
 
-    fun startAsync(newConnectionCb: Runnable? = null) = async {
+    fun startAsync(newConnectionCb: ((ConnectionState) -> Unit)? = null) = async {
         if (session.transport?.isOpenAndActive() == true) {
             log?.verbose("transport is open and active")
             return@async true
@@ -67,7 +71,7 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
                     val result = session.connect()
                     log?.verbose("connected session: $result")
                     connectionCount++
-                    newConnectionCb?.run()
+                    newConnectionCb?.invoke(result)
                     session.awaitSocketClose()
                     result is Open
                 } else {

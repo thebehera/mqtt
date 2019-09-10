@@ -133,14 +133,14 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         return@async state
     }
 
-    fun isOpenAndActive() = isActive && state.value == Open
+    fun isOpenAndActive() = isActive && state.value is Open
 
     open fun beforeClosingSocket() {}
 
     suspend fun awaitSocketClose() = currentSocket?.awaitClosed()
 
     fun closeAsync() = async {
-        if (state.value == Initializing || state.value == Connecting || state.value == Open) {
+        if (state.value == Initializing || state.value == Connecting || state.value is Open) {
             clientToServer.send(DisconnectNotification)
             while (isActive && state.value !is Closed) {
             }
@@ -229,7 +229,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                 } else if (configuration.logConfiguration.connectionAttempt) {
                     println("IN: $controlPacket")
                 }
-                if (!state.compareAndSet(Connecting, Open)) {
+                if (!state.compareAndSet(Connecting, Open(controlPacket))) {
                     throw IllegalStateException("Invalid state when reading transport ack - open (is ${state.value})")
                 }
                 openWriteChannel(transport)

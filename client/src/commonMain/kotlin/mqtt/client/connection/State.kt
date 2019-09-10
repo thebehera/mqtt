@@ -1,5 +1,7 @@
 package mqtt.client.connection
 
+import mqtt.wire.control.packet.IConnectionAcknowledgment
+
 /**
  * Upon normal operation each mqtt session transport progresses through a sequence of states
  */
@@ -20,7 +22,7 @@ object Connecting : ConnectionState()
 /**
  *  The MQTT transport has been accepted by the server and is last known to be connected since the keep alive timeout
  */
-object Open : ConnectionState()
+data class Open(val acknowledgment: IConnectionAcknowledgment) : ConnectionState()
 
 /**
  *  MQTT session has initiated a graceful shutdown. The session will attempt to dequeue all messages then send a

@@ -7,12 +7,13 @@ import mqtt.persistence.IQueuedMessage
 import mqtt.persistence.MqttPersistence
 import kotlin.coroutines.CoroutineContext
 
-class ConnectionManager(connectionParameters: IMqttConfiguration, coroutineContext: CoroutineContext) {
+class ConnectionManager(val connectionParameters: IMqttConfiguration, coroutineContext: CoroutineContext) {
     val client = MqttClient(connectionParameters)
     val queueManager = ConnectedQueueManager(coroutineContext, client)
 
     suspend fun connectAsync() = client.connectAsync().await()
 
+    suspend fun disconnectAsync() = client.disconnectAsync()
 }
 
 class ConnectedQueueManager(override val coroutineContext: CoroutineContext, val client: MqttClient) :

@@ -1,6 +1,11 @@
 package mqtt.client.service.ipc
 
-enum class Command {
+enum class BoundClientToService {
     QUEUE_INSERTED,
-    CONNECT
+    CREATE_CONNECTION,
+    DISCONNECT
+}
+
+enum class ServiceToBoundClient {
+    CONNECTION_ACKNOWLEGED
 }

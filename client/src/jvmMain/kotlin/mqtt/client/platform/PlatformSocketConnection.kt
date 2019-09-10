@@ -4,6 +4,7 @@ package mqtt.client.platform
 
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
+import io.ktor.network.tls.tls
 import kotlinx.coroutines.Dispatchers
 import mqtt.client.JavaSocketTransport
 import mqtt.client.ShutdownHook
@@ -17,8 +18,7 @@ import kotlin.coroutines.CoroutineContext
 actual class PlatformSocketConnection actual constructor(
     override val configuration: IMqttConfiguration,
     ctx: CoroutineContext
-)
-    : SocketTransport(ctx) {
+) : SocketTransport(ctx) {
     private val host = configuration.remoteHost
 
     override val supportsNativeSockets = true
@@ -26,7 +26,7 @@ actual class PlatformSocketConnection actual constructor(
     override suspend fun buildNativeSocket(): Transport {
         @Suppress("EXPERIMENTAL_API_USAGE")
         val socketBuilder = aSocket(ActorSelectorManager(Dispatchers.IO)).tcp()
-        val tmpSocketRef = socketBuilder.connect(host.name, host.port.toInt())
+        val tmpSocketRef = socketBuilder.connect(hostname = host.name, port = host.port.toInt())
         val socket = if (host.security.isTransportLayerSecurityEnabled) {
             tmpSocketRef.tls(coroutineContext) {
                 if (host.security.acceptAllCertificates) {
@@ -39,6 +39,7 @@ actual class PlatformSocketConnection actual constructor(
                     }
                 }
             }
+            tmpSocketRef
         } else {
             tmpSocketRef
         }

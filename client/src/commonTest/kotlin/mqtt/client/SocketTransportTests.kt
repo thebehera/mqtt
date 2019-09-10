@@ -21,7 +21,10 @@ import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 /**
  * These tests require running mosquitto servers with the configurations in the ./client/gradle/configurations path
@@ -39,7 +42,7 @@ class SocketTransportTests {
         blockWithTimeout(5000) {
             println("connect startAsync")
             val connectionResult = result.await().value
-            assertEquals(Open, connectionResult)
+            assertTrue(connectionResult is Open)
             assertNotNull(connection.connack)
 
             println("connect close")
@@ -86,7 +89,7 @@ class SocketTransportTests {
             result.await()
             val publishMessage = PublishMessage("yolo", buildPacket { writeFully("asdf".toByteArray()) })
             connection.clientToServer.send(publishMessage)
-            assertEquals(connection.state.value, Open)
+            assertTrue(connection.state.value is Open)
         }
     }
 
