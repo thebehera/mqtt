@@ -2,11 +2,13 @@ package mqtt.android_app
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.Log
 import mqtt.Parcelize
+import mqtt.android_app.databinding.ActivityMainBinding
 import mqtt.android_app.room.AndroidConfiguration
 import mqtt.android_app.room.initQueuedDb
 import mqtt.client.connection.parameters.LogConfiguration
@@ -35,11 +37,13 @@ class MainActivity : AppCompatActivity() {
             ),
             Logger
         )
+        val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
 //        val connection = client.connectAsync(config)
+        binding.remoteHost = config.remoteHost
         GlobalScope
             .launch {
-                clientService.createConnection(config)
-                println("await")
+                val connectionState = clientService.createConnection(config)
+                binding.connectionState = connectionState
 //                connection.await()
 //                println("subscribe")
 //                client.subscribe<String>("helloyolo", QualityOfService.AT_LEAST_ONCE) { topic, qos, message ->
@@ -51,7 +55,7 @@ class MainActivity : AppCompatActivity() {
 //                client.publish("helloyolo", QualityOfService.AT_LEAST_ONCE, "Meow")
 //                println("published")
             }
-        setContentView(R.layout.activity_main)
+
     }
 }
 

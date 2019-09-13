@@ -3,17 +3,15 @@
 package mqtt.client
 
 import io.ktor.http.Url
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
-import mqtt.client.connection.ConnectionState
-import mqtt.client.connection.Open
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.ClientSessionState
+import mqtt.connection.ConnectionFailure
+import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
+import mqtt.connection.Open
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
@@ -41,20 +39,18 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
 
     override fun connectAsync() = async {
         val lock = Mutex(true)
-        try {
-            log?.verbose("connectAsync - startAsync")
-            val result = startAsync {
-                log?.verbose("unlock")
-                lock.unlock()
-                log?.verbose("unlocked")
-            }
-            log?.verbose("result startAsync = $result")
-            return@async result
-        } finally {
-            log?.verbose("lock")
-            lock.lock()
+        log?.verbose("connectAsync - startAsync")
+        lateinit var queuedConnectionResult: ConnectionState
+        val result = startAsync {
+            queuedConnectionResult = it
+            log?.verbose("unlock")
+            lock.unlock()
             log?.verbose("unlocked")
         }
+        log?.verbose("lock")
+        lock.lock()
+        log?.verbose("unlocked result startAsync = $result")
+        return@async queuedConnectionResult
     }
 
     fun startAsync(newConnectionCb: ((ConnectionState) -> Unit)? = null) = async {
@@ -62,7 +58,6 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
             log?.verbose("transport is open and active")
             return@async true
         }
-
         log?.verbose("start async")
         return@async retryIO(config.remoteHost.maxNumberOfRetries) {
             val result = try {
@@ -75,9 +70,11 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
                     session.awaitSocketClose()
                     result is Open
                 } else {
+                    newConnectionCb?.invoke(ConnectionFailure(CancellationException("Client cancelled")))
                     false
                 }
             } catch (e: Exception) {
+                newConnectionCb?.invoke(ConnectionFailure(e))
                 log?.exceptionCausingReconnect(e)
                 false
             }

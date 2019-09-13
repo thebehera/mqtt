@@ -3,9 +3,9 @@ package mqtt.connection
 import mqtt.Log
 import mqtt.NoOpLog
 import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.persistence.IQueuedMessage
 import mqtt.persistence.MqttPersistence
-import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
 
 interface IMqttConfiguration : Parcelable {
@@ -15,9 +15,18 @@ interface IMqttConfiguration : Parcelable {
     fun persistenceLayer(): MqttPersistence<out IQueuedMessage>
 }
 
-interface IMqttConnectionAcknowleged : Parcelable {
+interface IMqttConnectionStateUpdated : Parcelable {
     val remoteHostConnectionIdentifier: Int
-    val acknowledgment: IConnectionAcknowledgment
+    val state: ConnectionState
+}
+
+@Parcelize
+data class MqttConnectionStateUpdated(
+    override val remoteHostConnectionIdentifier: Int,
+    override val state: ConnectionState
+) : IMqttConnectionStateUpdated {
+    constructor(remote: IRemoteHost, acknowledgment: ConnectionState)
+            : this(remote.connectionIdentifier(), acknowledgment)
 }
 
 interface IRemoteHost : Parcelable {
@@ -39,7 +48,16 @@ interface IRemoteHost : Parcelable {
 
     val maxNumberOfRetries: Int //= Int.MAX_VALUE
 
-    fun connectionIdentifier() = "mqtt:${request.mqttVersion}${request.clientIdentifier}:$name:$port".hashCode()
+
+    fun connectionIdentifier() = uniqueIdentifier().hashCode()
+    fun uniqueIdentifier(): String = listOf(
+        request.protocolName,
+        request.protocolVersion,
+        request.clientIdentifier,
+        request.username,
+        name,
+        port
+    ).joinToString(".")
 }
 
 interface ILogConfiguration : Parcelable {

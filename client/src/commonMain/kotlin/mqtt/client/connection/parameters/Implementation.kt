@@ -52,6 +52,9 @@ data class RemoteHost(
         override val isTransportLayerSecurityEnabled: Boolean = true,
         override val acceptAllCertificates: Boolean = false
     ) : ISecurityParameters
+
+    override fun hashCode() = connectionIdentifier()
+    override fun toString() = uniqueIdentifier()
 }
 
 @Parcelize

@@ -4,10 +4,10 @@ package mqtt.client.session
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import mqtt.client.connection.ConnectionState
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.client.transport.SocketTransport
+import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
@@ -39,7 +39,8 @@ class ClientSession(
         val platformSocketConnection = PlatformSocketConnection(configuration, coroutineContext)
         this@ClientSession.transport = platformSocketConnection
         platformSocketConnection.messageReceiveCallback = this@ClientSession
-        println("open connection")
+        val host = configuration.remoteHost
+        println("open socket connection: ${host.request.clientIdentifier}@${host.name}:${host.port}")
         val state = platformSocketConnection.openConnectionAsync(true).await()
         println("awaited")
         val connack = platformSocketConnection.connack

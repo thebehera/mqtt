@@ -52,6 +52,9 @@ data class ConnectionRequest(
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds
     override val variableHeaderPacket = variableHeader.packet()
     override val cleanStart: Boolean = variableHeader.cleanStart
+    override val username = payload.userName?.getValueOrThrow()
+    override val protocolName = variableHeader.protocolName.getValueOrThrow()
+    override val protocolVersion = variableHeader.protocolVersion.toInt()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {

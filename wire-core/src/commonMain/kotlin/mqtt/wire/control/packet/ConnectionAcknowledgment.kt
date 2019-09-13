@@ -1,6 +1,8 @@
 package mqtt.wire.control.packet
 
-interface IConnectionAcknowledgment : ControlPacket {
+import mqtt.Parcelable
+
+interface IConnectionAcknowledgment : ControlPacket, Parcelable {
     val isSuccessful: Boolean
     val connectionReason: String
     val sessionPresent: Boolean

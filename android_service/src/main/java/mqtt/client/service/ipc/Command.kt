@@ -7,5 +7,5 @@ enum class BoundClientToService {
 }
 
 enum class ServiceToBoundClient {
-    CONNECTION_ACKNOWLEGED
+    CONNECTION_STATE_CHANGED
 }

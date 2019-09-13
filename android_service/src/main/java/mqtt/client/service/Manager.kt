@@ -1,25 +1,21 @@
 package mqtt.client.service
 
-import kotlinx.coroutines.CoroutineScope
 import mqtt.client.MqttClient
+import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
-import mqtt.persistence.IQueuedMessage
-import mqtt.persistence.MqttPersistence
-import kotlin.coroutines.CoroutineContext
+import mqtt.connection.Initializing
+import mqtt.connection.MqttConnectionStateUpdated
 
-class ConnectionManager(val connectionParameters: IMqttConfiguration, coroutineContext: CoroutineContext) {
+class ConnectionManager(val connectionParameters: IMqttConfiguration) {
     val client = MqttClient(connectionParameters)
-    val queueManager = ConnectedQueueManager(coroutineContext, client)
+    var connectionState: ConnectionState = Initializing
 
-    suspend fun connectAsync() = client.connectAsync().await()
-
-    suspend fun disconnectAsync() = client.disconnectAsync()
-}
-
-class ConnectedQueueManager(override val coroutineContext: CoroutineContext, val client: MqttClient) :
-    OnQueueInvalidatedListener, CoroutineScope {
-    override fun onQueueInvalidated(persistence: MqttPersistence<out IQueuedMessage>) {
-        val message = persistence.peekQueuedMessages(1).firstOrNull() ?: return
-
+    suspend fun connect(connectionChangeCallback: ((MqttConnectionStateUpdated) -> Unit)) {
+        client.startAsync {
+            connectionState = it
+            connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters.remoteHost, it))
+        }.await()
     }
+
+    fun disconnectAsync() = client.disconnectAsync()
 }

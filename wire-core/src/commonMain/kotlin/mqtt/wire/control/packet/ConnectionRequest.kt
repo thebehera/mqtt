@@ -8,5 +8,8 @@ interface IConnectionRequest : ControlPacket, Parcelable {
     val keepAliveTimeoutSeconds: UShort
     val clientIdentifier: String
     val cleanStart: Boolean
+    val username: String?
+    val protocolName: String
+    val protocolVersion: Int
     fun copy(): IConnectionRequest
 }

@@ -79,16 +79,10 @@ class ClientToServiceConnection(val serviceClass: Class<out Service>) : ServiceC
             // has crashed.
         }
     }
-
-    interface Callback {
-        fun onServiceConnected() {}
-        fun onServiceSentMessage(msg: Message) {}
-        fun onServiceDisconnected() {}
-    }
 }
 
 class BoundClientsObserver(val callback: (msg: Message) -> Unit) {
-    private val registeredClients = HashSet<Messenger>()
+    private val registeredClients = LinkedHashSet<Messenger>()
     private val incomingHandler = MessageCallbackHandler {
         when (it.what) {
             REGISTER_CLIENT -> registeredClients.add(it.replyTo)
@@ -96,7 +90,18 @@ class BoundClientsObserver(val callback: (msg: Message) -> Unit) {
             else -> callback(it)
         }
     }
-    val binder = Messenger(incomingHandler).binder!!
+    val messenger = Messenger(incomingHandler)
+    val binder = messenger.binder!!
+
+
+    fun sendMessageToClients(msg: Message) = LinkedHashSet(registeredClients).forEach {
+        try {
+            it.send(msg)
+        } catch (e: RemoteException) {
+            // unregister the client, there is nothing we can do at this point as the other process has crashed
+            registeredClients.remove(it)
+        }
+    }
 }
 
 private const val REGISTER_CLIENT = Int.MIN_VALUE

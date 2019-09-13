@@ -8,13 +8,13 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
-import mqtt.client.connection.Closed
-import mqtt.client.connection.Open
 import mqtt.client.connection.parameters.ConnectionParameters
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
+import mqtt.connection.Closed
+import mqtt.connection.Open
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE

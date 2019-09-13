@@ -14,8 +14,7 @@ import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.io.ClosedWriteChannelException
 import mqtt.client.ConnectionTimeout
 import mqtt.client.FailedToReadConnectionAck
-import mqtt.client.connection.*
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.*
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.*
@@ -90,19 +89,20 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             return@async state
         }
         val host = configuration.remoteHost
+        var socketConnectException: Throwable? = null
         val platformSocketConnected = withTimeoutOrNull(host.connectionTimeout) {
             try {
                 println("building socket")
                 buildSocket()
             } catch (e: Exception) {
-                println(configuration.remoteHost)
-                println(e)
+                socketConnectException = e
                 return@withTimeoutOrNull null
             }
         }
         currentSocket = platformSocketConnected
         if (platformSocketConnected == null) {
-            val e = ConnectionTimeout("Failed to connect within ${host.connectionTimeout}ms")
+            val e = socketConnectException
+                ?: ConnectionTimeout("Failed to connect within ${host.connectionTimeout}ms")
             val connectionState = ConnectionFailure(e)
             state.lazySet(connectionState)
             return@async state
