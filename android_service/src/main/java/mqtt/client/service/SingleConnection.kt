@@ -2,6 +2,7 @@ package mqtt.client.service
 
 import android.content.Intent
 import android.os.Message
+import android.util.Log
 import kotlinx.coroutines.launch
 import mqtt.client.service.ipc.BoundClientsObserver
 import mqtt.client.service.ipc.EventHandler
@@ -18,6 +19,7 @@ class SingleConnection : CoroutineService() {
     private val boundClients = BoundClientsObserver { messageFromBoundClient ->
         val data = messageFromBoundClient.data
         val obj = messageFromBoundClient.obj
+        Log.i("RAHUL", "MSG RECIEVED FROM CLIENT $obj")
         launch {
             when (obj) {
                 is IMqttConfiguration -> {
@@ -28,11 +30,25 @@ class SingleConnection : CoroutineService() {
         eventHandler.handleMessage(messageFromBoundClient)
     }
 
+    init {
+        Log.i("RAHUL", "Service Init")
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        Log.i("RAHUL", "On create")
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        Log.i("RAHUL", "Start Command start")
         if (intent != null) {
             connectOrDisconnectViaIntent(intent)
         }
-        return super.onStartCommand(intent, flags, startId)
+        try {
+            return super.onStartCommand(intent, flags, startId)
+        } finally {
+            Log.i("RAHUL", "Start Command end")
+        }
     }
 
     private fun connectOrDisconnectViaIntent(intent: Intent) = launch {

@@ -3,12 +3,12 @@
 package mqtt.android_app
 
 import android.os.Bundle
+import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import mqtt.Log
 import mqtt.Parcelize
 import mqtt.android_app.databinding.ActivityMainBinding
 import mqtt.android_app.room.AndroidConfiguration
@@ -19,13 +19,11 @@ import mqtt.client.service.client.MqttServiceViewModel
 import mqtt.wire4.control.packet.ConnectionRequest
 
 class MainActivity : AppCompatActivity() {
-    //    val client by lazy { ViewModelProviders.of(this).get(SimpleMqttClientViewModel::class.java) }
-    val clientService by lazy { ViewModelProviders.of(this).get(MqttServiceViewModel::class.java) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         initQueuedDb(this)
         super.onCreate(savedInstanceState)
-        clientService
+        val clientService = ViewModelProviders.of(this).get(MqttServiceViewModel::class.java)
         val config = AndroidConfiguration(
             RemoteHost(
                 "192.168.1.17",
@@ -41,24 +39,16 @@ class MainActivity : AppCompatActivity() {
             Logger
         )
         val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
-//        val connection = client.connectAsync(config)
         binding.remoteHost = config.remoteHost
+        binding.connectionStateView.text = "hello"
+        val id = config.remoteHost.connectionIdentifier()
         GlobalScope
             .launch {
-                val connectionState = clientService.createConnection(config)
+                Log.i("RAHUL", "create connection")
+                val connectionState = clientService.createConnection(config, null)
+                Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
-//                connection.await()
-//                println("subscribe")
-//                client.subscribe<String>("helloyolo", QualityOfService.AT_LEAST_ONCE) { topic, qos, message ->
-//                    println(topic)
-//                    println(qos)
-//                    println(message)
-//                }
-//                println("subscribed, publish")
-//                client.publish("helloyolo", QualityOfService.AT_LEAST_ONCE, "Meow")
-//                println("published")
             }
-
     }
 }
 
@@ -66,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 @Parcelize
 object Logger :
     LogConfiguration(true, true, true, true, true) {
-    override fun getLogClass(): Log {
+    override fun getLogClass(): mqtt.Log {
         return AndroidLogger()
     }
 }

@@ -12,34 +12,43 @@ import android.os.RemoteException
 import android.util.Log
 import mqtt.connection.IMqttConfiguration
 
-class ClientToServiceConnection(val serviceClass: Class<out Service>) : ServiceConnection {
+class ClientToServiceConnection(val context: Context, val serviceClass: Class<out Service>) : ServiceConnection {
 
     /** Messenger for communicating with the service. Null if not bound  */
     private var serviceMessenger: Messenger? = null
     private val incomingMessenger: Messenger = Messenger(MessageCallbackHandler {
+        Log.i("RAHUL", "Incoming Message From Service: $it")
         if (newConnectionManager.onMessage(it)) {
             return@MessageCallbackHandler
         }
     })
     private val bindManager by lazy { ClientServiceBindManager() }
-    private val newConnectionManager by lazy { ClientServiceNewConnectionManager(bindManager, incomingMessenger) }
+    private val newConnectionManager = ClientServiceNewConnectionManager(bindManager, incomingMessenger)
+
+    init {
+        bind(context)
+    }
 
     fun bind(context: Context) {
         if (isBound()) {
             Log.w("[MQTT][S VM]", "Already bound")
             return
         }
+
+        Log.i("RAHUL", "bind service")
         context.bindService(Intent(context, serviceClass), this, Context.BIND_AUTO_CREATE)
     }
 
     override fun onServiceConnected(name: ComponentName, serviceBinder: IBinder) {
+        Log.i("RAHUL", "service connected")
         val serviceMessenger = Messenger(serviceBinder)
         this.serviceMessenger = serviceMessenger
         registerClientWithService(serviceMessenger)
         bindManager.onServiceConnected(serviceMessenger)
     }
 
-    suspend fun createNewConnection(config: IMqttConfiguration) = newConnectionManager.createConnection(config)
+    suspend fun createNewConnection(config: IMqttConfiguration, awaitOnConnectionState: Int?) =
+        newConnectionManager.createConnection(config, awaitOnConnectionState)
 
     private fun registerClientWithService(messenger: Messenger) {
         try {
