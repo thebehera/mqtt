@@ -4,9 +4,6 @@ plugins {
 repositories {
     mavenCentral()
     jcenter()
-    maven {
-        url  "https://kotlin.bintray.com/ktor"
-    }
 }
 apply from: "../gradle/experimental.gradle"
 apply from: "../gradle/android.gradle"

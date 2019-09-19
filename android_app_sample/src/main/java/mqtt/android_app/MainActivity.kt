@@ -14,6 +14,7 @@ import mqtt.android_app.room.initQueuedDb
 import mqtt.client.connection.parameters.LogConfiguration
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.service.client.MqttServiceViewModel
+import mqtt.client.viewmodel.ObservableFlow
 import mqtt.wire4.control.packet.ConnectionRequest
 
 class MainActivity : AppCompatActivity() {
@@ -25,7 +26,7 @@ class MainActivity : AppCompatActivity() {
         clientService
         val config = AndroidConfiguration(
             RemoteHost(
-                "192.168.1.98",
+                "192.168.1.17",
                 ConnectionRequest(
                     "yoloswag",
                     keepAliveSeconds = 4.toUShort()
@@ -43,7 +44,8 @@ class MainActivity : AppCompatActivity() {
         GlobalScope
             .launch {
                 val connectionState = clientService.createConnection(config)
-                binding.connectionState = connectionState
+                val observableFlow = ObservableFlow(connectionState, GlobalScope.coroutineContext)
+                binding.connectionState = observableFlow.observable
 //                connection.await()
 //                println("subscribe")
 //                client.subscribe<String>("helloyolo", QualityOfService.AT_LEAST_ONCE) { topic, qos, message ->

@@ -2,7 +2,7 @@
 <resources>
 
     <string name="mqtt_protocol_name">MQTT</string>
-    <string name="mqtt_remote_host_name">192.168.1.98</string>
+    <string name="mqtt_remote_host_name">192.168.1.17</string>
     <integer name="mqtt_client_version">4</integer>
     <integer name="mqtt_keep_alive_timeout_seconds">86400</integer>
 

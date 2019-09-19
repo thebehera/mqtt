@@ -2,6 +2,7 @@ package mqtt.client.service.ipc
 
 import android.os.Message
 import android.os.Messenger
+import androidx.databinding.ObservableField
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import mqtt.connection.ConnectionState
@@ -13,7 +14,7 @@ import kotlin.coroutines.suspendCoroutine
 class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManager, val incomingMessenger: Messenger) {
     private val continuationMap =
         HashMap<Int, SuspendOnIncomingMessageHandler<ConnectionState>>()
-    val mqttConnections = HashMap<Int, NonNullObservableField<ConnectionState>>()
+    val mqttConnections = HashMap<Int, ObservableField<ConnectionState>>()
 
     val connections = HashMap<Int, Flow<ConnectionState>>()
 
@@ -68,7 +69,7 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
         }
         val currentConnectionObservable = mqttConnections[updated.remoteHostConnectionIdentifier]
         if (currentConnectionObservable == null) {
-            mqttConnections[updated.remoteHostConnectionIdentifier] = NonNullObservableField(updated.state)
+            mqttConnections[updated.remoteHostConnectionIdentifier] = ObservableField(updated.state)
         } else {
             currentConnectionObservable.set(updated.state)
         }

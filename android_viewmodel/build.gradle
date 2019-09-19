@@ -6,6 +6,7 @@ androidExtensions {
 }
 android {
     compileSdkVersion 29
+    dataBinding.enabled = true
     defaultConfig {
         minSdkVersion 15
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
