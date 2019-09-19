@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.android_app
 
 import android.os.Bundle
@@ -14,12 +16,12 @@ import mqtt.android_app.room.initQueuedDb
 import mqtt.client.connection.parameters.LogConfiguration
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.service.client.MqttServiceViewModel
-import mqtt.client.viewmodel.ObservableFlow
 import mqtt.wire4.control.packet.ConnectionRequest
 
 class MainActivity : AppCompatActivity() {
     //    val client by lazy { ViewModelProviders.of(this).get(SimpleMqttClientViewModel::class.java) }
     val clientService by lazy { ViewModelProviders.of(this).get(MqttServiceViewModel::class.java) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         initQueuedDb(this)
         super.onCreate(savedInstanceState)
@@ -44,8 +46,7 @@ class MainActivity : AppCompatActivity() {
         GlobalScope
             .launch {
                 val connectionState = clientService.createConnection(config)
-                val observableFlow = ObservableFlow(connectionState, GlobalScope.coroutineContext)
-                binding.connectionState = observableFlow.observable
+                binding.connectionState = connectionState
 //                connection.await()
 //                println("subscribe")
 //                client.subscribe<String>("helloyolo", QualityOfService.AT_LEAST_ONCE) { topic, qos, message ->

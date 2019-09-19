@@ -2,9 +2,9 @@ package mqtt.client.service.ipc
 
 import android.os.Message
 import android.os.Messenger
+import android.util.SparseArray
+import androidx.databinding.Observable
 import androidx.databinding.ObservableField
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
 import mqtt.connection.IMqttConnectionStateUpdated
@@ -13,19 +13,19 @@ import kotlin.coroutines.suspendCoroutine
 
 class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManager, val incomingMessenger: Messenger) {
     private val continuationMap =
-        HashMap<Int, SuspendOnIncomingMessageHandler<ConnectionState>>()
-    val mqttConnections = HashMap<Int, ObservableField<ConnectionState>>()
-
-    val connections = HashMap<Int, Flow<ConnectionState>>()
+        SparseArray<SuspendOnIncomingMessageHandler<ConnectionState>>()
+    val mqttConnections = SparseArray<NonNullObservableField<ConnectionState>>()
 
 
-    suspend fun createConnection(config: IMqttConfiguration): Flow<ConnectionState> {
+    suspend fun createConnection(config: IMqttConfiguration): NonNullObservableField<ConnectionState> {
         val connectionIdentifier = config.remoteHost.connectionIdentifier()
-        val currentConnection = connections[connectionIdentifier]
-
+        val currentConnection = mqttConnections[connectionIdentifier]
         return if (currentConnection != null) {
             currentConnection
         } else {
+            val observable = NonNullObservableField<ConnectionState>(Initializing)
+
+            mqttConnections.put(connectionIdentifier, observable)
             val messenger = bindManager.awaitServiceBound()
             val message = Message()
             message.what = BoundClientToService.CREATE_CONNECTION.ordinal
@@ -33,11 +33,7 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
             message.replyTo = incomingMessenger
             messenger.send(message)
             awaitConnectionStateChanged(config)
-            val flow = flow<ConnectionState> {
-                emit(Initializing)
-            }
-            connections[connectionIdentifier] = flow
-            flow
+            observable
         }
     }
 
@@ -45,33 +41,34 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
         suspendCoroutine { continuation ->
             val msgHandler = SuspendOnIncomingMessageHandler<ConnectionState>()
             msgHandler.queue(continuation)
-            continuationMap[config.remoteHost.connectionIdentifier()] = msgHandler
+            continuationMap.put(config.remoteHost.connectionIdentifier(), msgHandler)
         }
 
     fun onMessage(msg: Message): Boolean {
         val updated = msg.obj as? IMqttConnectionStateUpdated ?: return false
         val currentConnectionState = updated.state
         updateMqttConnection(updated)
-        val connackHandler = continuationMap.remove(updated.remoteHostConnectionIdentifier) ?: return true
+        val connackHandler = continuationMap.get(updated.remoteHostConnectionIdentifier) ?: return true
         connackHandler.notify(currentConnectionState)
         return true
     }
 
     private fun updateMqttConnection(updated: IMqttConnectionStateUpdated) {
-        val currentFlow = connections[updated.remoteHostConnectionIdentifier]
-
-        if (currentFlow == null) {
-            connections[updated.remoteHostConnectionIdentifier] = flow<ConnectionState> {
-                emit(Initializing)
-            }
-        } else {
-            currentFlow
-        }
         val currentConnectionObservable = mqttConnections[updated.remoteHostConnectionIdentifier]
         if (currentConnectionObservable == null) {
-            mqttConnections[updated.remoteHostConnectionIdentifier] = ObservableField(updated.state)
+            mqttConnections.put(updated.remoteHostConnectionIdentifier, NonNullObservableField(updated.state))
         } else {
             currentConnectionObservable.set(updated.state)
         }
     }
+}
+
+class NonNullObservableField<T : Any>(value: T, vararg dependencies: Observable) : ObservableField<T>(*dependencies) {
+    init {
+        set(value)
+    }
+
+    override fun get(): T = super.get()!!
+    @Suppress("RedundantOverride") // Only allow non-null `value`.
+    override fun set(value: T) = super.set(value)
 }
