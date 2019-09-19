@@ -2,6 +2,8 @@ package mqtt.client.service.ipc
 
 import android.os.Message
 import android.os.Messenger
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
 import mqtt.connection.IMqttConnectionStateUpdated
@@ -13,15 +15,16 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
         HashMap<Int, SuspendOnIncomingMessageHandler<ConnectionState>>()
     val mqttConnections = HashMap<Int, NonNullObservableField<ConnectionState>>()
 
+    val connections = HashMap<Int, Flow<ConnectionState>>()
 
-    suspend fun createConnection(config: IMqttConfiguration): NonNullObservableField<ConnectionState> {
+
+    suspend fun createConnection(config: IMqttConfiguration): Flow<ConnectionState> {
         val connectionIdentifier = config.remoteHost.connectionIdentifier()
-        val currentConnection = mqttConnections[connectionIdentifier]
+        val currentConnection = connections[connectionIdentifier]
+
         return if (currentConnection != null) {
             currentConnection
         } else {
-            val observable = NonNullObservableField<ConnectionState>(Initializing)
-            mqttConnections[connectionIdentifier] = observable
             val messenger = bindManager.awaitServiceBound()
             val message = Message()
             message.what = BoundClientToService.CREATE_CONNECTION.ordinal
@@ -29,7 +32,11 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
             message.replyTo = incomingMessenger
             messenger.send(message)
             awaitConnectionStateChanged(config)
-            observable
+            val flow = flow<ConnectionState> {
+                emit(Initializing)
+            }
+            connections[connectionIdentifier] = flow
+            flow
         }
     }
 
@@ -50,6 +57,15 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
     }
 
     private fun updateMqttConnection(updated: IMqttConnectionStateUpdated) {
+        val currentFlow = connections[updated.remoteHostConnectionIdentifier]
+
+        if (currentFlow == null) {
+            connections[updated.remoteHostConnectionIdentifier] = flow<ConnectionState> {
+                emit(Initializing)
+            }
+        } else {
+            currentFlow
+        }
         val currentConnectionObservable = mqttConnections[updated.remoteHostConnectionIdentifier]
         if (currentConnectionObservable == null) {
             mqttConnections[updated.remoteHostConnectionIdentifier] = NonNullObservableField(updated.state)
