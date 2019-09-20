@@ -15,6 +15,7 @@ import mqtt.android_app.room.AndroidConfiguration
 import mqtt.android_app.room.initQueuedDb
 import mqtt.client.connection.parameters.LogConfiguration
 import mqtt.client.connection.parameters.RemoteHost
+import mqtt.client.service.AndroidLogger
 import mqtt.client.service.client.MqttServiceViewModel
 import mqtt.wire4.control.packet.ConnectionRequest
 
@@ -26,7 +27,7 @@ class MainActivity : AppCompatActivity() {
         val clientService = ViewModelProviders.of(this).get(MqttServiceViewModel::class.java)
         val config = AndroidConfiguration(
             RemoteHost(
-                "192.168.1.17",
+                "192.168.1.98",
                 ConnectionRequest(
                     "yoloswag",
                     keepAliveSeconds = 4.toUShort()

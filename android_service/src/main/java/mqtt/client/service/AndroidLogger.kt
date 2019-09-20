@@ -1,4 +1,4 @@
-package mqtt.android_app
+package mqtt.client.service
 
 import android.util.Log
 import mqtt.ConnectionLogger

@@ -5,7 +5,6 @@ import android.os.Message
 import android.util.Log
 import kotlinx.coroutines.launch
 import mqtt.client.service.ipc.BoundClientsObserver
-import mqtt.client.service.ipc.EventHandler
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
 import mqtt.connection.IMqttConfiguration
 
@@ -14,7 +13,6 @@ private const val TAG = "[MQTT][SiCo]"
 class SingleConnection : CoroutineService() {
 
     private lateinit var connectionManager: ConnectionManager
-    private val eventHandler = EventHandler(coroutineContext)
     override fun onBind(intent: Intent) = boundClients.binder
     private val boundClients = BoundClientsObserver { messageFromBoundClient ->
         val data = messageFromBoundClient.data
@@ -27,7 +25,6 @@ class SingleConnection : CoroutineService() {
                 }
             }
         }
-        eventHandler.handleMessage(messageFromBoundClient)
     }
 
     init {
