@@ -40,7 +40,7 @@ interface IRemoteHost : Parcelable {
     }
 
     val name: String
-    val port: UShort
+    val port: Int
     val connectionTimeout: Milliseconds
     val security: ISecurityParameters
     val websocket: IWebsocketParameters

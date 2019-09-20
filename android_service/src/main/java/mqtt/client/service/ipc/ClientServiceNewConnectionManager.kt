@@ -1,11 +1,18 @@
 package mqtt.client.service.ipc
 
+import android.content.Context
+import android.content.Intent
+import android.os.Build
+import android.os.Bundle
 import android.os.Message
 import android.os.Messenger
 import android.util.Log
 import android.util.SparseArray
 import androidx.databinding.Observable
 import androidx.databinding.ObservableField
+import mqtt.Parcelable
+import mqtt.client.service.MESSAGE_PAYLOAD
+import mqtt.client.service.SingleConnection
 import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
 import mqtt.connection.IMqttConnectionStateUpdated
@@ -13,9 +20,11 @@ import mqtt.connection.Initializing
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
-class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManager, val incomingMessenger: Messenger) {
-    private val continuationMap =
-        SparseArray<((ConnectionState) -> Unit)>()
+class ClientServiceNewConnectionManager(
+    val context: Context,
+    val bindManager: ClientServiceBindManager, val incomingMessenger: Messenger
+) {
+    private val continuationMap = SparseArray<((ConnectionState) -> Unit)>()
     private val mqttConnections = SparseArray<NonNullObservableField<ConnectionState>>()
 
     suspend fun createConnection(
@@ -29,14 +38,24 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
         } else {
             val observable = putOrUpdate(connectionIdentifier, Initializing)
             Log.i("RAHUL", "Await Bind")
-            val messenger = bindManager.awaitServiceBound()
-            Log.i("RAHUL", "Bound, Build msg")
-            val message = Message()
-            message.what = BoundClientToService.CREATE_CONNECTION.ordinal
-            message.obj = config
-            message.replyTo = incomingMessenger
-            Log.i("RAHUL", "Sending $config")
-            messenger.send(message)
+            val messenger = bindManager.serviceMessenger
+            if (messenger != null) {
+                Log.i("RAHUL", "Bound, Build msg")
+                val message = Message()
+                message.what = BoundClientToService.CREATE_CONNECTION.ordinal
+                message.data = payloadToBundle(config)
+                message.replyTo = incomingMessenger
+                Log.i("RAHUL", "Sending $config")
+                messenger.send(message)
+            } else {
+                val intent = Intent(context, SingleConnection::class.java)
+                intent.putExtra(MESSAGE_PAYLOAD, config)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.startForegroundService(intent)
+                } else {
+                    context.startService(intent)
+                }
+            }
             Log.i("RAHUL", "Awaiting connection status change")
             awaitConnectionStateChanged(config, awaitOnConnectionState)
             Log.i("RAHUL", "Connection status changed, return")
@@ -44,8 +63,17 @@ class ClientServiceNewConnectionManager(val bindManager: ClientServiceBindManage
         }
     }
 
+    fun payloadToBundle(payload: Parcelable): Bundle {
+        val bundle = Bundle()
+        bundle.putParcelable(MESSAGE_PAYLOAD, payload)
+        return bundle
+    }
+
     fun onMessage(msg: Message): Boolean {
-        val updated = msg.obj as? IMqttConnectionStateUpdated ?: return false
+        val bundle = msg.data
+        bundle.classLoader = javaClass.classLoader
+        val obj = bundle.getParcelable<Parcelable>(MESSAGE_PAYLOAD)
+        val updated = obj as? IMqttConnectionStateUpdated ?: return false
         val currentConnectionState = updated.state
         Log.i("RAHUL", "On msg update: $currentConnectionState")
         putOrUpdate(updated.remoteHostConnectionIdentifier, updated.state)

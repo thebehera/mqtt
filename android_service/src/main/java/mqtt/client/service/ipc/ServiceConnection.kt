@@ -23,18 +23,9 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
         }
     })
     private val bindManager by lazy { ClientServiceBindManager() }
-    private val newConnectionManager = ClientServiceNewConnectionManager(bindManager, incomingMessenger)
+    private val newConnectionManager = ClientServiceNewConnectionManager(context, bindManager, incomingMessenger)
 
     init {
-        bind(context)
-    }
-
-    fun bind(context: Context) {
-        if (isBound()) {
-            Log.w("[MQTT][S VM]", "Already bound")
-            return
-        }
-
         Log.i("RAHUL", "bind service")
         context.bindService(Intent(context, serviceClass), this, Context.BIND_AUTO_CREATE)
     }
@@ -61,11 +52,6 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
             // disconnected (and then reconnected if it can be restarted)
             // so there is no need to do anything here.
         }
-    }
-
-    fun isBound(): Boolean {
-        val serviceMessenger = serviceMessenger
-        return serviceMessenger != null && serviceMessenger.binder.isBinderAlive
     }
 
     override fun onServiceDisconnected(name: ComponentName) {

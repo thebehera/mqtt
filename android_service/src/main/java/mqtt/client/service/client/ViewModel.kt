@@ -15,10 +15,6 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
     override val coroutineContext = Dispatchers.Main + job
     private val serviceConnection by lazy { ClientToServiceConnection(app, SingleConnection::class.java) }
 
-    init {
-        serviceConnection.bind(getApplication())
-    }
-
     /**
      * Create new managed mqtt connection
      */

@@ -26,7 +26,7 @@ data class RemoteHost(
     override val request: IConnectionRequest,
     override val websocket: IWebsocketParameters = Websocket(),
     override val security: ISecurityParameters = Security(),
-    override val port: UShort =
+    override val port: Int =
         if (websocket.isEnabled) {
             if (security.isTransportLayerSecurityEnabled) {
                 443
@@ -39,7 +39,7 @@ data class RemoteHost(
             } else {
                 1883
             }
-        }.toUShort(),
+        },
     override val connectionTimeout: Milliseconds = 10_000,
     override val maxNumberOfRetries: Int = Int.MAX_VALUE
 ) : IRemoteHost {

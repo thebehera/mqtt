@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.Parcelize
@@ -35,7 +36,7 @@ class MainActivity : AppCompatActivity() {
                 security = RemoteHost.Security(
                     isTransportLayerSecurityEnabled = false
                 ),
-                port = 60000.toUShort()
+                port = 60000//.toUShort()
             ),
             Logger
         )
@@ -44,7 +45,7 @@ class MainActivity : AppCompatActivity() {
         binding.connectionStateView.text = "hello"
         val id = config.remoteHost.connectionIdentifier()
         GlobalScope
-            .launch {
+            .launch(Dispatchers.Main) {
                 Log.i("RAHUL", "create connection")
                 val connectionState = clientService.createConnection(config, null)
                 Log.i("RAHUL", "connection created")

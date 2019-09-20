@@ -6,7 +6,7 @@ import kotlin.coroutines.suspendCoroutine
 
 class ClientServiceBindManager {
     private val serviceBindSuspendContinuations = SuspendOnIncomingMessageHandler<Messenger>()
-    private var serviceMessenger: Messenger? = null
+    var serviceMessenger: Messenger? = null
 
     fun onServiceConnected(serviceMessenger: Messenger) {
         this.serviceMessenger = serviceMessenger

@@ -59,7 +59,8 @@ data class ConnectionRequest(
                             willQos = willQos,
                             willRetain = willRetain,
                             cleanSession = cleanSession,
-                            keepAliveSeconds = keepAliveSeconds),
+                        keepAliveSeconds = keepAliveSeconds.toInt()
+                    ),
                     Payload(
                             clientId = MqttUtf8String(clientId),
                             willTopic = if (willTopic != null && willPayload != null) MqttUtf8String(willTopic) else null,
@@ -70,8 +71,7 @@ data class ConnectionRequest(
             )
 
 
-
-    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds
+    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet()
     override val cleanStart: Boolean = variableHeader.cleanSession
@@ -127,7 +127,7 @@ data class ConnectionRequest(
          * respond to the CONNECT Packet with a CONNACK return code 0x01 (unacceptable protocol level) and then
          * disconnect the Client if the Protocol Level is not supported by the Server [MQTT-3.1.2-2].
          */
-        val protocolLevel: UByte = 4.toUByte(),
+        val protocolLevel: Byte = 4,
         /**
          * 3.1.2.8 User Name Flag
          *
@@ -325,7 +325,7 @@ data class ConnectionRequest(
          * maximum value is 18 hours 12 minutes and 15 seconds.
          *
          */
-        val keepAliveSeconds: UShort = UShort.MAX_VALUE
+        val keepAliveSeconds: Int = UShort.MAX_VALUE.toInt()
     ) : Parcelable {
         fun validateOrGetWarning(): MqttWarning? {
             if (!willFlag && willRetain) {
@@ -350,9 +350,9 @@ data class ConnectionRequest(
             val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
             return buildPacket {
                 writeMqttUtf8String(protocolName)
-                writeUByte(protocolLevel)
+                writeUByte(protocolLevel.toUByte())
                 writeByte(flags)
-                writeUShort(keepAliveSeconds)
+                writeUShort(keepAliveSeconds.toUShort())
             }
         }
 
@@ -375,8 +375,10 @@ data class ConnectionRequest(
                         "Reserved flag in Connect Variable Header packet is set incorrectly to 1")
                 }
                 val keepAliveSeconds = buffer.readUShort()
-                return VariableHeader(protocolName, protocolVersion, hasUsername, hasPassword, willRetain, willQos,
-                    willFlag, cleanStart, keepAliveSeconds)
+                return VariableHeader(
+                    protocolName, protocolVersion.toByte(), hasUsername, hasPassword, willRetain, willQos,
+                    willFlag, cleanStart, keepAliveSeconds.toInt()
+                )
             }
         }
     }
