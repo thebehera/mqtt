@@ -40,6 +40,10 @@ class MainActivity : AppCompatActivity() {
             ),
             Logger
         )
+
+        clientService.setCallback { controlPacket, remoteHostIdentifier ->
+            Log.i("RAHUL", "INCOMING CONTROL PACKET ($remoteHostIdentifier) ACTIVITY: $controlPacket")
+        }
         val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
         binding.remoteHost = config.remoteHost
         binding.connectionStateView.text = "hello"

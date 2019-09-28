@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.ClientSessionState
+import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.connection.ConnectionFailure
 import mqtt.connection.ConnectionState
 import mqtt.connection.IMqttConfiguration
@@ -20,7 +21,10 @@ import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
-data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClient {
+data class MqttClient(
+    override val config: IMqttConfiguration,
+    val otherMsgCallback: OnMessageReceivedCallback? = null
+) : SimpleMqttClient {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
@@ -33,9 +37,8 @@ data class MqttClient(override val config: IMqttConfiguration) : SimpleMqttClien
     }
     override val coroutineContext: CoroutineContext = job + dispatcher
     var connectionCount = 0
-    val session by lazy { ClientSession(config, Job(job), state) }
+    val session by lazy { ClientSession(config, Job(job), state).also { it.callback = otherMsgCallback } }
     val log by lazy { config.logConfiguration.getLogClass().connection }
-
 
     override fun connectAsync() = async {
         val lock = Mutex(true)

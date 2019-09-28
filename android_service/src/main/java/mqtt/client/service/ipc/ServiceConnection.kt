@@ -11,6 +11,7 @@ import android.os.Messenger
 import android.os.RemoteException
 import android.util.Log
 import mqtt.connection.IMqttConfiguration
+import mqtt.wire.control.packet.ControlPacket
 
 class ClientToServiceConnection(val context: Context, val serviceClass: Class<out Service>) : ServiceConnection {
 
@@ -52,6 +53,10 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
             // disconnected (and then reconnected if it can be restarted)
             // so there is no need to do anything here.
         }
+    }
+
+    fun setCallback(cb: (ControlPacket, Int) -> Unit) {
+        newConnectionManager.msgCb = cb
     }
 
     override fun onServiceDisconnected(name: ComponentName) {

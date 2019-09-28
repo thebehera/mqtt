@@ -9,6 +9,7 @@ import mqtt.client.service.SingleConnection
 import mqtt.client.service.ipc.ClientToServiceConnection
 import mqtt.connection.IMqttConfiguration
 import mqtt.connection.Open
+import mqtt.wire.control.packet.ControlPacket
 
 class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineScope {
     val job = Job()
@@ -20,6 +21,8 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
      */
     suspend fun createConnection(config: IMqttConfiguration, awaitOnConnectionState: Int? = Open.state) =
         serviceConnection.createNewConnection(config, awaitOnConnectionState)
+
+    fun setCallback(cb: (ControlPacket, Int) -> Unit) = serviceConnection.setCallback(cb)
 
     override fun onCleared() {
         serviceConnection.unbind(getApplication())

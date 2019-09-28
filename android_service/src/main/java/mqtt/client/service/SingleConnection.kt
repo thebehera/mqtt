@@ -7,6 +7,7 @@ import android.os.Parcelable
 import android.util.Log
 import kotlinx.coroutines.launch
 import mqtt.client.service.ipc.BoundClientsObserver
+import mqtt.client.service.ipc.ServiceToBoundClient
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
 import mqtt.connection.IMqttConfiguration
 
@@ -19,8 +20,7 @@ class SingleConnection : CoroutineService() {
     override fun onBind(intent: Intent) = boundClients.binder
     private val boundClients = BoundClientsObserver { messageFromBoundClient ->
         messageFromBoundClient.data?.classLoader = classLoader
-        val obj = messageFromBoundClient.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD)
-            ?: return@BoundClientsObserver
+        val obj = messageFromBoundClient.obj as? Parcelable ?: return@BoundClientsObserver
         handleMessage(obj)
     }
 
@@ -44,7 +44,14 @@ class SingleConnection : CoroutineService() {
     }
 
     private suspend fun connect(connectionParameters: IMqttConfiguration) {
-        connectionManager = ConnectionManager(connectionParameters)
+        connectionManager = ConnectionManager(connectionParameters) { controlPacket, remoteHostId ->
+            val msg = Message.obtain()
+            msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.ordinal
+            msg.obj = controlPacket
+            msg.arg1 = remoteHostId
+            // TODO: Uncomment once control packets are parcelable
+//            boundClients.sendMessageToClients(msg)
+        }
         connectionManager.connect {
             val msg = Message.obtain(null, CONNECTION_STATE_CHANGED.ordinal)
             val bundle = Bundle()
