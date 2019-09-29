@@ -7,7 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import mqtt.client.service.SingleConnection
 import mqtt.client.service.ipc.ClientToServiceConnection
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
 import mqtt.wire.control.packet.ControlPacket
 
@@ -19,7 +19,7 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
     /**
      * Create new managed mqtt connection
      */
-    suspend fun createConnection(config: IMqttConfiguration, awaitOnConnectionState: Int? = Open.state) =
+    suspend fun createConnection(config: IRemoteHost, awaitOnConnectionState: Int? = Open.state) =
         serviceConnection.createNewConnection(config, awaitOnConnectionState)
 
     fun incomingMessageCallback(cb: (ControlPacket, Int) -> Unit) {

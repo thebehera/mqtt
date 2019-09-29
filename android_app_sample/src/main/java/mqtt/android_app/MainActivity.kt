@@ -12,7 +12,6 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.Parcelize
 import mqtt.android_app.databinding.ActivityMainBinding
-import mqtt.android_app.room.AndroidConfiguration
 import mqtt.android_app.room.initQueuedDb
 import mqtt.client.connection.parameters.LogConfiguration
 import mqtt.client.connection.parameters.RemoteHost
@@ -26,19 +25,16 @@ class MainActivity : AppCompatActivity() {
         initQueuedDb(this)
         super.onCreate(savedInstanceState)
         val clientService = ViewModelProviders.of(this).get(MqttServiceViewModel::class.java)
-        val config = AndroidConfiguration(
-            RemoteHost(
-                "192.168.1.98",
-                ConnectionRequest(
-                    "yoloswag",
-                    keepAliveSeconds = 4.toUShort()
-                ),
-                security = RemoteHost.Security(
-                    isTransportLayerSecurityEnabled = false
-                ),
-                port = 60000//.toUShort()
+        val remoteHost = RemoteHost(
+            "192.168.1.98",
+            ConnectionRequest(
+                "yoloswag",
+                keepAliveSeconds = 4.toUShort()
             ),
-            Logger
+            security = RemoteHost.Security(
+                isTransportLayerSecurityEnabled = false
+            ),
+            port = 60000//.toUShort()
         )
 
         clientService.incomingMessageCallback { incomingControlPacket, remoteHostIdentifier ->
@@ -49,13 +45,13 @@ class MainActivity : AppCompatActivity() {
             Log.i("RAHUL", "OUT($remoteHostIdentifier) ACTIVITY: $controlPacketSent")
         }
         val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
-        binding.remoteHost = config.remoteHost
+        binding.remoteHost = remoteHost
         binding.connectionStateView.text = "hello"
-        val id = config.remoteHost.connectionIdentifier()
+        val id = remoteHost.connectionIdentifier()
         GlobalScope
             .launch(Dispatchers.Main) {
                 Log.i("RAHUL", "create connection")
-                val connectionState = clientService.createConnection(config, null)
+                val connectionState = clientService.createConnection(remoteHost, null)
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
             }

@@ -10,8 +10,8 @@ import androidx.databinding.ObservableField
 import mqtt.client.service.MESSAGE_PAYLOAD
 import mqtt.client.service.ipc.ServiceToBoundClient.*
 import mqtt.connection.ConnectionState
-import mqtt.connection.IMqttConfiguration
 import mqtt.connection.IMqttConnectionStateUpdated
+import mqtt.connection.IRemoteHost
 import mqtt.connection.Initializing
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.coroutines.resume
@@ -27,10 +27,10 @@ class ClientServiceNewConnectionManager(
     var outgoingMessageCallback: ((ControlPacket, Int) -> Unit)? = null
 
     suspend fun createConnection(
-        config: IMqttConfiguration,
+        remoteHost: IRemoteHost,
         awaitOnConnectionState: Int?
     ): NonNullObservableField<ConnectionState> {
-        val connectionIdentifier = config.remoteHost.connectionIdentifier()
+        val connectionIdentifier = remoteHost.connectionIdentifier()
         val currentConnection = mqttConnections[connectionIdentifier]
         return if (currentConnection != null) {
             currentConnection
@@ -38,13 +38,13 @@ class ClientServiceNewConnectionManager(
             val observable = putOrUpdate(connectionIdentifier, Initializing)
             val messenger = bindManager.awaitServiceBound()
             val bundle = Bundle()
-            bundle.putParcelable(MESSAGE_PAYLOAD, config)
+            bundle.putParcelable(MESSAGE_PAYLOAD, remoteHost)
             val message = Message.obtain(null, BoundClientToService.CREATE_CONNECTION.ordinal)
             message.data = bundle
-            message.arg1 = config.remoteHost.connectionIdentifier()
+            message.arg1 = remoteHost.connectionIdentifier()
             message.replyTo = incomingMessenger
             messenger.send(message)
-            awaitConnectionStateChanged(config, awaitOnConnectionState)
+            awaitConnectionStateChanged(remoteHost, awaitOnConnectionState)
             observable
         }
     }
@@ -98,13 +98,13 @@ class ClientServiceNewConnectionManager(
 
 
     private suspend fun awaitConnectionStateChanged(
-        config: IMqttConfiguration,
+        remoteHost: IRemoteHost,
         awaitOnConnectionState: Int?
     ): ConnectionState =
         suspendCoroutine { continuation ->
             val msgHandler = SuspendOnIncomingMessageHandler<ConnectionState>()
             msgHandler.queue(continuation)
-            continuationMap.put(config.remoteHost.connectionIdentifier()) {
+            continuationMap.put(remoteHost.connectionIdentifier()) {
                 if (awaitOnConnectionState == null || awaitOnConnectionState == it.state) {
                     continuation.resume(it)
                 }

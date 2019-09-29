@@ -4,7 +4,6 @@ package mqtt.client
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
-import mqtt.client.connection.parameters.ConnectionParameters
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.wire.control.packet.*
@@ -30,16 +29,14 @@ class ClientTests {
         val request = ConnectionRequest(getClientId())
         val invalidBadPort = 1
         val client = MqttClient(
-            ConnectionParameters(
-                RemoteHost(
-                    "localhost",
-                    port = invalidBadPort,
-                    request = request,
-                    security = RemoteHost.Security(
-                        isTransportLayerSecurityEnabled = false
-                    ),
-                    maxNumberOfRetries = 3
-                )
+            RemoteHost(
+                "localhost",
+                port = invalidBadPort,
+                request = request,
+                security = RemoteHost.Security(
+                    isTransportLayerSecurityEnabled = false
+                ),
+                maxNumberOfRetries = 3
             )
         )
         val job = client.startAsync()
@@ -52,16 +49,14 @@ class ClientTests {
     fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
         val client = MqttClient(
-            ConnectionParameters(
-                RemoteHost(
-                    "localhost",
-                    port = port,
-                    request = request,
-                    security = RemoteHost.Security(
-                        isTransportLayerSecurityEnabled = false
-                    ),
-                    maxNumberOfRetries = 3
-                )
+            RemoteHost(
+                "localhost",
+                port = port,
+                request = request,
+                security = RemoteHost.Security(
+                    isTransportLayerSecurityEnabled = false
+                ),
+                maxNumberOfRetries = 3
             )
         )
         val job = client.connectAsync()

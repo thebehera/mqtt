@@ -2,11 +2,11 @@ package mqtt.client.platform
 
 import io.ktor.util.KtorExperimentalAPI
 import mqtt.client.transport.SocketTransport
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI
 expect class PlatformSocketConnection(
-    configuration: IMqttConfiguration,
+    remoteHost: IRemoteHost,
     ctx: CoroutineContext
 ) : SocketTransport

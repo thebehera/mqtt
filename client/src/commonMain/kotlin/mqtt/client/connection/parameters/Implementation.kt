@@ -4,21 +4,11 @@ package mqtt.client.connection.parameters
 
 import mqtt.Parcelize
 import mqtt.connection.ILogConfiguration
-import mqtt.connection.IMqttConfiguration
 import mqtt.connection.IRemoteHost
 import mqtt.connection.IRemoteHost.ISecurityParameters
 import mqtt.connection.IRemoteHost.IWebsocketParameters
 import mqtt.connection.Milliseconds
-import mqtt.persistence.InMemoryPersistence
 import mqtt.wire.control.packet.IConnectionRequest
-
-@Parcelize
-open class ConnectionParameters(
-    override val remoteHost: IRemoteHost,
-    override val logConfiguration: ILogConfiguration = LogConfiguration()
-) : IMqttConfiguration {
-    override fun persistenceLayer() = InMemoryPersistence()
-}
 
 @Parcelize
 data class RemoteHost(

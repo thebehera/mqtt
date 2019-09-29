@@ -8,7 +8,7 @@ import kotlinx.coroutines.launch
 import mqtt.client.service.ipc.BoundClientsObserver
 import mqtt.client.service.ipc.ServiceToBoundClient
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 
 private const val TAG = "[MQTT][SiCo]"
 const val MESSAGE_PAYLOAD = "msg_payload"
@@ -27,14 +27,15 @@ class SingleConnection : CoroutineService() {
     fun handleMessage(data: Parcelable) {
         launch {
             when (data) {
-                is IMqttConfiguration -> {
+                is IRemoteHost -> {
                     connect(data)
                 }
             }
         }
     }
 
-    private suspend fun connect(connectionParameters: IMqttConfiguration) {
+    private suspend fun connect(connectionParameters: IRemoteHost) {
+
         connectionManager = ConnectionManager(connectionParameters) { controlPacket, remoteHostId ->
             val msg = Message.obtain()
             msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.ordinal

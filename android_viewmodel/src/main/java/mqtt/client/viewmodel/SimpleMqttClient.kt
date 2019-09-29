@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.Deferred
 import mqtt.client.MqttClient
 import mqtt.client.SimpleMqttClient
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import kotlin.reflect.KClass
@@ -13,7 +13,7 @@ class SimpleMqttClientViewModel : ViewModel() {
     lateinit var client: SimpleMqttClient
 
 
-    fun connectAsync(parameters: IMqttConfiguration): Deferred<Any> {
+    fun connectAsync(parameters: IRemoteHost): Deferred<Any> {
         if (::client.isInitialized) throw IllegalStateException("Client already exists!")
         val client = MqttClient(parameters)
         this.client = client

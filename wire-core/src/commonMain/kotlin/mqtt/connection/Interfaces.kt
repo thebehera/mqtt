@@ -4,16 +4,7 @@ import mqtt.Log
 import mqtt.NoOpLog
 import mqtt.Parcelable
 import mqtt.Parcelize
-import mqtt.persistence.IQueuedMessage
-import mqtt.persistence.MqttPersistence
 import mqtt.wire.control.packet.IConnectionRequest
-
-interface IMqttConfiguration : Parcelable {
-    val remoteHost: IRemoteHost
-    val logConfiguration: ILogConfiguration
-
-    fun persistenceLayer(): MqttPersistence<out IQueuedMessage>
-}
 
 interface IMqttConnectionStateUpdated : Parcelable {
     val remoteHostConnectionIdentifier: Int

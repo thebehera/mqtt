@@ -9,7 +9,7 @@ import android.os.IBinder
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 
 class ClientToServiceConnection(val context: Context, val serviceClass: Class<out Service>) : ServiceConnection {
@@ -35,8 +35,8 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
         bindManager.onServiceConnected(serviceMessenger)
     }
 
-    suspend fun createNewConnection(config: IMqttConfiguration, awaitOnConnectionState: Int?) =
-        newConnectionManager.createConnection(config, awaitOnConnectionState)
+    suspend fun createNewConnection(remoteHost: IRemoteHost, awaitOnConnectionState: Int?) =
+        newConnectionManager.createConnection(remoteHost, awaitOnConnectionState)
 
     private fun registerClientWithService(messenger: Messenger) {
         try {

@@ -8,12 +8,12 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
-import mqtt.client.connection.parameters.ConnectionParameters
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.connection.Closed
+import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
@@ -123,18 +123,16 @@ class SocketTransportTests {
         }
     }
 
-    fun buildParams(clientId: String = getClientId()): ConnectionParameters {
+    fun buildParams(clientId: String = getClientId()): IRemoteHost {
         val connectionRequest = ConnectionRequest(clientId = clientId, keepAliveSeconds = 5000.toUShort())
-        return ConnectionParameters(
-            RemoteHost(
-                domain,
-                port = port,
-                request = connectionRequest,
-                security = RemoteHost.Security(
-                    isTransportLayerSecurityEnabled = false
-                ),
-                maxNumberOfRetries = 3
-            )
+        return RemoteHost(
+            domain,
+            port = port,
+            request = connectionRequest,
+            security = RemoteHost.Security(
+                isTransportLayerSecurityEnabled = false
+            ),
+            maxNumberOfRetries = 3
         )
     }
 

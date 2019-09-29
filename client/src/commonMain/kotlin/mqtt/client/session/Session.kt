@@ -8,7 +8,7 @@ import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.client.transport.SocketTransport
 import mqtt.connection.ConnectionState
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
@@ -21,7 +21,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
 class ClientSession(
-    val configuration: IMqttConfiguration,
+    val remoteHost: IRemoteHost,
     override val coroutineContext: CoroutineContext,
     val state: ClientSessionState = ClientSessionState()
 ) : CoroutineScope, OnMessageReceivedCallback {
@@ -37,17 +37,14 @@ class ClientSession(
             println("transportLocal $transportLocal")
             return transportLocal.state.value
         }
-        val platformSocketConnection = PlatformSocketConnection(configuration, coroutineContext)
+        val platformSocketConnection = PlatformSocketConnection(remoteHost, coroutineContext)
         platformSocketConnection.outboundCallback = outboundCallback
         this@ClientSession.transport = platformSocketConnection
         platformSocketConnection.messageReceiveCallback = this@ClientSession
-        val host = configuration.remoteHost
-        println("open socket connection: ${host.request.clientIdentifier}@${host.name}:${host.port}")
         val state = platformSocketConnection.openConnectionAsync(true).await()
-        println("awaited")
         val connack = platformSocketConnection.connack
         this.connack = connack
-        if (!configuration.remoteHost.request.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {
+        if (!remoteHost.request.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {
             flushQueues()
         }
         return state.value

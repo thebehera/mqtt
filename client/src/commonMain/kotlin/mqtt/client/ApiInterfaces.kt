@@ -2,13 +2,13 @@ package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import mqtt.connection.IMqttConfiguration
+import mqtt.connection.IRemoteHost
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import kotlin.reflect.KClass
 
 interface SimpleMqttClient : CoroutineScope {
-    val config: IMqttConfiguration
+    val remoteHost: IRemoteHost
     fun connectAsync(): Deferred<Any>?
     suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, obj: T): Unit
     suspend fun <T : Any> subscribe(
