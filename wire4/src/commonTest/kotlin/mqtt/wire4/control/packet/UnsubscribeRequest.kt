@@ -8,7 +8,7 @@ import kotlin.test.assertEquals
 
 class UnsubscribeRequestTests {
 
-    private val packetIdentifier = 2.toUShort()
+    private val packetIdentifier = 2
 
     @Test
     fun basicTest() {

@@ -44,7 +44,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
             : this(VariableHeader(packetIdentifier, props),
             Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList))
 
-    override val packetIdentifier = variable.packetIdentifier
+    override val packetIdentifier = variable.packetIdentifier.toInt()
     override val variableHeaderPacket = variable.packet()
     private val payload by lazy {
         buildPacket {

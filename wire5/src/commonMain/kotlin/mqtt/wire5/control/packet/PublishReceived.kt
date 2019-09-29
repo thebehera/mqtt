@@ -25,7 +25,7 @@ data class PublishReceived(val variable: VariableHeader)
     : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL), IPublishReceived {
     override fun expectedResponse() = PublishRelease(variable.packetIdentifier)
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: UShort = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
 
     data class VariableHeader(val packetIdentifier: UShort,
                               /**

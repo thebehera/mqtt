@@ -29,6 +29,7 @@ class ClientSession(
     var callback: OnMessageReceivedCallback? = null
     var everyRecvMessageCallback: OnMessageReceivedCallback? = null
     var connack: IConnectionAcknowledgment? = null
+    var outboundCallback: ((ControlPacket, Int) -> Unit)? = null
 
     suspend fun connect(): ConnectionState {
         val transportLocal = transport
@@ -37,6 +38,7 @@ class ClientSession(
             return transportLocal.state.value
         }
         val platformSocketConnection = PlatformSocketConnection(configuration, coroutineContext)
+        platformSocketConnection.outboundCallback = outboundCallback
         this@ClientSession.transport = platformSocketConnection
         platformSocketConnection.messageReceiveCallback = this@ClientSession
         val host = configuration.remoteHost
@@ -67,20 +69,20 @@ class ClientSession(
                         send(response)
                     }
                     is IPublishAcknowledgment ->
-                        state.qos1And2MessagesSentButNotAcked.remove(controlPacket.packetIdentifier)
+                        state.qos1And2MessagesSentButNotAcked.remove(controlPacket.packetIdentifier.toUShort())
                     is IPublishReceived -> {
                         callback?.onMessage(controlPacket)
-                        state.qos1And2MessagesSentButNotAcked.remove(controlPacket.packetIdentifier)
+                        state.qos1And2MessagesSentButNotAcked.remove(controlPacket.packetIdentifier.toUShort())
                         val pubRel = controlPacket.expectedResponse()
                         send(pubRel)
-                        state.qos2MessagesRecevedButNotCompletelyAcked.put(pubRel.packetIdentifier, pubRel)
+                        state.qos2MessagesRecevedButNotCompletelyAcked.put(pubRel.packetIdentifier.toUShort(), pubRel)
                     }
                     is IPublishRelease -> {
-                        state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier)
+                        state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier.toUShort())
                         send(controlPacket.expectedResponse())
                     }
                     is IPublishComplete ->
-                        state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier)
+                        state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier.toUShort())
                     is ISubscribeAcknowledgement -> state.subscriptionAcknowledgementReceived(controlPacket)
                     else -> {
                         callback?.onMessage(controlPacket)
@@ -91,7 +93,6 @@ class ClientSession(
                 println(e)
             } finally {
                 everyRecvMessageCallback?.onMessage(controlPacket)
-                callback?.onMessage(controlPacket)
             }
         }
     }
@@ -102,7 +103,8 @@ class ClientSession(
     }
 
     suspend fun publish(topic: String, qos: QualityOfService,
-                        packetIdentifier: UShort = getAndIncrementPacketIdentifier()) {
+                        packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort()
+    ) {
         send(PublishMessage(topic, qos, packetIdentifier))
     }
 

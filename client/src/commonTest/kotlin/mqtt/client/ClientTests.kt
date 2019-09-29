@@ -19,7 +19,7 @@ import kotlin.test.assertEquals
 import kotlin.test.fail
 
 val domain = "localhost"
-val port = 60000.toUShort()
+val port = 60000
 
 class ClientTests {
 
@@ -28,7 +28,7 @@ class ClientTests {
     @Test
     fun reconnectsAfterSocketConnectionFailure() {
         val request = ConnectionRequest(getClientId())
-        val invalidBadPort = 1.toUShort()
+        val invalidBadPort = 1
         val client = MqttClient(
             ConnectionParameters(
                 RemoteHost(
@@ -76,7 +76,7 @@ class ClientTests {
 
     inline fun <reified T> blockUntilMessageReceived(
         topic: String, qos: QualityOfService,
-        publishMessageNumber: UShort = getAndIncrementPacketIdentifier(),
+        publishMessageNumber: UShort = getAndIncrementPacketIdentifier().toUShort(),
         cb: OnMessageReceivedCallback? = null
     ) {
         val (client, job) = createClient()
@@ -110,7 +110,7 @@ class ClientTests {
                     if (controlPacket !is IPublishComplete) {
                         fail("invalid control packet type")
                     }
-                    assertEquals(publishMessageNumber, controlPacket.packetIdentifier)
+                    assertEquals(publishMessageNumber, controlPacket.packetIdentifier.toUShort())
                 }
             })
     }

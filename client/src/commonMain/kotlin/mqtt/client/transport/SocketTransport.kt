@@ -31,6 +31,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     var currentSocket: Transport? = null
 
+    var outboundCallback: ((ControlPacket, Int) -> Unit)? = null
     var connack: IConnectionAcknowledgment? = null
 
     val clientToServer: Channel<ControlPacket> = Channel()
@@ -189,6 +190,8 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                     ) {
                         println("OUT [$size][$sendTime]: $messageToSend")
                     }
+
+                    outboundCallback?.invoke(messageToSend, configuration.remoteHost.connectionIdentifier())
                     if (messageToSend is DisconnectNotification) {
                         hardClose()
                         return@launch

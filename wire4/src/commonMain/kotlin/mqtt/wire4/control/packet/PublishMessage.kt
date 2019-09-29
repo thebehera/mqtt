@@ -3,6 +3,8 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -18,6 +20,7 @@ import mqtt.wire.data.writeMqttName
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
+@Parcelize
 data class PublishMessage(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
@@ -40,7 +43,10 @@ data class PublishMessage(
      * Build a QOS 1 or 2 publish message
      */
     constructor(topic: String, qos: QualityOfService, payload: ByteReadPacket? = null,
-                packetIdentifier: UShort = getAndIncrementPacketIdentifier(), dup: Boolean = false, retain: Boolean = false)
+                packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort(),
+                dup: Boolean = false,
+                retain: Boolean = false
+    )
             : this(
         FixedHeader(dup, qos, retain),
         VariableHeader(Name(topic), packetIdentifier.toInt()),
@@ -48,7 +54,10 @@ data class PublishMessage(
     )
 
     constructor(topic: String, qos: QualityOfService,
-                packetIdentifier: UShort = getAndIncrementPacketIdentifier(), dup: Boolean = false, retain: Boolean = false)
+                packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort(),
+                dup: Boolean = false,
+                retain: Boolean = false
+    )
             : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier.toInt()), null)
 
     init {
@@ -66,16 +75,17 @@ data class PublishMessage(
 
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
-            PublishAcknowledgment(variable.packetIdentifier!!.toUShort())
+            PublishAcknowledgment(variable.packetIdentifier!!.toUShort().toInt())
         }
         fixed.qos == EXACTLY_ONCE -> {
-            PublishRelease(variable.packetIdentifier!!.toUShort())
+            PublishRelease(variable.packetIdentifier!!.toUShort().toInt())
         }
         else -> null
     }
 
     override val topic: Name = variable.topicName
 
+    @Parcelize
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -155,7 +165,7 @@ data class PublishMessage(
          * subscriber will receive the most recent state.
          */
         val retain: Boolean = false
-    ) {
+    ) : Parcelable {
         val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
@@ -187,6 +197,7 @@ data class PublishMessage(
      *
      * The variable header contains the following fields in the order: Topic Name, Packet Identifier.
      */
+    @Parcelize
     data class VariableHeader(
             /**
              * The Topic Name identifies the information channel to which payload data is published.
@@ -207,7 +218,7 @@ data class PublishMessage(
              * 2.3.1 provides more information about Packet Identifiers.
              */
             val packetIdentifier: Int? = null
-    ) {
+    ) : Parcelable {
 
         fun packet() = buildPacket {
             writeMqttName(topicName)

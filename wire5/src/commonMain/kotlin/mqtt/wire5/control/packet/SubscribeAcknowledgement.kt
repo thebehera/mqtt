@@ -34,7 +34,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
             : this(VariableHeader(packetIdentifier, properties), listOf(payload))
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
-    override val packetIdentifier: UShort = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     init {
         payload.forEach {
             if (!validSubscribeCodes.contains(it)) {

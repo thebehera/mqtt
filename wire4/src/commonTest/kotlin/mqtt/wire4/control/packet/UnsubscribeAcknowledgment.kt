@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class UnsubscribeAcknowledgmentTests {
-    private val packetIdentifier = 2.toUShort()
+    private val packetIdentifier = 2
     @Test
     fun serializeDeserializeDefault() {
         val actual = UnsubscribeAcknowledgment(packetIdentifier)

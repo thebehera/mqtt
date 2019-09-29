@@ -53,14 +53,14 @@ class SubscribeRequestTest {
     @Test
     fun subscriptionPayloadSize() {
         val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val request = SubscribeRequest(0.toUShort(), subscriptions)
+        val request = SubscribeRequest(0, subscriptions)
         assertEquals(12.toUInt(), request.payloadPacketSize)
     }
 
     @Test
     fun subscriptionPayload() {
         val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val request = SubscribeRequest(0.toUShort(), subscriptions)
+        val request = SubscribeRequest(0, subscriptions)
         val readPacket = request.payloadPacket()
         // Topic Filter ("a/b")
         // byte 1: Length MSB (0)
@@ -99,7 +99,7 @@ class SubscribeRequestTest {
     @Test
     fun packetIdentifierIsCorrect() {
         val subscription = SubscribeRequest(10.toUShort(), Filter("a/b"), AT_MOST_ONCE)
-        assertEquals(10.toUShort(), subscription.packetIdentifier)
+        assertEquals(10, subscription.packetIdentifier)
         val stream = subscription.serialize()
         stream.readByte()
         stream.readByte()
@@ -110,7 +110,7 @@ class SubscribeRequestTest {
     @Test
     fun serialized() {
         val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val request = SubscribeRequest(10.toUShort(), subscriptions)
+        val request = SubscribeRequest(10, subscriptions)
         val readPacket = request.serialize()
         // fixed header 2 bytes
         // byte 1 fixed header
@@ -166,7 +166,7 @@ class SubscribeRequestTest {
     @Test
     fun variableHeader() {
         val subscriptions = Subscription.from(listOf(Filter("1234567")), listOf(AT_LEAST_ONCE))
-        val request = SubscribeRequest(10.toUShort(), subscriptions)
+        val request = SubscribeRequest(10, subscriptions)
         val variableHeaderBytes = request.variableHeaderPacket
         assertEquals(2, variableHeaderBytes.remaining)
         assertEquals(10.toUShort(), variableHeaderBytes.readUShort())
@@ -175,7 +175,7 @@ class SubscribeRequestTest {
     @Test
     fun variableHeader2Subscriptions() {
         val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val request = SubscribeRequest(10.toUShort(), subscriptions)
+        val request = SubscribeRequest(10, subscriptions)
         val variableHeaderBytes = request.variableHeaderPacket
         assertEquals(2, variableHeaderBytes.remaining)
         assertEquals(10.toUShort(), variableHeaderBytes.readUShort())
@@ -206,8 +206,8 @@ class SubscribeRequestTest {
 
     @Test
     fun serializeDeserialize() {
-        val subscribeRequest = SubscribeRequest(2.toUShort(), listOf(Subscription(Filter("test"))))
-        assertEquals(subscribeRequest.packetIdentifier, 2.toUShort())
+        val subscribeRequest = SubscribeRequest(2, listOf(Subscription(Filter("test"))))
+        assertEquals(subscribeRequest.packetIdentifier, 2)
         val subs = subscribeRequest.subscriptions
         val firstSub = subs.first()
         val filter = firstSub.topicFilter

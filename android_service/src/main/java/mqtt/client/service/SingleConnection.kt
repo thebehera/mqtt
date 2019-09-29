@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Message
 import android.os.Parcelable
-import android.util.Log
 import kotlinx.coroutines.launch
 import mqtt.client.service.ipc.BoundClientsObserver
 import mqtt.client.service.ipc.ServiceToBoundClient
@@ -20,12 +19,12 @@ class SingleConnection : CoroutineService() {
     override fun onBind(intent: Intent) = boundClients.binder
     private val boundClients = BoundClientsObserver { messageFromBoundClient ->
         messageFromBoundClient.data?.classLoader = classLoader
-        val obj = messageFromBoundClient.obj as? Parcelable ?: return@BoundClientsObserver
+        val obj = messageFromBoundClient.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD)
+            ?: return@BoundClientsObserver
         handleMessage(obj)
     }
 
     fun handleMessage(data: Parcelable) {
-        Log.i("RAHUL", "MSG RECIEVED FROM CLIENT $data")
         launch {
             when (data) {
                 is IMqttConfiguration -> {
@@ -34,23 +33,25 @@ class SingleConnection : CoroutineService() {
             }
         }
     }
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        intent?.setExtrasClassLoader(classLoader)
-        val msg = intent?.getParcelableExtra<Parcelable>(MESSAGE_PAYLOAD)
-        if (msg != null) {
-            handleMessage(msg)
-        }
-        return super.onStartCommand(intent, flags, startId)
-    }
 
     private suspend fun connect(connectionParameters: IMqttConfiguration) {
         connectionManager = ConnectionManager(connectionParameters) { controlPacket, remoteHostId ->
             val msg = Message.obtain()
             msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.ordinal
-            msg.obj = controlPacket
             msg.arg1 = remoteHostId
-            // TODO: Uncomment once control packets are parcelable
-//            boundClients.sendMessageToClients(msg)
+            val bundle = Bundle()
+            bundle.putParcelable(MESSAGE_PAYLOAD, controlPacket)
+            msg.data = bundle
+            boundClients.sendMessageToClients(msg)
+        }
+        connectionManager.client.session.outboundCallback = { controlPacketSentToServer, remoteHostId ->
+            val msg = Message.obtain()
+            msg.what = ServiceToBoundClient.OUTGOING_CONTROL_PACKET.ordinal
+            msg.arg1 = remoteHostId
+            val bundle = Bundle()
+            bundle.putParcelable(MESSAGE_PAYLOAD, controlPacketSentToServer)
+            msg.data = bundle
+            boundClients.sendMessageToClients(msg)
         }
         connectionManager.connect {
             val msg = Message.obtain(null, CONNECTION_STATE_CHANGED.ordinal)

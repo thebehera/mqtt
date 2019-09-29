@@ -9,7 +9,6 @@ import android.os.IBinder
 import android.os.Message
 import android.os.Messenger
 import android.os.RemoteException
-import android.util.Log
 import mqtt.connection.IMqttConfiguration
 import mqtt.wire.control.packet.ControlPacket
 
@@ -18,21 +17,18 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
     /** Messenger for communicating with the service. Null if not bound  */
     private var serviceMessenger: Messenger? = null
     private val incomingMessenger: Messenger = Messenger(MessageCallbackHandler {
-        Log.i("RAHUL", "Incoming Message From Service: $it")
         if (newConnectionManager.onMessage(it)) {
             return@MessageCallbackHandler
         }
     })
     private val bindManager by lazy { ClientServiceBindManager() }
-    private val newConnectionManager = ClientServiceNewConnectionManager(context, bindManager, incomingMessenger)
+    val newConnectionManager = ClientServiceNewConnectionManager(context, bindManager, incomingMessenger)
 
     init {
-        Log.i("RAHUL", "bind service")
         context.bindService(Intent(context, serviceClass), this, Context.BIND_AUTO_CREATE)
     }
 
     override fun onServiceConnected(name: ComponentName, serviceBinder: IBinder) {
-        Log.i("RAHUL", "service connected")
         val serviceMessenger = Messenger(serviceBinder)
         this.serviceMessenger = serviceMessenger
         registerClientWithService(serviceMessenger)
@@ -56,7 +52,7 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
     }
 
     fun setCallback(cb: (ControlPacket, Int) -> Unit) {
-        newConnectionManager.msgCb = cb
+        newConnectionManager.incomingMessageCallback = cb
     }
 
     override fun onServiceDisconnected(name: ComponentName) {

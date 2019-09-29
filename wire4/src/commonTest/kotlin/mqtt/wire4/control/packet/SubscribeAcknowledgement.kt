@@ -7,7 +7,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SubscribeAcknowledgementTests {
-    private val packetIdentifier = 2.toUShort()
+    private val packetIdentifier = 2
 
     @Test
     fun successMaxQos0() {

@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
+import mqtt.Parcelize
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -18,10 +19,12 @@ import mqtt.wire.data.writeMqttUtf8String
  * 3.10 UNSUBSCRIBE – Unsubscribe request
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
-data class UnsubscribeRequest(val packetIdentifier: UShort = getAndIncrementPacketIdentifier(),
+@Parcelize
+data class UnsubscribeRequest(
+    val packetIdentifier: Int = getAndIncrementPacketIdentifier(),
                               val topics: List<MqttUtf8String>)
     : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
-    override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier) }
+    override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
 
     init {
@@ -37,7 +40,7 @@ data class UnsubscribeRequest(val packetIdentifier: UShort = getAndIncrementPack
             while (buffer.remaining > 0) {
                 topics += buffer.readMqttUtf8String()
             }
-            return UnsubscribeRequest(packetIdentifier, topics)
+            return UnsubscribeRequest(packetIdentifier.toInt(), topics)
         }
     }
 }

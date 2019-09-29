@@ -22,7 +22,13 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
     suspend fun createConnection(config: IMqttConfiguration, awaitOnConnectionState: Int? = Open.state) =
         serviceConnection.createNewConnection(config, awaitOnConnectionState)
 
-    fun setCallback(cb: (ControlPacket, Int) -> Unit) = serviceConnection.setCallback(cb)
+    fun incomingMessageCallback(cb: (ControlPacket, Int) -> Unit) {
+        serviceConnection.newConnectionManager.incomingMessageCallback = cb
+    }
+
+    fun messageSentCallback(cb: (ControlPacket, Int) -> Unit) {
+        serviceConnection.newConnectionManager.outgoingMessageCallback = cb
+    }
 
     override fun onCleared() {
         serviceConnection.unbind(getApplication())

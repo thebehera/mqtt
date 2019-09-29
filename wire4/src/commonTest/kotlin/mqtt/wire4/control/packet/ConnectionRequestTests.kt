@@ -446,13 +446,13 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
-        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
+        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
     }
 
     @Test
     fun variableHeaderKeepAlive0() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0.toUShort()))
+        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0))
         val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -465,14 +465,14 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
-        assertEquals(0.toUShort(), connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
+        assertEquals(0.toUShort(), connectionRequest.variableHeader.keepAliveSeconds.toUShort())
     }
 
 
     @Test
     fun variableHeaderKeepAliveMax() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE))
+        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE.toInt()))
         val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -485,8 +485,8 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
-        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
+        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
     }
 
     @Test

@@ -28,7 +28,7 @@ data class PublishComplete(val variable: VariableHeader) :
     constructor(packetIdentifier: UShort, reasonCode: ReasonCode = SUCCESS)
             : this(VariableHeader(packetIdentifier, reasonCode))
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: UShort = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     /**
      * 3.7.2 PUBCOMP Variable Header
      *

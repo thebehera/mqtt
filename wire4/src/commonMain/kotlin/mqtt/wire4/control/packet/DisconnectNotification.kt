@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+import mqtt.Parcelize
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
 /**
@@ -23,4 +24,5 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * SHOULD close the Network Connection if the Client has not already done so.
  */
+@Parcelize
 object DisconnectNotification : ControlPacketV4(14, DirectionOfFlow.BIDIRECTIONAL)

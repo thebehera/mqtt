@@ -27,7 +27,7 @@ data class PublishAcknowledgment(val variable: VariableHeader)
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier))
 
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: UShort = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
 
     data class VariableHeader(val packetIdentifier: UShort,
                               /**

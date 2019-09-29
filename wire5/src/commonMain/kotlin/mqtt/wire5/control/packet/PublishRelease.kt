@@ -27,8 +27,8 @@ data class PublishRelease(val variable: VariableHeader)
 
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier))
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: UShort = variable.packetIdentifier
-    override fun expectedResponse() = PublishComplete(packetIdentifier)
+    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
+    override fun expectedResponse() = PublishComplete(packetIdentifier.toUShort())
     /**
      * 3.6.2 PUBREL Variable Header
      *

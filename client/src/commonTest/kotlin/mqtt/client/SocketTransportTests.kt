@@ -210,7 +210,7 @@ class SocketTransportTests {
                     }
                 }
             }
-            val subscribeRequest = SubscribeRequest(19.toUShort(), listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
+            val subscribeRequest = SubscribeRequest(19, listOf(Subscription(Filter("yolo"), AT_MOST_ONCE)))
             connection.clientToServer.send(subscribeRequest)
             mutex.withLock {} // lock until we get a message
             assertTrue(recvMessage)

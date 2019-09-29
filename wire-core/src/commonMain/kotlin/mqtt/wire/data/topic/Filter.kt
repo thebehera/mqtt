@@ -2,9 +2,12 @@
 
 package mqtt.wire.data.topic
 
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.data.MqttUtf8String
 
-inline class Filter(private val topicFilter: String) {
+@Parcelize
+class Filter(private val topicFilter: String) : Parcelable {
     fun validate(asServer: Boolean = false): Node? {
         return try {
             val rootNode = Node.from(MqttUtf8String(topicFilter))

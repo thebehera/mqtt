@@ -41,8 +41,12 @@ class MainActivity : AppCompatActivity() {
             Logger
         )
 
-        clientService.setCallback { controlPacket, remoteHostIdentifier ->
-            Log.i("RAHUL", "INCOMING CONTROL PACKET ($remoteHostIdentifier) ACTIVITY: $controlPacket")
+        clientService.incomingMessageCallback { incomingControlPacket, remoteHostIdentifier ->
+            Log.i("RAHUL", "IN ($remoteHostIdentifier) ACTIVITY: $incomingControlPacket")
+        }
+
+        clientService.messageSentCallback { controlPacketSent, remoteHostIdentifier ->
+            Log.i("RAHUL", "OUT($remoteHostIdentifier) ACTIVITY: $controlPacketSent")
         }
         val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
         binding.remoteHost = config.remoteHost

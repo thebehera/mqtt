@@ -7,4 +7,4 @@ import kotlinx.atomicfu.atomic
 private val packetIdentifierCount = atomic(0)
 
 
-fun getAndIncrementPacketIdentifier() = packetIdentifierCount.incrementAndGet().toUShort()
+fun getAndIncrementPacketIdentifier() = packetIdentifierCount.incrementAndGet().toUShort().toInt()

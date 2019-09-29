@@ -17,7 +17,7 @@ class ClientSessionState(
     val qos2MessagesRecevedButNotCompletelyAcked: QueuedObjectCollection = MemoryQueuedObjectCollection()
 ) {
     val subscriptionManager = SubscriptionManager()
-    val unacknowledgedSubscriptions = HashMap<UShort, ISubscribeRequest>()
+    val unacknowledgedSubscriptions = HashMap<Int, ISubscribeRequest>()
 
     suspend fun start(clientId: MqttUtf8String, server: Url) {
         qos1And2MessagesSentButNotAcked.open(clientId, server)

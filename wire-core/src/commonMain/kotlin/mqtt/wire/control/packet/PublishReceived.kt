@@ -3,6 +3,6 @@
 package mqtt.wire.control.packet
 
 interface IPublishReceived : ControlPacket {
-    val packetIdentifier: UShort
+    val packetIdentifier: Int
     fun expectedResponse(): IPublishRelease
 }

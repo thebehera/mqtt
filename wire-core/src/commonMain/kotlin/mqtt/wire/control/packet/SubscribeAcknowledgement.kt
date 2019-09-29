@@ -3,5 +3,5 @@
 package mqtt.wire.control.packet
 
 interface ISubscribeAcknowledgement : ControlPacket {
-    val packetIdentifier: UShort
+    val packetIdentifier: Int
 }
