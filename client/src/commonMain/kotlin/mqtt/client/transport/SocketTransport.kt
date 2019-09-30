@@ -69,12 +69,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             session.flush()
             return WebSocketTransport(session, coroutineContext)
         } else {
-            println("building native socket")
-            try {
-                return buildNativeSocket()
-            } finally {
-                println("finished building native socket")
-            }
+            return buildNativeSocket()
         }
     }
 
@@ -84,7 +79,6 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
      */
     fun openConnectionAsync(waitForConnectionAcknowledgment: Boolean = false) = async {
         if (!state.compareAndSet(Initializing, Connecting)) {
-            println("failed compare and set")
             val error = ConnectionFailure(ConcurrentModificationException("Invalid previous state before connecting"))
             state.lazySet(error)
             return@async state
@@ -106,12 +100,9 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             state.lazySet(connectionState)
             return@async state
         }
-        println("write connection request")
         val connectionRequestJob = writeConnectionRequestAsync(platformSocketConnected)
-        println("wait for connection request")
         val connectionRequestException = connectionRequestJob.await()
         if (connectionRequestException != null) {
-            println("connection request exception")
             return@async state
         }
 

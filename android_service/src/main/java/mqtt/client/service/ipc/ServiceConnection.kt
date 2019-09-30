@@ -12,7 +12,7 @@ import android.os.RemoteException
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 
-class ClientToServiceConnection(val context: Context, val serviceClass: Class<out Service>) : ServiceConnection {
+class ClientToServiceConnection(context: Context, serviceClass: Class<out Service>) : ServiceConnection {
 
     /** Messenger for communicating with the service. Null if not bound  */
     private var serviceMessenger: Messenger? = null
@@ -25,7 +25,8 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
     val newConnectionManager = ClientServiceNewConnectionManager(context, bindManager, incomingMessenger)
 
     init {
-        context.bindService(Intent(context, serviceClass), this, Context.BIND_AUTO_CREATE)
+        val intent = Intent(context, serviceClass)
+        context.bindService(intent, this, Context.BIND_AUTO_CREATE)
     }
 
     override fun onServiceConnected(name: ComponentName, serviceBinder: IBinder) {
@@ -77,11 +78,14 @@ class ClientToServiceConnection(val context: Context, val serviceClass: Class<ou
     }
 }
 
-class BoundClientsObserver(val callback: (msg: Message) -> Unit) {
+class BoundClientsObserver(newClientCb: (Messenger) -> Unit, val callback: (msg: Message) -> Unit) {
     private val registeredClients = LinkedHashSet<Messenger>()
     private val incomingHandler = MessageCallbackHandler {
         when (it.what) {
-            REGISTER_CLIENT -> registeredClients.add(it.replyTo)
+            REGISTER_CLIENT -> {
+                registeredClients.add(it.replyTo)
+                newClientCb(it.replyTo)
+            }
             UNREGISTER_CLIENT -> registeredClients.remove(it.replyTo)
             else -> callback(it)
         }

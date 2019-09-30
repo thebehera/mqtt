@@ -39,16 +39,30 @@ interface IRemoteHost : Parcelable {
 
     val maxNumberOfRetries: Int //= Int.MAX_VALUE
 
-
     fun connectionIdentifier() = uniqueIdentifier().hashCode()
-    fun uniqueIdentifier(): String = listOf(
-        request.protocolName,
-        request.protocolVersion,
-        request.clientIdentifier,
-        request.username,
-        name,
-        port
-    ).joinToString(".")
+    fun uniqueIdentifier(): String = Companion.uniqueIdentifier(
+        request.protocolName, request.protocolVersion,
+        request.clientIdentifier, name, port
+    )
+
+    companion object {
+        fun uniqueIdentifier(protocolName: String, protocolVersion: Int, clientId: String, name: String, port: Int) =
+            listOf(
+                protocolName,
+                protocolVersion,
+                clientId,
+                name,
+                port
+            ).joinToString(".")
+
+        fun connectionIdentifier(
+            protocolName: String,
+            protocolVersion: Int,
+            clientId: String,
+            name: String,
+            port: Int
+        ) = uniqueIdentifier(protocolName, protocolVersion, clientId, name, port).hashCode()
+    }
 }
 
 interface ILogConfiguration : Parcelable {

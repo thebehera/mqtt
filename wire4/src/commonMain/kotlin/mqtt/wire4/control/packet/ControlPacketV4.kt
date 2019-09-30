@@ -4,6 +4,7 @@ package mqtt.wire4.control.packet
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
+import mqtt.Ignore
 import mqtt.Parcelable
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ControlPacket
@@ -19,10 +20,11 @@ import mqtt.wire.data.decodeVariableByteInteger
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
  */
 abstract class ControlPacketV4(
-    override val controlPacketValue: Byte,
-    override val direction: DirectionOfFlow,
-    override val flags: Byte = 0b0
+    @Ignore override val controlPacketValue: Byte,
+    @Ignore override val direction: DirectionOfFlow,
+    @Ignore override val flags: Byte = 0b0
 ) : ControlPacket, Parcelable {
+    @Ignore
     override val mqttVersion: Byte = 4
 
     companion object {

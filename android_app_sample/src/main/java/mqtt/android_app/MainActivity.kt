@@ -10,24 +10,19 @@ import androidx.lifecycle.ViewModelProviders
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import mqtt.Parcelize
 import mqtt.android_app.databinding.ActivityMainBinding
-import mqtt.android_app.room.initQueuedDb
-import mqtt.client.connection.parameters.LogConfiguration
+import mqtt.client.connection.parameters.PersistableRemoteHostV4
 import mqtt.client.connection.parameters.RemoteHost
-import mqtt.client.service.AndroidLogger
-import mqtt.client.service.client.MqttServiceViewModel
-import mqtt.wire4.control.packet.ConnectionRequest
+import mqtt.wire4.control.packet.PersistableConnectionRequest
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        initQueuedDb(this)
         super.onCreate(savedInstanceState)
         val clientService = ViewModelProviders.of(this).get(MqttServiceViewModel::class.java)
-        val remoteHost = RemoteHost(
+        val remoteHost = PersistableRemoteHostV4(
             "192.168.1.98",
-            ConnectionRequest(
+            PersistableConnectionRequest(
                 "yoloswag",
                 keepAliveSeconds = 4.toUShort()
             ),
@@ -55,14 +50,5 @@ class MainActivity : AppCompatActivity() {
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
             }
-    }
-}
-
-
-@Parcelize
-object Logger :
-    LogConfiguration(true, true, true, true, true) {
-    override fun getLogClass(): mqtt.Log {
-        return AndroidLogger()
     }
 }

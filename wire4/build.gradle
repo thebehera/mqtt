@@ -65,6 +65,7 @@ kotlin {
         }
         androidMain {
             dependencies {
+                implementation "androidx.room:room-common:$room_version"
                 implementation project(':wire-core')
                 implementation kotlin('stdlib-jdk7')
                 implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"

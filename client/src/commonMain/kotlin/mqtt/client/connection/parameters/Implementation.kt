@@ -3,7 +3,6 @@
 package mqtt.client.connection.parameters
 
 import mqtt.Parcelize
-import mqtt.connection.ILogConfiguration
 import mqtt.connection.IRemoteHost
 import mqtt.connection.IRemoteHost.ISecurityParameters
 import mqtt.connection.IRemoteHost.IWebsocketParameters
@@ -46,12 +45,3 @@ data class RemoteHost(
     override fun hashCode() = connectionIdentifier()
     override fun toString() = uniqueIdentifier()
 }
-
-@Parcelize
-open class LogConfiguration(
-    override val connectionAttempt: Boolean = false,
-    override val outgoingPublishOrSubscribe: Boolean = false,
-    override val outgoingControlPackets: Boolean = false,
-    override val incomingControlPackets: Boolean = false,
-    override val incomingPublish: Boolean = false
-) : ILogConfiguration

@@ -7,6 +7,7 @@ repositories {
 }
 apply from: "../gradle/experimental.gradle"
 apply from: "../gradle/android.gradle"
+
 kotlin {
     jvm()
     android()
@@ -47,10 +48,16 @@ kotlin {
         }
         androidMain {
             dependsOn(jvmMain)
+            dependencies {
+                implementation "androidx.room:room-runtime:$room_version"
+                implementation "androidx.room:room-ktx:$room_version"
+                implementation "androidx.room:room-common:$room_version"
+                implementation kotlin('stdlib-jdk7')
+            }
         }
         androidTest {
             dependsOn(jvmTest)
-            dependsOn(jvmMain)
+            dependsOn(androidMain)
         }
     }
     targets.all {
