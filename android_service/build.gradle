@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
+apply plugin: 'kotlin-kapt'
 androidExtensions {
     experimental = true
 }
@@ -38,7 +39,9 @@ android {
 lint.enabled = false
 
 dependencies {
+    kapt "androidx.room:room-compiler:$room_version"
     api project(":wire-core")
+    api project(":wire4")
     implementation project(":client")
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
