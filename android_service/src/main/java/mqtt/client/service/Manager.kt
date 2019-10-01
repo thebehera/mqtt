@@ -18,7 +18,7 @@ class ConnectionManager(val remoteHost: IRemoteHost, val cb: ((ControlPacket, In
         client.startAsync {
             connectionState = it
             connectionChangeCallback(MqttConnectionStateUpdated(remoteHost, it))
-        }.await()
+        }
     }
 
     override fun onMessage(controlPacket: ControlPacket) {

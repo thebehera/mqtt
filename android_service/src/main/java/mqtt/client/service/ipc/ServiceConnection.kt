@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
+import android.util.Log
 import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 import mqtt.client.service.REGISTER_CLIENT
 import mqtt.client.service.UNREGISTER_CLIENT
@@ -29,10 +30,12 @@ class ClientToServiceConnection(
     init {
         val intent = Intent(context, serviceClass)
         intent.putExtra(MqttConnectionsDatabaseDescriptor.TAG, dbProvider)
+        Log.i("RAHUL", "Binding service")
         context.bindService(intent, this, Context.BIND_AUTO_CREATE)
     }
 
     override fun onServiceConnected(name: ComponentName, serviceBinder: IBinder) {
+        Log.i("RAHUL", "Service Connected")
         val serviceMessenger = Messenger(serviceBinder)
         this.serviceMessenger = serviceMessenger
         registerClientWithService(serviceMessenger)

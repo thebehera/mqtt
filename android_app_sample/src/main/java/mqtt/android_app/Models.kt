@@ -8,18 +8,18 @@ import mqtt.client.service.IMqttConnectionsDb
 import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 
 @Entity
-data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Int = 0)
+data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Long = 0)
 
 @Dao
 interface ModelsDao {
     @Insert
-    fun insert(model: SimpleModel): Long
+    suspend fun insert(model: SimpleModel): Long
 
     @Query("SELECT * FROM SimpleModel WHERE _rowid_ = :rowId")
-    fun getByRowId(rowId: Long): SimpleModel?
+    suspend fun getByRowId(rowId: Long): SimpleModel?
 
     @Query("DELETE FROM SimpleModel WHERE `key` = :key")
-    fun delete(key: Int)
+    suspend fun delete(key: Int)
 }
 
 

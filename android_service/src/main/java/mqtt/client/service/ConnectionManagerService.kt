@@ -2,7 +2,7 @@ package mqtt.client.service
 
 import android.content.Intent
 import android.os.*
-import android.util.Log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import mqtt.client.connection.parameters.PersistableRemoteHostV4
 import mqtt.client.connection.parameters.RemoteHostDao
@@ -36,18 +36,12 @@ class ConnectionManagerService : CoroutineService() {
         }
     }
 
-    override fun onCreate() {
-        super.onCreate()
-        Debug.waitForDebugger()
-    }
-
     override fun onBind(intent: Intent): IBinder {
         setupDbAndInitializeConnections(intent)
         return boundClients.binder
     }
 
     private fun handleMessage(msg: Message) {
-        Log.i("RAHUL", "Got msg $msg")
         if (msg.what == BoundClientToService.QUEUE_INSERTED.position) {
             val bundle: Bundle? = msg.data
             val rowId = bundle?.getLong(rowIdKey)
@@ -56,7 +50,7 @@ class ConnectionManagerService : CoroutineService() {
             return
         }
         when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
-            is IRemoteHost -> launch {
+            is IRemoteHost -> launch(Dispatchers.Default) {
                 connect(data)
             }
         }
@@ -68,9 +62,7 @@ class ConnectionManagerService : CoroutineService() {
     }
 
     private suspend fun connect(connectionParameters: IRemoteHost) {
-        Log.i("RAHUL", "Connect")
         if (connectionManagers[connectionParameters.connectionIdentifier()] != null) {
-            Log.i("RAHUL", "Connect bail")
             return
         }
         val connectionManager = ConnectionManager(connectionParameters) { controlPacket, remoteHostId ->
@@ -82,12 +74,9 @@ class ConnectionManagerService : CoroutineService() {
             msg.data = bundle
             boundClients.sendMessageToClients(msg)
         }
-        Log.i("RAHUL", "Connect set mgr")
         connectionManagers[connectionParameters.connectionIdentifier()] = connectionManager
-        Log.i("RAHUL", "Connect ${connectionParameters::class}")
         if (connectionParameters is PersistableRemoteHostV4) {
             connectionsDao.addOrUpdate(connectionParameters)
-            Log.i("RAHUL", "updated $connectionParameters")
         }
         connectionManager.client.session.outboundCallback = { controlPacketSentToServer, remoteHostId ->
             val msg = Message.obtain()
@@ -114,12 +103,9 @@ class ConnectionManagerService : CoroutineService() {
     private fun setupDbAndInitializeConnections(intent: Intent?) {
         if (setupDatabase(intent)) {
             launch {
-                Log.i("RAHUL", "Get all connections")
                 connectionsDao.getAllConnections().forEach {
-                    Log.i("RAHUL", "Connect $it")
                     connect(it)
                 }
-                Log.i("RAHUL", "Get all connections done")
             }
         }
     }
