@@ -15,7 +15,7 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
     val job = Job()
     override val coroutineContext = Dispatchers.Main + job
     private val serviceConnection by lazy {
-        ClientToServiceConnection(app, ConnectionManagerService::class.java)
+        ClientToServiceConnection(app, ConnectionManagerService::class.java, MqttDbProvider)
     }
 
     /**
@@ -30,6 +30,10 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
 
     fun messageSentCallback(cb: (ControlPacket, Int) -> Unit) {
         serviceConnection.newConnectionManager.outgoingMessageCallback = cb
+    }
+
+    suspend fun notifyPublish(rowId: Long, tableName: String) {
+        serviceConnection.notifyPublish(rowId, tableName)
     }
 
     override fun onCleared() {

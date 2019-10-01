@@ -5,14 +5,16 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
-import android.os.IBinder
-import android.os.Message
-import android.os.Messenger
-import android.os.RemoteException
+import android.os.*
+import mqtt.client.service.MqttConnectionsDatabaseDescriptor
+import mqtt.client.service.REGISTER_CLIENT
+import mqtt.client.service.UNREGISTER_CLIENT
 import mqtt.connection.IRemoteHost
-import mqtt.wire.control.packet.ControlPacket
 
-class ClientToServiceConnection(context: Context, serviceClass: Class<out Service>) : ServiceConnection {
+class ClientToServiceConnection(
+    context: Context, serviceClass: Class<out Service>,
+    dbProvider: MqttConnectionsDatabaseDescriptor
+) : ServiceConnection {
 
     /** Messenger for communicating with the service. Null if not bound  */
     private var serviceMessenger: Messenger? = null
@@ -26,6 +28,7 @@ class ClientToServiceConnection(context: Context, serviceClass: Class<out Servic
 
     init {
         val intent = Intent(context, serviceClass)
+        intent.putExtra(MqttConnectionsDatabaseDescriptor.TAG, dbProvider)
         context.bindService(intent, this, Context.BIND_AUTO_CREATE)
     }
 
@@ -52,10 +55,6 @@ class ClientToServiceConnection(context: Context, serviceClass: Class<out Servic
         }
     }
 
-    fun setCallback(cb: (ControlPacket, Int) -> Unit) {
-        newConnectionManager.incomingMessageCallback = cb
-    }
-
     override fun onServiceDisconnected(name: ComponentName) {
         serviceMessenger = null
     }
@@ -76,34 +75,18 @@ class ClientToServiceConnection(context: Context, serviceClass: Class<out Servic
             // has crashed.
         }
     }
-}
 
-class BoundClientsObserver(newClientCb: (Messenger) -> Unit, val callback: (msg: Message) -> Unit) {
-    private val registeredClients = LinkedHashSet<Messenger>()
-    private val incomingHandler = MessageCallbackHandler {
-        when (it.what) {
-            REGISTER_CLIENT -> {
-                registeredClients.add(it.replyTo)
-                newClientCb(it.replyTo)
-            }
-            UNREGISTER_CLIENT -> registeredClients.remove(it.replyTo)
-            else -> callback(it)
-        }
+    private fun buildPublishBundle(rowId: Long, tableName: String): Bundle {
+        val bundle = Bundle()
+        bundle.putLong(rowIdKey, rowId)
+        bundle.putString(tableNameKey, tableName)
+        return bundle
     }
-    val messenger = Messenger(incomingHandler)
-    val binder = messenger.binder!!
 
-
-    fun sendMessageToClients(msg: Message) = LinkedHashSet(registeredClients).forEach {
-        try {
-            it.send(msg)
-        } catch (e: RemoteException) {
-            // unregister the client, there is nothing we can do at this point as the other process has crashed
-            registeredClients.remove(it)
-        }
+    suspend fun notifyPublish(rowId: Long, tableName: String) {
+        val message = Message.obtain(null, BoundClientToService.QUEUE_INSERTED.position)
+        message.replyTo = incomingMessenger
+        message.data = buildPublishBundle(rowId, tableName)
+        bindManager.awaitServiceBound().send(message)
     }
 }
-
-private const val REGISTER_CLIENT = Int.MIN_VALUE
-private const val UNREGISTER_CLIENT = Int.MIN_VALUE + 1
-

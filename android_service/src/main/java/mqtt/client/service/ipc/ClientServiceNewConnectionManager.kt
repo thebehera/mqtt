@@ -39,7 +39,8 @@ class ClientServiceNewConnectionManager(
             val messenger = bindManager.awaitServiceBound()
             val bundle = Bundle()
             bundle.putParcelable(MESSAGE_PAYLOAD, remoteHost)
-            val message = Message.obtain(null, BoundClientToService.CREATE_CONNECTION.ordinal)
+            val message = Message()
+            message.what = BoundClientToService.CREATE_CONNECTION.position
             message.data = bundle
             message.arg1 = remoteHost.connectionIdentifier()
             message.replyTo = incomingMessenger
@@ -51,21 +52,21 @@ class ClientServiceNewConnectionManager(
 
     fun onMessage(msg: Message): Boolean {
         when (msg.what) {
-            INCOMING_CONTROL_PACKET.ordinal -> {
+            INCOMING_CONTROL_PACKET.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
                 val incomingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
                 incomingMessageCallback?.invoke(incomingControlPacket, msg.arg1)
                 return true
             }
-            OUTGOING_CONTROL_PACKET.ordinal -> {
+            OUTGOING_CONTROL_PACKET.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
                 val outgoingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
                 outgoingMessageCallback?.invoke(outgoingControlPacket, msg.arg1)
                 return true
             }
-            CONNECTION_STATE_CHANGED.ordinal -> {
+            CONNECTION_STATE_CHANGED.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
                 val updated =
