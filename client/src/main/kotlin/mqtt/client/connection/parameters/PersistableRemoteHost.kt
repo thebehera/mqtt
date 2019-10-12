@@ -54,13 +54,13 @@ data class PersistableRemoteHostV4(
 @Dao
 interface RemoteHostDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addOrUpdate(remoteHostV4: PersistableRemoteHostV4)
+    suspend fun addOrUpdate(host: PersistableRemoteHostV4)
 
     @Query("SELECT * FROM PersistableRemoteHostV4")
     suspend fun getAllConnections(): List<PersistableRemoteHostV4>
 
     @Delete
-    suspend fun remove(remoteHostV4: PersistableRemoteHostV4)
+    suspend fun remove(host: PersistableRemoteHostV4)
 }
 
 

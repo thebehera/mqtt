@@ -3,7 +3,7 @@ package mqtt.android_app
 import android.content.Context
 import androidx.room.*
 import mqtt.Parcelize
-import mqtt.client.connection.parameters.PersistableRemoteHostV4
+import mqtt.androidx.room.MqttDatabase
 import mqtt.client.service.IMqttConnectionsDb
 import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 
@@ -23,7 +23,7 @@ interface ModelsDao {
 }
 
 
-@Database(entities = [SimpleModel::class, PersistableRemoteHostV4::class], version = 1)
+@MqttDatabase(db = Database(entities = [SimpleModel::class], version = 1))
 abstract class SimpleModelDb : RoomDatabase(), IMqttConnectionsDb {
     abstract fun modelsDao(): ModelsDao
 }
