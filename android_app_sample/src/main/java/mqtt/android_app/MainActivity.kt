@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
 import androidx.lifecycle.ViewModelProviders
+import androidx.room.Room
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.android_app.databinding.ActivityMainBinding
@@ -44,15 +45,17 @@ class MainActivity : AppCompatActivity() {
         val id = remoteHost.connectionIdentifier()
         GlobalScope
             .launch {
+
+                val db = Room.databaseBuilder(this@MainActivity, SimpleModelDb::class.java, "yolo").build()
+                var model = SimpleModel("yolo swag")
+                model = model.copy(key = db.modelsDao().insert(model))
+                clientService.notifyPublish(model.key, "SimpleModel")
+
                 Log.i("RAHUL", "create connection")
                 val connectionState = clientService.createConnection(remoteHost, null)
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
 
-                val db = MqttDbProvider.getDb(this@MainActivity)
-                var model = SimpleModel("yolo swag")
-                model = model.copy(key = db.modelsDao().insert(model))
-                clientService.notifyPublish(model.key, "SimpleModel")
             }
     }
 }
