@@ -31,8 +31,7 @@ class JavaAnnotatedMqttElement(
             .addStatement(
                 "return \$T.databaseBuilder(context, $filename.class, \"mqtt.db\").build()",
                 ClassName.get("androidx.room", "Room")
-            )
-            .build()
+            ).build()
         val classType = TypeSpec.classBuilder(filename)
             .superclass(ClassName.get(pkg, element.simpleName.toString()))
             .addModifiers(Modifier.PUBLIC, Modifier.ABSTRACT)

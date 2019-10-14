@@ -1,4 +1,4 @@
-package mqtt.android_app
+package mqtt.client.service.ipc
 
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
@@ -6,16 +6,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import mqtt.client.service.ConnectionManagerService
-import mqtt.client.service.ipc.ClientToServiceConnection
+import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
 import mqtt.wire.control.packet.ControlPacket
 
-class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineScope {
+abstract class AbstractMqttServiceViewModel(app: Application, dbDescriptor: MqttConnectionsDatabaseDescriptor) :
+    AndroidViewModel(app), CoroutineScope {
     val job = Job()
     override val coroutineContext = Dispatchers.Main + job
     private val serviceConnection by lazy {
-        ClientToServiceConnection(app, ConnectionManagerService::class.java, MqttDbProvider)
+        ClientToServiceConnection(app, ConnectionManagerService::class.java, dbDescriptor)
     }
 
     /**
@@ -40,6 +41,4 @@ class MqttServiceViewModel(app: Application) : AndroidViewModel(app), CoroutineS
         serviceConnection.unbind(getApplication())
         super.onCleared()
     }
-
-
 }

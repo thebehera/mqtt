@@ -1,10 +1,12 @@
 package mqtt.android_app
 
-import android.content.Context
+import android.app.Application
 import androidx.room.*
 import mqtt.Parcelize
-import mqtt.client.service.IMqttConnectionsDb
-import mqtt.client.service.MqttConnectionsDatabaseDescriptor
+import mqtt.androidx.room.MqttDatabase
+import mqtt.client.service.MqttDatabaseDescriptor
+import mqtt.client.service.MqttRoomDatabase
+import mqtt.client.service.ipc.AbstractMqttServiceViewModel
 
 @Entity
 data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Long = 0)
@@ -22,21 +24,12 @@ interface ModelsDao {
 }
 
 
-@Database(entities = [SimpleModel::class], version = 1)
-abstract class SimpleModelDb : RoomDatabase() {
+@MqttDatabase(db = Database(entities = [SimpleModel::class], version = 1))
+abstract class SimpleModelDb : MqttRoomDatabase() {
     abstract fun modelsDao(): ModelsDao
 }
 
 @Parcelize
-object MqttDbProvider : MqttConnectionsDatabaseDescriptor {
-    lateinit var db: IMqttConnectionsDb
+object MqttDbProvider : MqttDatabaseDescriptor<SimpleModelDb>(Mqtt_RoomDb_SimpleModelDb::class.java)
 
-    override fun getDb(context: Context): IMqttConnectionsDb {
-        if (::db.isInitialized) {
-            return db
-        }
-        throw IllegalArgumentException("Y")
-//        db = Room.databaseBuilder(context, SimpleModelDb::class.java, "simpleModels.db").build()
-//        return db
-    }
-}
+class MqttServiceViewModel(app: Application) : AbstractMqttServiceViewModel(app, MqttDbProvider)

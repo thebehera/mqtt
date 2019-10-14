@@ -1,6 +1,5 @@
 package mqtt.androidx.room
 
-import androidx.room.Database
 import com.google.auto.service.AutoService
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
@@ -28,14 +27,12 @@ class MqttCodeGenerator : AbstractProcessor() {
         val databases = roundEnv.getElementsAnnotatedWith(dbClassRef).map {
             JavaAnnotatedMqttElement(processingEnv, typeUtils, elementUtils, it, it.getAnnotation(dbClassRef)!!)
         }
-        databases.forEach {
-            it.write(filer)
-        }
+        databases.forEach { it.write(filer) }
         return true
     }
 
     override fun getSupportedAnnotationTypes() =
-        setOf(Database::class.qualifiedName, MqttDatabase::class.qualifiedName!!)
+        setOf(MqttDatabase::class.qualifiedName!!)
 
     override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
 }
