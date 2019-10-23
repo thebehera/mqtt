@@ -44,8 +44,8 @@ interface PersistedMqttQueueDao {
     @Query("UPDATE MqttQueue SET acknowleged = 1 WHERE messageId = :messageId")
     suspend fun acknowledge(messageId: Int)
 
-    @Query("SELECT * FROM MqttQueue WHERE connectionIdentifier = :connectionIdentifier  AND messageId = :messageId")
-    suspend fun getByMessageId(connectionIdentifier: Int, messageId: Int): MqttQueue?
+    @Query("SELECT * FROM MqttQueue WHERE connectionIdentifier = :connectionIdentifier  AND messageId = :messageId  LIMIT 1")
+    suspend fun getByMessageId(messageId: Int, connectionIdentifier: Int): MqttQueue?
 
     @Insert
     suspend fun insertPublishQueue(mqttPublishQueue: MqttPublishQueue)
@@ -62,7 +62,7 @@ interface PersistedMqttQueueDao {
         val copied = queue.copy(messageId = nextMsgId)
         val msgId = queue(copied).toInt()
         insertPublishQueue(MqttPublishQueue(queue.connectionIdentifier, msgId, topic, qos, dup, retain))
-        return msgId
+        return nextMsgId
     }
 }
 
