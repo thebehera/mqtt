@@ -9,4 +9,8 @@ interface IPublishMessage : ControlPacket {
     val topic: Name
     override fun payloadPacket(sendDefaults: Boolean): ByteReadPacket?
     fun expectedResponse(): ControlPacket?
+
+    companion object {
+        const val controlPacketValue = 3
+    }
 }

@@ -23,7 +23,7 @@ import kotlin.reflect.KClass
 class ClientSession(
     val remoteHost: IRemoteHost,
     override val coroutineContext: CoroutineContext,
-    val state: ClientSessionState = ClientSessionState()
+    val state: ClientSessionState
 ) : CoroutineScope, OnMessageReceivedCallback {
     var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null
@@ -66,20 +66,22 @@ class ClientSession(
                         send(response)
                     }
                     is IPublishAcknowledgment ->
-                        state.qos1And2MessagesSentButNotAcked.remove(controlPacket.packetIdentifier.toUShort())
+                        state.queue.remove(controlPacket.packetIdentifier.toUShort())
                     is IPublishReceived -> {
                         callback?.onMessage(controlPacket)
-                        state.qos1And2MessagesSentButNotAcked.remove(controlPacket.packetIdentifier.toUShort())
                         val pubRel = controlPacket.expectedResponse()
+                        state.queue.ackMessageIdQueueControlPacket(
+                            controlPacket.packetIdentifier,
+                            pubRel.packetIdentifier.toUShort(), pubRel
+                        )
                         send(pubRel)
-                        state.qos2MessagesRecevedButNotCompletelyAcked.put(pubRel.packetIdentifier.toUShort(), pubRel)
                     }
                     is IPublishRelease -> {
-                        state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier.toUShort())
+                        state.queue.remove(controlPacket.packetIdentifier.toUShort())
                         send(controlPacket.expectedResponse())
                     }
                     is IPublishComplete ->
-                        state.qos2MessagesRecevedButNotCompletelyAcked.remove(controlPacket.packetIdentifier.toUShort())
+                        state.queue.remove(controlPacket.packetIdentifier.toUShort())
                     is ISubscribeAcknowledgement -> state.subscriptionAcknowledgementReceived(controlPacket)
                     else -> {
                         callback?.onMessage(controlPacket)
@@ -167,14 +169,8 @@ class ClientSession(
 
     private suspend fun flushQueues() {
         val transport = transport ?: return
-        for (key in state.qos2MessagesRecevedButNotCompletelyAcked.keys()) {
-            val msg = state.qos2MessagesRecevedButNotCompletelyAcked.get(key) ?: continue
-            transport.clientToServer.send(msg)
-        }
-        for (key in state.qos1And2MessagesSentButNotAcked.keys()) {
-            val msg = state.qos1And2MessagesSentButNotAcked.get(key) ?: continue
-            transport.clientToServer.send(msg)
-        }
+        val controlPacket = state.queue.get() ?: return
+        transport.clientToServer.send(controlPacket)
     }
 
     suspend fun unsubscribe(topics: List<String>) =

@@ -33,8 +33,8 @@ abstract class AbstractMqttServiceViewModel(app: Application, dbDescriptor: Mqtt
         serviceConnection.newConnectionManager.outgoingMessageCallback = cb
     }
 
-    suspend fun notifyPublish(rowId: Long, tableName: String) {
-        serviceConnection.notifyPublish(rowId, tableName)
+    suspend fun notifyPublish(notifyPublish: ClientToServiceConnection.NotifyPublish) {
+        serviceConnection.notifyPublish(notifyPublish)
     }
 
     override fun onCleared() {
@@ -42,3 +42,4 @@ abstract class AbstractMqttServiceViewModel(app: Application, dbDescriptor: Mqtt
         super.onCleared()
     }
 }
+

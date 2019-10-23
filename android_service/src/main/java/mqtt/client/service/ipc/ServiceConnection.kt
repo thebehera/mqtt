@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
+import mqtt.Parcelize
 import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 import mqtt.client.service.REGISTER_CLIENT
 import mqtt.client.service.UNREGISTER_CLIENT
@@ -76,17 +77,15 @@ class ClientToServiceConnection(
         }
     }
 
-    private fun buildPublishBundle(rowId: Long, tableName: String): Bundle {
-        val bundle = Bundle()
-        bundle.putLong(rowIdKey, rowId)
-        bundle.putString(tableNameKey, tableName)
-        return bundle
-    }
-
-    suspend fun notifyPublish(rowId: Long, tableName: String) {
+    suspend fun notifyPublish(notifyPublish: NotifyPublish) {
         val message = Message.obtain(null, BoundClientToService.QUEUE_INSERTED.position)
         message.replyTo = incomingMessenger
-        message.data = buildPublishBundle(rowId, tableName)
+        val bundle = Bundle()
+        bundle.putParcelable(NotifyPublish::class.java.canonicalName, notifyPublish)
+        message.data = bundle
         bindManager.awaitServiceBound().send(message)
     }
+
+    @Parcelize
+    data class NotifyPublish(val connectionIdentifier: Int, val messageId: Int) : Parcelable
 }

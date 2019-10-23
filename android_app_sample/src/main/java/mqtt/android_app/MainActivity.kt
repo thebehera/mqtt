@@ -18,7 +18,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val clientService = ViewModelProviders.of(this).get(MqttServiceViewModel::class.java)
+        val clientService = ViewModelProviders.of(this).get(MqttServiceViewModelGenerated::class.java)
         val remoteHost = PersistableRemoteHostV4(
             "192.168.1.98",
             PersistableConnectionRequest(
@@ -41,20 +41,16 @@ class MainActivity : AppCompatActivity() {
         val binding = DataBindingUtil.setContentView<ActivityMainBinding>(this, R.layout.activity_main)
         binding.remoteHost = remoteHost
         binding.connectionStateView.text = "hello"
-        val id = remoteHost.connectionIdentifier()
         GlobalScope
             .launch {
-
-                val db = MqttDbProvider.getDb(this@MainActivity)
-                var model = SimpleModel("yolo swag")
-                model = model.copy(key = db.modelsDao().insert(model))
-                clientService.notifyPublish(model.key, "SimpleModel")
-
                 Log.i("RAHUL", "create connection")
-                val connectionState = clientService.createConnection(remoteHost, null)
+                val connectionState = clientService.createConnection(remoteHost)
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
 
+
+//                val db = MqttDbProvider.getDb(this@MainActivity)
+                clientService.publish(remoteHost.connectionIdentifier(), SimpleModel("yolo swag"))
             }
     }
 }

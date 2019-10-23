@@ -2,26 +2,19 @@
 
 package mqtt.client.session
 
-import io.ktor.http.Url
-import mqtt.client.persistence.MemoryQueuedObjectCollection
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.ISubscribeRequest
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.reflect.KClass
 
-class ClientSessionState(
-    val qos1And2MessagesSentButNotAcked: QueuedObjectCollection = MemoryQueuedObjectCollection(),
-    val qos2MessagesRecevedButNotCompletelyAcked: QueuedObjectCollection = MemoryQueuedObjectCollection()
-) {
+class ClientSessionState(val queue: QueuedObjectCollection) {
     val subscriptionManager = SubscriptionManager()
     val unacknowledgedSubscriptions = HashMap<Int, ISubscribeRequest>()
 
-    suspend fun start(clientId: MqttUtf8String, server: Url) {
-        qos1And2MessagesSentButNotAcked.open(clientId, server)
-        qos2MessagesRecevedButNotCompletelyAcked.open(clientId, server)
+    suspend fun start() {
+        queue.open()
     }
 
     fun <T : Any> sentSubscriptionRequest(

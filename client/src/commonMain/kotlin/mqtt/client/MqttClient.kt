@@ -2,9 +2,10 @@
 
 package mqtt.client
 
-import io.ktor.http.Url
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
+import mqtt.client.persistence.MemoryQueuedObjectCollection
+import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.ClientSessionState
@@ -13,7 +14,6 @@ import mqtt.connection.ConnectionFailure
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
@@ -23,14 +23,15 @@ import kotlin.reflect.KClass
 
 data class MqttClient(
     override val remoteHost: IRemoteHost,
-    val otherMsgCallback: OnMessageReceivedCallback? = null
+    val otherMsgCallback: OnMessageReceivedCallback? = null,
+    val queuedObjectCollection: QueuedObjectCollection = MemoryQueuedObjectCollection(remoteHost)
 ) : SimpleMqttClient {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
-        ClientSessionState().also {
+        ClientSessionState(queuedObjectCollection).also {
             launch {
-                it.start(MqttUtf8String(remoteHost.request.clientIdentifier), Url(remoteHost.name))
+                it.start()
             }
         }
     }
@@ -92,7 +93,8 @@ data class MqttClient(
         session.publish(topic, qos, typeClass, message)
     }
 
-    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, message: T) =
+    suspend inline fun <reified T : Any>
+            publish(topic: String, qos: QualityOfService, message: T) =
         publish(topic, qos, T::class, message)
 
     override fun disconnectAsync() = async {

@@ -2,20 +2,27 @@
 
 package mqtt.client.persistence
 
-import io.ktor.http.Url
+import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.data.MqttUtf8String
 
-class MemoryQueuedObjectCollection : QueuedObjectCollection {
+class MemoryQueuedObjectCollection(override val remoteHost: IRemoteHost) : QueuedObjectCollection {
+
     private var map = HashMap<UShort, ControlPacket>()
-    override suspend fun open(clientId: MqttUtf8String, server: Url) {
+    override suspend fun open() {
         map = HashMap()
     }
 
-    override suspend fun keys(limit: UShort): Collection<UShort> = map.keys.sorted()
-    override suspend fun put(key: UShort, value: ControlPacket) = map.put(key, value)
-    override suspend fun get(key: UShort) = map[key]
-    override suspend fun remove(key: UShort) = map.remove(key)
-    override suspend fun clear() = map.clear()
-    override suspend fun dequeue() = keys(1.toUShort()).firstOrNull()?.let { get(it) }
+    override suspend fun get(messageId: Int?): ControlPacket? {
+        val lowestMessageId = map.keys.min() ?: return null
+        return map[lowestMessageId]
+    }
+
+    override suspend fun ackMessageIdQueueControlPacket(ackMsgId: Int, key: UShort, value: ControlPacket) {
+        remove(ackMsgId.toUShort())
+        map[key] = value
+    }
+
+    override suspend fun remove(key: UShort) {
+        map.remove(key)
+    }
 }

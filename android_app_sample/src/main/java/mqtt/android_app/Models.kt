@@ -1,15 +1,28 @@
 package mqtt.android_app
 
-import android.app.Application
 import androidx.room.*
-import mqtt.Parcelize
+import kotlinx.io.core.buildPacket
 import mqtt.androidx.room.MqttDatabase
-import mqtt.client.service.MqttDatabaseDescriptor
+import mqtt.androidx.room.MqttPublish
+import mqtt.androidx.room.MqttPublishPacket
+import mqtt.androidx.room.MqttPublishSize
 import mqtt.client.service.MqttRoomDatabase
-import mqtt.client.service.ipc.AbstractMqttServiceViewModel
+import mqtt.wire.data.utf8Length
 
 @Entity
-data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Long = 0)
+@MqttPublish
+data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Long = 0) {
+
+    @MqttPublishSize
+    @Ignore
+    val bytePacketSize = Long.SIZE_BYTES + stringValue.utf8Length()
+
+    @MqttPublishPacket
+    fun toByteReadPacket() = buildPacket {
+        writeLong(key)
+        writeStringUtf8(stringValue)
+    }
+}
 
 @Dao
 interface ModelsDao {
@@ -28,8 +41,3 @@ interface ModelsDao {
 abstract class SimpleModelDb : MqttRoomDatabase() {
     abstract fun modelsDao(): ModelsDao
 }
-
-@Parcelize
-object MqttDbProvider : MqttDatabaseDescriptor<SimpleModelDb>(Mqtt_RoomDb_SimpleModelDb::class.java)
-
-class MqttServiceViewModel(app: Application) : AbstractMqttServiceViewModel(app, MqttDbProvider)

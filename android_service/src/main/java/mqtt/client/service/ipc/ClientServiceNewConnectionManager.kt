@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import android.os.Message
 import android.os.Messenger
+import android.util.Log
 import android.util.SparseArray
 import androidx.databinding.Observable
 import androidx.databinding.ObservableField
@@ -62,8 +63,12 @@ class ClientServiceNewConnectionManager(
             OUTGOING_CONTROL_PACKET.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
-                val outgoingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
-                outgoingMessageCallback?.invoke(outgoingControlPacket, msg.arg1)
+                try {
+                    val outgoingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
+                    outgoingMessageCallback?.invoke(outgoingControlPacket, msg.arg1)
+                } catch (e: IllegalAccessError) {
+                    Log.e("MQTT", "Failed to forward outgoing packet", e)
+                }
                 return true
             }
             CONNECTION_STATE_CHANGED.position -> {
@@ -103,9 +108,12 @@ class ClientServiceNewConnectionManager(
         awaitOnConnectionState: Int?
     ): ConnectionState =
         suspendCoroutine { continuation ->
+            Log.i("RAHUL", "Await connection state change")
             val msgHandler = SuspendOnIncomingMessageHandler<ConnectionState>()
             msgHandler.queue(continuation)
             continuationMap.put(remoteHost.connectionIdentifier()) {
+
+                Log.i("RAHUL", "Await connection state change continuation map put $it")
                 if (awaitOnConnectionState == null || awaitOnConnectionState == it.state) {
                     continuation.resume(it)
                 }

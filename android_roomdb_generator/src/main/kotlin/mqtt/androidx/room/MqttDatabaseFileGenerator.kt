@@ -36,7 +36,7 @@ open class AnnotatedMqttElement(
                 _entities.addAll(elements)
             }
         }
-        _entities += persistableRemoteHostV4ClassName
+        _entities += arrayOf(persistableRemoteHostV4ClassName, persistedQueueV4ClassName, publishQueueV4ClassName)
         _entities
     }
 
@@ -87,6 +87,10 @@ open class AnnotatedMqttElement(
 
         val persistableRemoteHostV4ClassName =
             ClassName("mqtt.client.connection.parameters", "PersistableRemoteHostV4")
+        val persistedQueueV4ClassName =
+            ClassName("mqtt.client.persistence", "MqttQueue")
+        val publishQueueV4ClassName =
+            ClassName("mqtt.client.persistence", "MqttPublishQueue")
     }
 }
 
