@@ -5,10 +5,10 @@ package mqtt.client.persistence
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 
-class MemoryQueuedObjectCollection(override val remoteHost: IRemoteHost) : QueuedObjectCollection {
+class MemoryQueuedObjectCollection(override val connectionId: Int) : QueuedObjectCollection {
 
     private var map = HashMap<UShort, ControlPacket>()
-    override suspend fun open() {
+    override suspend fun open(remoteHost: IRemoteHost) {
         map = HashMap()
     }
 

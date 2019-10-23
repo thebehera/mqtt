@@ -39,12 +39,7 @@ class ConnectionManagerService : CoroutineService() {
         }
     }
 
-    init {
-//        Debug.waitForDebugger()
-    }
-
     override fun onBind(intent: Intent): IBinder {
-//        Debug.waitForDebugger()
         setupDbAndInitializeConnections(intent)
         return boundClients.binder
     }
@@ -56,7 +51,17 @@ class ConnectionManagerService : CoroutineService() {
             if (bundle.containsKey(publish)) {
                 val notifyPublishFromClient = bundle.getParcelable<NotifyPublish>(publish)!!
                 val connection = connectionManagers[notifyPublishFromClient.connectionIdentifier] ?: return
-
+                val db = dbProvider.getDb(this)
+                launch {
+                    val persistence = dbProvider.getPersistence(
+                        this@ConnectionManagerService,
+                        notifyPublishFromClient.connectionIdentifier
+                    )
+                    val packet = persistence.get(notifyPublishFromClient.messageId)
+                    Log.i("RAHUL", "read packet from db ${notifyPublishFromClient.messageId} $packet")
+                    packet.toString()
+                }
+                connection.toString()
             }
             return
         }
@@ -79,7 +84,7 @@ class ConnectionManagerService : CoroutineService() {
             return
         }
         Log.i("RAHUL", "Connect go")
-        val persistence = dbProvider.getPersistence(this, connectionParameters)
+        val persistence = dbProvider.getPersistence(this, connectionParameters.connectionIdentifier())
         val connectionChangeCallback: ((MqttConnectionStateUpdated) -> Unit) = {
             Log.i("RAHUL", "Connection change to ${it.state}")
             boundClients.sendMessageToClients(buildConnectionChangeToClients(it))

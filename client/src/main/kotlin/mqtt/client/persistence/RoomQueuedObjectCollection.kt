@@ -1,21 +1,22 @@
 package mqtt.client.persistence
 
 import mqtt.client.connection.parameters.PersistableRemoteHostV4
+import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 
 abstract class RoomQueuedObjectCollection(
     open val db: IMqttConnectionsDb,
-    override val remoteHost: PersistableRemoteHostV4
+    override val connectionId: Int
 ) : QueuedObjectCollection {
 
-    override suspend fun open() {
-        db.remoteHostsDao().addOrUpdate(remoteHost)
+    override suspend fun open(remoteHost: IRemoteHost) {
+        db.remoteHostsDao().addOrUpdate(remoteHost as PersistableRemoteHostV4)
     }
 
     protected suspend fun nextQueuedObj(messageId: Int? = null) = if (messageId != null) {
-        db.mqttQueueDao().getByMessageId(messageId, remoteHost.connectionId)
+        db.mqttQueueDao().getByMessageId(messageId, connectionId)
     } else {
-        db.mqttQueueDao().getNext(remoteHost.connectionId)
+        db.mqttQueueDao().getNext(connectionId)
     }
 
     override suspend fun ackMessageIdQueueControlPacket(ackMsgId: Int, key: UShort, value: ControlPacket) {

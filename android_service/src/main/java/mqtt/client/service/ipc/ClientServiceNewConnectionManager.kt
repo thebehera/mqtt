@@ -10,10 +10,7 @@ import androidx.databinding.Observable
 import androidx.databinding.ObservableField
 import mqtt.client.service.MESSAGE_PAYLOAD
 import mqtt.client.service.ipc.ServiceToBoundClient.*
-import mqtt.connection.ConnectionState
-import mqtt.connection.IMqttConnectionStateUpdated
-import mqtt.connection.IRemoteHost
-import mqtt.connection.Initializing
+import mqtt.connection.*
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -77,9 +74,12 @@ class ClientServiceNewConnectionManager(
                 val updated =
                     bundle.getParcelable<IMqttConnectionStateUpdated>(MESSAGE_PAYLOAD) ?: return false
                 val currentConnectionState = updated.state
+                Log.i("MQTT", "New connection state recv by client process $currentConnectionState")
                 putOrUpdate(updated.remoteHostConnectionIdentifier, updated.state)
                 val connackHandler = continuationMap.get(updated.remoteHostConnectionIdentifier) ?: return true
-                continuationMap.remove(updated.remoteHostConnectionIdentifier)
+                if (currentConnectionState is Open) {
+                    continuationMap.remove(updated.remoteHostConnectionIdentifier)
+                }
                 connackHandler(currentConnectionState)
                 return true
             }

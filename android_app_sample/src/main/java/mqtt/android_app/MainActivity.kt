@@ -22,8 +22,8 @@ class MainActivity : AppCompatActivity() {
         val remoteHost = PersistableRemoteHostV4(
             "192.168.1.98",
             PersistableConnectionRequest(
-                "yoloswag",
-                keepAliveSeconds = 4.toUShort()
+                "yoloswag2",
+                keepAliveSeconds = 300.toUShort()
             ),
             security = RemoteHost.Security(
                 isTransportLayerSecurityEnabled = false
@@ -48,9 +48,7 @@ class MainActivity : AppCompatActivity() {
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
 
-
-//                val db = MqttDbProvider.getDb(this@MainActivity)
-                clientService.publish(remoteHost.connectionIdentifier(), SimpleModel("yolo swag"))
+                clientService.publish(remoteHost.connectionIdentifier(), SimpleModel("yolo swag2"))
             }
     }
 }

@@ -24,12 +24,12 @@ import kotlin.reflect.KClass
 data class MqttClient(
     override val remoteHost: IRemoteHost,
     val otherMsgCallback: OnMessageReceivedCallback? = null,
-    val queuedObjectCollection: QueuedObjectCollection = MemoryQueuedObjectCollection(remoteHost)
+    val queuedObjectCollection: QueuedObjectCollection = MemoryQueuedObjectCollection(remoteHost.connectionIdentifier())
 ) : SimpleMqttClient {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
-        ClientSessionState(queuedObjectCollection).also {
+        ClientSessionState(queuedObjectCollection, remoteHost).also {
             launch {
                 it.start()
             }
@@ -37,7 +37,11 @@ data class MqttClient(
     }
     override val coroutineContext: CoroutineContext = job + dispatcher
     var connectionCount = 0
-    val session by lazy { ClientSession(remoteHost, Job(job), state).also { it.callback = otherMsgCallback } }
+    val session by lazy {
+        ClientSession(remoteHost, Job(job), state).also {
+            it.everyRecvMessageCallback = otherMsgCallback
+        }
+    }
 
     override fun connectAsync() = async {
         val lock = Mutex(true)

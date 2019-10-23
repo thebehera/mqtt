@@ -4,7 +4,6 @@ import android.content.Context
 import android.os.Parcelable
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import mqtt.client.connection.parameters.PersistableRemoteHostV4
 import mqtt.client.persistence.IMqttConnectionsDb
 import mqtt.client.persistence.QueuedObjectCollection
 
@@ -13,7 +12,7 @@ abstract class MqttRoomDatabase : RoomDatabase(), IMqttConnectionsDb
 
 interface MqttConnectionsDatabaseDescriptor : Parcelable {
     fun getDb(context: Context): IMqttConnectionsDb
-    fun getPersistence(context: Context, remoteHost: PersistableRemoteHostV4): QueuedObjectCollection
+    fun getPersistence(context: Context, connectionIdentifier: Int): QueuedObjectCollection
 
     companion object {
         val TAG = MqttConnectionsDatabaseDescriptor::class.java.canonicalName!!

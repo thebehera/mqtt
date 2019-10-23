@@ -1,5 +1,6 @@
 package mqtt.client.service
 
+import android.util.Log
 import mqtt.client.MqttClient
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.transport.OnMessageReceivedCallback
@@ -26,6 +27,7 @@ class ConnectionManager(
     }
 
     override fun onMessage(controlPacket: ControlPacket) {
+        Log.i("RAHUL", "On Msg: $controlPacket")
         cb?.invoke(controlPacket, remoteHost.connectionIdentifier())
     }
 

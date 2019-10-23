@@ -4,11 +4,11 @@ import android.app.Application
 import android.content.Context
 import kotlinx.android.parcel.Parcelize
 import mqtt.androidx.room.MqttGeneratedCodeException
-import mqtt.client.connection.parameters.PersistableRemoteHostV4
 import mqtt.client.persistence.MqttQueue
 import mqtt.client.persistence.RoomQueuedObjectCollection
 import mqtt.client.service.MqttDatabaseDescriptor
 import mqtt.client.service.ipc.AbstractMqttServiceViewModel
+import mqtt.client.service.ipc.ClientToServiceConnection
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.data.QualityOfService
@@ -16,8 +16,8 @@ import mqtt.wire4.control.packet.PublishMessage
 
 @Parcelize
 object MqttDbProvider : MqttDatabaseDescriptor<Mqtt_RoomDb_SimpleModelDb>(Mqtt_RoomDb_SimpleModelDb::class.java) {
-    override fun getPersistence(context: Context, remoteHost: PersistableRemoteHostV4) =
-        GeneratedRoomQueuedObjectCollection(remoteHost, getDb(context))
+    override fun getPersistence(context: Context, connectionIdentifier: Int) =
+        GeneratedRoomQueuedObjectCollection(connectionIdentifier, getDb(context))
 }
 
 class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqttServiceViewModel(app, MqttDbProvider) {
@@ -27,7 +27,7 @@ class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqtt
         dupOverride: Boolean? = null, retainOverride: Boolean? = null
     ) {
         val db = MqttDbProvider.getDb(app)
-        when (obj) {
+        val rowId = when (obj) {
             is SimpleModel -> {
                 val id = db.modelsDao().insert(obj)
                 val modelWithId = obj.copy(key = id)
@@ -49,21 +49,23 @@ class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqtt
                         " ${obj::class.java.canonicalName} with @MqttPublish?"
             )
         }
+        notifyPublish(ClientToServiceConnection.NotifyPublish(connectionIdentifier, rowId))
     }
 }
 
 
 class GeneratedRoomQueuedObjectCollection(
-    remoteHost: PersistableRemoteHostV4,
+    connectionIdentifier: Int,
     override val db: Mqtt_RoomDb_SimpleModelDb
-) : RoomQueuedObjectCollection(db, remoteHost) {
+) : RoomQueuedObjectCollection(db, connectionIdentifier) {
     val mqttDao = db.mqttQueueDao()
 
     override suspend fun get(messageId: Int?): ControlPacket? {
         val queuedObj = nextQueuedObj(messageId) ?: return null
         if (queuedObj.queuedType == SimpleModel::class.java.simpleName) {
             val obj = db.modelsDao().getByRowId(queuedObj.queuedRowId) ?: return null
-            val publishQueue = mqttDao.getPublishQueue(queuedObj.messageId) ?: return null
+            val publishQueue =
+                mqttDao.getPublishQueue(queuedObj.connectionIdentifier, queuedObj.messageId) ?: return null
             return PublishMessage(
                 publishQueue.topic,
                 publishQueue.qos,

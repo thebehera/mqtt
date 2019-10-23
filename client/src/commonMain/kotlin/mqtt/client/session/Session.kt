@@ -91,6 +91,7 @@ class ClientSession(
                 println("Application failed to process $controlPacket")
                 println(e)
             } finally {
+                println("everymsg $controlPacket $everyRecvMessageCallback")
                 everyRecvMessageCallback?.onMessage(controlPacket)
             }
         }

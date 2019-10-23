@@ -32,10 +32,11 @@ data class PublishMessage(
      * Build a QOS 0 At most once publish message
      */
     constructor(topic: String, payload: ByteReadPacket? = null, dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, retain = retain), VariableHeader(Name(topic)), ByteArrayWrapper(payload))
+            : this(FixedHeader(dup, retain = retain), VariableHeader(Name(topic).topic), ByteArrayWrapper(payload))
 
     constructor(topic: String, payload: String, dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, retain = retain), VariableHeader(Name(topic)),
+            : this(
+        FixedHeader(dup, retain = retain), VariableHeader(Name(topic).topic),
         ByteArrayWrapper(buildPacket { writeStringUtf8(payload) })
     )
 
@@ -49,7 +50,7 @@ data class PublishMessage(
     )
             : this(
         FixedHeader(dup, qos, retain),
-        VariableHeader(Name(topic), packetIdentifier.toInt()),
+        VariableHeader(Name(topic).topic, packetIdentifier.toInt()),
         ByteArrayWrapper(payload)
     )
 
@@ -58,7 +59,7 @@ data class PublishMessage(
                 dup: Boolean = false,
                 retain: Boolean = false
     )
-            : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier.toInt()), null)
+            : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic).topic, packetIdentifier.toInt()), null)
 
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
@@ -83,7 +84,7 @@ data class PublishMessage(
         else -> null
     }
 
-    override val topic: Name = variable.topicName
+    override val topic: Name = Name(variable.topicName)
 
     @Parcelize
     data class FixedHeader(
@@ -199,7 +200,7 @@ data class PublishMessage(
      */
     @Parcelize
     data class VariableHeader(
-            /**
+        /**
              * The Topic Name identifies the information channel to which payload data is published.
              *
              * The Topic Name MUST be present as the first field in the PUBLISH Packet Variable header. It MUST be a
@@ -212,8 +213,8 @@ data class PublishMessage(
              * [MQTT-3.3.2-3]. However, since the Server is permitted to override the Topic Name, it might not be the
              * same as the Topic Name in the original PUBLISH Packet.
              */
-            val topicName: Name,
-            /**
+        val topicName: String,
+        /**
              * The Packet Identifier field is only present in PUBLISH Packets where the QoS level is 1 or 2. Section
              * 2.3.1 provides more information about Packet Identifiers.
              */
@@ -221,7 +222,7 @@ data class PublishMessage(
     ) : Parcelable {
 
         fun packet() = buildPacket {
-            writeMqttName(topicName)
+            writeMqttName(Name(topicName))
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier.toUShort())
             }
@@ -230,8 +231,10 @@ data class PublishMessage(
         companion object {
             fun from(buffer: ByteReadPacket, isQos0: Boolean): VariableHeader {
                 val topicName = buffer.readMqttUtf8String()
+                // Intention NullPointerException. This should fail the validation and immediately bail out
+                val topicNameValidated = Name(topicName.getValueOrThrow()).validateTopic()!!
                 val packetIdentifier = if (isQos0) null else buffer.readUShort()
-                return VariableHeader(Name(topicName.getValueOrThrow()), packetIdentifier?.toInt())
+                return VariableHeader(topicNameValidated.getCurrentPath(), packetIdentifier?.toInt())
             }
         }
     }

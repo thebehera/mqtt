@@ -6,10 +6,10 @@ import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 
 interface QueuedObjectCollection {
-    val remoteHost: IRemoteHost
+    val connectionId: Int
     // Only used to open the DB with a concrete filename
     // Room: Create a DB with the ClientID+ServerUrl
-    suspend fun open()
+    suspend fun open(remoteHost: IRemoteHost)
 
     // Only used for When IPublishReceived -> qos2MessagesRecevedButNotCompletelyAcked
     suspend fun ackMessageIdQueueControlPacket(ackMsgId: Int, key: UShort, value: ControlPacket)
