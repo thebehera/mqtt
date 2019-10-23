@@ -51,15 +51,13 @@ class ConnectionManagerService : CoroutineService() {
             if (bundle.containsKey(publish)) {
                 val notifyPublishFromClient = bundle.getParcelable<NotifyPublish>(publish)!!
                 val connection = connectionManagers[notifyPublishFromClient.connectionIdentifier] ?: return
-                val db = dbProvider.getDb(this)
                 launch {
                     val persistence = dbProvider.getPersistence(
                         this@ConnectionManagerService,
                         notifyPublishFromClient.connectionIdentifier
                     )
-                    val packet = persistence.get(notifyPublishFromClient.messageId)
-                    Log.i("RAHUL", "read packet from db ${notifyPublishFromClient.messageId} $packet")
-                    packet.toString()
+                    val packet = persistence.get(notifyPublishFromClient.messageId) ?: return@launch
+                    connection.client.session.send(packet)
                 }
                 connection.toString()
             }

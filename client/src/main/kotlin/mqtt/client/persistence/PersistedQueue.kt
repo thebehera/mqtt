@@ -44,7 +44,7 @@ interface PersistedMqttQueueDao {
     @Query("UPDATE MqttQueue SET acknowleged = 1 WHERE messageId = :messageId")
     suspend fun acknowledge(messageId: Int)
 
-    @Query("SELECT * FROM MqttQueue WHERE connectionIdentifier = :connectionIdentifier  AND messageId = :messageId  LIMIT 1")
+    @Query("SELECT * FROM MqttQueue WHERE connectionIdentifier = :connectionIdentifier  AND messageId = :messageId AND acknowleged = 0 LIMIT 1")
     suspend fun getByMessageId(messageId: Int, connectionIdentifier: Int): MqttQueue?
 
     @Insert
@@ -54,11 +54,16 @@ interface PersistedMqttQueueDao {
     suspend fun getPublishQueue(connectionIdentifier: Int, messageId: Int): MqttPublishQueue?
 
     @Query("SELECT messageId FROM MqttQueue WHERE connectionIdentifier = :connectionIdentifier ORDER BY messageId DESC LIMIT 1")
-    suspend fun nextLargestMessageId(connectionIdentifier: Int): Int?
+    suspend fun largestMessageId(connectionIdentifier: Int): Int?
 
     @Transaction
     suspend fun publish(queue: MqttQueue, topic: String, qos: QualityOfService, dup: Boolean, retain: Boolean): Int {
-        val nextMsgId = nextLargestMessageId(queue.connectionIdentifier)?.rem(65_535) ?: 1
+        val largestMsgIdNullable = largestMessageId(queue.connectionIdentifier)
+        val nextMsgId = if (largestMsgIdNullable == null) {
+            1
+        } else {
+            largestMsgIdNullable.rem(65_535) + 1
+        }
         val copied = queue.copy(messageId = nextMsgId)
         val msgId = queue(copied).toInt()
         insertPublishQueue(MqttPublishQueue(queue.connectionIdentifier, msgId, topic, qos, dup, retain))
