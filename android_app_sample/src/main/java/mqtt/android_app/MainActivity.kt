@@ -48,6 +48,10 @@ class MainActivity : AppCompatActivity() {
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
 
+                clientService.subscribe<SimpleModel>(remoteHost.connectionId) { topic, qos, message ->
+                    println("incoming subscribe $topic, $qos, $message")
+                }
+
                 clientService.publish(remoteHost.connectionIdentifier(), SimpleModel("yolo swag2"))
             }
     }

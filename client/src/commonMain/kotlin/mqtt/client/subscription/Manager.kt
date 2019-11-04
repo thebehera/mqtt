@@ -3,10 +3,7 @@
 package mqtt.client.subscription
 
 import mqtt.wire.control.packet.IPublishMessage
-import mqtt.wire.data.topic.CallbackTypeReference
-import mqtt.wire.data.topic.Node
-import mqtt.wire.data.topic.SubscriptionCallback
-import mqtt.wire.data.topic.plusAssign
+import mqtt.wire.data.topic.*
 import kotlin.reflect.KClass
 
 class SubscriptionManager {
@@ -26,8 +23,13 @@ class SubscriptionManager {
         registeredSubscriptionsRootNode += root
     }
 
-    fun handleIncomingPublish(publish: IPublishMessage) {
+    fun unregister(level: Node) {
+        registeredSubscriptionsRootNode -= level
+    }
+
+    fun handleIncomingPublish(publish: IPublishMessage): Boolean {
         val topicLevelFound = registeredSubscriptionsRootNode.find(publish.topic)
         topicLevelFound?.handlePublish(publish)
+        return true
     }
 }

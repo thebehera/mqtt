@@ -8,7 +8,7 @@ import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
+
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
@@ -44,7 +44,7 @@ data class PublishMessage(
      * Build a QOS 1 or 2 publish message
      */
     constructor(topic: String, qos: QualityOfService, payload: ByteReadPacket? = null,
-                packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort(),
+                packetIdentifier: UShort,
                 dup: Boolean = false,
                 retain: Boolean = false
     )
@@ -55,7 +55,7 @@ data class PublishMessage(
     )
 
     constructor(topic: String, qos: QualityOfService,
-                packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort(),
+                packetIdentifier: UShort,
                 dup: Boolean = false,
                 retain: Boolean = false
     )

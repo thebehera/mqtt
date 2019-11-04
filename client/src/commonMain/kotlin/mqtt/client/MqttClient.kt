@@ -22,10 +22,10 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
 data class MqttClient(
-    override val remoteHost: IRemoteHost,
+    val remoteHost: IRemoteHost,
     val otherMsgCallback: OnMessageReceivedCallback? = null,
     val queuedObjectCollection: QueuedObjectCollection = MemoryQueuedObjectCollection(remoteHost.connectionIdentifier())
-) : SimpleMqttClient {
+) : CoroutineScope {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
     val state by lazy {
@@ -43,7 +43,7 @@ data class MqttClient(
         }
     }
 
-    override fun connectAsync() = async {
+    fun connectAsync() = async {
         val lock = Mutex(true)
         lateinit var queuedConnectionResult: ConnectionState
         val result = startAsync {
@@ -78,30 +78,36 @@ data class MqttClient(
         }
     }
 
-    override suspend fun <T : Any> subscribe(
-        topicFilter: String, qos: QualityOfService, typeClass: KClass<T>,
+    suspend fun <T : Any> subscribe(
+        topicFilter: String, qos: QualityOfService, packetIdentifier: UShort, typeClass: KClass<T>,
         callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
     ) {
         val subscriptionCallback = object : SubscriptionCallback<T> {
             override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) = callback(topic, qos, message)
         }
-        session.subscribe(Filter(topicFilter), qos, typeClass, subscriptionCallback)
+        session.subscribe(packetIdentifier, Filter(topicFilter), qos, typeClass, subscriptionCallback)
     }
 
     suspend inline fun <reified T : Any> subscribe(
-        topicFilter: String, qos: QualityOfService,
+        topicFilter: String, qos: QualityOfService, packetIdentifier: UShort,
         noinline callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
-    ) = subscribe(topicFilter, qos, T::class, callback)
+    ) = subscribe(topicFilter, qos, packetIdentifier, T::class, callback)
 
-    override suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, message: T) {
-        session.publish(topic, qos, typeClass, message)
+    suspend fun <T : Any> publish(
+        topic: String,
+        qos: QualityOfService,
+        packetIdentifier: UShort,
+        typeClass: KClass<T>,
+        message: T
+    ) {
+        session.publish(topic, qos, packetIdentifier, typeClass, message)
     }
 
     suspend inline fun <reified T : Any>
-            publish(topic: String, qos: QualityOfService, message: T) =
-        publish(topic, qos, T::class, message)
+            publish(topic: String, qos: QualityOfService, packetIdentifier: UShort, message: T) =
+        publish(topic, qos, packetIdentifier, T::class, message)
 
-    override fun disconnectAsync() = async {
+    fun disconnectAsync() = async {
         val disconnect = session.disconnectAsync()
         disconnect
     }

@@ -7,6 +7,7 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
 import mqtt.Parcelize
+import mqtt.client.persistence.MqttSubscription
 import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 import mqtt.client.service.REGISTER_CLIENT
 import mqtt.client.service.UNREGISTER_CLIENT
@@ -75,6 +76,24 @@ class ClientToServiceConnection(
             // There is nothing special we need to do if the service
             // has crashed.
         }
+    }
+
+    suspend fun notifySubscribe(queuedRowId: Long, subscription: MqttSubscription) {
+        val message = Message.obtain(null, BoundClientToService.SUBSCRIBE.position)
+        message.replyTo = incomingMessenger
+        val bundle = Bundle()
+        bundle.putParcelable(MqttSubscription::class.java.canonicalName, subscription)
+        bundle.putLong("rowId", queuedRowId)
+        message.data = bundle
+        bindManager.awaitServiceBound().send(message)
+    }
+
+    suspend fun notifyUnsubscribe(topicFilter: String, connectionId: Int) {
+        val message = Message.obtain(null, BoundClientToService.UNSUBSCRIBE.position)
+        message.replyTo = incomingMessenger
+        message.obj = topicFilter
+        message.arg1 = connectionId
+        bindManager.awaitServiceBound().send(message)
     }
 
     suspend fun notifyPublish(notifyPublish: NotifyPublish) {

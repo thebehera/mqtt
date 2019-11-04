@@ -106,6 +106,11 @@ data class Node internal constructor(val level: TopicLevel) {
     }
 }
 
+fun Node.addName(other: Name): Node {
+    val node = Node(other.topic.toTopicLevel())
+    this += node
+    return node
+}
 operator fun Node.plusAssign(other: Node) {
     for ((topicLevel, newChildNode) in other.children) {
         val originalChild = children[topicLevel]
@@ -122,6 +127,6 @@ operator fun Node.minusAssign(other: Node) {
     foundChildNode?.detachFromParent()
 }
 
-interface SubscriptionCallback<T> {
+interface SubscriptionCallback<in T> {
     fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?)
 }

@@ -8,7 +8,7 @@ import mqtt.Parcelize
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
+
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.readMqttFilter
@@ -27,25 +27,18 @@ import mqtt.wire.data.writeMqttFilter
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
 @Parcelize
-data class SubscribeRequest(
-    override val packetIdentifier: Int = getAndIncrementPacketIdentifier(),
-                            val subscriptions: List<Subscription>)
-    : ControlPacketV4(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
+data class
+SubscribeRequest(
+    override val packetIdentifier: Int,
+                            val subscriptions: List<Subscription>) :
+    ControlPacketV4(ISubscribeRequest.controlPacketValue, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
-    constructor(topic: Filter, qos: QualityOfService)
-            : this(subscriptions = listOf(Subscription(topic, qos)))
-
-
-    constructor(
-        packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort(),
-        topic: Filter,
-        qos: QualityOfService
-    )
-            : this(packetIdentifier.toInt(), listOf(Subscription(topic, qos)))
+    constructor(packetIdentifier: UShort, topic: Filter, qos: QualityOfService)
+            : this(packetIdentifier.toInt(), subscriptions = listOf(Subscription(topic, qos)))
 
 
-    constructor(topics: List<Filter>, qos: List<QualityOfService>)
-            : this(subscriptions = Subscription.from(topics, qos))
+    constructor(packetIdentifier: UShort, topics: List<Filter>, qos: List<QualityOfService>)
+            : this(packetIdentifier.toInt(), subscriptions = Subscription.from(topics, qos))
     private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
     override val variableHeaderPacket = buildPacket {
         writeUShort(packetIdentifier.toUShort())

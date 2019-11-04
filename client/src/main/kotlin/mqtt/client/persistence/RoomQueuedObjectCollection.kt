@@ -13,8 +13,8 @@ abstract class RoomQueuedObjectCollection(
         db.remoteHostsDao().addOrUpdate(remoteHost as PersistableRemoteHostV4)
     }
 
-    protected suspend fun nextQueuedObj(messageId: Int? = null) = if (messageId != null) {
-        db.mqttQueueDao().getByMessageId(messageId, connectionId)
+    protected suspend fun nextQueuedObj(packetId: Int? = null) = if (packetId != null) {
+        db.mqttQueueDao().getByMessageId(packetId, connectionId)
     } else {
         db.mqttQueueDao().getNext(connectionId)
     }

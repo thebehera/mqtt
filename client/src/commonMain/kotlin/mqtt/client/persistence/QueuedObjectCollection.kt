@@ -2,10 +2,11 @@
 
 package mqtt.client.persistence
 
+import kotlinx.coroutines.CoroutineScope
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 
-interface QueuedObjectCollection {
+interface QueuedObjectCollection : CoroutineScope {
     val connectionId: Int
     // Only used to open the DB with a concrete filename
     // Room: Create a DB with the ClientID+ServerUrl

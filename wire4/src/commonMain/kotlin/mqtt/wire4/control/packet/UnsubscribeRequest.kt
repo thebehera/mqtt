@@ -10,7 +10,7 @@ import mqtt.Parcelize
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.control.packet.getAndIncrementPacketIdentifier
+
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.readMqttUtf8String
 import mqtt.wire.data.writeMqttUtf8String
@@ -21,8 +21,8 @@ import mqtt.wire.data.writeMqttUtf8String
  */
 @Parcelize
 data class UnsubscribeRequest(
-    val packetIdentifier: Int = getAndIncrementPacketIdentifier(),
-                              val topics: List<MqttUtf8String>)
+    val packetIdentifier: Int,
+    val topics: List<MqttUtf8String>)
     : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }

@@ -78,21 +78,23 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
 
         data class Properties(
                 /**
-                 * 3.8.2.1.2 Subscription Identifier
+                 * 3.2.2.3.9 Reason String
                  *
-                 * 11 (0x0B) Byte, Identifier of the Subscription Identifier.
+                 * 31 (0x1F) Byte Identifier of the Reason String.
                  *
-                 * Followed by a Variable Byte Integer representing the identifier of the subscription. The
-                 * Subscription Identifier can have the value of 1 to 268,435,455. It is a Protocol Error if the
-                 * Subscription Identifier has a value of 0. It is a Protocol Error to include the Subscription
-                 * Identifier more than once.
+                 * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
+                 * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by
+                 * the Client.
                  *
-                 * The Subscription Identifier is associated with any subscription created or modified as the result
-                 * of this SUBSCRIBE packet. If there is a Subscription Identifier, it is stored with the
-                 * subscription. If this property is not specified, then the absence of a Subscription Identifier
-                 * is stored with the subscription.
+                 * The Server uses this value to give additional information to the Client. The Server MUST NOT send
+                 * this property if it would increase the size of the CONNACK packet beyond the Maximum Packet Size
+                 * specified by the Client [MQTT-3.2.2-19]. It is a Protocol Error to include the Reason String more
+                 * than once.
                  *
-                 * Refer to section 3.8.3.1 for more information about the handling of Subscription Identifiers.
+                 * Non-normative comment
+                 *
+                 * Proper uses for the reason string in the Client would include using this information in an exception
+                 * thrown by the Client code, or writing this string to a log.
                  */
                 val reasonString: MqttUtf8String? = null,
                 /**

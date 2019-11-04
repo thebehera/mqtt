@@ -2,15 +2,12 @@ package mqtt.android_app
 
 import androidx.room.*
 import kotlinx.io.core.buildPacket
-import mqtt.androidx.room.MqttDatabase
-import mqtt.androidx.room.MqttPublish
-import mqtt.androidx.room.MqttPublishPacket
-import mqtt.androidx.room.MqttPublishSize
+import mqtt.androidx.room.*
 import mqtt.client.service.MqttRoomDatabase
 import mqtt.wire.data.utf8Length
 
 @Entity
-@MqttPublish
+@MqttPublish(defaultTopic = "simple/1")
 data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Long = 0) {
 
     @MqttPublishSize
@@ -27,6 +24,7 @@ data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true)
 @Dao
 interface ModelsDao {
     @Insert
+    @MqttSubscribe("simple/+")
     suspend fun insert(model: SimpleModel): Long
 
     @Query("SELECT * FROM SimpleModel WHERE _rowid_ = :rowId")

@@ -102,8 +102,8 @@ class SocketTransportTests {
         val client2SocketConnection = PlatformSocketConnection(client2Params, ctx)
 
 
-        val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
-        val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) }, retain = true)
+        val subscribe = SubscribeRequest(10.toUShort(), Filter("test"), AT_LEAST_ONCE)
+        val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) }, 10.toUShort(), retain = true)
         blockWithTimeout {
             client1SocketConnection1.openConnectionAsync().await()
             client2SocketConnection.openConnectionAsync().await()
@@ -149,11 +149,11 @@ class SocketTransportTests {
         blockWithTimeout(5000) {
             val publishClient = buildConnection("pubClient")
             val recvClientSession1 = buildConnection("client1")
-            val subscribe = SubscribeRequest(Filter("test"), AT_LEAST_ONCE)
+            val subscribe = SubscribeRequest(10.toUShort(), Filter("test"), AT_LEAST_ONCE)
             recvClientSession1.clientToServer.send(subscribe)
             recvClientSession1.closeAsync().await()
 
-            val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) })
+            val publish = PublishMessage("test", AT_LEAST_ONCE, buildPacket { writeInt(1) }, 10.toUShort())
             publishClient.clientToServer.send(publish)
             val mutex = Mutex(true)
             val recvClientSession2Params = buildParams("client1")

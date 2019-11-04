@@ -11,6 +11,6 @@ interface IPublishMessage : ControlPacket {
     fun expectedResponse(): ControlPacket?
 
     companion object {
-        const val controlPacketValue = 3
+        const val controlPacketValue: Byte = 3
     }
 }

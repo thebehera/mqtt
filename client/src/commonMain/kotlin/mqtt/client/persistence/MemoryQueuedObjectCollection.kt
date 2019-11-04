@@ -4,8 +4,10 @@ package mqtt.client.persistence
 
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
+import kotlin.coroutines.CoroutineContext
 
 class MemoryQueuedObjectCollection(override val connectionId: Int) : QueuedObjectCollection {
+    override val coroutineContext: CoroutineContext = throw IllegalStateException("No context required")
 
     private var map = HashMap<UShort, ControlPacket>()
     override suspend fun open(remoteHost: IRemoteHost) {

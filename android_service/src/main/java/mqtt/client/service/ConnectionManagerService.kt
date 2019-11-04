@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.client.service
 
 import android.content.Intent
@@ -5,6 +7,7 @@ import android.os.*
 import android.util.Log
 import kotlinx.coroutines.launch
 import mqtt.client.connection.parameters.PersistableRemoteHostV4
+import mqtt.client.persistence.MqttSubscription
 import mqtt.client.service.ipc.BoundClientToService
 import mqtt.client.service.ipc.ClientToServiceConnection.NotifyPublish
 import mqtt.client.service.ipc.MessageCallbackHandler
@@ -12,7 +15,9 @@ import mqtt.client.service.ipc.ServiceToBoundClient
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
 import mqtt.connection.MqttConnectionStateUpdated
 import mqtt.connection.Open
+import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.ConnectionAcknowledgment
+import mqtt.wire4.control.packet.SubscribeRequest
 
 private const val TAG = "[MQTT][SiCo]"
 const val MESSAGE_PAYLOAD = "msg_payload"
@@ -21,6 +26,9 @@ class ConnectionManagerService : CoroutineService() {
 
     private lateinit var dbProvider: MqttConnectionsDatabaseDescriptor
     private val connectionManagers = HashMap<Int, ConnectionManager>()
+
+
+    val tablesTracked = arrayOf(MqttSubscription::class)
 
     private val boundClients by lazy {
         BoundClientsObserver(newClientCb) { messageFromBoundClient ->
@@ -45,28 +53,45 @@ class ConnectionManagerService : CoroutineService() {
     }
 
     private fun handleMessage(msg: Message) {
-        if (msg.what == BoundClientToService.QUEUE_INSERTED.position) {
-            val bundle: Bundle = msg.data ?: return
-            val publish = NotifyPublish::class.java.canonicalName!!
-            if (bundle.containsKey(publish)) {
+        when {
+            msg.what == BoundClientToService.QUEUE_INSERTED.position -> {
+                val bundle: Bundle = msg.data ?: return
+                val publish = NotifyPublish::class.java.canonicalName ?: return
                 val notifyPublishFromClient = bundle.getParcelable<NotifyPublish>(publish)!!
                 val connection = connectionManagers[notifyPublishFromClient.connectionIdentifier] ?: return
                 launch {
                     val persistence = dbProvider.getPersistence(
                         this@ConnectionManagerService,
+                        coroutineContext,
                         notifyPublishFromClient.connectionIdentifier
                     )
                     val packet = persistence.get(notifyPublishFromClient.messageId) ?: return@launch
                     connection.client.session.send(packet)
                 }
-                connection.toString()
             }
-            return
-        }
-        when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
-            is PersistableRemoteHostV4 -> launch {
-                Log.i("RAHUL", "Handle msg")
-                connect(data)
+            msg.what == BoundClientToService.SUBSCRIBE.position -> {
+                Debug.waitForDebugger()
+                val bundle: Bundle = msg.data ?: return
+                val subscriptionClass = MqttSubscription::class.java.canonicalName!!
+                val subscription = bundle.getParcelable<MqttSubscription>(subscriptionClass) ?: return
+                val rowId = bundle.getLong("rowId")
+                val connection = connectionManagers[subscription.connectionIdentifier] ?: return
+                launch {
+                    val db = dbProvider.getDb(this@ConnectionManagerService).mqttQueueDao()
+                    val queuedMqtt = db.getQueuedObjectByRowId(rowId) ?: return@launch
+                    val subscriptionRequest = SubscribeRequest(
+                        subscription.packetIdentifier.toUShort(),
+                        Filter(subscription.topicFilter),
+                        queuedMqtt.qos
+                    )
+                    connection.client.session.send(subscriptionRequest)
+                }
+            }
+            else -> when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
+                is PersistableRemoteHostV4 -> launch {
+                    Log.i("RAHUL", "Handle msg")
+                    connect(data)
+                }
             }
         }
     }
@@ -82,7 +107,7 @@ class ConnectionManagerService : CoroutineService() {
             return
         }
         Log.i("RAHUL", "Connect go")
-        val persistence = dbProvider.getPersistence(this, connectionParameters.connectionIdentifier())
+        val persistence = dbProvider.getPersistence(this, coroutineContext, connectionParameters.connectionIdentifier())
         val connectionChangeCallback: ((MqttConnectionStateUpdated) -> Unit) = {
             Log.i("RAHUL", "Connection change to ${it.state}")
             boundClients.sendMessageToClients(buildConnectionChangeToClients(it))
@@ -139,15 +164,15 @@ class ConnectionManagerService : CoroutineService() {
     }
 
     private fun setupDatabase(intent: Intent?): Boolean {
-        intent ?: return false
-        if (::dbProvider.isInitialized) {
-            return false
+        synchronized(this) {
+            intent ?: return false
+            if (::dbProvider.isInitialized) {
+                return false
+            }
+            intent.setExtrasClassLoader(classLoader)
+            dbProvider = intent.getParcelableExtra(MqttConnectionsDatabaseDescriptor.TAG) ?: return false
+            return true
         }
-        intent.setExtrasClassLoader(classLoader)
-        dbProvider =
-            intent.getParcelableExtra<MqttConnectionsDatabaseDescriptor>(MqttConnectionsDatabaseDescriptor.TAG)
-                ?: return false
-        return true
     }
 
     private suspend fun disconnect() {

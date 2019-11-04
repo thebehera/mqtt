@@ -103,54 +103,81 @@ class ClientSession(
     }
 
     suspend fun publish(topic: String, qos: QualityOfService,
-                        packetIdentifier: UShort = getAndIncrementPacketIdentifier().toUShort()
+                        packetIdentifier: UShort
     ) {
         send(PublishMessage(topic, qos, packetIdentifier))
     }
 
-    suspend inline fun <reified T : Any> publishGeneric(topic: String, qos: QualityOfService, payload: T) = publish(topic, qos, payload)
+    suspend inline fun <reified T : Any> publishGeneric(
+        topic: String,
+        qos: QualityOfService,
+        packetIdentifier: UShort,
+        payload: T
+    ) = publish(topic, qos, packetIdentifier, payload)
 
-    suspend inline fun <reified T : Any> publish(topic: String, qos: QualityOfService, payload: T) {
+    suspend inline fun <reified T : Any> publish(
+        topic: String,
+        qos: QualityOfService,
+        packetIdentifier: UShort,
+        payload: T
+    ) {
         val actualPayload = run {
             val serializer = findSerializer<T>() ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }
-        send(PublishMessage(topic, qos, actualPayload))
+        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
     }
 
-    suspend fun <T : Any> publish(topic: String, qos: QualityOfService, typeClass: KClass<T>, payload: T) {
+    suspend fun <T : Any> publish(
+        topic: String,
+        qos: QualityOfService,
+        packetIdentifier: UShort,
+        typeClass: KClass<T>,
+        payload: T
+    ) {
         val actualPayload = run {
             val serializer =
                 findSerializer(typeClass) ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }
-        send(PublishMessage(topic, qos, actualPayload))
+        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
     }
 
 
     suspend fun <T : Any> subscribe(
+        packetIdentifier: UShort,
         topic: Filter, qos: QualityOfService, typeClass: KClass<T>,
         callback: SubscriptionCallback<T>
     ) {
         val node = topic.validate() ?: return
         state.subscriptionManager.register(node, typeClass, callback)
-        val subscription = SubscribeRequest(10.toUShort(), topic, qos)
+        state.sentSubscriptionRequest(subscribe(packetIdentifier, topic, qos), typeClass, listOf(callback))
+    }
+
+    suspend fun subscribe(packetIdentifier: UShort, topic: Filter, qos: QualityOfService): SubscribeRequest {
+        val subscription = SubscribeRequest(packetIdentifier, topic, qos)
         send(subscription)
-        state.sentSubscriptionRequest(subscription, typeClass, listOf(callback))
+        return subscription
     }
 
     suspend inline fun <reified T : Any> subscribe(
+        packetIdentifier: UShort,
         topic: Filter,
         qos: QualityOfService,
         callback: SubscriptionCallback<T>
-    ) = subscribe(topic, qos, T::class, callback)
+    ) = subscribe(packetIdentifier, topic, qos, T::class, callback)
 
-    suspend inline fun <reified T : Any> subscribe(topics: List<Filter>, qos: List<QualityOfService>, callbacks: List<SubscriptionCallback<T>>) {
+    suspend inline fun <reified T : Any> subscribe(
+        packetIdentifier: UShort,
+        topics: List<Filter>,
+        qos: List<QualityOfService>,
+        callbacks: List<SubscriptionCallback<T>>
+    ) {
         if (topics.size != qos.size && qos.size != callbacks.size) {
             throw IllegalArgumentException("Failed to subscribe: Topics.size != qos.size != callbacks.size")
         }
         val size = topics.size
-        val subscription = SubscribeRequest(topics, qos)
+        val subscription = SubscribeRequest(packetIdentifier, topics, qos)
         for (index in 0..size) {
             val node = topics[index].validate() ?: return
             state.subscriptionManager.register(node, callbacks[index])
@@ -174,8 +201,8 @@ class ClientSession(
         transport.clientToServer.send(controlPacket)
     }
 
-    suspend fun unsubscribe(topics: List<String>) =
-            send(UnsubscribeRequest(topics = topics.map { MqttUtf8String(it) }))
+    suspend fun unsubscribe(packetIdentifier: UShort, topics: List<String>) =
+        send(UnsubscribeRequest(packetIdentifier.toInt(), topics = topics.map { MqttUtf8String(it) }))
 
     suspend fun disconnectAsync(): Boolean {
         val result = transport?.closeAsync()?.await() ?: false

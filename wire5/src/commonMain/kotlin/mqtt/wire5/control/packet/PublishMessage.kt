@@ -20,8 +20,8 @@ import mqtt.wire5.control.packet.format.variable.property.*
 data class PublishMessage(
         val fixed: FixedHeader = FixedHeader(),
         val variable: VariableHeader,
-        val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf()))
-    : ControlPacketV5(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
+        val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf())) :
+    ControlPacketV5(IPublishMessage.controlPacketValue, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")

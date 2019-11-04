@@ -1,9 +1,11 @@
 package mqtt.client.service.ipc
 
 enum class BoundClientToService(val position: Int) {
-    QUEUE_INSERTED(1),
-    CREATE_CONNECTION(2),
-    DISCONNECT(3)
+    CREATE_CONNECTION(1),
+    DISCONNECT(2),
+    QUEUE_INSERTED(3),
+    SUBSCRIBE(4),
+    UNSUBSCRIBE(5)
 }
 
 enum class ServiceToBoundClient(val position: Int) {

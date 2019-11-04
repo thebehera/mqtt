@@ -15,6 +15,11 @@ annotation class MqttPublish(
 annotation class MqttPublishSize
 annotation class MqttPublishPacket
 
+annotation class MqttSubscribe(
+    val defaultTopicFilter: String,
+    val defaultQos: QualityOfService = AT_LEAST_ONCE
+)
+
 enum class QualityOfService {
     AT_MOST_ONCE,
     AT_LEAST_ONCE,

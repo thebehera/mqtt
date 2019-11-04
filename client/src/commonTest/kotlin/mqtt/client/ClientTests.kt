@@ -6,7 +6,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
 import mqtt.client.connection.parameters.RemoteHost
 import mqtt.client.transport.OnMessageReceivedCallback
-import mqtt.wire.control.packet.*
+import mqtt.wire.control.packet.ControlPacket
+import mqtt.wire.control.packet.IPublishAcknowledgment
+import mqtt.wire.control.packet.IPublishComplete
+import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
@@ -71,7 +74,7 @@ class ClientTests {
 
     inline fun <reified T> blockUntilMessageReceived(
         topic: String, qos: QualityOfService,
-        publishMessageNumber: UShort = getAndIncrementPacketIdentifier().toUShort(),
+        publishMessageNumber: UShort = 10.toUShort(),
         cb: OnMessageReceivedCallback? = null
     ) {
         val (client, job) = createClient()
@@ -137,7 +140,11 @@ class ClientTests {
                 }
             }
             println("sending subscribe")
-            client.session.subscribe(Filter("hello"), AT_LEAST_ONCE, object : SubscriptionCallback<String> {
+            client.session.subscribe(
+                10.toUShort(),
+                Filter("hello"),
+                AT_LEAST_ONCE,
+                object : SubscriptionCallback<String> {
                 override fun onMessageReceived(topic: Name, qos: QualityOfService, message: String?) {
                     println(message)
                 }
@@ -154,14 +161,14 @@ class ClientTests {
             val client1Session1 = createClient().first
             val client2 = createClient().first
             val mutex = Mutex(true)
-            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { topic, qos, message ->
                 assertEquals(ogMessage, message)
                 if (!mutex.isLocked) {
                     return@subscribe
                 }
                 mutex.unlock()
             }
-            client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
+            client2.session.publish("yolo2/23", AT_LEAST_ONCE, 10.toUShort(), ogMessage)
             if (!mutex.isLocked) {
                 mutex.lock()
             }
@@ -180,11 +187,11 @@ class ClientTests {
             val client1Session1 = createClientAwaitConnection()
             val client2 = createClientAwaitConnection(true)
             val mutex = Mutex(true)
-            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { topic, qos, message ->
                 assertEquals(ogMessage, message)
                 mutex.unlock()
             }
-            client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
+            client2.session.publish("yolo2/23", AT_LEAST_ONCE, 10.toUShort(), ogMessage)
             mutex.lock()
         }
     }
@@ -200,13 +207,13 @@ class ClientTests {
         blockWithTimeout {
             val client1Session1 = createClientAwaitConnection(true)
             val client2 = createClientAwaitConnection()
-            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { topic, qos, message ->
                 assertEquals(ogMessage, message)
                 if (mutex.isLocked) {
                     mutex.unlock()
                 }
             }
-            client2.session.publish("yolo2/23", AT_LEAST_ONCE, ogMessage)
+            client2.session.publish("yolo2/23", AT_LEAST_ONCE, 10.toUShort(), ogMessage)
             mutex.lock()
         }
     }
