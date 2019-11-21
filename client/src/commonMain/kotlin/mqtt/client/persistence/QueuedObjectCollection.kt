@@ -15,7 +15,7 @@ interface QueuedObjectCollection : CoroutineScope {
     // Only used for When IPublishReceived -> qos2MessagesRecevedButNotCompletelyAcked
     suspend fun ackMessageIdQueueControlPacket(ackMsgId: Int, key: UShort, value: ControlPacket)
 
-    suspend fun get(messageId: Int? = null): ControlPacket?
+    suspend fun get(packetId: Int? = null): ControlPacket?
 
     // Only used to ack Qos1 and Qos2 states
     suspend fun remove(key: UShort)

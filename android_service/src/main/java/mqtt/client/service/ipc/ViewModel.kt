@@ -41,7 +41,8 @@ abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: 
     ) {
         getSubscriptionManager(connectionId).register(Node.parse(topicFilter), cb)
         val subscription = MqttSubscription(connectionId, topicFilter)
-        val result = db.mqttQueueDao().subscribe(MqttSubscription::class, qualityOfService, subscription)
+        val result =
+            db.mqttQueueDao().subscribe(MqttSubscription::class.java.canonicalName!!, qualityOfService, subscription)
         serviceConnection.notifySubscribe(
             result.queuedRowId,
             subscription.copy(packetIdentifier = result.packetIdentifier)

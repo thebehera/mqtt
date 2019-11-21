@@ -83,7 +83,9 @@ data class MqttClient(
         callback: (topic: Name, qos: QualityOfService, message: T?) -> Unit
     ) {
         val subscriptionCallback = object : SubscriptionCallback<T> {
-            override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) = callback(topic, qos, message)
+            override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) {
+                callback(topic, qos, message)
+            }
         }
         session.subscribe(packetIdentifier, Filter(topicFilter), qos, typeClass, subscriptionCallback)
     }

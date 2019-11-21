@@ -7,7 +7,7 @@ import mqtt.Parcelize
 import mqtt.wire.data.MqttUtf8String
 
 @Parcelize
-class Filter(private val topicFilter: String) : Parcelable {
+data class Filter(private val topicFilter: String) : Parcelable {
     fun validate(asServer: Boolean = false): Node? {
         return try {
             val rootNode = Node.from(MqttUtf8String(topicFilter))
@@ -19,4 +19,5 @@ class Filter(private val topicFilter: String) : Parcelable {
             null
         }
     }
+
 }

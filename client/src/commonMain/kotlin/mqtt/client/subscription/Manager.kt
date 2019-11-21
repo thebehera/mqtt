@@ -28,6 +28,7 @@ class SubscriptionManager {
     }
 
     fun handleIncomingPublish(publish: IPublishMessage): Boolean {
+        println("incoming $publish")
         val topicLevelFound = registeredSubscriptionsRootNode.find(publish.topic)
         topicLevelFound?.handlePublish(publish)
         return true

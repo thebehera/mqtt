@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
         val remoteHost = PersistableRemoteHostV4(
             "192.168.1.98",
             PersistableConnectionRequest(
-                "yoloswag2",
+                "yoloswag",
                 keepAliveSeconds = 300.toUShort()
             ),
             security = RemoteHost.Security(
@@ -47,11 +47,11 @@ class MainActivity : AppCompatActivity() {
                 val connectionState = clientService.createConnection(remoteHost)
                 Log.i("RAHUL", "connection created")
                 binding.connectionState = connectionState
-
+                Log.i("RAHUL", "Subscribe")
                 clientService.subscribe<SimpleModel>(remoteHost.connectionId) { topic, qos, message ->
                     println("incoming subscribe $topic, $qos, $message")
                 }
-
+                Log.i("RAHUL", "Publish")
                 clientService.publish(remoteHost.connectionIdentifier(), SimpleModel("yolo swag2"))
             }
     }

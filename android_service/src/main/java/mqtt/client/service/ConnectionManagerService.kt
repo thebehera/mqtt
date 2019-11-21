@@ -17,6 +17,7 @@ import mqtt.connection.MqttConnectionStateUpdated
 import mqtt.connection.Open
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.ConnectionAcknowledgment
+import mqtt.wire4.control.packet.SubscribeAcknowledgement
 import mqtt.wire4.control.packet.SubscribeRequest
 
 private const val TAG = "[MQTT][SiCo]"
@@ -26,9 +27,6 @@ class ConnectionManagerService : CoroutineService() {
 
     private lateinit var dbProvider: MqttConnectionsDatabaseDescriptor
     private val connectionManagers = HashMap<Int, ConnectionManager>()
-
-
-    val tablesTracked = arrayOf(MqttSubscription::class)
 
     private val boundClients by lazy {
         BoundClientsObserver(newClientCb) { messageFromBoundClient ->
@@ -70,7 +68,6 @@ class ConnectionManagerService : CoroutineService() {
                 }
             }
             msg.what == BoundClientToService.SUBSCRIBE.position -> {
-                Debug.waitForDebugger()
                 val bundle: Bundle = msg.data ?: return
                 val subscriptionClass = MqttSubscription::class.java.canonicalName!!
                 val subscription = bundle.getParcelable<MqttSubscription>(subscriptionClass) ?: return
@@ -84,7 +81,14 @@ class ConnectionManagerService : CoroutineService() {
                         Filter(subscription.topicFilter),
                         queuedMqtt.qos
                     )
-                    connection.client.session.send(subscriptionRequest)
+                    connection.client.subscribe<SubscribeAcknowledgement>(
+                        subscription.topicFilter,
+                        queuedMqtt.qos,
+                        subscription.packetIdentifier.toUShort()
+                    ) { filter, qos, msg ->
+                        msg ?: return@subscribe
+                        connection.client.session.state.subscriptionAcknowledgementReceived(msg)
+                    }
                 }
             }
             else -> when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
@@ -113,7 +117,6 @@ class ConnectionManagerService : CoroutineService() {
             boundClients.sendMessageToClients(buildConnectionChangeToClients(it))
         }
         val connectionManager = ConnectionManager(connectionParameters, persistence) { controlPacket, remoteHostId ->
-            Log.i("RAHUL", "Incoming Packet $controlPacket")
             if (controlPacket is ConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
             } else {
@@ -205,7 +208,6 @@ class BoundClientsObserver(newClientCb: (Messenger) -> Unit, val callback: (msg:
 
     fun sendMessageToClients(msg: Message) = LinkedHashSet(registeredClients).forEach {
         try {
-            Log.i("RAHUL", "Sending to $it $msg")
             it.send(msg)
         } catch (e: RemoteException) {
             // unregister the client, there is nothing we can do at this point as the other process has crashed

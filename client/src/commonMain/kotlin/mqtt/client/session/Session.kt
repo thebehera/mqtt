@@ -91,7 +91,6 @@ class ClientSession(
                 println("Application failed to process $controlPacket")
                 println(e)
             } finally {
-                println("everymsg $controlPacket $everyRecvMessageCallback")
                 everyRecvMessageCallback?.onMessage(controlPacket)
             }
         }
@@ -157,6 +156,7 @@ class ClientSession(
     suspend fun subscribe(packetIdentifier: UShort, topic: Filter, qos: QualityOfService): SubscribeRequest {
         val subscription = SubscribeRequest(packetIdentifier, topic, qos)
         send(subscription)
+        state.unacknowledgedSubscriptions[packetIdentifier.toInt()] = subscription
         return subscription
     }
 

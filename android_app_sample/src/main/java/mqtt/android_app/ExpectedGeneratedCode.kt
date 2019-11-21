@@ -63,7 +63,7 @@ class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqtt
                 )
                 db.mqttQueueDao().publish(
                     queue,
-                    topicOverride ?: "{injectedDefaultTopic}",
+                    topicOverride ?: "simple/1",
                     dupOverride ?: false,
                     retainOverride ?: false
                 ) //Inject the real value

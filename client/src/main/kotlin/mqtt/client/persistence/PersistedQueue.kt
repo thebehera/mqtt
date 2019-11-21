@@ -1,12 +1,11 @@
 package mqtt.client.persistence
 
 import android.os.Parcelable
-import androidx.room.*
+import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.client.connection.parameters.MqttV4TypeConverters
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.data.QualityOfService
-import kotlin.reflect.KClass
 
 @Entity(primaryKeys = ["connectionIdentifier", "packetIdentifier"])
 @TypeConverters(MqttV4TypeConverters::class)
@@ -70,12 +69,12 @@ interface PersistedMqttQueueDao {
     suspend fun unsubscribe(connectionIdentifier: Int, topicFilter: String)
 
     @Transaction
-    suspend fun subscribe(klass: KClass<out Any>, qos: QualityOfService, subscription: MqttSubscription): MqttQueue {
+    suspend fun subscribe(queuedType: String, qos: QualityOfService, subscription: MqttSubscription): MqttQueue {
         val nextPacketId = nextPacketId(this, subscription.connectionIdentifier)
         val subscription = subscription.copy(packetIdentifier = nextPacketId)
         val subscriptionRowId = subscribe(subscription)
         val queue = MqttQueue(
-            klass::class.java.simpleName,
+            queuedType,
             subscriptionRowId,
             ISubscribeRequest.controlPacketValue,
             qos,

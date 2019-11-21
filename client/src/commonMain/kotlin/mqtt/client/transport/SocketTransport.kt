@@ -227,7 +227,6 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         try {
             while (isOpenAndActive()) {
                 val msg = transport.read()
-                println("Incoming: $msg")
                 readControlPacket(msg)
             }
         } catch (e: ClosedReceiveChannelException) {
