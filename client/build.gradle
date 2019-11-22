@@ -16,7 +16,7 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-common')
                 compileOnly project(":wire4")
-                implementation project(":wire-core")
+                api project(":wire-core")
                 implementation project(":time")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
@@ -70,6 +70,13 @@ kotlin {
             }
         }
     }
+}
+
+
+dependencies {
+    implementation "androidx.room:room-runtime:$room_version"
+    implementation "androidx.room:room-ktx:$room_version"
+    implementation "androidx.room:room-common:$room_version"
 }
 apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
