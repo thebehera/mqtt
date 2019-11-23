@@ -5,6 +5,7 @@ import android.content.Context
 import kotlinx.android.parcel.Parcelize
 import kotlinx.coroutines.launch
 import mqtt.androidx.room.MqttGeneratedCodeException
+import mqtt.client.MqttClient
 import mqtt.client.persistence.MqttQueue
 import mqtt.client.persistence.RoomQueuedObjectCollection
 import mqtt.client.service.MqttDatabaseDescriptor
@@ -13,18 +14,43 @@ import mqtt.client.service.ipc.ClientToServiceConnection
 import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPublishMessage
+import mqtt.wire.control.packet.installSerializer
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.Node
 import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.PublishMessage
 import kotlin.coroutines.CoroutineContext
+import kotlin.reflect.KClass
 
 @Parcelize
 object MqttDbProvider : MqttDatabaseDescriptor<Mqtt_RoomDb_SimpleModelDb>(Mqtt_RoomDb_SimpleModelDb::class.java) {
+    init {
+        MqttSerializer.install()
+    }
     override fun getPersistence(context: Context, coroutineContext: CoroutineContext, connectionIdentifier: Int) =
         GeneratedRoomQueuedObjectCollection(connectionIdentifier, getDb(context), coroutineContext)
+
+    override suspend fun <T : Any> subscribe(
+        client: MqttClient, packetId: UShort, topicOverride: String?,
+        qosOverride: QualityOfService?, klass: KClass<T>,
+        cb: (topic: Name, qos: QualityOfService, message: T?) -> Unit
+    ) {
+        if (klass == SimpleModel::class) {
+            val topicName = topicOverride ?: "simple"
+            val qos = qosOverride ?: QualityOfService.AT_LEAST_ONCE  // injected value
+            client.subscribe(topicName, qos, packetId, klass, cb)
+        }
+    }
 }
+
+object MqttSerializer {
+    fun install() {
+        installSerializer(SimpleModelSerializer)
+    }
+}
+
+
 
 class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqttServiceViewModel(app, MqttDbProvider) {
 
@@ -35,7 +61,7 @@ class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqtt
         crossinline cb: (topic: Name, qos: QualityOfService, message: T?) -> Unit
     ) {
         if (T::class == SimpleModel::class) {
-            val topicName = topicOverride ?: "simple/+"
+            val topicName = topicOverride ?: "simple"
             val qos = qosOverride ?: QualityOfService.AT_LEAST_ONCE  // injected value
             subscribe(topicName, qos, connectionIdentifier, object : SubscriptionCallback<T> {
                 override fun onMessageReceived(topic: Name, qos: QualityOfService, message: T?) {
@@ -63,7 +89,7 @@ class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqtt
                 )
                 db.mqttQueueDao().publish(
                     queue,
-                    topicOverride ?: "simple/1",
+                    topicOverride ?: "simple",
                     dupOverride ?: false,
                     retainOverride ?: false
                 ) //Inject the real value
@@ -90,7 +116,7 @@ class GeneratedRoomQueuedObjectCollection(
 
     init {
         // From @MqttSubscribe
-        val filterNode = Node.parse("simple/+")
+        val filterNode = Node.parse("simple")
         subscriptionManager.register(filterNode, object : SubscriptionCallback<SimpleModel> {
             override fun onMessageReceived(topic: Name, qos: QualityOfService, message: SimpleModel?) {
                 message ?: return

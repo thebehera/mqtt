@@ -12,5 +12,6 @@ import mqtt.client.connection.parameters.MqttV4TypeConverters
 data class MqttSubscription(
     val connectionIdentifier: Int,
     val topicFilter: String,
+    val kclass: String,
     val packetIdentifier: Int = 0
 ) : Parcelable

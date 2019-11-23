@@ -54,7 +54,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
     api project(":android_viewmodel")
     implementation project(":wire4")
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-extensions:$ktx_lifecycle_version"
     implementation fileTree(dir: 'libs', include: ['*.jar'])

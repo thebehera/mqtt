@@ -1,13 +1,16 @@
 package mqtt.android_app
 
 import androidx.room.*
+import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
+import kotlinx.io.streams.readerUTF8
 import mqtt.androidx.room.*
 import mqtt.client.service.MqttRoomDatabase
+import mqtt.wire.control.packet.MqttSerializable
 import mqtt.wire.data.utf8Length
 
 @Entity
-@MqttPublish(defaultTopic = "simple/1")
+@MqttPublish(defaultTopic = "simple")
 data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true) val key: Long = 0) {
 
     @MqttPublishSize
@@ -21,10 +24,23 @@ data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true)
     }
 }
 
+object SimpleModelSerializer : MqttSerializable<SimpleModel> {
+    override fun serialize(obj: SimpleModel) = buildPacket {
+        writeLong(obj.key)
+        writeStringUtf8(obj.stringValue)
+    }
+
+    override fun deserialize(buffer: ByteReadPacket) = with(buffer) {
+        val key = readLong()
+        val string = readerUTF8().use { readText() }
+        SimpleModel(string, key)
+    }
+}
+
 @Dao
 interface ModelsDao {
     @Insert
-    @MqttSubscribe("simple/+")
+    @MqttSubscribe("simple")
     suspend fun insert(model: SimpleModel): Long
 
     @Query("SELECT * FROM SimpleModel WHERE _rowid_ = :rowId")

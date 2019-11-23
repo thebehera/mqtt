@@ -40,7 +40,7 @@ abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: 
         cb: SubscriptionCallback<T>
     ) {
         getSubscriptionManager(connectionId).register(Node.parse(topicFilter), cb)
-        val subscription = MqttSubscription(connectionId, topicFilter)
+        val subscription = MqttSubscription(connectionId, topicFilter, T::class.java.canonicalName!!)
         val result =
             db.mqttQueueDao().subscribe(MqttSubscription::class.java.canonicalName!!, qualityOfService, subscription)
         serviceConnection.notifySubscribe(
@@ -66,13 +66,15 @@ abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: 
     fun incomingMessageCallback(cb: (ControlPacket, Int) -> Unit) {
         serviceConnection.newConnectionManager.incomingMessageCallback = object : (ControlPacket, Int) -> Unit {
             override fun invoke(incoming: ControlPacket, connectionIdentifier: Int) {
+                if (incoming is IPublishMessage) {
+                    subscriptions[connectionIdentifier]?.handleIncomingPublish(incoming)
+                }
                 if (incoming is IPublishMessage && onIncomingPublish(incoming, connectionIdentifier)) {
                 } else {
                     cb(incoming, connectionIdentifier)
                 }
             }
         }
-        serviceConnection.newConnectionManager.incomingMessageCallback = cb
     }
 
     fun onIncomingPublish(incoming: IPublishMessage, connectionId: Int): Boolean {

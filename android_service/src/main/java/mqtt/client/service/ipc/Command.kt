@@ -13,7 +13,3 @@ enum class ServiceToBoundClient(val position: Int) {
     INCOMING_CONTROL_PACKET(2),
     OUTGOING_CONTROL_PACKET(3)
 }
-
-
-const val rowIdKey = "rowId"
-const val tableNameKey = "tableName"

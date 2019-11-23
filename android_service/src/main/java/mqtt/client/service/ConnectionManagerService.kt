@@ -15,10 +15,8 @@ import mqtt.client.service.ipc.ServiceToBoundClient
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
 import mqtt.connection.MqttConnectionStateUpdated
 import mqtt.connection.Open
-import mqtt.wire.data.topic.Filter
+import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire4.control.packet.ConnectionAcknowledgment
-import mqtt.wire4.control.packet.SubscribeAcknowledgement
-import mqtt.wire4.control.packet.SubscribeRequest
 
 private const val TAG = "[MQTT][SiCo]"
 const val MESSAGE_PAYLOAD = "msg_payload"
@@ -76,19 +74,17 @@ class ConnectionManagerService : CoroutineService() {
                 launch {
                     val db = dbProvider.getDb(this@ConnectionManagerService).mqttQueueDao()
                     val queuedMqtt = db.getQueuedObjectByRowId(rowId) ?: return@launch
-                    val subscriptionRequest = SubscribeRequest(
-                        subscription.packetIdentifier.toUShort(),
-                        Filter(subscription.topicFilter),
-                        queuedMqtt.qos
-                    )
-                    connection.client.subscribe<SubscribeAcknowledgement>(
-                        subscription.topicFilter,
-                        queuedMqtt.qos,
-                        subscription.packetIdentifier.toUShort()
+                    val klass = Class.forName(subscription.kclass).kotlin
+
+                    dbProvider.subscribe(
+                        connection.client, subscription.packetIdentifier.toUShort(),
+                        subscription.topicFilter, queuedMqtt.qos, klass
                     ) { filter, qos, msg ->
-                        msg ?: return@subscribe
-                        connection.client.session.state.subscriptionAcknowledgementReceived(msg)
+                        println("Incoming subscribe msg $filter $qos $msg")
+                        if (msg !is Parcelable) return@subscribe
+
                     }
+
                 }
             }
             else -> when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
@@ -119,6 +115,8 @@ class ConnectionManagerService : CoroutineService() {
         val connectionManager = ConnectionManager(connectionParameters, persistence) { controlPacket, remoteHostId ->
             if (controlPacket is ConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
+            } else if (controlPacket is ISubscribeAcknowledgement) {
+                connectionManagers[remoteHostId]?.client?.state?.subscriptionAcknowledgementReceived(controlPacket)
             } else {
                 val msg = Message.obtain()
                 msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.position
