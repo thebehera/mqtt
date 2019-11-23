@@ -26,8 +26,9 @@ import kotlin.reflect.KClass
 @Parcelize
 object MqttDbProvider : MqttDatabaseDescriptor<Mqtt_RoomDb_SimpleModelDb>(Mqtt_RoomDb_SimpleModelDb::class.java) {
     init {
-        MqttSerializer.install()
+        installSerializer(SimpleModelSerializer)
     }
+
     override fun getPersistence(context: Context, coroutineContext: CoroutineContext, connectionIdentifier: Int) =
         GeneratedRoomQueuedObjectCollection(connectionIdentifier, getDb(context), coroutineContext)
 
@@ -43,13 +44,6 @@ object MqttDbProvider : MqttDatabaseDescriptor<Mqtt_RoomDb_SimpleModelDb>(Mqtt_R
         }
     }
 }
-
-object MqttSerializer {
-    fun install() {
-        installSerializer(SimpleModelSerializer)
-    }
-}
-
 
 
 class MqttServiceViewModelGenerated(private val app: Application) : AbstractMqttServiceViewModel(app, MqttDbProvider) {
