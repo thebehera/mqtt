@@ -52,7 +52,6 @@ dependencies {
 
 
     implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
-    api project(":android_viewmodel")
     implementation project(":wire4")
     api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"

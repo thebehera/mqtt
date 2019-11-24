@@ -8,7 +8,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
-import mqtt.client.connection.parameters.RemoteHost
+import mqtt.client.connection.RemoteHost
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback

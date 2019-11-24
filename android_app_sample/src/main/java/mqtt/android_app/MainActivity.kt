@@ -10,8 +10,8 @@ import androidx.lifecycle.ViewModelProviders
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.android_app.databinding.ActivityMainBinding
+import mqtt.client.connection.RemoteHost
 import mqtt.client.connection.parameters.PersistableRemoteHostV4
-import mqtt.client.connection.parameters.RemoteHost
 import mqtt.wire4.control.packet.PersistableConnectionRequest
 
 class MainActivity : AppCompatActivity() {

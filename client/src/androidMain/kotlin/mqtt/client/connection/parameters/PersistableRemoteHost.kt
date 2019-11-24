@@ -2,13 +2,13 @@
 
 package mqtt.client.connection.parameters
 
-import androidx.room.*
 import mqtt.Parcelize
-import mqtt.client.connection.parameters.RemoteHost.Security
-import mqtt.client.connection.parameters.RemoteHost.Websocket
+import mqtt.client.connection.RemoteHost.Security
+import mqtt.client.connection.RemoteHost.Websocket
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Milliseconds
 import mqtt.wire4.control.packet.PersistableConnectionRequest
+import androidx.room.*
 
 @Parcelize
 @Entity
