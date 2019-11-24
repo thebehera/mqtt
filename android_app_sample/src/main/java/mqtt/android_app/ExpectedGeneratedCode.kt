@@ -3,7 +3,6 @@ package mqtt.android_app
 import android.app.Application
 import android.content.Context
 import kotlinx.android.parcel.Parcelize
-import kotlinx.coroutines.launch
 import mqtt.androidx.room.MqttGeneratedCodeException
 import mqtt.client.MqttClient
 import mqtt.client.persistence.MqttQueue
@@ -11,13 +10,11 @@ import mqtt.client.persistence.RoomQueuedObjectCollection
 import mqtt.client.service.MqttDatabaseDescriptor
 import mqtt.client.service.ipc.AbstractMqttServiceViewModel
 import mqtt.client.service.ipc.ClientToServiceConnection
-import mqtt.client.subscription.SubscriptionManager
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.installSerializer
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
-import mqtt.wire.data.topic.Node
 import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.PublishMessage
 import kotlin.coroutines.CoroutineContext
@@ -104,26 +101,6 @@ class GeneratedRoomQueuedObjectCollection(
     override val db: Mqtt_RoomDb_SimpleModelDb, override val coroutineContext: CoroutineContext
 ) : RoomQueuedObjectCollection(db, connectionIdentifier) {
     val mqttDao = db.mqttQueueDao()
-
-    val subscriptionManager = SubscriptionManager()
-    var dataInsertedCb: ((ClientToServiceConnection.NotifyPublish) -> Unit)? = null
-
-    init {
-        // From @MqttSubscribe
-        val filterNode = Node.parse("simple")
-        subscriptionManager.register(filterNode, object : SubscriptionCallback<SimpleModel> {
-            override fun onMessageReceived(topic: Name, qos: QualityOfService, message: SimpleModel?) {
-                message ?: return
-                launch {
-                    val rowId = db.modelsDao().insert(message)
-                    val connectionIdentifier = connectionIdentifier
-                    val type = message::class.java.canonicalName!!
-
-//                    dataInsertedCb?.invoke()
-                }
-            }
-        })
-    }
 
     override suspend fun get(packetId: Int?): ControlPacket? {
         val queuedObj = nextQueuedObj(packetId) ?: return null
