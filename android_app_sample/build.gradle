@@ -45,6 +45,8 @@ dependencies {
     kapt project(":android_roomdb_generator")
 
     implementation project(":android_service")
+
+    implementation project(":client")
     implementation "androidx.room:room-runtime:$room_version"
     kapt "androidx.room:room-compiler:$room_version"
     // optional - Kotlin Extensions and Coroutines support for Room
