@@ -14,6 +14,9 @@ class MqttCodeGenerator : AbstractProcessor() {
     private lateinit var filer: Filer
     private lateinit var messager: Messager
     private val dbClassRef = MqttDatabase::class.java
+    private val publishRef = MqttPublish::class.java
+    private val publishDequeRef = MqttPublishDequeue::class.java
+    private val publishPacketRef = MqttPublishPacket::class.java
 
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
@@ -25,14 +28,26 @@ class MqttCodeGenerator : AbstractProcessor() {
 
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val databases = roundEnv.getElementsAnnotatedWith(dbClassRef).map {
-            JavaAnnotatedMqttElement(processingEnv, typeUtils, elementUtils, it, it.getAnnotation(dbClassRef)!!)
+            val annotation = it.getAnnotation(dbClassRef)
+            JavaAnnotatedMqttElement(processingEnv, typeUtils, elementUtils, it, annotation)
         }
+//        val publishModels = roundEnv.getElementsAnnotatedWith(publishRef).map { it!! }.first()
+//        val publishPackets = roundEnv.getElementsAnnotatedWith(publishPacketRef).map { it!!}.first()
+//        val publishDeque = roundEnv.getElementsAnnotatedWith(publishDequeRef).map {
+//            GeneratedRoomQueuedObjectCollectionGenerator(elementUtils, publishModels, ClassName("mqtt.android_app", "Mqtt_RoomDb_SimpleModelDb"), it, publishPackets)
+//        }
+//        publishDeque.toString()
         databases.forEach { it.write(filer) }
         return true
     }
 
     override fun getSupportedAnnotationTypes() =
-        setOf(MqttDatabase::class.qualifiedName!!)
+        setOf(
+            MqttDatabase::class.qualifiedName!!,
+            MqttPublish::class.qualifiedName!!,
+            MqttPublishDequeue::class.qualifiedName!!,
+            MqttPublishPacket::class.qualifiedName!!
+        )
 
     override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
 }
