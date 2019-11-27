@@ -11,13 +11,14 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
     val elementUtils: Elements,
     val annotatedPublishClass: Element,
     val roomDbName: ClassName,
-    val annotatedDequeFunctionElement: Element,
-    val annotatedPublishPacketFunction: Element
+    val mqttPublish: MqttPublish,
+    val annotatedPublishPacketFunction: MqttPublishPacket,
+    val annotatedDequeFunctionElement: MqttPublishDequeue?
 ) {
     val pkg = elementUtils.getPackageOf(annotatedPublishClass).qualifiedName!!.toString()
     val filename = "GeneratedRoomQueuedObjectCollection"
 
-    val classSpec = {
+    val classSpec by lazy {
         println("$annotatedPublishClass $annotatedDequeFunctionElement, $annotatedPublishPacketFunction")
         val whenBlock = listOf(
             CodeBlock.builder()

@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/android_app_sample/android_app_sample.iml" filepath="$PROJECT_DIR$/android_app_sample/android_app_sample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android_roomdb_core/android_roomdb_core.iml" filepath="$PROJECT_DIR$/android_roomdb_core/android_roomdb_core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" filepath="$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" />
+      <module fileurl="file://$PROJECT_DIR$/android_service/android_service.iml" filepath="$PROJECT_DIR$/android_service/android_service.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/client.iml" filepath="$PROJECT_DIR$/client/client.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/client_androidMain.iml" filepath="$PROJECT_DIR$/client/client_androidMain.iml" group="client" />
+      <module fileurl="file://$PROJECT_DIR$/client/client_commonMain.iml" filepath="$PROJECT_DIR$/client/client_commonMain.iml" group="client" />
+      <module fileurl="file://$PROJECT_DIR$/client/client_commonTest.iml" filepath="$PROJECT_DIR$/client/client_commonTest.iml" group="client" />
+      <module fileurl="file://$PROJECT_DIR$/client/client_jvmMain.iml" filepath="$PROJECT_DIR$/client/client_jvmMain.iml" group="client" />
+      <module fileurl="file://$PROJECT_DIR$/client/client_jvmTest.iml" filepath="$PROJECT_DIR$/client/client_jvmTest.iml" group="client" />
+      <module fileurl="file://$PROJECT_DIR$/mqtt.iml" filepath="$PROJECT_DIR$/mqtt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/time.iml" filepath="$PROJECT_DIR$/time/time.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_commonMain.iml" filepath="$PROJECT_DIR$/time/time_commonMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_commonTest.iml" filepath="$PROJECT_DIR$/time/time_commonTest.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_iOSMain.iml" filepath="$PROJECT_DIR$/time/time_iOSMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_jsMain.iml" filepath="$PROJECT_DIR$/time/time_jsMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_jsTest.iml" filepath="$PROJECT_DIR$/time/time_jsTest.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_jvmMain.iml" filepath="$PROJECT_DIR$/time/time_jvmMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_jvmTest.iml" filepath="$PROJECT_DIR$/time/time_jvmTest.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_linuxMain.iml" filepath="$PROJECT_DIR$/time/time_linuxMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_macosMain.iml" filepath="$PROJECT_DIR$/time/time_macosMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_nativeMain.iml" filepath="$PROJECT_DIR$/time/time_nativeMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_windowsMain.iml" filepath="$PROJECT_DIR$/time/time_windowsMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core.iml" filepath="$PROJECT_DIR$/wire-core/wire-core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_commonMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_commonMain.iml" group="wire-core" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_commonTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_commonTest.iml" group="wire-core" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jsMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jsMain.iml" group="wire-core" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jsTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jsTest.iml" group="wire-core" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jvmMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jvmMain.iml" group="wire-core" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jvmTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jvmTest.iml" group="wire-core" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4.iml" filepath="$PROJECT_DIR$/wire4/wire4.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_androidMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_androidMain.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_commonMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_commonMain.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_commonTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_commonTest.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jsMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_jsMain.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jsTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_jsTest.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jvmMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_jvmMain.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jvmTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_jvmTest.iml" group="wire4" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/wire5.iml" filepath="$PROJECT_DIR$/wire5/wire5.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_commonMain.iml" filepath="$PROJECT_DIR$/wire5/wire5_commonMain.iml" group="wire5" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_commonTest.iml" filepath="$PROJECT_DIR$/wire5/wire5_commonTest.iml" group="wire5" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_jvmMain.iml" filepath="$PROJECT_DIR$/wire5/wire5_jvmMain.iml" group="wire5" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_jvmTest.iml" filepath="$PROJECT_DIR$/wire5/wire5_jvmTest.iml" group="wire5" />
+    </modules>
+  </component>
+</project>

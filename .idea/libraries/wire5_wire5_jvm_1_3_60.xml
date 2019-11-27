@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="wire5.wire5-jvm-1.3.60">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/wire5/build/libs/wire5-jvm-1.3.60.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

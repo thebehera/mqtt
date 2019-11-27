@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="client_jvmMain" target="1.6" />
+      <module name="client_jvmTest" target="1.6" />
+      <module name="time_jvmMain" target="1.6" />
+      <module name="time_jvmTest" target="1.6" />
+      <module name="wire-core_jvmMain" target="1.6" />
+      <module name="wire-core_jvmTest" target="1.6" />
+      <module name="wire4_jvmMain" target="1.6" />
+      <module name="wire4_jvmTest" target="1.6" />
+      <module name="wire5_jvmMain" target="1.6" />
+      <module name="wire5_jvmTest" target="1.6" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

@@ -15,3 +15,5 @@ kotlinx-io-native/repo/
 !.idea/codeStyles/*
 
 local.properties
+
+!.idea

@@ -1,0 +1,9 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Clean and Debug preprocessor" type="ShConfigurationType">
+    <option name="SCRIPT_PATH" value="$PROJECT_DIR$/gradlew" />
+    <option name="SCRIPT_OPTIONS" value="-Dorg.gradle.debug=true :android_app_sample:clean :android_app_sample:kaptDebugKotlin" />
+    <option name="INTERPRETER_PATH" value="/bin/bash" />
+    <option name="INTERPRETER_OPTIONS" value="" />
+    <method v="2" />
+  </configuration>
+</component>

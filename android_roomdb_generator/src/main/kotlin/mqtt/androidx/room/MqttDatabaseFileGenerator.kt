@@ -22,6 +22,7 @@ open class AnnotatedMqttElement(
 ) {
     val pkg = elementUtils.getPackageOf(element).qualifiedName!!.toString()
     val filename = "Mqtt_RoomDb_${element.simpleName}"
+    val kClassName = ClassName(pkg, filename)
 
     val entitiesInDatabaseAnnotation by lazy {
         val _entities = TreeSet<ClassName>()
