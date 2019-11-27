@@ -26,9 +26,11 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
                     "%T::class.java.simpleName ->",
                     ClassName(pkg, annotatedPublishClass.simpleName.toString())
                 )
-                // How do we pick up getByRowId?? for dequeing
+                // db is std convention.
+                // modelsDao() is by looking at the enclosing element for @MqttPublishDequeue
+                // getByRowId(..) comes from @MqttPublishDequeue's annotation of the method signature
                 .add("val obj = db.modelsDao().getByRowId(queuedObj.queuedRowId) ?: return null")
-                // how do we get 'obj.toByteReadPacket(),'?? don't we need to import this?
+                // validate @MqttPublishPacket is enclosing the correct class and is annotating something that returns ByteReadPacket
                 .add(
                     """return PublishMessage(
                     publishQueue.topic,

@@ -21,14 +21,14 @@ annotation class MqttPublish(
 // Deque from stored message collection so the mqtt process can send it off incase of network/power failure
 @Retention(SOURCE)
 @Target(FUNCTION)
-annotation class MqttPublishDequeue(val override: String = "yolo")
+annotation class MqttPublishDequeue
 
 @Retention(SOURCE)
 annotation class MqttPublishSize
 
 @Retention(SOURCE)
 @Target(FUNCTION)
-annotation class MqttPublishPacket(val override2: String = "yolo")
+annotation class MqttPublishPacket
 
 @Retention(SOURCE)
 annotation class MqttSubscribe(

@@ -1,6 +1,5 @@
 package mqtt.androidx.room
 
-import androidx.room.Database
 import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
@@ -49,7 +48,7 @@ class MqttCodeGenerator : AbstractProcessor() {
             val pw = PrintWriter(sw)
             e.printStackTrace(pw)
             messager.printMessage(Diagnostic.Kind.ERROR, "\nFATAL EXCEPTION in AbstractProcessor ($this)\n$sw")
-            true
+            throw e
         }
     }
 
@@ -78,13 +77,19 @@ class MqttCodeGenerator : AbstractProcessor() {
             }
         val publishFullNameMap = publishModels.keys.associateBy { it.asType().asTypeName().toString() }
 
+        val annotatedTypeToPublishSerializationMethodType = HashMap<TypeElement, ExecutableElement>()
         val publishPacketsReturnTypes = roundEnv.getElementsAnnotatedWith(publishPacketRef.java)
             .filter { it.kind == ElementKind.METHOD }
+            .filterIsInstance<ExecutableElement>()
             .associate {
                 val annotation = it.getAnnotation(publishPacketRef.java)!!
-                it.enclosingElement!! as TypeElement to annotation
+                val typeElement = it.enclosingElement!! as TypeElement
+                annotatedTypeToPublishSerializationMethodType[typeElement] = it
+                typeElement to annotation
             }
 
+
+        val annotatedTypeToPublishDequeMethodType = HashMap<TypeElement, ExecutableElement>()
         val publishDequeueReturnTypes = roundEnv.getElementsAnnotatedWith(publishDequeRef.java)
             .filter { it.kind == ElementKind.METHOD }
             .filterIsInstance<ExecutableElement>()
@@ -96,7 +101,14 @@ class MqttCodeGenerator : AbstractProcessor() {
                     .map { declaredType ->
                         val typeName = declaredType.typeArguments.filterIsInstance<WildcardType>()
                             .map { wildcardType -> wildcardType.superBound.asTypeName().toString() }
-                            .first { typeName -> publishFullNameMap.containsKey(typeName) }
+                            .first { typeName ->
+                                val typeElement = publishFullNameMap[typeName]
+                                if (typeElement != null) {
+                                    annotatedTypeToPublishDequeMethodType[typeElement] = executableElement
+                                }
+                                typeElement != null
+                            }
+
                         publishFullNameMap.getValue(typeName)
                     }
 
@@ -105,7 +117,6 @@ class MqttCodeGenerator : AbstractProcessor() {
                 firstTypeElement to annotation
             }
 
-        val annotatedObjects = HashMap<TypeMirror, AnnotatedObjects>(publishModels.size)
         publishModels.forEach {
             val packetFound = publishPacketsReturnTypes[it.key]
             if (packetFound == null) {
@@ -118,7 +129,6 @@ class MqttCodeGenerator : AbstractProcessor() {
                 }
                 val type = it.key.asType()
                 if (type != null) {
-                    annotatedObjects[type] = AnnotatedObjects(it.key, it.value, packetFound, dequeueFound)
 
                     val roomDbClassName = dbMappingToClassName[it.key.asClassName().canonicalName]!!
 
@@ -142,7 +152,6 @@ class MqttCodeGenerator : AbstractProcessor() {
 
     override fun getSupportedAnnotationTypes() =
         setOf(
-            Database::class.qualifiedName!!,
             MqttDatabase::class.qualifiedName!!,
             MqttPublish::class.qualifiedName!!,
             MqttPublishDequeue::class.qualifiedName!!,
