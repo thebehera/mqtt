@@ -4,6 +4,7 @@ import com.google.auto.service.AutoService
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
+import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import javax.annotation.processing.*
@@ -30,7 +31,13 @@ class MqttCodeGenerator : AbstractProcessor() {
     private val publishRef = MqttPublish::class
     private val publishDequeRef = MqttPublishDequeue::class
     private val publishPacketRef = MqttPublishPacket::class
-
+    val kaptKotlinGeneratedDir by lazy {
+        File(processingEnv.options["kapt.kotlin.generated"] ?: run {
+            val msg = "Can't find the target directory for generated Kotlin files."
+            messager.printMessage(Diagnostic.Kind.ERROR, msg)
+            throw RuntimeException(msg)
+        })
+    }
     override fun init(processingEnv: ProcessingEnvironment) {
         super.init(processingEnv)
         typeUtils = processingEnv.typeUtils!!
@@ -53,6 +60,8 @@ class MqttCodeGenerator : AbstractProcessor() {
     }
 
     private fun process2(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
+
+
         val dbMappingToClassName = HashMap<String, ClassName>()
         val databases = roundEnv.getElementsAnnotatedWith(dbClassRef.java).map {
             val annotation = it.getAnnotation(dbClassRef.java)
@@ -122,8 +131,10 @@ class MqttCodeGenerator : AbstractProcessor() {
             if (packetFound == null) {
                 messager.printMessage(Diagnostic.Kind.WARNING, "Failed to find @MqttPublishPacket for $it")
             } else {
-                val dequeueFound = publishDequeueReturnTypes[it.key]
                 val publishPacket = publishPacketsReturnTypes[it.key]
+                val publishPacketElement = annotatedTypeToPublishSerializationMethodType[it.key]
+                val dequeueFound = publishDequeueReturnTypes[it.key]
+
                 if (dequeueFound == null) {
                     messager.printMessage(Diagnostic.Kind.NOTE, "Failed to find @MqttPublishDequeue for $it")
                 }
@@ -132,14 +143,17 @@ class MqttCodeGenerator : AbstractProcessor() {
 
                     val roomDbClassName = dbMappingToClassName[it.key.asClassName().canonicalName]!!
 
-                    if (publishPacket != null) {
+                    if (publishPacket != null && publishPacketElement != null) {
+
+                        //TODO: Update so we can pass in the correct ExecutableElement(s)
+
                         val generated = GeneratedRoomQueuedObjectCollectionGenerator(
                             elementUtils, it.key, roomDbClassName, it.value,
-                            publishPacket, publishDequeueReturnTypes[it.key]
+                            publishPacket, publishPacketElement,
+                            publishDequeueReturnTypes[it.key], annotatedTypeToPublishDequeMethodType[it.key]
                         )
-                        val spec = generated.classSpec.toString()
-
-                        messager.printMessage(Diagnostic.Kind.NOTE, spec)
+                        generated.classSpecPersist.writeTo(kaptKotlinGeneratedDir)
+                        messager.printMessage(Diagnostic.Kind.NOTE, "Wrote \n ${generated.classSpecPersist}")
                     }
                 }
             }

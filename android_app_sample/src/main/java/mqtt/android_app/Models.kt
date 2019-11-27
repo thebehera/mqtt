@@ -43,8 +43,8 @@ interface ModelsDao {
     @MqttSubscribe("simple")
     suspend fun insert(model: SimpleModel): Long
 
-    @Query("SELECT * FROM SimpleModel WHERE _rowid_ = :rowId")
     @MqttPublishDequeue
+    @Query("SELECT * FROM SimpleModel WHERE _rowid_ = :rowId")
     suspend fun getByRowId(rowId: Long): SimpleModel?
 
     @Query("DELETE FROM SimpleModel WHERE `key` = :key")
