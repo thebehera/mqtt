@@ -8,8 +8,9 @@ dependencies {
     kapt "com.google.auto.service:auto-service:1.0-rc5"
     annotationProcessor "com.google.auto.service:auto-service:1.0-rc5"
     api "androidx.room:room-common:$room_version"
-    implementation 'com.squareup:kotlinpoet:1.4.0'
-    implementation 'com.squareup:javapoet:1.11.1'
+    implementation "com.squareup:kotlinpoet:$kotlinpoet_version"
+    implementation "com.squareup:javapoet:$javapoet_version"
     implementation "org.jetbrains.kotlin:kotlin-reflect"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+
+    implementation "org.jetbrains.kotlinx:kotlinx-metadata-jvm:$kotlinx_metadata_version"
 }

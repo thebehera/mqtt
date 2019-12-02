@@ -3,8 +3,12 @@ package mqtt.androidx.room
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.KModifier.OVERRIDE
 import com.squareup.kotlinpoet.KModifier.SUSPEND
+import com.squareup.kotlinpoet.MemberName.Companion.member
+import kotlinx.metadata.jvm.KotlinClassHeader
+import kotlinx.metadata.jvm.KotlinClassMetadata
 import javax.lang.model.element.Element
 import javax.lang.model.element.ExecutableElement
+import javax.lang.model.element.TypeElement
 import javax.lang.model.util.Elements
 import kotlin.coroutines.CoroutineContext
 
@@ -12,36 +16,31 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
     val elementUtils: Elements,
     val annotatedPublishClass: Element,
     val roomDbName: ClassName,
-    val mqttPublish: MqttPublish,
-    val annotatedPublishPacket: MqttPublishPacket,
-    val annotatedPublishPacketElement: ExecutableElement,
-    val annotatedPublishDequeue: MqttPublishDequeue?,
+    val annotatedSerializerClass: TypeElement,
     val annotatedPublishDequeueElement: ExecutableElement?
 ) {
     val pkg = elementUtils.getPackageOf(annotatedPublishClass).qualifiedName!!.toString()
-    val filename = "GeneratedRoomQueuedObjectCollection"
+
 
     val classSpecPersist by lazy {
-        println("$annotatedPublishClass $annotatedPublishDequeue, $annotatedPublishPacket")
-
-
         val whenBlock = listOf(
             CodeBlock.builder()
                 .beginControlFlow("%T::class.java.simpleName ->", annotatedPublishClass.asType())
                 // db is std convention.
                 // modelsDao() is by looking at the enclosing element for @MqttPublishDequeue
                 .addStatement("val obj = db.modelsDao().${annotatedPublishDequeueElement!!.simpleName}(queuedObj.queuedRowId) ?: return null")
-                // validate @MqttPublishPacket is enclosing the correct class and is annotating something that returns ByteReadPacket
+                // validate annotatedSerializerClass is enclosing the correct class and is annotating something that returns ByteReadPacket
                 .addStatement(
-                    """return %M(
+                    """return %T(
                     publishQueue.topic,
                     queuedObj.qos,
                     // publishable format
-                    obj.toByteReadPacket(),
+                    %M(obj),
                     publishQueue.packetIdentifier.toUShort(),
                     publishQueue.dup,
                     publishQueue.retain
-                )""", MemberName("mqtt.wire4.control.packet", "PublishMessage")
+                )""", ClassName("mqtt.wire4.control.packet", "PublishMessage"),
+                    annotatedSerializerClass.asClassName().member("serialize")
                 )
                 .endControlFlow()
                 .build()
@@ -54,9 +53,9 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
             whenBlock.forEach { add(it) }
             endControlFlow()
         }.build()
-        FileSpec.builder(pkg, filename)
+        FileSpec.builder(pkg, Companion.filename)
             .addType(
-                TypeSpec.classBuilder(filename)
+                TypeSpec.classBuilder(Companion.filename)
                     .primaryConstructor(
                         FunSpec.constructorBuilder()
                             .addParameter("connectionIdentifier", Int::class)
@@ -97,4 +96,13 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
             ).build()
 
     }
+
+    companion object {
+        const val filename = "GeneratedRoomQueuedObjectCollection"
+    }
 }
+
+fun Metadata.toKotlinClassMetadata() =
+    KotlinClassMetadata.read(
+        KotlinClassHeader(kind, metadataVersion, bytecodeVersion, data1, data2, extraString, packageName, extraInt)
+    )

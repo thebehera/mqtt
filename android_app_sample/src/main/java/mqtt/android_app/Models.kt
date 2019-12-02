@@ -16,14 +16,9 @@ data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true)
     @MqttPublishSize
     @Ignore
     val bytePacketSize = Long.SIZE_BYTES + stringValue.utf8Length()
-
-    @MqttPublishPacket
-    fun toByteReadPacket() = buildPacket {
-        writeLong(key)
-        writeStringUtf8(stringValue)
-    }
 }
 
+@MqttSerializer
 object SimpleModelSerializer : MqttSerializable<SimpleModel> {
     override fun serialize(obj: SimpleModel) = buildPacket {
         writeLong(obj.key)

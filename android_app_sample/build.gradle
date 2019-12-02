@@ -38,6 +38,10 @@ android {
         exclude 'io/ktor/http/cio/*.kotlin_metadata'
         exclude 'META-INF/*.kotlin_module'
     }
+
+    sourceSets.main.java.srcDirs += ['build/generated/source/kaptKotlin']
+    sourceSets.main.kotlin.srcDirs += ['build/generated/source/kaptKotlin']
+
 }
 lint.enabled = false
 dependencies {

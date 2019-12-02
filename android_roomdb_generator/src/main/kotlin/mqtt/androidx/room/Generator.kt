@@ -30,7 +30,8 @@ class MqttCodeGenerator : AbstractProcessor() {
     private val dbClassRef = MqttDatabase::class
     private val publishRef = MqttPublish::class
     private val publishDequeRef = MqttPublishDequeue::class
-    private val publishPacketRef = MqttPublishPacket::class
+    private val serializerRef = MqttSerializer::class
+
     val kaptKotlinGeneratedDir by lazy {
         File(processingEnv.options["kapt.kotlin.generated"] ?: run {
             val msg = "Can't find the target directory for generated Kotlin files."
@@ -60,21 +61,17 @@ class MqttCodeGenerator : AbstractProcessor() {
     }
 
     private fun process2(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
-
-
         val dbMappingToClassName = HashMap<String, ClassName>()
-        val databases = roundEnv.getElementsAnnotatedWith(dbClassRef.java).map {
-            val annotation = it.getAnnotation(dbClassRef.java)
-            val mqttElement =
-                JavaAnnotatedMqttElement(processingEnv, typeUtils, elementUtils, it, annotation)
-            try {
-                annotation.db.entities
-            } catch (e: MirroredTypesException) {
-                e.typeMirrors.classNames().forEach { className ->
-                    dbMappingToClassName[className.canonicalName] = mqttElement.kClassName
-                }
+        val database = roundEnv.getElementsAnnotatedWith(dbClassRef.java).firstOrNull() ?: return true
+        val dbAnnotation = database.getAnnotation(dbClassRef.java)
+        val mqttElement =
+            JavaAnnotatedMqttElement(processingEnv, typeUtils, elementUtils, database, dbAnnotation)
+        try {
+            dbAnnotation.db.entities
+        } catch (e: MirroredTypesException) {
+            e.typeMirrors.classNames().forEach { className ->
+                dbMappingToClassName[className.canonicalName] = mqttElement.kClassName
             }
-            mqttElement
         }
 
         val publishModels = roundEnv.getElementsAnnotatedWith(publishRef.java)
@@ -86,15 +83,19 @@ class MqttCodeGenerator : AbstractProcessor() {
             }
         val publishFullNameMap = publishModels.keys.associateBy { it.asType().asTypeName().toString() }
 
-        val annotatedTypeToPublishSerializationMethodType = HashMap<TypeElement, ExecutableElement>()
-        val publishPacketsReturnTypes = roundEnv.getElementsAnnotatedWith(publishPacketRef.java)
-            .filter { it.kind == ElementKind.METHOD }
-            .filterIsInstance<ExecutableElement>()
-            .associate {
-                val annotation = it.getAnnotation(publishPacketRef.java)!!
-                val typeElement = it.enclosingElement!! as TypeElement
-                annotatedTypeToPublishSerializationMethodType[typeElement] = it
-                typeElement to annotation
+        val annotatedTypeToSerializationType = HashMap<TypeElement, TypeElement>()
+        val typeToSerializer = roundEnv.getElementsAnnotatedWith(serializerRef.java)
+            .filterIsInstance<TypeElement>()
+            .filter { it.kind == ElementKind.CLASS }.associate { annotatedTypeElement ->
+                val annotation = annotatedTypeElement.getAnnotation(serializerRef.java)
+                val serializedDeclaredType = annotatedTypeElement.interfaces.asSequence()
+                    .filterIsInstance<DeclaredType>()
+                    .filter {
+                        it.asElement().qualifiedName(elementUtils) == "mqtt.wire.control.packet.MqttSerializable"
+                    }.first().typeArguments.first() as DeclaredType
+                val serializerTypeElement = serializedDeclaredType.asElement() as TypeElement
+                annotatedTypeToSerializationType[serializerTypeElement] = annotatedTypeElement
+                serializerTypeElement to annotation
             }
 
 
@@ -126,41 +127,56 @@ class MqttCodeGenerator : AbstractProcessor() {
                 firstTypeElement to annotation
             }
 
+
+        val serializers = annotatedTypeToSerializationType.values.map { it.asClassName() }
+        val classNameToPublishAnnotations = publishModels.asSequence().associate {
+            ClassName(elementUtils.getPackageOf(it.key).toString(), it.key.simpleName.toString()) to it.value
+        }
+        val mqttDbProvierFileSpec = fileSpec(mqttElement.kClassName, serializers, classNameToPublishAnnotations)
+        mqttDbProvierFileSpec.writeTo(kaptKotlinGeneratedDir)
+        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $mqttDbProvierFileSpec\n")
+
         publishModels.forEach {
-            val packetFound = publishPacketsReturnTypes[it.key]
+            val packetFound = typeToSerializer[it.key]
             if (packetFound == null) {
-                messager.printMessage(Diagnostic.Kind.WARNING, "Failed to find @MqttPublishPacket for $it")
+                messager.printMessage(Diagnostic.Kind.WARNING, "Failed to find @MqttPublishPacket for $it", it.key)
             } else {
-                val publishPacket = publishPacketsReturnTypes[it.key]
-                val publishPacketElement = annotatedTypeToPublishSerializationMethodType[it.key]
-                val dequeueFound = publishDequeueReturnTypes[it.key]
+                val publishPacket = typeToSerializer[it.key]
+                val publishPacketElement = annotatedTypeToSerializationType[it.key]
+                val dequeueFound = annotatedTypeToPublishDequeMethodType[it.key]
 
                 if (dequeueFound == null) {
-                    messager.printMessage(Diagnostic.Kind.NOTE, "Failed to find @MqttPublishDequeue for $it")
+                    messager.printMessage(Diagnostic.Kind.NOTE, "Failed to find @MqttPublishDequeue for $it", it.key)
                 }
                 val type = it.key.asType()
                 if (type != null) {
 
                     val roomDbClassName = dbMappingToClassName[it.key.asClassName().canonicalName]!!
-
-                    if (publishPacket != null && publishPacketElement != null) {
+                    val serializationClass = annotatedTypeToSerializationType[it.key]
+                    if (serializationClass != null && publishPacket != null && publishPacketElement != null) {
 
                         //TODO: Update so we can pass in the correct ExecutableElement(s)
 
-                        val generated = GeneratedRoomQueuedObjectCollectionGenerator(
-                            elementUtils, it.key, roomDbClassName, it.value,
-                            publishPacket, publishPacketElement,
-                            publishDequeueReturnTypes[it.key], annotatedTypeToPublishDequeMethodType[it.key]
-                        )
+                        val generated =
+//                            GeneratedRoomQueuedObjectCollectionGenerator(
+//                            elementUtils, it.key, roomDbClassName, it.value,
+//                            publishPacket, publishPacketElement,
+//                            publishDequeueReturnTypes[it.key], annotatedTypeToPublishDequeMethodType[it.key])
+                            GeneratedRoomQueuedObjectCollectionGenerator(
+                                elementUtils,
+                                it.key,
+                                roomDbClassName,
+                                serializationClass,
+                                dequeueFound
+                            )
+
                         generated.classSpecPersist.writeTo(kaptKotlinGeneratedDir)
-                        messager.printMessage(Diagnostic.Kind.NOTE, "Wrote \n ${generated.classSpecPersist}")
+                        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n ${generated.classSpecPersist}\n")
                     }
                 }
             }
         }
-
-        databases.forEach { it.write(filer) }
-        val dbString = databases.toString()
+        mqttElement.write(filer)
         return true
     }
 
@@ -169,7 +185,7 @@ class MqttCodeGenerator : AbstractProcessor() {
             MqttDatabase::class.qualifiedName!!,
             MqttPublish::class.qualifiedName!!,
             MqttPublishDequeue::class.qualifiedName!!,
-            MqttPublishPacket::class.qualifiedName!!
+            MqttSerializer::class.qualifiedName!!
         )
 
     override fun getSupportedSourceVersion() = SourceVersion.latestSupported()!!
@@ -178,15 +194,6 @@ class MqttCodeGenerator : AbstractProcessor() {
     private fun <T : TypeMirror> List<T>.classNames() = map { (typeUtils.asElement(it) as TypeElement).asClassName() }
 }
 
-
 fun Element.qualifiedName(elementUtils: Elements): String {
     return "${elementUtils.getPackageOf(this).qualifiedName}.$simpleName"
 }
-
-
-data class AnnotatedObjects(
-    val model: TypeElement,
-    val publishAnnotation: MqttPublish,
-    val packetAnnotation: MqttPublishPacket,
-    val publishDequeueAnnotation: MqttPublishDequeue?
-)

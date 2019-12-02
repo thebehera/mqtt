@@ -22,7 +22,7 @@ class MainActivity : AppCompatActivity() {
         val remoteHost = PersistableRemoteHostV4(
             "192.168.1.98",
             PersistableConnectionRequest(
-                "yjoj",
+                "yjojsj",
                 keepAliveSeconds = 300.toUShort()
             ),
             security = RemoteHost.Security(

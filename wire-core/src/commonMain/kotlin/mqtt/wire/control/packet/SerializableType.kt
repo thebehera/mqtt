@@ -7,11 +7,11 @@ import kotlinx.io.core.writeFully
 import kotlin.reflect.KClass
 
 interface MqttSerializationStrategy<T> {
-    fun serialize(obj: T): ByteReadPacket
+    fun serialize(obj: T): ByteReadPacket = buildPacket { }
 }
 
 interface MqttDeserializationStrategy<T> {
-    fun deserialize(buffer: ByteReadPacket): T
+    fun deserialize(buffer: ByteReadPacket): T? = null
 }
 
 

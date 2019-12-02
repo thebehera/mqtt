@@ -27,8 +27,8 @@ annotation class MqttPublishDequeue
 annotation class MqttPublishSize
 
 @Retention(SOURCE)
-@Target(FUNCTION)
-annotation class MqttPublishPacket
+@Target(CLASS)
+annotation class MqttSerializer
 
 @Retention(SOURCE)
 annotation class MqttSubscribe(
