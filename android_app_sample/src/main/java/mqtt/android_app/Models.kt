@@ -35,7 +35,7 @@ object SimpleModelSerializer : MqttSerializable<SimpleModel> {
 @Dao
 interface ModelsDao {
     @Insert
-    @MqttSubscribe("simple")
+    @MqttPublishQueue
     suspend fun insert(model: SimpleModel): Long
 
     @MqttPublishDequeue

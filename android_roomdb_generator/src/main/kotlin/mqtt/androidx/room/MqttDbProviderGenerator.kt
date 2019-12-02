@@ -6,11 +6,13 @@ import com.squareup.kotlinpoet.KModifier.SUSPEND
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import kotlin.reflect.KClass
 
+const val mqttDbProviderGeneratorFilename = "MqttDbProvider"
+
 fun fileSpec(
     generatedRoomDbClassName: ClassName, serializers: Collection<ClassName>,
     classNameToPublishAnnotations: Map<ClassName, MqttPublish>
 ) =
-    FileSpec.builder(generatedRoomDbClassName.packageName, "MqttDbProvider")
+    FileSpec.builder(generatedRoomDbClassName.packageName, mqttDbProviderGeneratorFilename)
         .addType(classSpec(generatedRoomDbClassName, serializers, classNameToPublishAnnotations))
         .build()
 
@@ -18,7 +20,7 @@ fun classSpec(
     generatedRoomDbClassName: ClassName, serializers: Collection<ClassName>,
     classNameToPublishAnnotations: Map<ClassName, MqttPublish>
 ) =
-    with(TypeSpec.objectBuilder(ClassName(generatedRoomDbClassName.packageName, "MqttDbProvider"))) {
+    with(TypeSpec.objectBuilder(ClassName(generatedRoomDbClassName.packageName, mqttDbProviderGeneratorFilename))) {
         addAnnotation(ClassName("kotlinx.android.parcel", "Parcelize"))
         superclass(
             ClassName("mqtt.client.service", "MqttDatabaseDescriptor")
@@ -55,18 +57,23 @@ fun subscribeMethodCodeBlock(classNameToPublishAnnotations: Map<ClassName, MqttP
         addParameter("qosOverride", mqttGeneratedQualityOfServiceClassName.copy(nullable = true))
         addParameter("klass", KClass::class.asTypeName().parameterizedBy(typeVariable))
 
-        val lambdaParams = listOf(
-            ParameterSpec.builder("topic", ClassName("mqtt.wire.data.topic", "Name")).build(),
-            ParameterSpec.builder("qos", mqttGeneratedQualityOfServiceClassName).build(),
-            ParameterSpec.builder("message", typeVariable.copy(nullable = true)).build()
-        )
-
-        addParameter("cb", LambdaTypeName.get(parameters = lambdaParams, returnType = Unit::class.asTypeName()))
+        val cbParams = lambdaCallbackParams(typeVariable.copy(nullable = true))
+        addParameter("cb", LambdaTypeName.get(parameters = cbParams, returnType = Unit::class.asTypeName()))
         beginControlFlow("when (klass)")
         classNameToPublishAnnotations.forEach { buildSubscribeForClass(this, it.key, it.value) }
         endControlFlow()
         build()
     }
+
+
+val nameClassName = ClassName("mqtt.wire.data.topic", "Name")
+fun lambdaCallbackParams(variable: TypeName) =
+    listOf(
+        ParameterSpec.builder("topic", nameClassName).build(),
+        ParameterSpec.builder("qos", mqttGeneratedQualityOfServiceClassName).build(),
+        ParameterSpec.builder("message", variable).build()
+    )
+
 
 val mqttGeneratedQualityOfServiceClassName = ClassName("mqtt.wire.data", "QualityOfService")
 

@@ -9,10 +9,7 @@ import java.io.PrintWriter
 import java.io.StringWriter
 import javax.annotation.processing.*
 import javax.lang.model.SourceVersion
-import javax.lang.model.element.Element
-import javax.lang.model.element.ElementKind
-import javax.lang.model.element.ExecutableElement
-import javax.lang.model.element.TypeElement
+import javax.lang.model.element.*
 import javax.lang.model.type.DeclaredType
 import javax.lang.model.type.MirroredTypesException
 import javax.lang.model.type.TypeMirror
@@ -30,6 +27,7 @@ class MqttCodeGenerator : AbstractProcessor() {
     private val dbClassRef = MqttDatabase::class
     private val publishRef = MqttPublish::class
     private val publishDequeRef = MqttPublishDequeue::class
+    private val publishQueueRef = MqttPublishQueue::class
     private val serializerRef = MqttSerializer::class
 
     val kaptKotlinGeneratedDir by lazy {
@@ -62,7 +60,7 @@ class MqttCodeGenerator : AbstractProcessor() {
 
     private fun process2(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         val dbMappingToClassName = HashMap<String, ClassName>()
-        val database = roundEnv.getElementsAnnotatedWith(dbClassRef.java).firstOrNull() ?: return true
+        val database = roundEnv.getElementsAnnotatedWith(dbClassRef.java).firstOrNull() as? TypeElement ?: return true
         val dbAnnotation = database.getAnnotation(dbClassRef.java)
         val mqttElement =
             JavaAnnotatedMqttElement(processingEnv, typeUtils, elementUtils, database, dbAnnotation)
@@ -77,11 +75,29 @@ class MqttCodeGenerator : AbstractProcessor() {
         val publishModels = roundEnv.getElementsAnnotatedWith(publishRef.java)
             .filter {
                 it.kind == ElementKind.CLASS
-            }.associate {
+            }.filterIsInstance<TypeElement>().associateWith {
                 val annotation = it.getAnnotation(publishRef.java)
-                it as TypeElement to annotation
+                annotation
             }
+        val classNameToPublishMap = publishModels.map {
+            it.key.asClassName() to it.value
+        }.toMap()
         val publishFullNameMap = publishModels.keys.associateBy { it.asType().asTypeName().toString() }
+
+        val mqttQueueAnnotatedElements = roundEnv.getElementsAnnotatedWith(publishQueueRef.java)
+            .filter { it.kind == ElementKind.METHOD }
+            .filterIsInstance<ExecutableElement>()
+            .map {
+                val model = it.parameters[0] as VariableElement
+                val declaredType = model.asType() as DeclaredType
+                val typeElement = declaredType.asElement() as TypeElement
+                typeElement.asClassName() to PublishQueueParams(
+                    it,
+                    publishModels[typeElement]!!,
+                    it.getAnnotation(publishQueueRef.java),
+                    database
+                )
+            }.toMap()
 
         val annotatedTypeToSerializationType = HashMap<TypeElement, TypeElement>()
         val typeToSerializer = roundEnv.getElementsAnnotatedWith(serializerRef.java)
@@ -136,6 +152,15 @@ class MqttCodeGenerator : AbstractProcessor() {
         mqttDbProvierFileSpec.writeTo(kaptKotlinGeneratedDir)
         messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $mqttDbProvierFileSpec\n")
 
+
+        val viewModelFileSpec = fileSpec(
+            mqttElement.pkg,
+            classNameToPublishMap,
+            mqttQueueAnnotatedElements
+        )
+        viewModelFileSpec.writeTo(kaptKotlinGeneratedDir)
+        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $viewModelFileSpec\n")
+
         publishModels.forEach {
             val packetFound = typeToSerializer[it.key]
             if (packetFound == null) {
@@ -184,6 +209,7 @@ class MqttCodeGenerator : AbstractProcessor() {
         setOf(
             MqttDatabase::class.qualifiedName!!,
             MqttPublish::class.qualifiedName!!,
+            MqttPublishQueue::class.qualifiedName!!,
             MqttPublishDequeue::class.qualifiedName!!,
             MqttSerializer::class.qualifiedName!!
         )

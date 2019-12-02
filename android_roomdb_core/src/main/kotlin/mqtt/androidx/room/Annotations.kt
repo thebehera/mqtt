@@ -24,17 +24,16 @@ annotation class MqttPublish(
 annotation class MqttPublishDequeue
 
 @Retention(SOURCE)
+@Target(FUNCTION)
+annotation class MqttPublishQueue
+
+@Retention(SOURCE)
 annotation class MqttPublishSize
 
 @Retention(SOURCE)
 @Target(CLASS)
 annotation class MqttSerializer
 
-@Retention(SOURCE)
-annotation class MqttSubscribe(
-    val defaultTopicFilter: String,
-    val defaultQos: QualityOfService = AT_LEAST_ONCE
-)
 
 enum class QualityOfService {
     AT_MOST_ONCE,
