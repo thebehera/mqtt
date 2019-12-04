@@ -13,7 +13,6 @@ matrix:
         - sudo apt-get update -y
         - sudo apt-get install mosquitto -y
     - os: osx
-      osx_image: xcode10.2
       before_install:
         - PATH=$PATH:/usr/local/sbin
       addons:
