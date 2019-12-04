@@ -3,11 +3,11 @@ language: ruby
 #  only:
 #    - master
 addons:
+  homebrew:
+    packages: mosquitto
   apt:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
-    packages: mosquitto
-  homebrew:
     packages: mosquitto
 matrix:
   include:
