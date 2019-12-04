@@ -6,7 +6,7 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      jdk: oraclejdk9
+      jdk: oraclejdk8
       before_install:
         - PATH=$PATH:/usr/local/sbin
         - sudo add-apt-repository ppa:mosquitto-dev/mosquitto-ppa -y
@@ -14,7 +14,7 @@ matrix:
         - sudo apt-get install mosquitto -y
     - os: osx
       osx_image: xcode10.2
-      jdk: oraclejdk9
+      jdk: oraclejdk8
       before_install:
         - PATH=$PATH:/usr/local/sbin
       addons:
