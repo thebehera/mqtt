@@ -17,7 +17,7 @@ matrix:
       jdk: openjdk8
     - os: osx
       before_install:
-        - rvm use 2.3 --install --binary
+        - rvm use 2.3 --install
         - brew update
         - brew install mosquitto
 #    - os: windows # enable when it starts working correctly
