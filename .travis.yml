@@ -16,6 +16,10 @@ matrix:
       dist: xenial
       jdk: openjdk8
     - os: osx
+      before_install:
+        - rvm use 2.3 --install --binary
+        - brew update
+        - brew install mosquitto
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
