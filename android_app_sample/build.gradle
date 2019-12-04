@@ -39,8 +39,8 @@ android {
         exclude 'META-INF/*.kotlin_module'
     }
 
-    sourceSets.main.java.srcDirs += ['build/generated/source/kaptKotlin']
-    sourceSets.main.kotlin.srcDirs += ['build/generated/source/kaptKotlin']
+    sourceSets.debug.kotlin.srcDirs += ['build/generated/source/kaptKotlin/debug']
+    sourceSets.release.kotlin.srcDirs += ['build/generated/source/kaptKotlin/release']
 
 }
 lint.enabled = false

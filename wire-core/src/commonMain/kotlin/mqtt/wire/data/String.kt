@@ -35,7 +35,7 @@ private val shouldNotIncludeCharRange2 by lazy { '\u007F'..'\u009F' }
 private val privateUseCharRange by lazy { '\uE000'..'\uF8FF' }
 
 @Parcelize
-class MqttUtf8String(val value: String) : Parcelable {
+data class MqttUtf8String(val value: String) : Parcelable {
     fun getValueOrThrow(includeWarnings: Boolean = true): String {
         val ex = exception
         if (ex != null) {
