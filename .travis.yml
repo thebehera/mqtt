@@ -6,14 +6,14 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      jdk: oraclejdk8
+      jdk: openjdk8
       before_install:
         - sudo add-apt-repository ppa:mosquitto-dev/mosquitto-ppa -y
         - sudo apt-get update -y
         - sudo apt-get install mosquitto -y
     - os: osx
       osx_image: xcode10.2
-      jdk: oraclejdk8
+      jdk: openjdk8
       addons:
         homebrew:
           packages:
