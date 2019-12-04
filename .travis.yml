@@ -2,20 +2,19 @@ language: ruby
 #branches:
 #  only:
 #    - master
+addons:
+  apt:
+    sources:
+      - sourceline: ppa:mosquitto-dev/mosquitto-ppa
+    packages: mosquitto
+  homebrew:
+    packages: mosquitto
 matrix:
   include:
     - os: linux
       dist: xenial
       jdk: openjdk8
-      before_install:
-        - PATH=$PATH:/usr/local/sbin
-        - sudo add-apt-repository ppa:mosquitto-dev/mosquitto-ppa -y
-        - sudo apt-get update -y
-        - sudo apt-get install mosquitto -y
     - os: osx
-      before_install:
-        - PATH=$PATH:/usr/local/sbin
-        - brew install mosquitto
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
