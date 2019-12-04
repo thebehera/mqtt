@@ -6,7 +6,6 @@ matrix:
   include:
     - os: linux
       dist: xenial
-      jdk: openjdk8
       before_install:
         - PATH=$PATH:/usr/local/sbin
         - sudo add-apt-repository ppa:mosquitto-dev/mosquitto-ppa -y
@@ -14,7 +13,6 @@ matrix:
         - sudo apt-get install mosquitto -y
     - os: osx
       osx_image: xcode10.2
-      jdk: openjdk8
       before_install:
         - PATH=$PATH:/usr/local/sbin
       addons:
@@ -36,7 +34,7 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - ./gradlew allTests
-  - ./gradlew build || true
-  - ./gradlew build
+  - gradle allTests
+  - gradle build || true
+  - gradle build
 
