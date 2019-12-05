@@ -1,7 +1,4 @@
 language: ruby
-#branches:
-#  only:
-#    - master
 addons:
   homebrew:
     packages: mosquitto
@@ -17,9 +14,6 @@ matrix:
       jdk: openjdk8
     - os: osx
       before_install:
-        - echo "BEFORE_INSTALL"
-        - brew update
-        - brew install mosquitto
         - export PATH="$PATH:/usr/local/sbin/"
 #    - os: windows # enable when it starts working correctly
 #      language: sh
@@ -36,6 +30,5 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - ./gradlew allTests
   - ./gradlew build -x lint
 
