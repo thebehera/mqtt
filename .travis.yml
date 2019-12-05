@@ -30,5 +30,6 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
+  - ./gradlew allTests
   - ./gradlew build -x lint
 
