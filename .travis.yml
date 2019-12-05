@@ -20,6 +20,7 @@ matrix:
         - rvm use 2.3 --install
         - brew update
         - brew install mosquitto
+        - export PATH="$PATH:/usr/local/sbin/mosquitto
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
