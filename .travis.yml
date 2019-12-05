@@ -17,10 +17,10 @@ matrix:
       jdk: openjdk8
     - os: osx
       before_install:
-        - rvm use 2.3 --install
+        - echo "BEFORE_INSTALL"
         - brew update
         - brew install mosquitto
-        - export PATH="$PATH:/usr/local/sbin/mosquitto
+        - export PATH="$PATH:/usr/local/sbin/"
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
