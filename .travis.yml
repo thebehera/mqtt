@@ -13,6 +13,7 @@ matrix:
       dist: xenial
       jdk: openjdk8
     - os: osx
+      osx_image: xcode11
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
 #    - os: windows # enable when it starts working correctly
