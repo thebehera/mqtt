@@ -23,7 +23,7 @@ data class PersistableConnectionRequest(
 ) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     @Ignore
     @IgnoredOnParcel
-    override val username = payload.userName.getValueOrThrow()
+    override val username = payload.userName?.getValueOrThrow()
     @Ignore
     @IgnoredOnParcel
     override val clientIdentifier: String = payload.clientId.getValueOrThrow()
