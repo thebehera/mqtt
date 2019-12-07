@@ -48,7 +48,7 @@ class MqttCodeGenerator : AbstractProcessor() {
 
     override fun process(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
         return try {
-            process2(annotations, roundEnv)
+            process2(roundEnv)
         } catch (e: Exception) {
             val sw = StringWriter()
             val pw = PrintWriter(sw)
@@ -58,7 +58,7 @@ class MqttCodeGenerator : AbstractProcessor() {
         }
     }
 
-    private fun process2(annotations: Set<TypeElement>, roundEnv: RoundEnvironment): Boolean {
+    private fun process2(roundEnv: RoundEnvironment): Boolean {
         val dbMappingToClassName = HashMap<String, ClassName>()
         val database = roundEnv.getElementsAnnotatedWith(dbClassRef.java).firstOrNull() as? TypeElement ?: return true
         val dbAnnotation = database.getAnnotation(dbClassRef.java)
@@ -116,7 +116,7 @@ class MqttCodeGenerator : AbstractProcessor() {
 
 
         val annotatedTypeToPublishDequeMethodType = HashMap<TypeElement, ExecutableElement>()
-        val publishDequeueReturnTypes = roundEnv.getElementsAnnotatedWith(publishDequeRef.java)
+        roundEnv.getElementsAnnotatedWith(publishDequeRef.java)
             .filter { it.kind == ElementKind.METHOD }
             .filterIsInstance<ExecutableElement>()
             .associate { executableElement ->

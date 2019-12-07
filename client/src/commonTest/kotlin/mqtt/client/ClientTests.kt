@@ -49,7 +49,7 @@ class ClientTests {
         assertEquals(3, client.connectionCount)
     }
 
-    fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
+    private fun createClient(clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
         val client = MqttClient(
             RemoteHost(
@@ -66,18 +66,18 @@ class ClientTests {
         return Pair(client, job)
     }
 
-    suspend fun createClientAwaitConnection(websockets: Boolean = false, clientId: String = getClientId()): MqttClient {
-        val (client, job) = createClient(websockets, clientId)
+    private suspend fun createClientAwaitConnection(clientId: String = getClientId()): MqttClient {
+        val (client, job) = createClient(clientId)
         job.await()
         return client
     }
 
-    inline fun <reified T> blockUntilMessageReceived(
+    private inline fun <reified T> blockUntilMessageReceived(
         topic: String, qos: QualityOfService,
         publishMessageNumber: UShort = 10.toUShort(),
         cb: OnMessageReceivedCallback? = null
     ) {
-        val (client, job) = createClient()
+        val (client, _) = createClient()
         println("created client")
         blockWithTimeout {
             println("client connected")
@@ -129,7 +129,7 @@ class ClientTests {
 
     @Test
     fun subscribeAckReceived() {
-        val (client, job) = createClient()
+        val (client, _) = createClient()
         blockWithTimeout {
             val pubCompMutex = Mutex(true)
             client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
@@ -161,7 +161,7 @@ class ClientTests {
             val client1Session1 = createClient().first
             val client2 = createClient().first
             val mutex = Mutex(true)
-            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { _, _, message ->
                 assertEquals(ogMessage, message)
                 if (!mutex.isLocked) {
                     return@subscribe
@@ -185,9 +185,9 @@ class ClientTests {
         val ogMessage = "Hello2"
         blockWithTimeout {
             val client1Session1 = createClientAwaitConnection()
-            val client2 = createClientAwaitConnection(true)
+            val client2 = createClientAwaitConnection()
             val mutex = Mutex(true)
-            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { _, _, message ->
                 assertEquals(ogMessage, message)
                 mutex.unlock()
             }
@@ -205,9 +205,9 @@ class ClientTests {
         val ogMessage = "Hello2"
         val mutex = Mutex(true)
         blockWithTimeout {
-            val client1Session1 = createClientAwaitConnection(true)
+            val client1Session1 = createClientAwaitConnection()
             val client2 = createClientAwaitConnection()
-            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", AT_MOST_ONCE, 10.toUShort()) { _, _, message ->
                 assertEquals(ogMessage, message)
                 if (mutex.isLocked) {
                     mutex.unlock()

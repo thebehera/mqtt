@@ -46,7 +46,7 @@ data class MqttClient(
     fun connectAsync() = async {
         val lock = Mutex(true)
         lateinit var queuedConnectionResult: ConnectionState
-        val result = startAsync {
+        startAsync {
             queuedConnectionResult = it
             lock.unlock()
         }

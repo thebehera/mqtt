@@ -123,7 +123,7 @@ class SocketTransportTests {
         }
     }
 
-    fun buildParams(clientId: String = getClientId()): IRemoteHost {
+    private fun buildParams(clientId: String = getClientId()): IRemoteHost {
         val connectionRequest = ConnectionRequest(clientId = clientId, keepAliveSeconds = 5000.toUShort())
         return RemoteHost(
             domain,
@@ -136,7 +136,7 @@ class SocketTransportTests {
         )
     }
 
-    suspend fun buildConnection(clientId: String = getClientId()): PlatformSocketConnection {
+    private suspend fun buildConnection(clientId: String = getClientId()): PlatformSocketConnection {
         val params = buildParams(clientId)
         val connection = PlatformSocketConnection(params, ctx)
         connection.openConnectionAsync().await()
@@ -221,7 +221,7 @@ fun getClientId(name: String? = null): String {
     val randomString = if (name == null) {
         val charPool: List<Char> = ('a'..'z') + ('A'..'Z') + ('0'..'9')
         (1..10)
-                .map { i -> kotlin.random.Random.nextInt(0, charPool.size) }
+            .map { kotlin.random.Random.nextInt(0, charPool.size) }
                 .map(charPool::get)
                 .joinToString("")
     } else {

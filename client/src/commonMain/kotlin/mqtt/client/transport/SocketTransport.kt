@@ -143,10 +143,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
         try {
             val host = remoteHost
             val connectionRequestPacket = host.request.copy().serialize()
-            val serializationTime = currentTimestampMs()
             transport.writePacket(connectionRequestPacket)
-            val postWriteTime = currentTimestampMs()
-            val socketWriteTime = postWriteTime - serializationTime
             return@async null
         } catch (e: Exception) {
             val failureState = ConnectionFailure(e)
@@ -162,12 +159,9 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             for (messageToSend in clientToServer) {
                 if (isOpenAndActive() || messageToSend is DisconnectNotification) {
                     val sendMessage = messageToSend.serialize()
-                    val size = sendMessage.remaining
-                    val start = currentTimestampMs()
                     transport.writePacket(sendMessage)
                     val writeComplete = currentTimestampMs()
                     setLastMessageReceived(writeComplete)
-                    val sendTime = writeComplete - start
                     outboundCallback?.invoke(messageToSend, remoteHost.connectionIdentifier())
                     if (messageToSend is DisconnectNotification) {
                         hardClose()
@@ -241,7 +235,6 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     private fun readControlPacket(controlPacket: ControlPacket) {
         val newMessageReceived = currentTimestampMs()
-        val lastMsgReceivedBeforeThisPacketMs = newMessageReceived - lastMessageBetweenClientAndServer.value
         setLastMessageReceived(newMessageReceived)
         messageReceiveCallback?.onMessage(controlPacket)
     }
