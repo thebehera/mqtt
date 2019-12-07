@@ -11,6 +11,7 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
     android()
+    js()
     sourceSets {
         commonMain {
             dependencies {

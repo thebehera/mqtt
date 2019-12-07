@@ -83,7 +83,6 @@ dependencies {
 
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
 }
-apply from: file("$rootProject.projectDir/gradle/jacoco.gradle")
 
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
 

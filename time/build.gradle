@@ -10,12 +10,11 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     android()
     jvm()
-    js {
-        browser {
-        }
-        nodejs {
-        }
-    }
+    js()
+    ios("iOS")
+    mingwX64("windows")
+    macosX64("macos")
+    linuxX64("linux")
     sourceSets {
         commonMain {
             dependencies {

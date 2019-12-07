@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="Kotlin/Native 1.3.61 - stdlib" type="kotlin.native">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.konan/kotlin-native-macos-1.3.61/klib/common/stdlib" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.konan/kotlin-native-macos-1.3.61/sources/kotlin-test-annotations-common-sources.zip!/" />
+      <root url="jar://$USER_HOME$/.konan/kotlin-native-macos-1.3.61/sources/kotlin-stdlib-native-sources.zip!/" />
+      <root url="jar://$USER_HOME$/.konan/kotlin-native-macos-1.3.61/sources/kotlin-test-common-sources.zip!/" />
+      <root url="jar://$USER_HOME$/.konan/kotlin-native-macos-1.3.61/sources/kotlin-stdlib-common-sources.zip!/" />
+    </SOURCES>
+  </library>
+</component>

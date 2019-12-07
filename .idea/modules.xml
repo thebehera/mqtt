@@ -16,15 +16,23 @@
       <module fileurl="file://$PROJECT_DIR$/time/time.iml" filepath="$PROJECT_DIR$/time/time.iml" />
       <module fileurl="file://$PROJECT_DIR$/time/time_commonMain.iml" filepath="$PROJECT_DIR$/time/time_commonMain.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_commonTest.iml" filepath="$PROJECT_DIR$/time/time_commonTest.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_iOSArm64Main.iml" filepath="$PROJECT_DIR$/time/time_iOSArm64Main.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_iOSArm64Test.iml" filepath="$PROJECT_DIR$/time/time_iOSArm64Test.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_iOSMain.iml" filepath="$PROJECT_DIR$/time/time_iOSMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_iOSTest.iml" filepath="$PROJECT_DIR$/time/time_iOSTest.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_iOSX64Main.iml" filepath="$PROJECT_DIR$/time/time_iOSX64Main.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_iOSX64Test.iml" filepath="$PROJECT_DIR$/time/time_iOSX64Test.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_jsMain.iml" filepath="$PROJECT_DIR$/time/time_jsMain.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_jsTest.iml" filepath="$PROJECT_DIR$/time/time_jsTest.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_jvmMain.iml" filepath="$PROJECT_DIR$/time/time_jvmMain.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_jvmTest.iml" filepath="$PROJECT_DIR$/time/time_jvmTest.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_linuxMain.iml" filepath="$PROJECT_DIR$/time/time_linuxMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_linuxTest.iml" filepath="$PROJECT_DIR$/time/time_linuxTest.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_macosMain.iml" filepath="$PROJECT_DIR$/time/time_macosMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_macosTest.iml" filepath="$PROJECT_DIR$/time/time_macosTest.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_nativeMain.iml" filepath="$PROJECT_DIR$/time/time_nativeMain.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/time/time_windowsMain.iml" filepath="$PROJECT_DIR$/time/time_windowsMain.iml" group="time" />
+      <module fileurl="file://$PROJECT_DIR$/time/time_windowsTest.iml" filepath="$PROJECT_DIR$/time/time_windowsTest.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core.iml" filepath="$PROJECT_DIR$/wire-core/wire-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_commonMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_commonMain.iml" group="wire-core" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_commonTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_commonTest.iml" group="wire-core" />
@@ -36,8 +44,6 @@
       <module fileurl="file://$PROJECT_DIR$/wire4/wire4_androidMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_androidMain.iml" group="wire4" />
       <module fileurl="file://$PROJECT_DIR$/wire4/wire4_commonMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_commonMain.iml" group="wire4" />
       <module fileurl="file://$PROJECT_DIR$/wire4/wire4_commonTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_commonTest.iml" group="wire4" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jsMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_jsMain.iml" group="wire4" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jsTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_jsTest.iml" group="wire4" />
       <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jvmMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_jvmMain.iml" group="wire4" />
       <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jvmTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_jvmTest.iml" group="wire4" />
       <module fileurl="file://$PROJECT_DIR$/wire5/wire5.iml" filepath="$PROJECT_DIR$/wire5/wire5.iml" />

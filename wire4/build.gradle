@@ -78,18 +78,6 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-
-        jsMain {
-            dependencies {
-                implementation kotlin('stdlib-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
-            }
-        }
-        jsTest {
-            dependencies {
-                implementation kotlin('test-js')
-            }
-        }
     }
 
     targets.all {

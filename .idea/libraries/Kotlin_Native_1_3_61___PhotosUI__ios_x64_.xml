@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Kotlin/Native 1.3.61 - PhotosUI [ios_x64]" type="kotlin.native">
+    <CLASSES>
+      <root url="file://$USER_HOME$/.konan/kotlin-native-macos-1.3.61/klib/platform/ios_x64/PhotosUI" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

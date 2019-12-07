@@ -22,7 +22,7 @@ class MosquittoServer extends DefaultTask {
             void run() {
                 try {
                     for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-                        println("[$configurationFileName] $line")
+//                        println("[$configurationFileName] $line")
                     }
                 } catch(Exception e) {
                 } finally {
@@ -56,11 +56,6 @@ task stopMosquittoTLS60001() {
 
 task startMosquittoTLS60001(type: MosquittoServer) {
     configurationFileName = "mosquitto_tls_1.3_60001.conf"
-    doFirst{
-        println(configurationDirectory.absolutePath)
-        println(configurationFileName)
-
-    }
 }
 
 task stopMosquitto60000Default() {

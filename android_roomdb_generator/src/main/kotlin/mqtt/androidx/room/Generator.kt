@@ -150,7 +150,7 @@ class MqttCodeGenerator : AbstractProcessor() {
         }
         val mqttDbProvierFileSpec = fileSpec(mqttElement.kClassName, serializers, classNameToPublishAnnotations)
         mqttDbProvierFileSpec.writeTo(kaptKotlinGeneratedDir)
-        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $mqttDbProvierFileSpec\n")
+//        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $mqttDbProvierFileSpec\n")
 
 
         val viewModelFileSpec = fileSpec(
@@ -159,7 +159,7 @@ class MqttCodeGenerator : AbstractProcessor() {
             mqttQueueAnnotatedElements
         )
         viewModelFileSpec.writeTo(kaptKotlinGeneratedDir)
-        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $viewModelFileSpec\n")
+//        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n $viewModelFileSpec\n")
 
         publishModels.forEach {
             val packetFound = typeToSerializer[it.key]
@@ -196,7 +196,7 @@ class MqttCodeGenerator : AbstractProcessor() {
                             )
 
                         generated.classSpecPersist.writeTo(kaptKotlinGeneratedDir)
-                        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n ${generated.classSpecPersist}\n")
+//                        messager.printMessage(Diagnostic.Kind.NOTE, "\nWrote \n ${generated.classSpecPersist}\n")
                     }
                 }
             }
