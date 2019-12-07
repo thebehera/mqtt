@@ -15,12 +15,12 @@ matrix:
     - os: osx
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
-    - os: windows # enable when it starts working correctly
-      language: sh
-      before_install:
-        - export JAVA_HOME=${JAVA_HOME:-/c/jdk}
-        - export PATH=${JAVA_HOME}/bin:${PATH}
-        - choco install jdk8 -params 'installdir=c:\\jdk' -y
+#    - os: windows # enable when it starts working correctly
+#      language: sh
+#      before_install:
+#        - export JAVA_HOME=${JAVA_HOME:-/c/jdk}
+#        - export PATH=${JAVA_HOME}/bin:${PATH}
+#        - choco install jdk8 -params 'installdir=c:\\jdk' -y
 #        - choco install openjdk #add mosquitto
 #        - export PATH=$PATH:"/C/Program Files/OpenJDK/jdk-11.0.2/bin"
 #        - export GRADLE_OPTS=-Dorg.gradle.daemon=false
