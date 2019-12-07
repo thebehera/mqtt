@@ -34,6 +34,6 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
+  - ./gradlew build -x test #let it build first then run tests and lint so we don't run into socket timeout exceptions
   - ./gradlew allTests lint
-  - ./gradlew build
 
