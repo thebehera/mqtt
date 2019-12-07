@@ -26,17 +26,7 @@ android {
         exclude 'io/ktor/http/cio/*.kotlin_metadata'
         exclude 'META-INF/*.kotlin_module'
     }
-
-
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
-        kotlinOptions {
-            jvmTarget = '1.8'
-            freeCompilerArgs = ['-XXLanguage:+InlineClasses']
-        }
-    }
 }
-
-lint.enabled = false
 
 dependencies {
     kapt "androidx.room:room-compiler:$room_version"
@@ -47,7 +37,7 @@ dependencies {
     implementation "androidx.room:room-runtime:$room_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-viewmodel:2.0.0"
+    implementation "androidx.lifecycle:lifecycle-viewmodel:$ktx_lifecycle_version"
     implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
     api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation fileTree(dir: 'libs', include: ['*.jar'])

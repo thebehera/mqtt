@@ -3,6 +3,7 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -39,7 +40,10 @@ SubscribeRequest(
 
     constructor(packetIdentifier: UShort, topics: List<Filter>, qos: List<QualityOfService>)
             : this(packetIdentifier.toInt(), subscriptions = Subscription.from(topics, qos))
+
+    @IgnoredOnParcel
     private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
+    @IgnoredOnParcel
     override val variableHeaderPacket = buildPacket {
         writeUShort(packetIdentifier.toUShort())
     }
@@ -77,6 +81,7 @@ data class Subscription(val topicFilter: Filter,
                          */
                         val maximumQos: QualityOfService = AT_LEAST_ONCE
 ) : Parcelable {
+    @IgnoredOnParcel
     val packet by lazy {
         val qosInt = maximumQos.integerValue
         buildPacket {

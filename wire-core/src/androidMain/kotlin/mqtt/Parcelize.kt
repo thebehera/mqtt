@@ -5,3 +5,6 @@ actual typealias RawValue = kotlinx.android.parcel.RawValue
 actual typealias Parcelable = android.os.Parcelable
 
 actual typealias Ignore = androidx.room.Ignore
+
+
+actual typealias IgnoredOnParcel = kotlinx.android.parcel.IgnoredOnParcel

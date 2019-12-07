@@ -2,6 +2,7 @@ package mqtt.wire4.control.packet
 
 import androidx.room.Embedded
 import androidx.room.Ignore
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
@@ -21,12 +22,16 @@ data class PersistableConnectionRequest(
     @Embedded val payload: Payload = Payload()
 ) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     @Ignore
-    override val username = payload.userName?.getValueOrThrow()
+    @IgnoredOnParcel
+    override val username = payload.userName.getValueOrThrow()
     @Ignore
+    @IgnoredOnParcel
     override val clientIdentifier: String = payload.clientId.getValueOrThrow()
     @Ignore
+    @IgnoredOnParcel
     override val protocolName = variableHeader.protocolName.getValueOrThrow()
     @Ignore
+    @IgnoredOnParcel
     override val protocolVersion = variableHeader.protocolLevel.toInt()
 
     constructor(
@@ -61,14 +66,17 @@ data class PersistableConnectionRequest(
 
 
     @Ignore
+    @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
     @Ignore
+    @IgnoredOnParcel
     override val variableHeaderPacket = variableHeader.packet()
 
     @Ignore
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet()
 
     @Ignore
+    @IgnoredOnParcel
     override val cleanStart: Boolean = variableHeader.cleanSession
 
     @Ignore

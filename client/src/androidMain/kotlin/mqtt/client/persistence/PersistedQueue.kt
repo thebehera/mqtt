@@ -77,14 +77,14 @@ interface PersistedMqttQueueDao {
     @Transaction
     suspend fun subscribe(queuedType: String, qos: QualityOfService, subscription: MqttSubscription): MqttQueue {
         val nextPacketId = nextPacketId(this, subscription.connectionIdentifier)
-        val subscription = subscription.copy(packetIdentifier = nextPacketId)
-        val subscriptionRowId = subscribe(subscription)
+        val mqttSubscription = subscription.copy(packetIdentifier = nextPacketId)
+        val subscriptionRowId = subscribe(mqttSubscription)
         val queue = MqttQueue(
             queuedType,
             subscriptionRowId,
             ISubscribeRequest.controlPacketValue,
             qos,
-            subscription.connectionIdentifier,
+            mqttSubscription.connectionIdentifier,
             packetIdentifier = nextPacketId
         )
         val queuedRowId = queue(queue)

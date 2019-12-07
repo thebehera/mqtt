@@ -5,10 +5,9 @@
     <application>
         <service
                 android:name=".ConnectionManagerService"
-                android:enabled="true"
                 android:exported="true"
-                android:process=":sync">
-        </service>
+                android:process=":sync"
+                android:permission="android.permission.BIND_JOB_SERVICE"/>
     </application>
 
 </manifest>

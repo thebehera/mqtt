@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -27,9 +28,13 @@ typealias CONNACK = ConnectionAcknowledgment
 @Parcelize
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV4(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
+    @IgnoredOnParcel
     override val sessionPresent: Boolean = header.sessionPresent
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = header.packet()
+    @IgnoredOnParcel
     override val isSuccessful: Boolean = header.connectReason == CONNECTION_ACCEPTED
+    @IgnoredOnParcel
     override val connectionReason: String = header.connectReason.name
     /**
      * The Variable Header of the CONNACK Packet contains the following fields in the order: Connect Acknowledge Flags,

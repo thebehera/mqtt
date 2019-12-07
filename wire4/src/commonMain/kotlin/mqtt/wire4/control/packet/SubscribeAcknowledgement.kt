@@ -3,6 +3,7 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
@@ -21,6 +22,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 @Parcelize
 data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payload: List<ReasonCode>)
     : ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
 

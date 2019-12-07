@@ -1,5 +1,6 @@
 package mqtt.client.service.ipc
 
+import android.annotation.SuppressLint
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +26,7 @@ abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: 
     val serviceConnection by lazy {
         ClientToServiceConnection(app, ConnectionManagerService::class.java, dbDescriptor)
     }
+    @SuppressLint("UseSparseArrays")
     val subscriptions = HashMap<Int, SubscriptionManager>()
 
     /**

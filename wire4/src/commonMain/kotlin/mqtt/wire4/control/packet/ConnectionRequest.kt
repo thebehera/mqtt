@@ -3,6 +3,7 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -37,9 +38,13 @@ data class ConnectionRequest(
         val variableHeader: VariableHeader = VariableHeader(),
         val payload: Payload = Payload())
     : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    @IgnoredOnParcel
     override val username = payload.userName?.getValueOrThrow()
+    @IgnoredOnParcel
     override val clientIdentifier: String = payload.clientId.getValueOrThrow()
+    @IgnoredOnParcel
     override val protocolName = variableHeader.protocolName.getValueOrThrow()
+    @IgnoredOnParcel
     override val protocolVersion = variableHeader.protocolLevel.toInt()
     constructor(
             clientId: String,
@@ -71,9 +76,12 @@ data class ConnectionRequest(
             )
 
 
+    @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
+    @IgnoredOnParcel
     override val variableHeaderPacket = variableHeader.packet()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet()
+    @IgnoredOnParcel
     override val cleanStart: Boolean = variableHeader.cleanSession
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {

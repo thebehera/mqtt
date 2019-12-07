@@ -54,6 +54,12 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
             endControlFlow()
         }.build()
         FileSpec.builder(pkg, Companion.filename)
+            .addAnnotation(
+                AnnotationSpec.builder(Suppress::class).addMember(
+                    "%L",
+                    "\"EXPERIMENTAL_API_USAGE\""
+                ).build()
+            )
             .addType(
                 TypeSpec.classBuilder(Companion.filename)
                     .primaryConstructor(

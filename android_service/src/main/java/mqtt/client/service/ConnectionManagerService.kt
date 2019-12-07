@@ -2,6 +2,7 @@
 
 package mqtt.client.service
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.*
 import android.util.Log
@@ -24,6 +25,7 @@ const val MESSAGE_PAYLOAD = "msg_payload"
 class ConnectionManagerService : CoroutineService() {
 
     private lateinit var dbProvider: MqttConnectionsDatabaseDescriptor
+    @SuppressLint("UseSparseArrays")
     private val connectionManagers = HashMap<Int, ConnectionManager>()
 
     private val boundClients by lazy {

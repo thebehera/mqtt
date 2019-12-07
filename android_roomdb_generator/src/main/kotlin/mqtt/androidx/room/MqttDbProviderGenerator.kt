@@ -15,6 +15,7 @@ fun fileSpec(
     classNameToPublishAnnotations: Map<ClassName, MqttPublish>
 ) =
     FileSpec.builder(generatedRoomDbClassName.packageName, mqttDbProviderGeneratorFilename)
+        .addAnnotation(AnnotationSpec.builder(Suppress::class).addMember("%L", "\"EXPERIMENTAL_API_USAGE\"").build())
         .addType(classSpec(generatedRoomDbClassName, serializers, classNameToPublishAnnotations))
         .build()
 
