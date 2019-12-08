@@ -14,7 +14,6 @@ matrix:
       jdk: openjdk8
     - os: osx
       osx_image: xcode11
-      jdk: oraclejdk9
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
 #    - os: windows # enable when it starts working correctly
@@ -35,6 +34,7 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
+  - ./gradlew lint
   - ./gradlew build -x test #let it build first then run tests and lint so we don't run into socket timeout exceptions
-  - ./gradlew allTests lint
+  - ./gradlew allTests
 
