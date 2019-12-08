@@ -14,7 +14,7 @@ matrix:
       jdk: openjdk8
     - os: osx
       osx_image: xcode11
-      jdk: oraclejdk8
+      jdk: oraclejdk9
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
 #    - os: windows # enable when it starts working correctly
