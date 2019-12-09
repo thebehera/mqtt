@@ -17,6 +17,11 @@ matrix:
       before_install:
         - export HOMEBREW_NO_INSTALL_CLEANUP=1
         - export PATH="$PATH:/usr/local/sbin/"
+      before_cache:
+        - brew cleanup
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
