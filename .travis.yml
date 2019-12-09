@@ -1,6 +1,6 @@
 addons:
   homebrew:
-    packages: mosquitto@1.6.8
+    packages: mosquitto
     update: true
   apt:
     sources:
