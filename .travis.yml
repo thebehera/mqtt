@@ -22,7 +22,6 @@ matrix:
       jdk: openjdk9
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
-        - export LINT="-x lint"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
