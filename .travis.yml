@@ -11,8 +11,6 @@ matrix:
     - os: linux
       language: android
       dist: trusty
-      script:
-        - ./gradlew check build allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
       android:
         components:
           - tools
@@ -27,6 +25,8 @@ matrix:
           licenses:
             - 'android-sdk.+'
             - 'google-gdk-license-.+'
+      script:
+        - ./gradlew check build allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
     - os: osx
       language: ruby
       before_install:
