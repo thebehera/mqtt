@@ -7,13 +7,12 @@ import kotlinx.coroutines.sync.Mutex
 import mqtt.client.connection.RemoteHost
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.control.packet.IPublishComplete
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.QualityOfService.*
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
+import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.fail
 
 val domain = "localhost"
 val port = 60000
@@ -91,22 +90,22 @@ class ClientTests {
         }
     }
 
-    @Test
-    fun publishQos2PublishCompleteReceived() {
-        val publishMessageNumber = UShort.MAX_VALUE
-        blockUntilMessageReceived<IPublishComplete>(
-            "yolo",
-            EXACTLY_ONCE,
-            publishMessageNumber,
-            cb = object : OnMessageReceivedCallback {
-                override fun onMessage(controlPacket: ControlPacket) {
-                    if (controlPacket !is IPublishComplete) {
-                        fail("invalid control packet type")
-                    }
-                    assertEquals(publishMessageNumber, controlPacket.packetIdentifier.toUShort())
-                }
-            })
-    }
+//    @Test
+//    fun publishQos2PublishCompleteReceived() {
+//        val publishMessageNumber = UShort.MAX_VALUE
+//        blockUntilMessageReceived<IPublishComplete>(
+//            "yolo",
+//            EXACTLY_ONCE,
+//            publishMessageNumber,
+//            cb = object : OnMessageReceivedCallback {
+//                override fun onMessage(controlPacket: ControlPacket) {
+//                    if (controlPacket !is IPublishComplete) {
+//                        fail("invalid control packet type")
+//                    }
+//                    assertEquals(publishMessageNumber, controlPacket.packetIdentifier.toUShort())
+//                }
+//            })
+//    }
 
 //    @Test
 //    fun publishQos1PublishAckReceived() {
