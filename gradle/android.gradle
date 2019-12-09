@@ -21,9 +21,6 @@ android {
         exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
         exclude 'io/ktor/http/cio/*.kotlin_metadata'
     }
-    lintOptions {
-        tasks.lint.enabled = false
-    }
     sourceSets {
         main {
             manifest.srcFile 'src/androidMain/AndroidManifest.xml'
