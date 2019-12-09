@@ -68,7 +68,7 @@ task startMosquitto60000Default(type: MosquittoServer) {
     configurationFileName = "mosquitto_default_60000.conf"
 }
 
-jvmTest {
+check {
     dependsOn startMosquittoTLS60001
     dependsOn startMosquitto60000Default
     finalizedBy stopMosquittoTLS60001
