@@ -19,8 +19,7 @@ matrix:
     - os: osx
       language: ruby
       before_install:
-        - brew update
-        - export mosquitto=/usr/local/sbin/mosquitto
+        - export PATH="$PATH:/usr/local/sbin/"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
