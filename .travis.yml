@@ -16,25 +16,11 @@ matrix:
         - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
-        script:
-          - ./gradlew check build allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
-      before_cache:
-        - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
-        - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
-      cache:
-        directories:
-          - $HOME/travis/.rvm/
-          - $HOME/.gradle/caches/
-          - $HOME/.gradle/wrapper/
-          - $HOME/.konan/
-          - $HOME/Library/Caches/Homebrew
-          - $HOME/.android/build-cache
     - os: osx
       language: ruby
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
-      script:
-        - ./gradlew check build allTests -x lint --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
+        - export LINT="-x lint"
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
@@ -46,3 +32,5 @@ cache:
     - $HOME/.konan/
     - $HOME/Library/Caches/Homebrew
     - $HOME/.android/build-cache
+script:
+  - ./gradlew check build "$LINT" allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
