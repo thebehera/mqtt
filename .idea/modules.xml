@@ -5,7 +5,6 @@
       <module fileurl="file://$PROJECT_DIR$/android_app_sample/android_app_sample.iml" filepath="$PROJECT_DIR$/android_app_sample/android_app_sample.iml" />
       <module fileurl="file://$PROJECT_DIR$/android_roomdb_core/android_roomdb_core.iml" filepath="$PROJECT_DIR$/android_roomdb_core/android_roomdb_core.iml" />
       <module fileurl="file://$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" filepath="$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android_service/android_service.iml" filepath="$PROJECT_DIR$/android_service/android_service.iml" />
       <module fileurl="file://$PROJECT_DIR$/client/client.iml" filepath="$PROJECT_DIR$/client/client.iml" />
       <module fileurl="file://$PROJECT_DIR$/mqtt.iml" filepath="$PROJECT_DIR$/mqtt.iml" />
       <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.commonMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.commonMain.iml" />
