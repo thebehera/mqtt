@@ -1,6 +1,7 @@
 addons:
   homebrew:
     packages: mosquitto
+    update: true
   apt:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
