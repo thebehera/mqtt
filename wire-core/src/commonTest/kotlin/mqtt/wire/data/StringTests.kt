@@ -5,7 +5,6 @@ package mqtt.wire.data
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.readUShort
-import platform.Platform
 import kotlin.js.JsName
 import kotlin.test.*
 
@@ -15,9 +14,6 @@ class StringTests {
      */
     @Test
     fun mqttSpecConformance() {
-        if (Platform.name == "JS") {
-            assertEquals(2 + 2, 5)
-        }
         invalidMqttString()
         validMqttString()
         invalidMqttString()
