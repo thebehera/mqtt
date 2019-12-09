@@ -39,5 +39,3 @@ allprojects {
     }
 //    tasks.build.dependsOn(['sourceJar', 'emptyJar'])
 }
-
-apply from: "./gradle/deps-check.gradle"
