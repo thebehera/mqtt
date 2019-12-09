@@ -29,7 +29,7 @@ cache:
     - $HOME/travis/.rvm/
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
-    - $HOME/.konan/cache
+    - $HOME/.konan/
     - $HOME/Library/Caches/Homebrew
     - $HOME/.android/build-cache
 script:
