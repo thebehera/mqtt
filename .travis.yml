@@ -35,9 +35,10 @@ before_cache:
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
 cache:
   directories:
+    - $HOME/travis/.rvm/
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - ./gradlew check build allTests --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
+  - ./gradlew check build allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
 
