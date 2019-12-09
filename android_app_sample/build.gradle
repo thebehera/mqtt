@@ -29,7 +29,9 @@ android {
             }
         }
     }
-
+    lintOptions {
+        tasks.lint.enabled = false
+    }
     buildTypes {
         release {
             minifyEnabled true
