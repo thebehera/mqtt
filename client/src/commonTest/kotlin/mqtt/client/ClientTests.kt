@@ -8,10 +8,10 @@ import mqtt.client.connection.RemoteHost
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPublishAcknowledgment
-import mqtt.wire.control.packet.IPublishComplete
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.QualityOfService.*
+import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
+import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.SubscriptionCallback
@@ -96,27 +96,28 @@ class ClientTests {
         }
     }
 
-    @Test
-    fun publishQos2PublishCompleteReceived() {
-        val publishMessageNumber = UShort.MAX_VALUE
-        blockUntilMessageReceived<IPublishComplete>(
-            "yolo",
-            EXACTLY_ONCE,
-            publishMessageNumber,
-            cb = object : OnMessageReceivedCallback {
-                override fun onMessage(controlPacket: ControlPacket) {
-                    if (controlPacket !is IPublishComplete) {
-                        fail("invalid control packet type")
-                    }
-                    assertEquals(publishMessageNumber, controlPacket.packetIdentifier.toUShort())
-                }
-            })
-    }
+//    @Test
+//    fun publishQos2PublishCompleteReceived() {
+//        val publishMessageNumber = UShort.MAX_VALUE
+//        blockUntilMessageReceived<IPublishComplete>(
+//            "yolo",
+//            EXACTLY_ONCE,
+//            publishMessageNumber,
+//            cb = object : OnMessageReceivedCallback {
+//                override fun onMessage(controlPacket: ControlPacket) {
+//                    if (controlPacket !is IPublishComplete) {
+//                        fail("invalid control packet type")
+//                    }
+//                    assertEquals(publishMessageNumber, controlPacket.packetIdentifier.toUShort())
+//                }
+//            })
+//    }
 
     @Test
     fun publishQos1PublishAckReceived() {
 
-        blockUntilMessageReceived<IPublishAcknowledgment>("yolo2", AT_LEAST_ONCE,
+        blockUntilMessageReceived<IPublishAcknowledgment>(
+            "yolo2", AT_LEAST_ONCE,
             cb = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {
                     if (controlPacket !is IPublishAcknowledgment) {
