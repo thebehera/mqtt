@@ -58,7 +58,9 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
 
     @IgnoredOnParcel
     override val packetIdentifier = variable.packetIdentifier
-    @IgnoredOnParcel override val variableHeaderPacket = variable.packet()
+    @IgnoredOnParcel
+    override val variableHeaderPacket = variable.packet()
+    @IgnoredOnParcel
     private val payload by lazy {
         buildPacket {
             subscriptions.forEach { writePacket(it.packet) }

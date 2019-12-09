@@ -43,6 +43,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
+        @IgnoredOnParcel
         val packet by lazy {
             buildPacket {
                 writeUShort(packetIdentifier.toUShort())
