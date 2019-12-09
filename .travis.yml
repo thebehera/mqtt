@@ -25,8 +25,6 @@ matrix:
           licenses:
             - 'android-sdk.+'
             - 'google-gdk-license-.+'
-      script:
-        - ./gradlew check build allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
     - os: osx
       language: ruby
       before_install:
@@ -34,8 +32,6 @@ matrix:
         - export PATH="$PATH:/usr/local/sbin/"
       before_cache:
         - brew cleanup
-      script:
-        - ./gradlew check build allTests -x lint --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
@@ -55,4 +51,5 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
     - $HOME/Library/Caches/Homebrew
-
+script:
+  - ./gradlew check build allTests -x lint --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
