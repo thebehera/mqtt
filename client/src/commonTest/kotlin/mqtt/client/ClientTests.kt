@@ -7,14 +7,9 @@ import kotlinx.coroutines.sync.Mutex
 import mqtt.client.connection.RemoteHost
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.control.packet.IPublishAcknowledgment
 import mqtt.wire.control.packet.IPublishComplete
-import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
-import mqtt.wire.data.topic.Filter
-import mqtt.wire.data.topic.Name
-import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -113,47 +108,47 @@ class ClientTests {
             })
     }
 
-    @Test
-    fun publishQos1PublishAckReceived() {
-
-        blockUntilMessageReceived<IPublishAcknowledgment>(
-            "yolo2", AT_LEAST_ONCE,
-            cb = object : OnMessageReceivedCallback {
-                override fun onMessage(controlPacket: ControlPacket) {
-                    if (controlPacket !is IPublishAcknowledgment) {
-                        fail("invalid control packet type")
-                    }
-                }
-            })
-    }
-
-
-    @Test
-    fun subscribeAckReceived() {
-        val (client, _) = createClient()
-        blockWithTimeout {
-            val pubCompMutex = Mutex(true)
-            client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
-                override fun onMessage(controlPacket: ControlPacket) {
-                    if (controlPacket is ISubscribeAcknowledgement) {
-                        pubCompMutex.unlock()
-                    }
-                }
-            }
-            println("sending subscribe")
-            client.session.subscribe(
-                10.toUShort(),
-                Filter("hello"),
-                AT_LEAST_ONCE,
-                object : SubscriptionCallback<String> {
-                override fun onMessageReceived(topic: Name, qos: QualityOfService, message: String?) {
-                    println(message)
-                }
-            })
-            println("subscribe sent")
-            pubCompMutex.lock()
-        }
-    }
+//    @Test
+//    fun publishQos1PublishAckReceived() {
+//
+//        blockUntilMessageReceived<IPublishAcknowledgment>(
+//            "yolo2", AT_LEAST_ONCE,
+//            cb = object : OnMessageReceivedCallback {
+//                override fun onMessage(controlPacket: ControlPacket) {
+//                    if (controlPacket !is IPublishAcknowledgment) {
+//                        fail("invalid control packet type")
+//                    }
+//                }
+//            })
+//    }
+//
+//
+//    @Test
+//    fun subscribeAckReceived() {
+//        val (client, _) = createClient()
+//        blockWithTimeout {
+//            val pubCompMutex = Mutex(true)
+//            client.session.everyRecvMessageCallback = object : OnMessageReceivedCallback {
+//                override fun onMessage(controlPacket: ControlPacket) {
+//                    if (controlPacket is ISubscribeAcknowledgement) {
+//                        pubCompMutex.unlock()
+//                    }
+//                }
+//            }
+//            println("sending subscribe")
+//            client.session.subscribe(
+//                10.toUShort(),
+//                Filter("hello"),
+//                AT_LEAST_ONCE,
+//                object : SubscriptionCallback<String> {
+//                override fun onMessageReceived(topic: Name, qos: QualityOfService, message: String?) {
+//                    println(message)
+//                }
+//            })
+//            println("subscribe sent")
+//            pubCompMutex.lock()
+//        }
+//    }
 
     @Test
     fun subscribeOnePublishAnotherWorks() {
