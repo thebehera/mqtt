@@ -39,3 +39,6 @@ allprojects {
     }
 //    tasks.build.dependsOn(['sourceJar', 'emptyJar'])
 }
+
+
+lint.enabled = false

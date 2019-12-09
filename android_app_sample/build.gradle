@@ -48,7 +48,6 @@ android {
     sourceSets.release.kotlin.srcDirs += ['build/generated/source/kaptKotlin/release']
 
 }
-lint.enabled = false
 dependencies {
     implementation project(":android_roomdb_core")
     kapt project(":android_roomdb_generator")

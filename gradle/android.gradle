@@ -35,8 +35,6 @@ android {
     }
 
 }
-
-lint.enabled = false
 configurations {
     compileClasspath
 }
