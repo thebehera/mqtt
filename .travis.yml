@@ -1,6 +1,6 @@
 addons:
   homebrew:
-    packages: mosquitto, ccache
+    packages: mosquitto
     update: true
   apt:
     sources:
@@ -14,7 +14,6 @@ matrix:
     - os: osx
       language: ruby
       before_install:
-        - export PATH="/usr/local/opt/ccache/libexec:$PATH"
         - export PATH="$PATH:/usr/local/sbin/"
       before_cache:
         - brew cleanup
