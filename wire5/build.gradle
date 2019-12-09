@@ -1,6 +1,12 @@
 plugins {
     id 'kotlin-multiplatform'
+    id 'com.android.library'
 }
+apply plugin: 'kotlin-android-extensions'
+androidExtensions {
+    experimental = true
+}
+apply from: "../gradle/android.gradle"
 repositories {
     mavenCentral()
     jcenter()
@@ -9,7 +15,7 @@ repositories {
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-
+    android()
     sourceSets {
         commonMain {
             dependencies {
@@ -31,6 +37,20 @@ kotlin {
             }
         }
         jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
+        }
+        androidMain {
+            dependencies {
+                implementation "androidx.room:room-common:$room_version"
+                implementation project(':wire-core')
+                implementation kotlin('stdlib-jdk7')
+                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+            }
+        }
+        androidTest {
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')

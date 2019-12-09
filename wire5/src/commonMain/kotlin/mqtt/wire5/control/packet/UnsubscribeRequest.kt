@@ -6,6 +6,8 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
@@ -22,6 +24,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * 3.10 UNSUBSCRIBE – Unsubscribe request
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
+@Parcelize
 data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<MqttUtf8String>)
     : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
     override val variableHeaderPacket: ByteReadPacket = variable.packet
@@ -40,11 +43,14 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
      * and Properties. Section 2.2.1 provides more information about Packet Identifiers. The rules for encoding
      * Properties are described in section 2.2.2.
      */
-    data class VariableHeader(val packetIdentifier: UShort,
-                              val properties: Properties = Properties()) {
+    @Parcelize
+    data class VariableHeader(
+        val packetIdentifier: Int,
+        val properties: Properties = Properties()
+    ) : Parcelable {
         val packet by lazy {
             buildPacket {
-                writeUShort(packetIdentifier)
+                writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet)
             }
         }
@@ -52,6 +58,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
         /**
          * 3.10.2.1 UNSUBSCRIBE Properties
          */
+        @Parcelize
         data class Properties(
                 /**
                  * 3.10.2.1.2 User Property
@@ -68,7 +75,8 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
                  * User Properties on the UNSUBSCRIBE packet can be used to send subscription related properties from
                  * the Client to the Server. The meaning of these properties is not defined by this specification.
                  */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()) {
+                val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+        ) : Parcelable {
             val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (userProperty.isNotEmpty()) {
@@ -88,7 +96,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is UserProperty -> userProperty += Pair(it.key, it.value)
@@ -102,7 +110,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
 
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort()
+                val packetIdentifier = buffer.readUShort().toInt()
                 val props = Properties.from(buffer.readProperties())
                 return VariableHeader(packetIdentifier, props)
             }

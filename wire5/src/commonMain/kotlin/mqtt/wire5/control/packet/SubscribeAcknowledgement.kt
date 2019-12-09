@@ -3,6 +3,8 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
@@ -25,13 +27,14 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * A SUBACK packet contains a list of Reason Codes, that specify the maximum QoS level that was granted or the
  * error which was found for each Subscription that was requested by the SUBSCRIBE.
  */
+@Parcelize
 data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: List<ReasonCode>)
     : ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
     constructor(packetIdentifier: UShort, properties: Properties = Properties(), payload: ReasonCode = SUCCESS)
-            : this(VariableHeader(packetIdentifier, properties), listOf(payload))
+            : this(VariableHeader(packetIdentifier.toInt(), properties), listOf(payload))
 
     constructor(packetIdentifier: UShort, payload: ReasonCode = SUCCESS, properties: Properties = Properties())
-            : this(VariableHeader(packetIdentifier, properties), listOf(payload))
+            : this(VariableHeader(packetIdentifier.toInt(), properties), listOf(payload))
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
     override val packetIdentifier: Int = variable.packetIdentifier.toInt()
@@ -49,11 +52,14 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
      * The Variable Header of the SUBACK Packet contains the following fields in the order: the Packet Identifier from
      * the SUBSCRIBE Packet that is being acknowledged, and Properties.
      */
-    data class VariableHeader(val packetIdentifier: UShort,
-                              val properties: Properties = Properties()) {
+    @Parcelize
+    data class VariableHeader(
+        val packetIdentifier: Int,
+        val properties: Properties = Properties()
+    ) : Parcelable {
         val packet by lazy {
             buildPacket {
-                writeUShort(packetIdentifier)
+                writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet)
             }
         }
@@ -61,6 +67,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
         /**
          * 3.9.2.1 SUBACK Properties
          */
+        @Parcelize
         data class Properties(
                 /**
                  * 3.9.2.1.2 Reason String
@@ -86,7 +93,8 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
                  * Property is allowed to appear multiple times to represent multiple name, value pairs. The same
                  * name is allowed to appear more than once.
                  */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()) {
+                val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+        ) : Parcelable {
             val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (reasonString != null) {
@@ -110,7 +118,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
@@ -137,7 +145,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
                 } else {
                     Properties()
                 }
-                return VariableHeader(packetIdentifier, props)
+                return VariableHeader(packetIdentifier.toInt(), props)
             }
         }
     }

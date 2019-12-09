@@ -51,43 +51,47 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
     val byte = readByte().toInt()
     val property = when (byte) {
         0x01 -> PayloadFormatIndicator(readByte() == 1.toByte())
-        0x02 -> MessageExpiryInterval(readUInt())
+        0x02 -> MessageExpiryInterval(readUInt().toLong())
         0x03 -> ContentType(readMqttUtf8String())
         0x08 -> ResponseTopic(readMqttUtf8String())
         0x09 -> CorrelationData(readMqttBinary())
-        0x0B -> SubscriptionIdentifier(decodeVariableByteInteger())
-        0x11 -> SessionExpiryInterval(readUInt())
+        0x0B -> SubscriptionIdentifier(decodeVariableByteInteger().toLong())
+        0x11 -> SessionExpiryInterval(readUInt().toLong())
         0x12 -> AssignedClientIdentifier(readMqttUtf8String())
-        0x13 -> ServerKeepAlive(readUShort())
+        0x13 -> ServerKeepAlive(readUShort().toInt())
         0x15 -> AuthenticationMethod(readMqttUtf8String())
         0x16 -> AuthenticationData(readMqttBinary())
         0x17 -> {
             val uByteAsInt = readUByte().toInt()
             if (!(uByteAsInt == 0 || uByteAsInt == 1)) {
-                throw ProtocolError("Request Problem Information cannot have a value other than 0 or 1" +
-                        "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353")
+                throw ProtocolError(
+                    "Request Problem Information cannot have a value other than 0 or 1" +
+                            "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477353"
+                )
             }
             RequestProblemInformation(uByteAsInt == 1)
         }
-        0x18 -> WillDelayInterval(readUInt())
+        0x18 -> WillDelayInterval(readUInt().toLong())
         0x19 -> {
             val uByteAsInt = readUByte().toInt()
             if (!(uByteAsInt == 0 || uByteAsInt == 1)) {
-                throw ProtocolError("Request Response Information cannot have a value other than 0 or 1" +
-                        "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352")
+                throw ProtocolError(
+                    "Request Response Information cannot have a value other than 0 or 1" +
+                            "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352"
+                )
             }
             RequestResponseInformation(uByteAsInt == 1)
         }
         0x1A -> ResponseInformation(readMqttUtf8String())
         0x1C -> ServerReference(readMqttUtf8String())
         0x1F -> ReasonString(readMqttUtf8String())
-        0x21 -> ReceiveMaximum(readUShort())
-        0x22 -> TopicAlias(readUShort())
-        0x23 -> TopicAliasMaximum(readUShort())
+        0x21 -> ReceiveMaximum(readUShort().toInt())
+        0x22 -> TopicAlias(readUShort().toInt())
+        0x23 -> TopicAliasMaximum(readUShort().toInt())
         0x24 -> MaximumQos(if (readByte() == 1.toByte()) QualityOfService.AT_LEAST_ONCE else QualityOfService.AT_MOST_ONCE) // Should not be present for 2
         0x25 -> RetainAvailable(readByte() == 1.toByte())
         0x26 -> UserProperty(readMqttUtf8String(), readMqttUtf8String())
-        0x27 -> MaximumPacketSize(readUInt())
+        0x27 -> MaximumPacketSize(readUInt().toLong())
         0x28 -> WildcardSubscriptionAvailable(readByte() == 1.toByte())
         0x29 -> SubscriptionIdentifierAvailable(readByte() == 1.toByte())
         0x2A -> SharedSubscriptionAvailable(readByte() == 1.toByte())

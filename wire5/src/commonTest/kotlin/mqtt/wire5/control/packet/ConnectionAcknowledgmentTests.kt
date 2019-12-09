@@ -65,10 +65,10 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun sessionExpiryInterval() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(4.toUInt())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(4L)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.sessionExpiryIntervalSeconds, 4.toUInt())
+        assertEquals(expected.header.properties.sessionExpiryIntervalSeconds, 4L)
     }
 
     @Test
@@ -202,15 +202,16 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun maximumPacketSize() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(maximumPacketSize = 4.toUInt())))
+            VariableHeader(properties = Properties(maximumPacketSize = 4))
+        )
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.maximumPacketSize, 4.toUInt())
+        assertEquals(expected.header.properties.maximumPacketSize, 4)
     }
 
     @Test
     fun maximumPacketSizeSetToZeroThrowsProtocolError() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumPacketSize = 0.toUInt())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumPacketSize = 0)))
         val bytes = actual.serialize()
         try {
             ControlPacketV5.from(bytes)
@@ -446,7 +447,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun serverKeepAlive() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(serverKeepAlive = 5.toUShort())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(serverKeepAlive = 5)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.sharedSubscriptionAvailable, true)

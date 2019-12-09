@@ -3,6 +3,8 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishReceived
@@ -21,33 +23,39 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * A PUBREC packet is the response to a PUBLISH packet with QoS 2. It is the second packet of the QoS 2 protocol exchange.
  */
+@Parcelize
 data class PublishReceived(val variable: VariableHeader)
     : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL), IPublishReceived {
-    override fun expectedResponse() = PublishRelease(variable.packetIdentifier)
+    override fun expectedResponse() = PublishRelease(variable.packetIdentifier.toUShort())
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
+    override val packetIdentifier: Int = variable.packetIdentifier
 
-    data class VariableHeader(val packetIdentifier: UShort,
-                              /**
-                               * 3.5.2.1 PUBREC Reason Code
-                               * Byte 3 in the Variable Header is the PUBREC Reason Code. If the Remaining Length is
-                               * 2, then the Publish Reason Code has the value 0x00 (Success).
-                               * The Client or Server sending the PUBREC packet MUST use one of the PUBREC Reason Code
-                               * values. [MQTT-3.5.2-1]. The Reason Code and Property Length can be omitted if the
-                               * Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBREC
-                               * has a Remaining Length of 2.
-                               */
-                              val reasonCode: ReasonCode = SUCCESS,
-                              /**
-                               * 3.4.2.2 PUBACK Properties
-                               */
-                              val properties: Properties = Properties()) {
+    @Parcelize
+    data class VariableHeader(
+        val packetIdentifier: Int,
+        /**
+         * 3.5.2.1 PUBREC Reason Code
+         * Byte 3 in the Variable Header is the PUBREC Reason Code. If the Remaining Length is
+         * 2, then the Publish Reason Code has the value 0x00 (Success).
+         * The Client or Server sending the PUBREC packet MUST use one of the PUBREC Reason Code
+         * values. [MQTT-3.5.2-1]. The Reason Code and Property Length can be omitted if the
+         * Reason Code is 0x00 (Success) and there are no Properties. In this case the PUBREC
+         * has a Remaining Length of 2.
+         */
+        val reasonCode: ReasonCode = SUCCESS,
+        /**
+         * 3.4.2.2 PUBACK Properties
+         */
+        val properties: Properties = Properties()
+    ) : Parcelable {
         init {
             when (reasonCode.byte.toInt()) {
                 0, 0x10, 0x80, 0x83, 0x87, 0x90, 0x91, 0x97, 0x99 -> {
                 }
-                else -> throw ProtocolError("Invalid Publish Receieved reason code ${reasonCode.byte} " +
-                        "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477424")
+                else -> throw ProtocolError(
+                    "Invalid Publish Receieved reason code ${reasonCode.byte} " +
+                            "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477424"
+                )
             }
         }
 
@@ -57,7 +65,7 @@ data class PublishReceived(val variable: VariableHeader)
                     && properties.reasonString == null)
 
             return buildPacket {
-                writeUShort(packetIdentifier)
+                writeUShort(packetIdentifier.toUShort())
                 if (!canOmitReasonCodeAndProperties || sendDefaults) {
                     writeUByte(reasonCode.byte)
                     writePacket(properties.packet())
@@ -65,33 +73,35 @@ data class PublishReceived(val variable: VariableHeader)
             }
         }
 
+        @Parcelize
         data class Properties(
-                /**
-                 * 3.5.2.2.2 Reason String
-                 *
-                 * 31 (0x1F) Byte, Identifier of the Reason String.
-                 *
-                 * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
-                 * Reason String is human readable, designed for diagnostics and SHOULD NOT be parsed by the receiver.
-                 *
-                 * The sender uses this value to give additional information to the receiver. The sender MUST NOT
-                 * send this property if it would increase the size of the PUBREC packet beyond the Maximum Packet
-                 * Size specified by the receiver [MQTT-3.5.2-2]. It is a Protocol Error to include the Reason
-                 * String more than once.
-                 */
-                val reasonString: MqttUtf8String? = null,
-                /**
-                 * 3.5.2.2.3 User Property
-                 *
-                 * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by UTF-8 String Pair. This property can be used to provide additional diagnostic or other
-                 * information. The sender MUST NOT send this property if it would increase the size of the PUBREC
-                 * packet beyond the Maximum Packet Size specified by the receiver [MQTT-3.5.2-3]. The User Property
-                 * is allowed to appear multiple times to represent multiple name, value pairs. The same name is
-                 * allowed to appear more than once.
-                 */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()) {
+            /**
+             * 3.5.2.2.2 Reason String
+             *
+             * 31 (0x1F) Byte, Identifier of the Reason String.
+             *
+             * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
+             * Reason String is human readable, designed for diagnostics and SHOULD NOT be parsed by the receiver.
+             *
+             * The sender uses this value to give additional information to the receiver. The sender MUST NOT
+             * send this property if it would increase the size of the PUBREC packet beyond the Maximum Packet
+             * Size specified by the receiver [MQTT-3.5.2-2]. It is a Protocol Error to include the Reason
+             * String more than once.
+             */
+            val reasonString: MqttUtf8String? = null,
+            /**
+             * 3.5.2.2.3 User Property
+             *
+             * 38 (0x26) Byte, Identifier of the User Property.
+             *
+             * Followed by UTF-8 String Pair. This property can be used to provide additional diagnostic or other
+             * information. The sender MUST NOT send this property if it would increase the size of the PUBREC
+             * packet beyond the Maximum Packet Size specified by the receiver [MQTT-3.5.2-3]. The User Property
+             * is allowed to appear multiple times to represent multiple name, value pairs. The same name is
+             * allowed to appear more than once.
+             */
+            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+        ) : Parcelable {
             fun packet(): ByteReadPacket {
                 val propertiesPacket = buildPacket {
                     if (reasonString != null) {
@@ -115,7 +125,7 @@ data class PublishReceived(val variable: VariableHeader)
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
@@ -136,7 +146,7 @@ data class PublishReceived(val variable: VariableHeader)
 
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort()
+                val packetIdentifier = buffer.readUShort().toInt()
                 val remaining = buffer.remaining.toInt()
                 if (remaining == 0) {
                     return VariableHeader(packetIdentifier)

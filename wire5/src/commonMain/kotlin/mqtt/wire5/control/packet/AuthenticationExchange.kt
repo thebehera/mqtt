@@ -6,6 +6,8 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -25,6 +27,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * Bits 3,2,1 and 0 of the Fixed Header of the AUTH packet are reserved and MUST all be set to 0. The Client or Server
  * MUST treat any other value as malformed and close the Network Connection [MQTT-3.15.1-1].
  */
+@Parcelize
 data class AuthenticationExchange(val variable: VariableHeader)
     : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
     override val variableHeaderPacket = variable.packet
@@ -38,6 +41,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
      * The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no
      * Properties. In this case the AUTH has a Remaining Length of 0.
      */
+    @Parcelize
     data class VariableHeader(
             /**
              * 3.15.2.1 Authenticate Reason Code
@@ -55,7 +59,8 @@ data class AuthenticationExchange(val variable: VariableHeader)
              * 25|0x19|Re-authenticate|Client
              */
             val reasonCode: ReasonCode = SUCCESS,
-            val properties: Properties = Properties()) {
+            val properties: Properties = Properties()
+    ) : Parcelable {
         init {
             // throw if reason code doesnt exist
             getReasonCode(reasonCode.byte)
@@ -68,11 +73,13 @@ data class AuthenticationExchange(val variable: VariableHeader)
             }
         }
 
+        @Parcelize
         data class Properties(
-                val method: MqttUtf8String? = null,
-                val data: ByteArrayWrapper? = null,
-                val reasonString: MqttUtf8String? = null,
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()) {
+            val method: MqttUtf8String? = null,
+            val data: ByteArrayWrapper? = null,
+            val reasonString: MqttUtf8String? = null,
+            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+        ) : Parcelable {
             val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (method != null) {
@@ -103,7 +110,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var method: MqttUtf8String? = null
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     var data: ByteArrayWrapper? = null
                     keyValuePairs?.forEach {
                         when (it) {
@@ -116,16 +123,20 @@ data class AuthenticationExchange(val variable: VariableHeader)
                             }
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476")
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }
-                            is UserProperty -> userProperty += Pair(it.key, it.value)
+                            is UserProperty -> userProperty.add(Pair(it.key, it.value))
                             is AuthenticationData -> {
                                 if (data != null) {
-                                    throw ProtocolError("Server Reference added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396")
+                                    throw ProtocolError(
+                                        "Server Reference added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396"
+                                    )
                                 }
                                 data = it.data
                             }
