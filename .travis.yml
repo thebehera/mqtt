@@ -5,7 +5,7 @@ addons:
   apt:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
-    packages: mosquitto=1.6.8
+    packages: mosquitto
 matrix:
   include:
     - os: linux
