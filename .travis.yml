@@ -19,7 +19,7 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.2
-      jdk: openjdk9
+      jdk: openjdk12
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
 before_cache:
