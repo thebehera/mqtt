@@ -18,9 +18,6 @@ matrix:
         - export PATH="$PATH:/usr/local/sbin/"
       before_cache:
         - brew cleanup
-      cache:
-        directories:
-          - $HOME/Library/Caches/Homebrew
 #    - os: windows # enable when it starts working correctly
 #      language: sh
 #      before_install:
@@ -39,6 +36,7 @@ cache:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
+    - $HOME/Library/Caches/Homebrew
 script:
   - ./gradlew check build allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
 
