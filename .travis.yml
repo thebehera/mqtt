@@ -1,7 +1,7 @@
 language: ruby
 addons:
   homebrew:
-    packages: mosquitto
+    packages: mosquitto, ccache
     update: true
   apt:
     sources:
@@ -14,7 +14,7 @@ matrix:
       jdk: openjdk8
     - os: osx
       before_install:
-        - export HOMEBREW_NO_INSTALL_CLEANUP=1
+        - export PATH="/usr/local/opt/ccache/libexec:$PATH"
         - export PATH="$PATH:/usr/local/sbin/"
       before_cache:
         - brew cleanup
