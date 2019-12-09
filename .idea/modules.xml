@@ -7,50 +7,50 @@
       <module fileurl="file://$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" filepath="$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" />
       <module fileurl="file://$PROJECT_DIR$/android_service/android_service.iml" filepath="$PROJECT_DIR$/android_service/android_service.iml" />
       <module fileurl="file://$PROJECT_DIR$/client/client.iml" filepath="$PROJECT_DIR$/client/client.iml" />
-      <module fileurl="file://$PROJECT_DIR$/client/client_androidMain.iml" filepath="$PROJECT_DIR$/client/client_androidMain.iml" group="client" />
-      <module fileurl="file://$PROJECT_DIR$/client/client_commonMain.iml" filepath="$PROJECT_DIR$/client/client_commonMain.iml" group="client" />
-      <module fileurl="file://$PROJECT_DIR$/client/client_commonTest.iml" filepath="$PROJECT_DIR$/client/client_commonTest.iml" group="client" />
-      <module fileurl="file://$PROJECT_DIR$/client/client_jvmMain.iml" filepath="$PROJECT_DIR$/client/client_jvmMain.iml" group="client" />
-      <module fileurl="file://$PROJECT_DIR$/client/client_jvmTest.iml" filepath="$PROJECT_DIR$/client/client_jvmTest.iml" group="client" />
       <module fileurl="file://$PROJECT_DIR$/mqtt.iml" filepath="$PROJECT_DIR$/mqtt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.androidMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.androidMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.commonMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.commonMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.commonTest.iml" filepath="$PROJECT_DIR$/client/mqtt.client.commonTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.jvmMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.jvmMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.jvmTest.iml" filepath="$PROJECT_DIR$/client/mqtt.client.jvmTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.commonMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.commonMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.commonTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.commonTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSArm64Main.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSArm64Main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSArm64Test.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSArm64Test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSX64Main.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSX64Main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSX64Test.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSX64Test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.jsMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.jsMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.jsTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.jsTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.jvmMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.jvmMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.jvmTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.jvmTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.linuxMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.linuxMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.linuxTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.linuxTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.macosMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.macosMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.macosTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.macosTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.nativeMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.nativeMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.windowsMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.windowsMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.windowsTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.windowsTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.commonMain.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.commonMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.commonTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.commonTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jsMain.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jsMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jsTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jsTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmMain.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.androidMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.androidMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.commonMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.commonMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.commonTest.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.commonTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.jvmMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.jvmMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.jvmTest.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.jvmTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/mqtt.wire5.commonMain.iml" filepath="$PROJECT_DIR$/wire5/mqtt.wire5.commonMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/mqtt.wire5.commonTest.iml" filepath="$PROJECT_DIR$/wire5/mqtt.wire5.commonTest.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/mqtt.wire5.jvmMain.iml" filepath="$PROJECT_DIR$/wire5/mqtt.wire5.jvmMain.iml" />
+      <module fileurl="file://$PROJECT_DIR$/wire5/mqtt.wire5.jvmTest.iml" filepath="$PROJECT_DIR$/wire5/mqtt.wire5.jvmTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/time/time.iml" filepath="$PROJECT_DIR$/time/time.iml" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_commonMain.iml" filepath="$PROJECT_DIR$/time/time_commonMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_commonTest.iml" filepath="$PROJECT_DIR$/time/time_commonTest.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_iOSArm64Main.iml" filepath="$PROJECT_DIR$/time/time_iOSArm64Main.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_iOSArm64Test.iml" filepath="$PROJECT_DIR$/time/time_iOSArm64Test.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_iOSMain.iml" filepath="$PROJECT_DIR$/time/time_iOSMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_iOSTest.iml" filepath="$PROJECT_DIR$/time/time_iOSTest.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_iOSX64Main.iml" filepath="$PROJECT_DIR$/time/time_iOSX64Main.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_iOSX64Test.iml" filepath="$PROJECT_DIR$/time/time_iOSX64Test.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_jsMain.iml" filepath="$PROJECT_DIR$/time/time_jsMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_jsTest.iml" filepath="$PROJECT_DIR$/time/time_jsTest.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_jvmMain.iml" filepath="$PROJECT_DIR$/time/time_jvmMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_jvmTest.iml" filepath="$PROJECT_DIR$/time/time_jvmTest.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_linuxMain.iml" filepath="$PROJECT_DIR$/time/time_linuxMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_linuxTest.iml" filepath="$PROJECT_DIR$/time/time_linuxTest.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_macosMain.iml" filepath="$PROJECT_DIR$/time/time_macosMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_macosTest.iml" filepath="$PROJECT_DIR$/time/time_macosTest.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_nativeMain.iml" filepath="$PROJECT_DIR$/time/time_nativeMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_windowsMain.iml" filepath="$PROJECT_DIR$/time/time_windowsMain.iml" group="time" />
-      <module fileurl="file://$PROJECT_DIR$/time/time_windowsTest.iml" filepath="$PROJECT_DIR$/time/time_windowsTest.iml" group="time" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core.iml" filepath="$PROJECT_DIR$/wire-core/wire-core.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_commonMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_commonMain.iml" group="wire-core" />
-      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_commonTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_commonTest.iml" group="wire-core" />
-      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jsMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jsMain.iml" group="wire-core" />
-      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jsTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jsTest.iml" group="wire-core" />
-      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jvmMain.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jvmMain.iml" group="wire-core" />
-      <module fileurl="file://$PROJECT_DIR$/wire-core/wire-core_jvmTest.iml" filepath="$PROJECT_DIR$/wire-core/wire-core_jvmTest.iml" group="wire-core" />
       <module fileurl="file://$PROJECT_DIR$/wire4/wire4.iml" filepath="$PROJECT_DIR$/wire4/wire4.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_androidMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_androidMain.iml" group="wire4" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_commonMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_commonMain.iml" group="wire4" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_commonTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_commonTest.iml" group="wire4" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jvmMain.iml" filepath="$PROJECT_DIR$/wire4/wire4_jvmMain.iml" group="wire4" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/wire4_jvmTest.iml" filepath="$PROJECT_DIR$/wire4/wire4_jvmTest.iml" group="wire4" />
       <module fileurl="file://$PROJECT_DIR$/wire5/wire5.iml" filepath="$PROJECT_DIR$/wire5/wire5.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_commonMain.iml" filepath="$PROJECT_DIR$/wire5/wire5_commonMain.iml" group="wire5" />
-      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_commonTest.iml" filepath="$PROJECT_DIR$/wire5/wire5_commonTest.iml" group="wire5" />
-      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_jvmMain.iml" filepath="$PROJECT_DIR$/wire5/wire5_jvmMain.iml" group="wire5" />
-      <module fileurl="file://$PROJECT_DIR$/wire5/wire5_jvmTest.iml" filepath="$PROJECT_DIR$/wire5/wire5_jvmTest.iml" group="wire5" />
     </modules>
   </component>
 </project>

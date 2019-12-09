@@ -2,7 +2,7 @@
   <artifact type="jar" name="client-jvm-1.3.61">
     <output-path>$PROJECT_DIR$/client/build/libs</output-path>
     <root id="archive" name="client-jvm-1.3.61.jar">
-      <element id="module-output" name="client_jvmMain" />
+      <element id="module-output" name="mqtt.client.jvmMain" />
     </root>
   </artifact>
 </component>

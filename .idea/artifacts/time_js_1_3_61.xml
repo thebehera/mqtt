@@ -2,7 +2,7 @@
   <artifact type="jar" name="time-js-1.3.61">
     <output-path>$PROJECT_DIR$/time/build/libs</output-path>
     <root id="archive" name="time-js-1.3.61.jar">
-      <element id="module-output" name="time_jsMain" />
+      <element id="module-output" name="mqtt.time.jsMain" />
     </root>
   </artifact>
 </component>

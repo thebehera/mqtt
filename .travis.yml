@@ -35,9 +35,6 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - echo ANDROID_HOME
-  - echo $ANDROID_HOME
-  - ./gradlew lint
   - ./gradlew build -x test #let it build first then run tests and lint so we don't run into socket timeout exceptions
   - ./gradlew allTests
 

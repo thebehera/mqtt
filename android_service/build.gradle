@@ -27,7 +27,7 @@ android {
         exclude 'META-INF/*.kotlin_module'
     }
 }
-
+lint.enabled = false
 dependencies {
     kapt "androidx.room:room-compiler:$room_version"
     api project(":wire-core")
