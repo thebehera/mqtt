@@ -2,7 +2,9 @@
 
 package mqtt.android_app
 
+import android.os.Build
 import android.os.Bundle
+import android.preference.PreferenceManager
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import androidx.databinding.DataBindingUtil
@@ -13,16 +15,23 @@ import mqtt.android_app.databinding.ActivityMainBinding
 import mqtt.client.connection.RemoteHost
 import mqtt.client.connection.parameters.PersistableRemoteHostV4
 import mqtt.wire4.control.packet.PersistableConnectionRequest
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val clientIdTmp = prefs.getString("clientId", null)
+        val clientId = clientIdTmp ?: "${Build.MODEL}-${Build.DEVICE}-${UUID.randomUUID()}"
+        if (clientIdTmp == null) {
+            prefs.edit().putString("clientId", clientId).apply()
+        }
         val clientService = ViewModelProviders.of(this).get(MqttServiceViewModelGenerated::class.java)
         val remoteHost = PersistableRemoteHostV4(
-            "192.168.1.98",
+            BuildConfig.IPV4[0],
             PersistableConnectionRequest(
-                "yjojsj",
+                clientId,
                 keepAliveSeconds = 300.toUShort()
             ),
             security = RemoteHost.Security(

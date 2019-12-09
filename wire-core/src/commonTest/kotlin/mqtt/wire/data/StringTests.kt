@@ -9,9 +9,11 @@ import kotlinx.io.core.readUShort
 import kotlin.test.*
 
 class StringTests {
+    /**
+     * MQTT Conformance Character data in a UTF-8 Encoded String MUST be well-formed UTF-8 as defined by the Unicode specification Unicode and restated in RFC 3629
+     */
     @Test
-//    @JsName("Utf8EncodedStringIsWellFormed_1_5_4")
-    fun `MQTT Conformance Character data in a UTF-8 Encoded String MUST be well-formed UTF-8 as defined by the Unicode specification Unicode and restated in RFC 3629`() {
+    fun mqttSpecConformance() {
         invalidMqttString()
         validMqttString()
         invalidMqttString()
