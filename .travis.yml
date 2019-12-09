@@ -19,11 +19,10 @@ matrix:
     - os: osx
       language: ruby
       osx_image: xcode11.2
-      jdk:
-        - oraclejdk8
       before_install:
         - export PATH="$PATH:/usr/local/sbin/"
         - export LINT="-x lint"
+        - jdk_switcher use oraclejdk8
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
