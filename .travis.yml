@@ -36,4 +36,4 @@ cache:
     - $HOME/Library/Caches/Homebrew
     - $HOME/.android/build-cache
 script:
-  - ./gradlew check build "$LINT" allTests --stacktrace --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
+  - ./build.sh
