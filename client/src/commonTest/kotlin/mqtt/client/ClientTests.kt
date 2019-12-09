@@ -43,7 +43,7 @@ class ClientTests {
             )
         )
         val job = client.startAsync()
-        blockWithTimeout(5000) {
+        blockWithTimeout {
             job.await()
         }
         assertEquals(3, client.connectionCount)
