@@ -1,11 +1,11 @@
 addons:
   homebrew:
-    packages: mosquitto
+    packages: mosquitto@1.6.8
     update: true
   apt:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
-    packages: mosquitto
+    packages: mosquitto=1.6.8
 matrix:
   include:
     - os: linux
