@@ -13,18 +13,8 @@ matrix:
       dist: trusty
       android:
         components:
-          - tools
-          - platform-tools
           - build-tools-29.0.2
           - android-29
-          - extra-google-google_play_services
-          - extra-google-m2repository
-          - extra-android-m2repository
-          - sys-img-x86-android-29
-        licenses:
-          - 'android-sdk-preview-license-.+'
-          - 'android-sdk-license-.+'
-          - 'google-gdk-license-.+'
       before_install:
         - mkdir "$ANDROID_HOME/licenses/"
         - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
