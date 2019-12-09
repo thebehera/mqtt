@@ -40,6 +40,5 @@ cache:
     - $HOME/.gradle/wrapper/
     - $HOME/.konan/cache
 script:
-  - ./gradlew build -x test #let it build first then run tests and lint so we don't run into socket timeout exceptions
-  - ./gradlew allTests
+  - ./gradlew check build allTests --console=plain --max-workers=1 --no-daemon --build-cache -Dkotlin.colors.enabled=false
 
