@@ -11,20 +11,6 @@ matrix:
     - os: linux
       language: android
       dist: trusty
-      android:
-        components:
-          - tools
-          - platform-tools
-          - build-tools-29.0.2
-          - android-29
-          - extra-google-google_play_services
-          - extra-google-m2repository
-          - extra-android-m2repository
-          - sys-img-x86-android-29
-          #          - sys-img-armeabi-v7a-android-17
-          licenses:
-            - 'android-sdk.+'
-            - 'google-gdk-license-.+'
     - os: osx
       language: ruby
       before_install:
@@ -32,15 +18,6 @@ matrix:
         - export PATH="$PATH:/usr/local/sbin/"
       before_cache:
         - brew cleanup
-#    - os: windows # enable when it starts working correctly
-#      language: sh
-#      before_install:
-#        - export JAVA_HOME=${JAVA_HOME:-/c/jdk}
-#        - export PATH=${JAVA_HOME}/bin:${PATH}
-#        - choco install jdk8 -params 'installdir=c:\\jdk' -y
-#        - choco install openjdk #add mosquitto
-#        - export PATH=$PATH:"/C/Program Files/OpenJDK/jdk-11.0.2/bin"
-#        - export GRADLE_OPTS=-Dorg.gradle.daemon=false
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
