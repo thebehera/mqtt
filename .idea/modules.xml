@@ -34,7 +34,6 @@
       <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jsTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jsTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmMain.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.androidMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.androidMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.commonMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.commonMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.commonTest.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.commonTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.jvmMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.jvmMain.iml" />
