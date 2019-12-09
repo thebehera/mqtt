@@ -5,6 +5,30 @@ apply plugin: 'kotlin-kapt'
 androidExtensions {
     experimental = true
 }
+
+def getLocalIPv4() {
+    def ip4s = []
+    NetworkInterface.getNetworkInterfaces()
+            .findAll { it.isUp() && !it.isLoopback() && !it.isVirtual() }
+            .each {
+                it.getInetAddresses()
+                        .findAll { !it.isLoopbackAddress() && it instanceof Inet4Address }
+                        .each { ip4s << it.getHostAddress() }
+            }
+    return "{\"" + ip4s.join("\", \"") + "\"}"
+}
+def getLocalIPv6() {
+    def ip6s = []
+    NetworkInterface.getNetworkInterfaces()
+            .findAll { it.isUp() && !it.isLoopback() && !it.isVirtual() }
+            .each {
+                it.getInetAddresses()
+                        .findAll { !it.isLoopbackAddress() && it instanceof Inet6Address }
+                        .each { ip6s << it.getHostAddress() }
+            }
+    return "{\"" + ip6s.join("\", \"") + "\"}"
+}
+
 android {
     compileSdkVersion 29
     compileOptions {
@@ -28,6 +52,8 @@ android {
                 arguments = ["room.schemaLocation": "$projectDir/schemas".toString()]
             }
         }
+        buildConfigField "String[]", "IPV4", getLocalIPv4()
+        buildConfigField "String[]", "IPV6", getLocalIPv6()
     }
     buildTypes {
         release {
