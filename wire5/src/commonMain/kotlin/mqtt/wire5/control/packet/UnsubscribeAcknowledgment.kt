@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -19,6 +20,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
 
 @Parcelize
 data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS)) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { reasonCodes.forEach { writeUByte(it.byte) } }
 
@@ -81,7 +83,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            val packet by lazy {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (reasonString != null) {
                         ReasonString(reasonString).write(this)

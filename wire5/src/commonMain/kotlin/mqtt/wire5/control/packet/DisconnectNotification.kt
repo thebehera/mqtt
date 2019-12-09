@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -31,7 +32,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  */
 @Parcelize
 data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) : ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL) {
-    override val variableHeaderPacket = variable.packet
+    @IgnoredOnParcel override val variableHeaderPacket = variable.packet
 
     @Parcelize
     data class VariableHeader(
@@ -43,7 +44,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
             getDisconnectCode(reasonCode.byte)
         }
 
-        val packet by lazy {
+        @IgnoredOnParcel val packet by lazy {
             buildPacket {
                 writeUByte(reasonCode.byte)
                 writePacket(properties.packet)
@@ -111,7 +112,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
              */
             val serverReference: MqttUtf8String? = null
         ) : Parcelable {
-            val packet by lazy {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (sessionExpiryIntervalSeconds != null) {
                         SessionExpiryInterval(sessionExpiryIntervalSeconds).write(this)

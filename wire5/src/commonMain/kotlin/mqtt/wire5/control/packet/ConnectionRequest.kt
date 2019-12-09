@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -49,13 +50,14 @@ data class ConnectionRequest(
         val variableHeader: VariableHeader = VariableHeader(),
         val payload: Payload = Payload())
     : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    @IgnoredOnParcel
     override val clientIdentifier: String = payload.clientId.getValueOrThrow()
-    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
-    override val variableHeaderPacket = variableHeader.packet()
-    override val cleanStart: Boolean = variableHeader.cleanStart
-    override val username = payload.userName?.getValueOrThrow()
-    override val protocolName = variableHeader.protocolName.getValueOrThrow()
-    override val protocolVersion = variableHeader.protocolVersion.toInt()
+    @IgnoredOnParcel override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
+    @IgnoredOnParcel override val variableHeaderPacket = variableHeader.packet()
+    @IgnoredOnParcel override val cleanStart: Boolean = variableHeader.cleanStart
+    @IgnoredOnParcel override val username = payload.userName?.getValueOrThrow()
+    @IgnoredOnParcel override val protocolName = variableHeader.protocolName.getValueOrThrow()
+    @IgnoredOnParcel override val protocolVersion = variableHeader.protocolVersion.toInt()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
@@ -582,7 +584,7 @@ data class ConnectionRequest(
                     throw ProtocolError("Maximum Packet Size cannot be set to 0")
                 }
             }
-
+            @IgnoredOnParcel
             val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (sessionExpiryIntervalSeconds != null) {

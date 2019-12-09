@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -33,10 +34,11 @@ data class PublishMessage(
         }
     }
 
+    @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
-    override val variableHeaderPacket: ByteReadPacket = variable.packet()
+    @IgnoredOnParcel override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
-    override val topic = variable.topicName
+    @IgnoredOnParcel override val topic = variable.topicName
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
             PublishAcknowledgment(variable.packetIdentifier!!.toUShort())
@@ -158,7 +160,7 @@ data class PublishMessage(
          */
         val retain: Boolean = false
     ) : Parcelable {
-        val flags by lazy {
+        @IgnoredOnParcel val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
             val retainInt = if (retain) 0b1 else 0b0

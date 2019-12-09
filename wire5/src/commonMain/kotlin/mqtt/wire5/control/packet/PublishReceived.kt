@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -27,8 +28,9 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
 data class PublishReceived(val variable: VariableHeader)
     : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL), IPublishReceived {
     override fun expectedResponse() = PublishRelease(variable.packetIdentifier.toUShort())
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: Int = variable.packetIdentifier
+    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
 
     @Parcelize
     data class VariableHeader(

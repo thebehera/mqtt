@@ -138,7 +138,7 @@ class AuthenticationExchangeTests {
     @Test
     fun invalidPropertyThrowsMalformedException() {
         try {
-            Properties.from(setOf(WillDelayInterval(2.toUInt())))
+            Properties.from(setOf(WillDelayInterval(2)))
             fail()
         } catch (e: MalformedPacketException) {
         }

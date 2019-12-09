@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -29,8 +30,9 @@ data class PublishAcknowledgment(val variable: VariableHeader)
 
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier.toInt()))
 
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override val packetIdentifier: Int = variable.packetIdentifier
+    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
 
     @Parcelize
     data class VariableHeader(

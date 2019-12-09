@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -27,6 +28,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
 @Parcelize
 data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<MqttUtf8String>)
     : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
 
@@ -48,7 +50,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
-        val packet by lazy {
+        @IgnoredOnParcel val packet by lazy {
             buildPacket {
                 writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet)
@@ -77,7 +79,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
                  */
                 val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            val packet by lazy {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (userProperty.isNotEmpty()) {
                         for (keyValueProperty in userProperty) {

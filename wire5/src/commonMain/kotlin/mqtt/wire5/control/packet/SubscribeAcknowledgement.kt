@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -35,9 +36,10 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
 
     constructor(packetIdentifier: UShort, payload: ReasonCode = SUCCESS, properties: Properties = Properties())
             : this(VariableHeader(packetIdentifier.toInt(), properties), listOf(payload))
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
-    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
+    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     init {
         payload.forEach {
             if (!validSubscribeCodes.contains(it)) {
@@ -57,7 +59,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
-        val packet by lazy {
+        @IgnoredOnParcel val packet by lazy {
             buildPacket {
                 writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet)
@@ -95,7 +97,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
                  */
                 val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            val packet by lazy {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (reasonString != null) {
                         ReasonString(reasonString).write(this)

@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -30,7 +31,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
 @Parcelize
 data class AuthenticationExchange(val variable: VariableHeader)
     : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
-    override val variableHeaderPacket = variable.packet
+    @IgnoredOnParcel override val variableHeaderPacket = variable.packet
 
     /**
      * 3.15.2 AUTH Variable Header
@@ -66,7 +67,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
             getReasonCode(reasonCode.byte)
         }
 
-        val packet by lazy {
+        @IgnoredOnParcel val packet by lazy {
             buildPacket {
                 writeUByte(reasonCode.byte)
                 writePacket(properties.packet)
@@ -80,7 +81,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
             val reasonString: MqttUtf8String? = null,
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            val packet by lazy {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (method != null) {
                         AuthenticationMethod(method).write(this)

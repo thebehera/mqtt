@@ -13,7 +13,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class TypeTests {
-    private val packetIdentifier = 0.toUShort()
+    private val packetIdentifier = 0
 
     private val controlPacketSpectMatchError = "doesn't match the spec from " +
             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477322"
@@ -55,7 +55,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForSUBACK() =
-            assertEquals(9, SubscribeAcknowledgement(packetIdentifier, GRANTED_QOS_0).controlPacketValue, controlPacketSpectMatchError)
+            assertEquals(9, SubscribeAcknowledgement(packetIdentifier.toUShort(), GRANTED_QOS_0).controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBSCRIBE() =
@@ -119,7 +119,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowSUBACK() =
-            assertEquals(SERVER_TO_CLIENT, SubscribeAcknowledgement(packetIdentifier, GRANTED_QOS_0).direction, controlPacketSpectMatchError)
+            assertEquals(SERVER_TO_CLIENT, SubscribeAcknowledgement(packetIdentifier.toUShort(), GRANTED_QOS_0).direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBSCRIBE() =

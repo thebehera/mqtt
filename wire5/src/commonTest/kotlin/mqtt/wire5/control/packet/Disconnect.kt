@@ -21,15 +21,15 @@ import kotlin.test.fail
 class DisconnectTests {
     @Test
     fun sessionExpiryInterval() {
-        val actual = DisconnectNotification(VariableHeader(properties = Properties(4.toUInt())))
+        val actual = DisconnectNotification(VariableHeader(properties = Properties(4)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as DisconnectNotification
-        assertEquals(expected.variable.properties.sessionExpiryIntervalSeconds, 4.toUInt())
+        assertEquals(expected.variable.properties.sessionExpiryIntervalSeconds, 4)
     }
 
     @Test
     fun sessionExpiryIntervalMultipleTimesThrowsProtocolError() {
-        val obj1 = SessionExpiryInterval(4.toUInt())
+        val obj1 = SessionExpiryInterval(4)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -137,7 +137,7 @@ class DisconnectTests {
 
     @Test
     fun invalidPropertyThrowsException() {
-        val pairs = setOf<Property>(WillDelayInterval(3.toUInt()))
+        val pairs = setOf<Property>(WillDelayInterval(3))
         try {
             Properties.from(pairs)
             fail()

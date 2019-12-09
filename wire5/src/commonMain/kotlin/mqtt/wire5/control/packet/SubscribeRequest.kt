@@ -3,6 +3,7 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
@@ -55,8 +56,9 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList)
     )
 
-    override val packetIdentifier = variable.packetIdentifier.toInt()
-    override val variableHeaderPacket = variable.packet()
+    @IgnoredOnParcel
+    override val packetIdentifier = variable.packetIdentifier
+    @IgnoredOnParcel override val variableHeaderPacket = variable.packet()
     private val payload by lazy {
         buildPacket {
             subscriptions.forEach { writePacket(it.packet) }
@@ -235,7 +237,7 @@ data class Subscription(val topicFilter: Filter,
                          */
                         val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
 ) : Parcelable {
-    val packet by lazy {
+    @IgnoredOnParcel val packet by lazy {
         val qosInt = maximumQos.integerValue
         val nlShifted = (if (noLocal) 1 else 0).shl(2)
         val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
