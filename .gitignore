@@ -13,7 +13,7 @@ kotlinx-io-native/repo/
 !.idea/dictionaries/*
 !.idea/codeStyles
 !.idea/codeStyles/*
+.idea/libraries/
+.idea/caches/
 
 local.properties
-
-!.idea
