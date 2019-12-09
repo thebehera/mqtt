@@ -11,10 +11,6 @@ matrix:
     - os: linux
       language: android
       dist: trusty
-      android:
-        components:
-          - build-tools-29.0.2
-          - android-29
       before_install:
         - mkdir "$ANDROID_HOME/licenses/"
         - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
