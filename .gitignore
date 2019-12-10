@@ -9,11 +9,7 @@ bin
 kotlinx-io-native/repo/
 
 !.idea/vcs.xml
-!.idea/dictionaries
-!.idea/dictionaries/*
+!.idea/runConfigurations
 !.idea/codeStyles
-!.idea/codeStyles/*
-.idea/libraries/
-.idea/caches/
 
 local.properties
