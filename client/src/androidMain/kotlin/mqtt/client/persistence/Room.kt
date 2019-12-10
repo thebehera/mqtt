@@ -1,14 +1,12 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.client.service
+package mqtt.client.persistence
 
 import android.content.Context
 import android.os.Parcelable
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import mqtt.client.MqttClient
-import mqtt.client.persistence.IMqttConnectionsDb
-import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import kotlin.coroutines.CoroutineContext

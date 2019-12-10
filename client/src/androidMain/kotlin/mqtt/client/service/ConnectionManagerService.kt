@@ -7,6 +7,7 @@ import android.content.Intent
 import android.os.*
 import android.util.Log
 import kotlinx.coroutines.launch
+import mqtt.client.persistence.MqttConnectionsDatabaseDescriptor
 import mqtt.client.persistence.MqttSubscription
 import mqtt.client.persistence.PersistableRemoteHostV4
 import mqtt.client.service.ipc.BoundClientToService
