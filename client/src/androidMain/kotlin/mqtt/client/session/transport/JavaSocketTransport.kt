@@ -1,4 +1,4 @@
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import io.ktor.network.sockets.*
 import kotlinx.io.core.ByteReadPacket

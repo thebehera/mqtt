@@ -1,4 +1,4 @@
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import kotlinx.io.core.ByteReadPacket
 import mqtt.wire.control.packet.ControlPacket

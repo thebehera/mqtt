@@ -8,7 +8,7 @@ import mqtt.client.persistence.MemoryQueuedObjectCollection
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
-import mqtt.client.transport.OnMessageReceivedCallback
+import mqtt.client.session.transport.OnMessageReceivedCallback
 import mqtt.connection.ConnectionFailure
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost

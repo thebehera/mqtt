@@ -1,4 +1,4 @@
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import mqtt.wire.control.packet.ControlPacket
 

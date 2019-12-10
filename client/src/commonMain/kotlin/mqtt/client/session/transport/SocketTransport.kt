@@ -1,4 +1,4 @@
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import io.ktor.client.HttpClient
 import io.ktor.client.features.websocket.WebSockets

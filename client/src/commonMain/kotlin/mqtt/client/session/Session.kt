@@ -6,8 +6,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.platform.PlatformSocketConnection
-import mqtt.client.transport.OnMessageReceivedCallback
-import mqtt.client.transport.SocketTransport
+import mqtt.client.session.transport.OnMessageReceivedCallback
+import mqtt.client.session.transport.SocketTransport
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.*

@@ -11,7 +11,7 @@ import kotlinx.io.core.writeFully
 import mqtt.client.connection.RemoteHost
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.platform.PlatformSocketConnection
-import mqtt.client.transport.OnMessageReceivedCallback
+import mqtt.client.session.transport.OnMessageReceivedCallback
 import mqtt.connection.Closed
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open

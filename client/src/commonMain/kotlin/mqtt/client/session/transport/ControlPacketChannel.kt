@@ -1,6 +1,6 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import kotlinx.coroutines.io.ByteReadChannel
 import kotlinx.coroutines.io.readPacket
