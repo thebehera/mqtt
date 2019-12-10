@@ -13,6 +13,7 @@ import mqtt.connection.ConnectionFailure
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
+import mqtt.retryIO
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name

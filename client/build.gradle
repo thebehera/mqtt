@@ -20,7 +20,6 @@ kotlin {
                 api project(":wire-core")
                 implementation project(":time")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
-//                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
                 implementation "io.ktor:ktor-client-websocket:1.2.0-alpha-2"

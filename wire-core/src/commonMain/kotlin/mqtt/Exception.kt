@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt
 
 import kotlinx.io.errors.IOException
 
