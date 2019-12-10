@@ -1,4 +1,4 @@
-package mqtt.client.service.ipc
+package mqtt.client.service
 
 import android.annotation.SuppressLint
 import android.app.Application
@@ -6,10 +6,10 @@ import androidx.lifecycle.AndroidViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import mqtt.client.persistence.MqttConnectionsDatabaseDescriptor
 import mqtt.client.persistence.MqttSubscription
-import mqtt.client.service.ConnectionManagerService
-import mqtt.client.service.MqttConnectionsDatabaseDescriptor
-import mqtt.client.subscription.SubscriptionManager
+import mqtt.client.service.ipc.ClientToServiceConnection
+import mqtt.client.session.SubscriptionManager
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
 import mqtt.wire.control.packet.ControlPacket
@@ -24,7 +24,11 @@ abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: 
     val db by lazy { dbDescriptor.getDb(app) }
     override val coroutineContext = Dispatchers.Main + job
     val serviceConnection by lazy {
-        ClientToServiceConnection(app, ConnectionManagerService::class.java, dbDescriptor)
+        ClientToServiceConnection(
+            app,
+            ConnectionManagerService::class.java,
+            dbDescriptor
+        )
     }
     @SuppressLint("UseSparseArrays")
     val subscriptions = HashMap<Int, SubscriptionManager>()

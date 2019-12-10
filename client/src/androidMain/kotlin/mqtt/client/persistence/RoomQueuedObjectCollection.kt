@@ -1,6 +1,5 @@
 package mqtt.client.persistence
 
-import mqtt.client.connection.parameters.PersistableRemoteHostV4
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ControlPacket
 

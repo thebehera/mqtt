@@ -2,7 +2,7 @@ package mqtt.client.service
 
 import mqtt.client.MqttClient
 import mqtt.client.persistence.QueuedObjectCollection
-import mqtt.client.transport.OnMessageReceivedCallback
+import mqtt.client.session.transport.OnMessageReceivedCallback
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Initializing

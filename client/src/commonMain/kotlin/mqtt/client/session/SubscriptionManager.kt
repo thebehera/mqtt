@@ -1,4 +1,4 @@
-package mqtt.client.subscription
+package mqtt.client.session
 
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.findSerializer

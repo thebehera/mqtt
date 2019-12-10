@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay

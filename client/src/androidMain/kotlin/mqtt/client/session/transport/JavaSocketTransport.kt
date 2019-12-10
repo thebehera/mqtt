@@ -1,8 +1,7 @@
-package mqtt.client
+package mqtt.client.session.transport
 
 import io.ktor.network.sockets.*
 import kotlinx.io.core.ByteReadPacket
-import mqtt.client.transport.Transport
 
 class JavaSocketTransport(private val socket: Socket, private val protocolVersion: Int) : Transport {
     private val writeChannel by lazy { socket.openWriteChannel(autoFlush = true) }

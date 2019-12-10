@@ -1,6 +1,6 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.client.connection
+package mqtt.client
 
 import mqtt.Parcelize
 import mqtt.connection.IRemoteHost

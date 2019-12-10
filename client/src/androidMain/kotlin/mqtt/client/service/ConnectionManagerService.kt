@@ -7,11 +7,11 @@ import android.content.Intent
 import android.os.*
 import android.util.Log
 import kotlinx.coroutines.launch
-import mqtt.client.connection.parameters.PersistableRemoteHostV4
+import mqtt.client.persistence.MqttConnectionsDatabaseDescriptor
 import mqtt.client.persistence.MqttSubscription
+import mqtt.client.persistence.PersistableRemoteHostV4
 import mqtt.client.service.ipc.BoundClientToService
 import mqtt.client.service.ipc.ClientToServiceConnection.NotifyPublish
-import mqtt.client.service.ipc.MessageCallbackHandler
 import mqtt.client.service.ipc.ServiceToBoundClient
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
 import mqtt.connection.MqttConnectionStateUpdated
@@ -21,6 +21,9 @@ import mqtt.wire.control.packet.ISubscribeAcknowledgement
 
 private const val TAG = "[MQTT][SiCo]"
 const val MESSAGE_PAYLOAD = "msg_payload"
+const val REGISTER_CLIENT = Int.MIN_VALUE
+const val UNREGISTER_CLIENT = Int.MIN_VALUE + 1
+
 
 class ConnectionManagerService : CoroutineService() {
 
@@ -118,7 +121,7 @@ class ConnectionManagerService : CoroutineService() {
             if (controlPacket is IConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
             } else if (controlPacket is ISubscribeAcknowledgement) {
-                connectionManagers[remoteHostId]?.client?.state?.subscriptionAcknowledgementReceived(controlPacket)
+                connectionManagers[remoteHostId]?.client?.session?.state?.subscriptionAcknowledgementReceived(controlPacket)
             } else {
                 val msg = Message.obtain()
                 msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.position
@@ -189,33 +192,3 @@ class ConnectionManagerService : CoroutineService() {
     }
 
 }
-
-class BoundClientsObserver(newClientCb: (Messenger) -> Unit, val callback: (msg: Message) -> Unit) {
-    private val registeredClients = LinkedHashSet<Messenger>()
-    private val incomingHandler = MessageCallbackHandler {
-        when (it.what) {
-            REGISTER_CLIENT -> {
-                registeredClients.add(it.replyTo)
-                newClientCb(it.replyTo)
-            }
-            UNREGISTER_CLIENT -> registeredClients.remove(it.replyTo)
-            else -> callback(it)
-        }
-    }
-    val messenger = Messenger(incomingHandler)
-    val binder = messenger.binder!!
-
-
-    fun sendMessageToClients(msg: Message) = LinkedHashSet(registeredClients).forEach {
-        try {
-            it.send(msg)
-        } catch (e: RemoteException) {
-            // unregister the client, there is nothing we can do at this point as the other process has crashed
-            registeredClients.remove(it)
-        }
-    }
-}
-
-const val REGISTER_CLIENT = Int.MIN_VALUE
-const val UNREGISTER_CLIENT = Int.MIN_VALUE + 1
-

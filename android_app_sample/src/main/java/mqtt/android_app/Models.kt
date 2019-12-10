@@ -5,7 +5,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.streams.readerUTF8
 import mqtt.androidx.room.*
-import mqtt.client.service.MqttRoomDatabase
+import mqtt.client.persistence.MqttRoomDatabase
 import mqtt.wire.control.packet.MqttSerializable
 import mqtt.wire.data.utf8Length
 

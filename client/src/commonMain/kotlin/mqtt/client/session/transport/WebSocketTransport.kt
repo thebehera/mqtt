@@ -1,4 +1,4 @@
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import io.ktor.client.features.websocket.DefaultClientWebSocketSession
 import io.ktor.http.cio.websocket.Frame
@@ -8,7 +8,6 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.launch
 import kotlinx.io.core.*
-import mqtt.client.readFirstTwoBytes
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire4.control.packet.ControlPacketV4

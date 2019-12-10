@@ -1,4 +1,4 @@
-package mqtt.client.transport
+package mqtt.client.session.transport
 
 import io.ktor.client.HttpClient
 import io.ktor.client.features.websocket.WebSockets
@@ -12,8 +12,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.io.ClosedWriteChannelException
-import mqtt.client.ConnectionTimeout
-import mqtt.client.FailedToReadConnectionAck
+import mqtt.ConnectionTimeout
+import mqtt.FailedToReadConnectionAck
 import mqtt.connection.*
 import mqtt.time.currentTimestampMs
 import mqtt.wire.ProtocolError

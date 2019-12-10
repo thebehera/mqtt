@@ -1,4 +1,4 @@
-package mqtt.client.connection.parameters
+package mqtt.client.persistence
 
 import androidx.room.*
 

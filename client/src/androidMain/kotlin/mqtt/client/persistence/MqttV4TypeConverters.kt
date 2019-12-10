@@ -1,4 +1,4 @@
-package mqtt.client.connection.parameters
+package mqtt.client.persistence
 
 import androidx.room.TypeConverter
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow

@@ -7,8 +7,8 @@ import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
 import mqtt.Parcelize
+import mqtt.client.persistence.MqttConnectionsDatabaseDescriptor
 import mqtt.client.persistence.MqttSubscription
-import mqtt.client.service.MqttConnectionsDatabaseDescriptor
 import mqtt.client.service.REGISTER_CLIENT
 import mqtt.client.service.UNREGISTER_CLIENT
 import mqtt.connection.IRemoteHost

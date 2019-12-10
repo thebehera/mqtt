@@ -1,4 +1,4 @@
-package mqtt.client.platform
+package mqtt.client
 
 import kotlinx.coroutines.CoroutineDispatcher
 

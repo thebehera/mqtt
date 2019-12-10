@@ -7,7 +7,7 @@ import kotlinx.coroutines.Job
 import kotlin.coroutines.CoroutineContext
 
 abstract class CoroutineService : Service(), CoroutineScope {
-    protected val job: Job = Job()
-    protected val dispatcher = Dispatchers.Main
+    private val job: Job = Job()
+    private val dispatcher = Dispatchers.Main
     override val coroutineContext: CoroutineContext = job + dispatcher
 }

@@ -1,14 +1,14 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.client.connection.parameters
+package mqtt.client.persistence
 
 import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
 import mqtt.Parcelize
-import mqtt.client.connection.RemoteHost.Security
-import mqtt.client.connection.RemoteHost.Websocket
+import mqtt.client.RemoteHost.Security
+import mqtt.client.RemoteHost.Websocket
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Milliseconds
 import mqtt.wire4.control.packet.ConnectionRequest
