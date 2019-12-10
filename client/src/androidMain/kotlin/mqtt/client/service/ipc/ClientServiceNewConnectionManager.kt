@@ -6,8 +6,6 @@ import android.os.Message
 import android.os.Messenger
 import android.util.Log
 import android.util.SparseArray
-import androidx.databinding.Observable
-import androidx.databinding.ObservableField
 import mqtt.client.service.MESSAGE_PAYLOAD
 import mqtt.client.service.ipc.ServiceToBoundClient.*
 import mqtt.connection.*
@@ -121,12 +119,3 @@ class ClientServiceNewConnectionManager(
         }
 }
 
-class NonNullObservableField<T : Any>(value: T, vararg dependencies: Observable) : ObservableField<T>(*dependencies) {
-    init {
-        set(value)
-    }
-    override fun get(): T = super.get()!!
-    @Suppress("RedundantOverride") // Only allow non-null `value`.
-    override fun set(value: T) = super.set(value)
-
-}

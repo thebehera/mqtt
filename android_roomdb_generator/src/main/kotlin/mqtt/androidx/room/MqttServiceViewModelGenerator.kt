@@ -26,7 +26,7 @@ fun classSpec(
             .addModifiers(KModifier.PRIVATE)
             .build()
     )
-    superclass(ClassName("mqtt.client.service.ipc", "AbstractMqttServiceViewModel"))
+    superclass(ClassName("mqtt.client.service", "AbstractMqttServiceViewModel"))
 
     addSuperclassConstructorParameter("app")
     addSuperclassConstructorParameter("%T", ClassName(packageName, mqttDbProviderGeneratorFilename))
