@@ -118,7 +118,7 @@ class ConnectionManagerService : CoroutineService() {
             if (controlPacket is IConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
             } else if (controlPacket is ISubscribeAcknowledgement) {
-                connectionManagers[remoteHostId]?.client?.state?.subscriptionAcknowledgementReceived(controlPacket)
+                connectionManagers[remoteHostId]?.client?.session?.state?.subscriptionAcknowledgementReceived(controlPacket)
             } else {
                 val msg = Message.obtain()
                 msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.position
