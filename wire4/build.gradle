@@ -6,25 +6,7 @@ apply plugin: 'kotlin-android-extensions'
 androidExtensions {
     experimental = true
 }
-android {
-    compileSdkVersion 29
-    defaultConfig {
-        minSdkVersion 15
-    }
-    buildTypes {
-        release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        }
-    }
-    packagingOptions {
-        exclude 'META-INF/*.kotlin_module'
-        exclude 'io/ktor/http/cio/internals/*.kotlin_metadata'
-        exclude 'io/ktor/client/features/websocket/*.kotlin_metadata'
-        exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
-        exclude 'io/ktor/http/cio/*.kotlin_metadata'
-    }
-}
+apply from: "../gradle/android.gradle"
 configurations {
     compileClasspath
 }
@@ -71,7 +53,6 @@ kotlin {
             }
         }
         androidTest {
-            dependsOn(androidMain)
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')

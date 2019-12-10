@@ -9,7 +9,7 @@ apply from: "../gradle/experimental.gradle"
 apply from: "../gradle/android.gradle"
 
 kotlin {
-    jvm()
+//    jvm()
     android()
     sourceSets {
         commonMain {
@@ -32,33 +32,24 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        jvmMain {
+        androidMain {
             dependencies {
                 implementation project(":android_roomdb_core")
-                implementation kotlin('stdlib-jdk7')
-                implementation "io.ktor:ktor-client-cio:$ktor_version"
-                implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
-            }
-        }
-        jvmTest {
-            dependencies {
-                implementation kotlin('test')
-                implementation kotlin('test-junit')
-            }
-        }
-        androidMain {
-            dependsOn(jvmMain)
-            dependencies {
                 implementation "androidx.room:room-runtime:$room_version"
                 implementation "androidx.room:room-ktx:$room_version"
                 implementation "androidx.room:room-common:$room_version"
                 implementation kotlin('stdlib-jdk7')
+                implementation "io.ktor:ktor-client-cio:$ktor_version"
+                implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+                implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
             }
         }
         androidTest {
-            dependsOn(jvmTest)
-            dependsOn(androidMain)
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+            }
         }
     }
     targets.all {

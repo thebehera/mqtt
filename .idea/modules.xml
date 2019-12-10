@@ -5,14 +5,10 @@
       <module fileurl="file://$PROJECT_DIR$/android_app_sample/android_app_sample.iml" filepath="$PROJECT_DIR$/android_app_sample/android_app_sample.iml" />
       <module fileurl="file://$PROJECT_DIR$/android_roomdb_core/android_roomdb_core.iml" filepath="$PROJECT_DIR$/android_roomdb_core/android_roomdb_core.iml" />
       <module fileurl="file://$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" filepath="$PROJECT_DIR$/android_roomdb_generator/android_roomdb_generator.iml" />
-      <module fileurl="file://$PROJECT_DIR$/android_service/android_service.iml" filepath="$PROJECT_DIR$/android_service/android_service.iml" />
       <module fileurl="file://$PROJECT_DIR$/client/client.iml" filepath="$PROJECT_DIR$/client/client.iml" />
       <module fileurl="file://$PROJECT_DIR$/mqtt.iml" filepath="$PROJECT_DIR$/mqtt.iml" />
-      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.androidMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.androidMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.commonMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.commonMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.commonTest.iml" filepath="$PROJECT_DIR$/client/mqtt.client.commonTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.jvmMain.iml" filepath="$PROJECT_DIR$/client/mqtt.client.jvmMain.iml" />
-      <module fileurl="file://$PROJECT_DIR$/client/mqtt.client.jvmTest.iml" filepath="$PROJECT_DIR$/client/mqtt.client.jvmTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.commonMain.iml" filepath="$PROJECT_DIR$/time/mqtt.time.commonMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.commonTest.iml" filepath="$PROJECT_DIR$/time/mqtt.time.commonTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/time/mqtt.time.iOSArm64Main.iml" filepath="$PROJECT_DIR$/time/mqtt.time.iOSArm64Main.iml" />
@@ -38,7 +34,6 @@
       <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jsTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jsTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmMain.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmTest.iml" filepath="$PROJECT_DIR$/wire-core/mqtt.wire-core.jvmTest.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.androidMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.androidMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.commonMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.commonMain.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.commonTest.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.commonTest.iml" />
       <module fileurl="file://$PROJECT_DIR$/wire4/mqtt.wire4.jvmMain.iml" filepath="$PROJECT_DIR$/wire4/mqtt.wire4.jvmMain.iml" />
