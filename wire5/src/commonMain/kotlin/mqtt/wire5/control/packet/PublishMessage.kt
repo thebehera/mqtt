@@ -34,11 +34,23 @@ data class PublishMessage(
         }
     }
 
+
+    constructor(
+        topic: String, qos: QualityOfService,
+        packetIdentifier: UShort,
+        dup: Boolean = false,
+        retain: Boolean = false
+    ) : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier = packetIdentifier.toInt()))
+
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
-    @IgnoredOnParcel override val variableHeaderPacket: ByteReadPacket = variable.packet()
+    @IgnoredOnParcel
+    override val variableHeaderPacket: ByteReadPacket = variable.packet()
+
     override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
-    @IgnoredOnParcel override val topic = variable.topicName
+    @IgnoredOnParcel
+    override val topic = variable.topicName
+
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
             PublishAcknowledgment(variable.packetIdentifier!!.toUShort())

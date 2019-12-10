@@ -12,10 +12,13 @@ import mqtt.client.readFirstTwoBytes
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire4.control.packet.ControlPacketV4
+import mqtt.wire5.control.packet.ControlPacketV5
 import kotlin.coroutines.CoroutineContext
 
-class WebSocketTransport(private val websocket: DefaultClientWebSocketSession,
-                         override val coroutineContext: CoroutineContext) : Transport, CoroutineScope {
+class WebSocketTransport(
+    val protocolVersion: Int, private val websocket: DefaultClientWebSocketSession,
+    override val coroutineContext: CoroutineContext
+) : Transport, CoroutineScope {
     var lastMessageReceived: Long? = null
     private val buffer = IoBuffer.Pool.borrow()
     private val internalControlPacketChannel = Channel<ControlPacket>()
@@ -47,7 +50,11 @@ class WebSocketTransport(private val websocket: DefaultClientWebSocketSession,
         if (buffer.readRemaining < remaining) {
             return null
         }
-        return ControlPacketV4.from(buildPacket { writeFully(buffer, remaining) }, byte1)
+        return if (protocolVersion == 5) {
+            ControlPacketV5.from(buildPacket { writeFully(buffer, remaining) }, byte1)
+        } else {
+            ControlPacketV4.from(buildPacket { writeFully(buffer, remaining) }, byte1)
+        }
     }
 
     private suspend fun hardClose() {

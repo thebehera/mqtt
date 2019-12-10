@@ -1,5 +1,3 @@
-@file:Suppress("UNCHECKED_CAST")
-
 package mqtt.client.subscription
 
 import mqtt.wire.control.packet.IPublishMessage

@@ -41,7 +41,7 @@ actual class PlatformSocketConnection actual constructor(
         } else {
             tmpSocketRef
         }
-        return JavaSocketTransport(socket)
+        return JavaSocketTransport(socket, remoteHost.request.protocolVersion)
     }
 
 }

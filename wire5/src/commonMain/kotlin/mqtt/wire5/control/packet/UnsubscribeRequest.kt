@@ -30,7 +30,10 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
     : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet
+
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
+
+    constructor(packetIdentifier: Int, topics: Set<MqttUtf8String>) : this(VariableHeader(packetIdentifier), topics)
 
     init {
         if (topics.isEmpty()) {

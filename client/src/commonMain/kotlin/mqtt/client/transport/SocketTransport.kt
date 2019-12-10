@@ -67,7 +67,7 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
                 headers["Sec-WebSocket-Protocol"] = "mqttv3.1"
             }
             session.flush()
-            return WebSocketTransport(session, coroutineContext)
+            return WebSocketTransport(remoteHost.request.protocolVersion, session, coroutineContext)
         } else {
             return buildNativeSocket()
         }
@@ -131,7 +131,12 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
 
     fun closeAsync() = async {
         if (state.value == Initializing || state.value == Connecting || state.value is Open) {
-            clientToServer.send(DisconnectNotification)
+            val packet: ControlPacket = if (remoteHost.request.protocolVersion == 5) {
+                mqtt.wire5.control.packet.DisconnectNotification()
+            } else {
+                DisconnectNotification
+            }
+            clientToServer.send(packet)
             while (isActive && state.value !is Closed) {
             }
             return@async true
@@ -248,7 +253,13 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             val keepAliveTimeoutMs = keepAliveTimeoutSeconds * 1000
             while (isOpenAndActive()) {
                 if (currentTimestampMs() - lastMessageBetweenClientAndServer() > keepAliveTimeoutMs) {
-                    clientToServer.send(PingRequest)
+                    clientToServer.send(
+                        if (remoteHost.request.protocolVersion == 5) {
+                            mqtt.wire5.control.packet.PingRequest
+                        } else {
+                            PingRequest
+                        }
+                    )
                     delay(keepAliveTimeoutMs)
                 } else {
                     delay(keepAliveTimeoutMs - (currentTimestampMs() - lastMessageBetweenClientAndServer()))

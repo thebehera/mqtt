@@ -2,13 +2,16 @@
 
 package mqtt.client.connection.parameters
 
+import androidx.room.Embedded
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+import androidx.room.TypeConverters
 import mqtt.Parcelize
 import mqtt.client.connection.RemoteHost.Security
 import mqtt.client.connection.RemoteHost.Websocket
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Milliseconds
-import mqtt.wire4.control.packet.PersistableConnectionRequest
-import androidx.room.*
+import mqtt.wire4.control.packet.ConnectionRequest
 
 @Parcelize
 @Entity
@@ -16,7 +19,7 @@ import androidx.room.*
 data class PersistableRemoteHostV4(
     override val name: String,
     @Embedded
-    override val request: PersistableConnectionRequest,
+    override val request: ConnectionRequest,
     @Embedded
     override val websocket: Websocket = Websocket(),
     @Embedded
@@ -45,18 +48,6 @@ data class PersistableRemoteHostV4(
 ) : IRemoteHost {
     override fun hashCode() = connectionIdentifier()
     override fun toString() = uniqueIdentifier()
-}
-
-@Dao
-interface RemoteHostDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addOrUpdate(host: PersistableRemoteHostV4)
-
-    @Query("SELECT * FROM PersistableRemoteHostV4")
-    suspend fun getAllConnections(): List<PersistableRemoteHostV4>
-
-    @Delete
-    suspend fun remove(host: PersistableRemoteHostV4)
 }
 
 

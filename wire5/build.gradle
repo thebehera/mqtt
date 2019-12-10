@@ -6,7 +6,40 @@ apply plugin: 'kotlin-android-extensions'
 androidExtensions {
     experimental = true
 }
-apply from: "../gradle/android.gradle"
+android {
+    compileSdkVersion 29
+    defaultConfig {
+        minSdkVersion 15
+    }
+    buildTypes {
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/*.kotlin_module'
+        exclude 'io/ktor/http/cio/internals/*.kotlin_metadata'
+        exclude 'io/ktor/client/features/websocket/*.kotlin_metadata'
+        exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
+        exclude 'io/ktor/http/cio/*.kotlin_metadata'
+    }
+    sourceSets {
+        main {
+            manifest.srcFile 'src/androidMain/AndroidManifest.xml'
+            java.srcDirs = ['src/androidMain/kotlin']
+            res.srcDirs = ['src/androidMain/res']
+        }
+        androidTest {
+            java.srcDirs = ['src/androidTest/kotlin']
+            res.srcDirs = ['src/androidTest/res']
+        }
+    }
+
+}
+configurations {
+    compileClasspath
+}
 repositories {
     mavenCentral()
     jcenter()
@@ -66,5 +99,22 @@ kotlin {
                 ]
             }
         }
+    }
+}
+configurations {
+    compileClasspath
+}
+dependencies {
+    implementation project(':wire-core')
+}
+tasks.whenTaskAdded { task ->
+    if (task.name.equals("lint")) {
+        //this is for speed up build
+        task.enabled = false
+    }
+    if(task.name.contains("Test"))
+    {
+        //this is what you need
+        task.enabled = false
     }
 }

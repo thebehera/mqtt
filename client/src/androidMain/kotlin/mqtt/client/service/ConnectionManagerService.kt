@@ -16,8 +16,8 @@ import mqtt.client.service.ipc.ServiceToBoundClient
 import mqtt.client.service.ipc.ServiceToBoundClient.CONNECTION_STATE_CHANGED
 import mqtt.connection.MqttConnectionStateUpdated
 import mqtt.connection.Open
+import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
-import mqtt.wire4.control.packet.ConnectionAcknowledgment
 
 private const val TAG = "[MQTT][SiCo]"
 const val MESSAGE_PAYLOAD = "msg_payload"
@@ -115,7 +115,7 @@ class ConnectionManagerService : CoroutineService() {
             boundClients.sendMessageToClients(buildConnectionChangeToClients(it))
         }
         val connectionManager = ConnectionManager(connectionParameters, persistence) { controlPacket, remoteHostId ->
-            if (controlPacket is ConnectionAcknowledgment) {
+            if (controlPacket is IConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
             } else if (controlPacket is ISubscribeAcknowledgement) {
                 connectionManagers[remoteHostId]?.client?.state?.subscriptionAcknowledgementReceived(controlPacket)

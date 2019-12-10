@@ -44,4 +44,8 @@ data class RemoteHost(
 
     override fun hashCode() = connectionIdentifier()
     override fun toString() = uniqueIdentifier()
+    override fun equals(other: Any?): Boolean {
+        if (other !is IRemoteHost) return false
+        return connectionIdentifier() == other.connectionIdentifier()
+    }
 }
