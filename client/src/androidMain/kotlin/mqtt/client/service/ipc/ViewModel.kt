@@ -9,7 +9,7 @@ import kotlinx.coroutines.Job
 import mqtt.client.persistence.MqttSubscription
 import mqtt.client.service.ConnectionManagerService
 import mqtt.client.service.MqttConnectionsDatabaseDescriptor
-import mqtt.client.subscription.SubscriptionManager
+import mqtt.client.session.SubscriptionManager
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
 import mqtt.wire.control.packet.ControlPacket

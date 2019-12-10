@@ -3,7 +3,6 @@
 package mqtt.client.session
 
 import mqtt.client.persistence.QueuedObjectCollection
-import mqtt.client.subscription.SubscriptionManager
 import mqtt.connection.IRemoteHost
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.ISubscribeRequest
