@@ -111,13 +111,6 @@ class ClientSession(
         }
     }
 
-    suspend inline fun <reified T : Any> publishGeneric(
-        topic: String,
-        qos: QualityOfService,
-        packetIdentifier: UShort,
-        payload: T
-    ) = publish(topic, qos, packetIdentifier, payload)
-
     suspend inline fun <reified T : Any> publish(
         topic: String,
         qos: QualityOfService,
