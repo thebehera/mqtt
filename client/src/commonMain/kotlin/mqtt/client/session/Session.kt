@@ -5,8 +5,8 @@ package mqtt.client.session
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mqtt.client.persistence.QueuedObjectCollection
-import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.session.transport.OnMessageReceivedCallback
+import mqtt.client.session.transport.PlatformSocketConnection
 import mqtt.client.session.transport.SocketTransport
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
@@ -39,7 +39,8 @@ class ClientSession(
             println("transportLocal $transportLocal")
             return transportLocal.state.value
         }
-        val platformSocketConnection = PlatformSocketConnection(remoteHost, coroutineContext)
+        val platformSocketConnection =
+            PlatformSocketConnection(remoteHost, coroutineContext)
         platformSocketConnection.outboundCallback = outboundCallback
         this@ClientSession.transport = platformSocketConnection
         platformSocketConnection.messageReceiveCallback = this@ClientSession

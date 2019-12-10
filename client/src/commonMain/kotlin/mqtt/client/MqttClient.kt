@@ -6,7 +6,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import mqtt.client.persistence.MemoryQueuedObjectCollection
 import mqtt.client.persistence.QueuedObjectCollection
-import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
 import mqtt.client.session.transport.OnMessageReceivedCallback
 import mqtt.connection.ConnectionFailure

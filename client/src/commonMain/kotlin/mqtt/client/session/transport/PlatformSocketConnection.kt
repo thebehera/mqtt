@@ -1,7 +1,6 @@
-package mqtt.client.platform
+package mqtt.client.session.transport
 
 import io.ktor.util.KtorExperimentalAPI
-import mqtt.client.session.transport.SocketTransport
 import mqtt.connection.IRemoteHost
 import kotlin.coroutines.CoroutineContext
 

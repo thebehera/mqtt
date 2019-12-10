@@ -1,15 +1,8 @@
 package mqtt.client.persistence
 
 import android.os.Parcelable
-import androidx.room.Dao
-import androidx.room.Entity
-import androidx.room.Insert
-import androidx.room.OnConflictStrategy
-import androidx.room.Query
-import androidx.room.Transaction
-import androidx.room.TypeConverters
+import androidx.room.*
 import mqtt.Parcelize
-import mqtt.client.connection.parameters.MqttV4TypeConverters
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.data.QualityOfService
 

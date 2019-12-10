@@ -92,7 +92,7 @@ open class AnnotatedMqttElement(
     companion object {
 
         val persistableRemoteHostV4ClassName =
-            ClassName("mqtt.client.connection.parameters", "PersistableRemoteHostV4")
+            ClassName("mqtt.client.persistence", "PersistableRemoteHostV4")
         val persistedQueueV4ClassName =
             ClassName("mqtt.client.persistence", "MqttQueue")
         val publishQueueV4ClassName =

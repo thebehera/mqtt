@@ -12,8 +12,8 @@ import androidx.lifecycle.ViewModelProviders
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mqtt.android_app.databinding.ActivityMainBinding
-import mqtt.client.connection.RemoteHost
-import mqtt.client.connection.parameters.PersistableRemoteHostV4
+import mqtt.client.RemoteHost
+import mqtt.client.persistence.PersistableRemoteHostV4
 import mqtt.wire4.control.packet.ConnectionRequest
 import java.util.*
 

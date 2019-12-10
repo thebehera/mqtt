@@ -8,10 +8,8 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
-import mqtt.client.connection.RemoteHost
-import mqtt.client.platform.PlatformCoroutineDispatcher
-import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.session.transport.OnMessageReceivedCallback
+import mqtt.client.session.transport.PlatformSocketConnection
 import mqtt.connection.Closed
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Open
@@ -97,9 +95,11 @@ class SocketTransportTests {
     fun testQos1() {
         val clientId1 = "Client1"
         val client1Params = buildParams(clientId1)
-        val client1SocketConnection1 = PlatformSocketConnection(client1Params, ctx)
+        val client1SocketConnection1 =
+            PlatformSocketConnection(client1Params, ctx)
         val client2Params = buildParams("Client2")
-        val client2SocketConnection = PlatformSocketConnection(client2Params, ctx)
+        val client2SocketConnection =
+            PlatformSocketConnection(client2Params, ctx)
 
 
         val subscribe = SubscribeRequest(10.toUShort(), Filter("test"), AT_LEAST_ONCE)
@@ -157,7 +157,8 @@ class SocketTransportTests {
             publishClient.clientToServer.send(publish)
             val mutex = Mutex(true)
             val recvClientSession2Params = buildParams("client1")
-            val recvClientSession2Connection = PlatformSocketConnection(recvClientSession2Params, ctx)
+            val recvClientSession2Connection =
+                PlatformSocketConnection(recvClientSession2Params, ctx)
             recvClientSession2Connection.messageReceiveCallback = object : OnMessageReceivedCallback {
                 override fun onMessage(controlPacket: ControlPacket) {
                     try {

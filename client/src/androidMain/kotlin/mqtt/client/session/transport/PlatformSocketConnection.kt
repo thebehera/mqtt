@@ -1,14 +1,11 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_OVERRIDE")
 
-package mqtt.client.platform
+package mqtt.client.session.transport
 
 import io.ktor.network.selector.ActorSelectorManager
 import io.ktor.network.sockets.aSocket
 import io.ktor.network.tls.tls
 import kotlinx.coroutines.Dispatchers
-import mqtt.client.session.transport.JavaSocketTransport
-import mqtt.client.session.transport.SocketTransport
-import mqtt.client.session.transport.Transport
 import mqtt.connection.IRemoteHost
 import java.security.cert.X509Certificate
 import javax.net.ssl.X509TrustManager

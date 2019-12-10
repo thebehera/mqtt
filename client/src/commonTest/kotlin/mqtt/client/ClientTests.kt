@@ -4,7 +4,6 @@ package mqtt.client
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
-import mqtt.client.connection.RemoteHost
 import mqtt.client.session.transport.OnMessageReceivedCallback
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.QualityOfService
