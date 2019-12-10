@@ -14,6 +14,8 @@
       <module name="mqtt.wire4.jvmTest" target="1.6" />
       <module name="mqtt.wire5.jvmMain" target="1.6" />
       <module name="mqtt.wire5.jvmTest" target="1.6" />
+      <module name="public.mqtt.client.jvmMain" target="1.6" />
+      <module name="public.mqtt.client.jvmTest" target="1.6" />
       <module name="time_jvmMain" target="1.6" />
       <module name="time_jvmTest" target="1.6" />
       <module name="wire-core_jvmMain" target="1.6" />

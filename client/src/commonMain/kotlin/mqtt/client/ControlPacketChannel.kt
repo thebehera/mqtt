@@ -10,16 +10,21 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.VARIABLE_BYTE_INT_MAX
 import mqtt.wire4.control.packet.ControlPacketV4
+import mqtt.wire5.control.packet.ControlPacketV5
 import kotlin.experimental.and
 
-suspend fun ByteReadChannel.read(): ControlPacket {
+suspend fun ByteReadChannel.read(protocolVersion: Int): ControlPacket {
     val byte1 = readByte().toUByte()
     if (!ControlPacket.isValidFirstByte(byte1)) {
         throw MalformedPacketException("Invalid MQTT Control Packet Type: $byte1 Should be in range between 0 and 15 inclusive")
     }
     val remainingLength = decodeVariableByteInteger().toInt()
     val packet = readPacket(remainingLength)
-    return ControlPacketV4.from(packet, byte1)
+    return when (protocolVersion) {
+        3, 4 -> ControlPacketV4.from(packet, byte1)
+        5 -> ControlPacketV5.from(packet, byte1)
+        else -> throw IllegalArgumentException("Received an unsupported protocol version $protocolVersion")
+    }
 }
 
 suspend fun ByteReadChannel.decodeVariableByteInteger(): UInt {

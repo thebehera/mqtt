@@ -14,7 +14,7 @@ import kotlinx.coroutines.launch
 import mqtt.android_app.databinding.ActivityMainBinding
 import mqtt.client.connection.RemoteHost
 import mqtt.client.connection.parameters.PersistableRemoteHostV4
-import mqtt.wire4.control.packet.PersistableConnectionRequest
+import mqtt.wire4.control.packet.ConnectionRequest
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
@@ -30,7 +30,7 @@ class MainActivity : AppCompatActivity() {
         val clientService = ViewModelProviders.of(this).get(MqttServiceViewModelGenerated::class.java)
         val remoteHost = PersistableRemoteHostV4(
             BuildConfig.IPV4[0],
-            PersistableConnectionRequest(
+            ConnectionRequest(
                 clientId,
                 keepAliveSeconds = 300.toUShort()
             ),

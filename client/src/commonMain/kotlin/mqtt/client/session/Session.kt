@@ -104,7 +104,11 @@ class ClientSession(
     suspend fun publish(topic: String, qos: QualityOfService,
                         packetIdentifier: UShort
     ) {
-        send(PublishMessage(topic, qos, packetIdentifier))
+        if (remoteHost.request.protocolVersion == 5) {
+            send(mqtt.wire5.control.packet.PublishMessage(topic, qos, packetIdentifier))
+        } else {
+            send(PublishMessage(topic, qos, packetIdentifier))
+        }
     }
 
     suspend inline fun <reified T : Any> publishGeneric(
@@ -153,8 +157,12 @@ class ClientSession(
         state.sentSubscriptionRequest(subscribe(packetIdentifier, topic, qos), typeClass, listOf(callback))
     }
 
-    suspend fun subscribe(packetIdentifier: UShort, topic: Filter, qos: QualityOfService): SubscribeRequest {
-        val subscription = SubscribeRequest(packetIdentifier, topic, qos)
+    suspend fun subscribe(packetIdentifier: UShort, topic: Filter, qos: QualityOfService): ISubscribeRequest {
+        val subscription = if (remoteHost.request.protocolVersion == 5) {
+            mqtt.wire5.control.packet.SubscribeRequest(packetIdentifier.toUShort(), topic.topicFilter, qos)
+        } else {
+            SubscribeRequest(packetIdentifier, topic, qos)
+        }
         send(subscription)
         state.unacknowledgedSubscriptions[packetIdentifier.toInt()] = subscription
         return subscription
@@ -201,8 +209,17 @@ class ClientSession(
         transport.clientToServer.send(controlPacket)
     }
 
-    suspend fun unsubscribe(packetIdentifier: UShort, topics: List<String>) =
-        send(UnsubscribeRequest(packetIdentifier.toInt(), topics = topics.map { MqttUtf8String(it) }))
+    suspend fun unsubscribe(packetIdentifier: UShort, topics: List<String>) {
+        val unsubscription = if (remoteHost.request.protocolVersion == 5) {
+            mqtt.wire5.control.packet.UnsubscribeRequest(
+                packetIdentifier.toInt(),
+                topics.map { MqttUtf8String(it) }.toSet()
+            )
+        } else {
+            UnsubscribeRequest(packetIdentifier.toInt(), topics = topics.map { MqttUtf8String(it) })
+        }
+        send(unsubscription)
+    }
 
     suspend fun disconnectAsync(): Boolean {
         val result = transport?.closeAsync()?.await() ?: false

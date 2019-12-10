@@ -6,3 +6,4 @@ actual interface Parcelable
 
 actual annotation class Ignore
 actual annotation class IgnoredOnParcel
+actual annotation class Embedded
