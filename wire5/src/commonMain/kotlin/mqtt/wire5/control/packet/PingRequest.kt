@@ -1,6 +1,8 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.readBytes
+import mqtt.IgnoredOnParcel
+import mqtt.Parcelize
 import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
@@ -17,6 +19,8 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * This packet is used in Keep Alive processing. Refer to section 3.1.2.10 for more details.
  */
+@Parcelize
 object PingRequest : ControlPacketV5(12, DirectionOfFlow.CLIENT_TO_SERVER), IPingRequest {
+    @IgnoredOnParcel
     override val lazyBytes: ByteArray by lazy { serialize().readBytes() }
 }

@@ -16,7 +16,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class FlagTests {
-    private val packetIdentifier = 1.toUShort()
+    private val packetIdentifier = 1
 
     private val controlPacketSpectMatchError = "doesn't match the spec from " +
             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477323"
@@ -189,7 +189,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =
-            assertEquals(SubscribeAcknowledgement(packetIdentifier, GRANTED_QOS_0).flags, 0b0, controlPacketSpectMatchError)
+            assertEquals(SubscribeAcknowledgement(packetIdentifier.toUShort(), GRANTED_QOS_0).flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =

@@ -1,6 +1,8 @@
 package mqtt.wire5.control.packet
 
+import mqtt.Parcelize
 import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
+@Parcelize
 object PingResponse : ControlPacketV5(13, DirectionOfFlow.SERVER_TO_CLIENT), IPingResponse

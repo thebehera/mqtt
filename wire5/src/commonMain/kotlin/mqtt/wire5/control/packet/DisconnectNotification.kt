@@ -6,6 +6,9 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.IgnoredOnParcel
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -27,82 +30,89 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * A Server MUST NOT send a DISCONNECT until after it has sent a CONNACK with Reason Code of less than 0x80
  * [MQTT-3.14.0-1].
  */
+@Parcelize
 data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) : ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL) {
-    override val variableHeaderPacket = variable.packet
+    @IgnoredOnParcel override val variableHeaderPacket = variable.packet
 
-    data class VariableHeader(val reasonCode: ReasonCode = NORMAL_DISCONNECTION, val properties: Properties = Properties()) {
+    @Parcelize
+    data class VariableHeader(
+        val reasonCode: ReasonCode = NORMAL_DISCONNECTION,
+        val properties: Properties = Properties()
+    ) : Parcelable {
         init {
             // throw if the reason code is not valid for the disconnect notification
             getDisconnectCode(reasonCode.byte)
         }
 
-        val packet by lazy {
+        @IgnoredOnParcel val packet by lazy {
             buildPacket {
                 writeUByte(reasonCode.byte)
                 writePacket(properties.packet)
             }
         }
 
+        @Parcelize
         data class Properties(
-                /**
-                 * 3.14.2.2.2 Session Expiry Interval
-                 *
-                 * 17 (0x11) Byte, Identifier of the Session Expiry Interval.
-                 *
-                 * Followed by the Four Byte Integer representing the Session Expiry Interval in seconds. It is a
-                 * Protocol Error to include the Session Expiry Interval more than once.
-                 *
-                 * If the Session Expiry Interval is absent, the Session Expiry Interval in the CONNECT packet is used.
-                 *
-                 * The Session Expiry Interval MUST NOT be sent on a DISCONNECT by the Server [MQTT-3.14.2-2].
-                 *
-                 * If the Session Expiry Interval in the CONNECT packet was zero, then it is a Protocol Error to set a
-                 * non-zero Session Expiry Interval in the DISCONNECT packet sent by the Client. If such a non-zero
-                 * Session Expiry Interval is received by the Server, it does not treat it as a valid DISCONNECT
-                 * packet. The Server uses DISCONNECT with Reason Code 0x82 (Protocol Error) as described in
-                 * section 4.13.
-                 */
-                val sessionExpiryIntervalSeconds: UInt? = null,
-                /**
-                 * 3.14.2.2.3 Reason String
-                 *
-                 * 31 (0x1F) Byte, Identifier of the Reason String.
-                 *
-                 * Followed by the UTF-8 Encoded String representing the reason for the disconnect. This Reason
-                 * String is human readable, designed for diagnostics and SHOULD NOT be parsed by the receiver.
-                 *
-                 * The sender MUST NOT send this Property if it would increase the size of the DISCONNECT packet
-                 * beyond the Maximum Packet Size specified by the receiver [MQTT-3.14.2-3]. It is a Protocol Error
-                 * to include the Reason String more than once.
-                 */
-                val reasonString: MqttUtf8String? = null,
-                /**
-                 * 3.14.2.2.4 User Property
-                 *
-                 * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by UTF-8 String Pair. This property may be used to provide additional diagnostic or other
-                 * information. The sender MUST NOT send this property if it would increase the size of the DISCONNECT
-                 * packet beyond the Maximum Packet Size specified by the receiver [MQTT-3.14.2-4]. The User Property
-                 * is allowed to appear multiple times to represent multiple name, value pairs. The same name is
-                 * allowed to appear more than once.
-                 */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
-                /**
-                 * 3.14.2.2.5 Server Reference
-                 *
-                 * 28 (0x1C) Byte, Identifier of the Server Reference.
-                 *
-                 * Followed by a UTF-8 Encoded String which can be used by the Client to identify another Server to
-                 * use. It is a Protocol Error to include the Server Reference more than once.
-                 *
-                 * The Server sends DISCONNECT including a Server Reference and Reason Code 0x9C (Use another server)
-                 * or 0x9D (Server moved) as described in section 4.13.
-                 *
-                 * Refer to section 4.11 Server Redirection for information about how Server Reference is used.
-                 */
-                val serverReference: MqttUtf8String? = null) {
-            val packet by lazy {
+            /**
+             * 3.14.2.2.2 Session Expiry Interval
+             *
+             * 17 (0x11) Byte, Identifier of the Session Expiry Interval.
+             *
+             * Followed by the Four Byte Integer representing the Session Expiry Interval in seconds. It is a
+             * Protocol Error to include the Session Expiry Interval more than once.
+             *
+             * If the Session Expiry Interval is absent, the Session Expiry Interval in the CONNECT packet is used.
+             *
+             * The Session Expiry Interval MUST NOT be sent on a DISCONNECT by the Server [MQTT-3.14.2-2].
+             *
+             * If the Session Expiry Interval in the CONNECT packet was zero, then it is a Protocol Error to set a
+             * non-zero Session Expiry Interval in the DISCONNECT packet sent by the Client. If such a non-zero
+             * Session Expiry Interval is received by the Server, it does not treat it as a valid DISCONNECT
+             * packet. The Server uses DISCONNECT with Reason Code 0x82 (Protocol Error) as described in
+             * section 4.13.
+             */
+            val sessionExpiryIntervalSeconds: Long? = null,
+            /**
+             * 3.14.2.2.3 Reason String
+             *
+             * 31 (0x1F) Byte, Identifier of the Reason String.
+             *
+             * Followed by the UTF-8 Encoded String representing the reason for the disconnect. This Reason
+             * String is human readable, designed for diagnostics and SHOULD NOT be parsed by the receiver.
+             *
+             * The sender MUST NOT send this Property if it would increase the size of the DISCONNECT packet
+             * beyond the Maximum Packet Size specified by the receiver [MQTT-3.14.2-3]. It is a Protocol Error
+             * to include the Reason String more than once.
+             */
+            val reasonString: MqttUtf8String? = null,
+            /**
+             * 3.14.2.2.4 User Property
+             *
+             * 38 (0x26) Byte, Identifier of the User Property.
+             *
+             * Followed by UTF-8 String Pair. This property may be used to provide additional diagnostic or other
+             * information. The sender MUST NOT send this property if it would increase the size of the DISCONNECT
+             * packet beyond the Maximum Packet Size specified by the receiver [MQTT-3.14.2-4]. The User Property
+             * is allowed to appear multiple times to represent multiple name, value pairs. The same name is
+             * allowed to appear more than once.
+             */
+            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
+            /**
+             * 3.14.2.2.5 Server Reference
+             *
+             * 28 (0x1C) Byte, Identifier of the Server Reference.
+             *
+             * Followed by a UTF-8 Encoded String which can be used by the Client to identify another Server to
+             * use. It is a Protocol Error to include the Server Reference more than once.
+             *
+             * The Server sends DISCONNECT including a Server Reference and Reason Code 0x9C (Use another server)
+             * or 0x9D (Server moved) as described in section 4.13.
+             *
+             * Refer to section 4.11 Server Redirection for information about how Server Reference is used.
+             */
+            val serverReference: MqttUtf8String? = null
+        ) : Parcelable {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (sessionExpiryIntervalSeconds != null) {
                         SessionExpiryInterval(sessionExpiryIntervalSeconds).write(this)
@@ -130,9 +140,9 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var sessionExpiryIntervalSeconds: UInt? = null
+                    var sessionExpiryIntervalSeconds: Long? = null
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    var userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     var serverReference: MqttUtf8String? = null
                     keyValuePairs?.forEach {
                         when (it) {
@@ -145,16 +155,20 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
                             }
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476")
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }
-                            is UserProperty -> userProperty += Pair(it.key, it.value)
+                            is UserProperty -> userProperty.add(Pair(it.key, it.value))
                             is ServerReference -> {
                                 if (serverReference != null) {
-                                    throw ProtocolError("Server Reference added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396")
+                                    throw ProtocolError(
+                                        "Server Reference added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396"
+                                    )
                                 }
                                 serverReference = it.otherServer
                             }

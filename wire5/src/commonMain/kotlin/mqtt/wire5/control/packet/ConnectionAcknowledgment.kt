@@ -6,6 +6,9 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.writeUByte
+import mqtt.IgnoredOnParcel
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IConnectionAcknowledgment
@@ -29,13 +32,15 @@ typealias CONNACK = ConnectionAcknowledgment
  * SHOULD close the Network Connection. A "reasonable" amount of time depends on the type of application and the
  * communications infrastructure.
  */
+@Parcelize
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
 
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = header.packet()
-    override val isSuccessful: Boolean = header.connectReason == SUCCESS
-    override val connectionReason: String = header.connectReason.name
-    override val sessionPresent: Boolean = header.sessionPresent
+    @IgnoredOnParcel override val isSuccessful: Boolean = header.connectReason == SUCCESS
+    @IgnoredOnParcel override val connectionReason: String = header.connectReason.name
+    @IgnoredOnParcel override val sessionPresent: Boolean = header.sessionPresent
     /**
      * The Variable Header of the CONNACK Packet contains the following fields in the order: Connect Acknowledge Flags,
      * Connect Reason Code, and Properties. The rules for encoding Properties are described in section 2.2.2.
@@ -44,6 +49,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Properties">
      *     Section 2.2.2</a>
      */
+    @Parcelize
     data class VariableHeader(
             /**
              * 3.2.2.1.1 Session Present
@@ -98,48 +104,50 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              * the connection has not been authorized it might be unwise to indicate that this is an MQTT Server.
              */
             val connectReason: ReasonCode = SUCCESS,
-            val properties: Properties = Properties()) {
+            val properties: Properties = Properties()
+    ) : Parcelable {
+        @Parcelize
         data class Properties(
-                /**
-                 * 3.2.2.3.2 Session Expiry Interval
-                 *
-                 * 17 (0x11) Byte, Identifier of the Session Expiry Interval.
-                 *
-                 * Followed by the Four Byte Integer representing the Session Expiry Interval in seconds. It is a
-                 * Protocol Error to include the Session Expiry Interval more than once.
-                 *
-                 * If the Session Expiry Interval is absent the value in the CONNECT Packet used. The server uses this
-                 * property to inform the Client that it is using a value other than that sent by the Client in the
-                 * CONNACK. Refer to section 3.1.2.11.2 for a description of the use of Session Expiry Interval.
-                 */
-                val sessionExpiryIntervalSeconds: UInt? = null,
-                /**
-                 * 3.2.2.3.3 Receive Maximum
-                 *
-                 * 33 (0x21) Byte, Identifier of the Receive Maximum.
-                 *
-                 * Followed by the Two Byte Integer representing the Receive Maximum value. It is a Protocol Error to
-                 * include the Receive Maximum value more than once or for it to have the value 0.
-                 *
-                 * The Server uses this value to limit the number of QoS 1 and QoS 2 publications that it is willing
-                 * to process concurrently for the Client. It does not provide a mechanism to limit the QoS 0
-                 * publications that the Client might try to send.
-                 *
-                 * If the Receive Maximum value is absent, then its value defaults to 65,535.
-                 *
-                 * Refer to section 4.9 Flow Control for details of how the Receive Maximum is used.
-                 */
-                val receiveMaximum: UShort = UShort.MAX_VALUE,
-                /**
-                 * 3.2.2.3.4 Maximum QoS
-                 *
-                 * 36 (0x24) Byte, Identifier of the Maximum QoS.
-                 *
-                 * Followed by a Byte with a value of either 0 or 1. It is a Protocol Error to include Maximum QoS
-                 * more than once, or to have a value other than 0 or 1. If the Maximum QoS is absent, the Client uses
-                 * a Maximum QoS of 2.
-                 *
-                 * If a Server does not support QoS 1 or QoS 2 PUBLISH packets it MUST send a Maximum QoS in the
+            /**
+             * 3.2.2.3.2 Session Expiry Interval
+             *
+             * 17 (0x11) Byte, Identifier of the Session Expiry Interval.
+             *
+             * Followed by the Four Byte Integer representing the Session Expiry Interval in seconds. It is a
+             * Protocol Error to include the Session Expiry Interval more than once.
+             *
+             * If the Session Expiry Interval is absent the value in the CONNECT Packet used. The server uses this
+             * property to inform the Client that it is using a value other than that sent by the Client in the
+             * CONNACK. Refer to section 3.1.2.11.2 for a description of the use of Session Expiry Interval.
+             */
+            val sessionExpiryIntervalSeconds: Long? = null,
+            /**
+             * 3.2.2.3.3 Receive Maximum
+             *
+             * 33 (0x21) Byte, Identifier of the Receive Maximum.
+             *
+             * Followed by the Two Byte Integer representing the Receive Maximum value. It is a Protocol Error to
+             * include the Receive Maximum value more than once or for it to have the value 0.
+             *
+             * The Server uses this value to limit the number of QoS 1 and QoS 2 publications that it is willing
+             * to process concurrently for the Client. It does not provide a mechanism to limit the QoS 0
+             * publications that the Client might try to send.
+             *
+             * If the Receive Maximum value is absent, then its value defaults to 65,535.
+             *
+             * Refer to section 4.9 Flow Control for details of how the Receive Maximum is used.
+             */
+            val receiveMaximum: Int = UShort.MAX_VALUE.toInt(),
+            /**
+             * 3.2.2.3.4 Maximum QoS
+             *
+             * 36 (0x24) Byte, Identifier of the Maximum QoS.
+             *
+             * Followed by a Byte with a value of either 0 or 1. It is a Protocol Error to include Maximum QoS
+             * more than once, or to have a value other than 0 or 1. If the Maximum QoS is absent, the Client uses
+             * a Maximum QoS of 2.
+             *
+             * If a Server does not support QoS 1 or QoS 2 PUBLISH packets it MUST send a Maximum QoS in the
                  * CONNACK packet specifying the highest QoS it supports [MQTT-3.2.2-9]. A Server that does not support
                  * QoS 1 or QoS 2 PUBLISH packets MUST still accept SUBSCRIBE packets containing a Requested QoS of 0,
                  * 1 or 2 [MQTT-3.2.2-10].
@@ -191,27 +199,27 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                  * header sizes.
                  *
                  * It is a Protocol Error to include the Maximum Packet Size more than once, or for the value to be
-                 * set to zero.
-                 *
-                 * The packet size is the total number of bytes in an MQTT Control Packet, as defined in section
-                 * 2.1.4. The Server uses the Maximum Packet Size to inform the Client that it will not process
-                 * packets whose size exceeds this limit.
-                 *
-                 * The Client MUST NOT send packets exceeding Maximum Packet Size to the Server [MQTT-3.2.2-15].
-                 * If a Server receives a packet whose size exceeds this limit, this is a Protocol Error, the Server
-                 * uses DISCONNECT with Reason Code 0x95 (Packet too large), as described in section 4.13.
-                 * */
-                val maximumPacketSize: UInt? = null,
-                /**
-                 * 3.2.2.3.7 Assigned Client Identifier
-                 *
-                 * 18 (0x12) Byte, Identifier of the Assigned Client Identifier.
-                 *
-                 * Followed by the UTF-8 string which is the Assigned Client Identifier. It is a Protocol Error to
-                 * include the Assigned Client Identifier more than once.
-                 *
-                 * The Client Identifier which was assigned by the Server because a zero length Client Identifier was
-                 * found in the CONNECT packet.
+             * set to zero.
+             *
+             * The packet size is the total number of bytes in an MQTT Control Packet, as defined in section
+             * 2.1.4. The Server uses the Maximum Packet Size to inform the Client that it will not process
+             * packets whose size exceeds this limit.
+             *
+             * The Client MUST NOT send packets exceeding Maximum Packet Size to the Server [MQTT-3.2.2-15].
+             * If a Server receives a packet whose size exceeds this limit, this is a Protocol Error, the Server
+             * uses DISCONNECT with Reason Code 0x95 (Packet too large), as described in section 4.13.
+             * */
+            val maximumPacketSize: Long? = null,
+            /**
+             * 3.2.2.3.7 Assigned Client Identifier
+             *
+             * 18 (0x12) Byte, Identifier of the Assigned Client Identifier.
+             *
+             * Followed by the UTF-8 string which is the Assigned Client Identifier. It is a Protocol Error to
+             * include the Assigned Client Identifier more than once.
+             *
+             * The Client Identifier which was assigned by the Server because a zero length Client Identifier was
+             * found in the CONNECT packet.
                  * If the Client connects using a zero length Client Identifier, the Server MUST respond with a CONNACK
                  * containing an Assigned Client Identifier. The Assigned Client Identifier MUST be a new Client
                  * Identifier not used by any other Session currently in the Server [MQTT-3.2.2-16].
@@ -223,27 +231,27 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                  * 34 (0x22) Byte, Identifier of the Topic Alias Maximum.
                  *
                  * Followed by the Two Byte Integer representing the Topic Alias Maximum value. It is a Protocol Error
-                 * to include the Topic Alias Maximum value more than once. If the Topic Alias Maximum property is
-                 * absent, the default value is 0.
-                 *
-                 * This value indicates the highest value that the Server will accept as a Topic Alias sent by the
-                 * Client. The Server uses this value to limit the number of Topic Aliases that it is willing to
-                 * hold on this Connection. The Client MUST NOT send a Topic Alias in a PUBLISH packet to the Server
-                 * greater than this value [MQTT-3.2.2-17]. A value of 0 indicates that the Server does not accept
-                 * any Topic Aliases on this connection. If Topic Alias Maximum is absent or 0, the Client MUST NOT
-                 * send any Topic Aliases on to the Server [MQTT-3.2.2-18].
-                 */
-                val topicAliasMaximum: UShort = 0.toUShort(),
-                /**
-                 * 3.2.2.3.9 Reason String
-                 *
-                 * 31 (0x1F) Byte Identifier of the Reason String.
-                 *
-                 * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
-                 * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the
-                 * Client.
-                 *
-                 * The Server uses this value to give additional information to the Client. The Server MUST NOT send
+             * to include the Topic Alias Maximum value more than once. If the Topic Alias Maximum property is
+             * absent, the default value is 0.
+             *
+             * This value indicates the highest value that the Server will accept as a Topic Alias sent by the
+             * Client. The Server uses this value to limit the number of Topic Aliases that it is willing to
+             * hold on this Connection. The Client MUST NOT send a Topic Alias in a PUBLISH packet to the Server
+             * greater than this value [MQTT-3.2.2-17]. A value of 0 indicates that the Server does not accept
+             * any Topic Aliases on this connection. If Topic Alias Maximum is absent or 0, the Client MUST NOT
+             * send any Topic Aliases on to the Server [MQTT-3.2.2-18].
+             */
+            val topicAliasMaximum: Int = 0,
+            /**
+             * 3.2.2.3.9 Reason String
+             *
+             * 31 (0x1F) Byte Identifier of the Reason String.
+             *
+             * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
+             * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the
+             * Client.
+             *
+             * The Server uses this value to give additional information to the Client. The Server MUST NOT send
                  * this property if it would increase the size of the CONNACK packet beyond the Maximum Packet Size
                  * specified by the Client [MQTT-3.2.2-19]. It is a Protocol Error to include the Reason String more
                  * than once.
@@ -257,27 +265,27 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                  * 3.2.2.3.10 User Property
                  *
                  * 38 (0x26) Byte, Identifier of User Property.
-                 *
-                 * Followed by a UTF-8 String Pair. This property can be used to provide additional information to
-                 * the Client including diagnostic information. The Server MUST NOT send this property if it would
-                 * increase the size of the CONNACK packet beyond the Maximum Packet Size specified by the Client
-                 * [MQTT-3.2.2-20]. The User Property is allowed to appear multiple times to represent multiple name,
-                 * value pairs. The same name is allowed to appear more than once.
-                 *
-                 * The content and meaning of this property is not defined by this specification. The receiver of a
-                 * CONNACK containing this property MAY ignore it.
-                 */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
-                /**
-                 * 3.2.2.3.11 Wildcard Subscription Available
-                 *
-                 * 40 (0x28) Byte, Identifier of Wildcard Subscription Available.
-                 *
-                 * Followed by a Byte field. If present, this byte declares whether the Server supports Wildcard
-                 * Subscriptions. A value is 0 means that Wildcard Subscriptions are not supported. A value of 1
-                 * means Wildcard Subscriptions are supported. If not present, then Wildcard Subscriptions are
-                 * supported. It is a Protocol Error to include the Wildcard Subscription Available more than
-                 * once or to send a value other than 0 or 1.
+             *
+             * Followed by a UTF-8 String Pair. This property can be used to provide additional information to
+             * the Client including diagnostic information. The Server MUST NOT send this property if it would
+             * increase the size of the CONNACK packet beyond the Maximum Packet Size specified by the Client
+             * [MQTT-3.2.2-20]. The User Property is allowed to appear multiple times to represent multiple name,
+             * value pairs. The same name is allowed to appear more than once.
+             *
+             * The content and meaning of this property is not defined by this specification. The receiver of a
+             * CONNACK containing this property MAY ignore it.
+             */
+            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
+            /**
+             * 3.2.2.3.11 Wildcard Subscription Available
+             *
+             * 40 (0x28) Byte, Identifier of Wildcard Subscription Available.
+             *
+             * Followed by a Byte field. If present, this byte declares whether the Server supports Wildcard
+             * Subscriptions. A value is 0 means that Wildcard Subscriptions are not supported. A value of 1
+             * means Wildcard Subscriptions are supported. If not present, then Wildcard Subscriptions are
+             * supported. It is a Protocol Error to include the Wildcard Subscription Available more than
+             * once or to send a value other than 0 or 1.
                  *
                  * If the Server receives a SUBSCRIBE packet containing a Wildcard Subscription and it does not
                  * support Wildcard Subscriptions, this is a Protocol Error. The Server uses DISCONNECT with Reason
@@ -326,27 +334,27 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                  * 19 (0x13) Byte, Identifier of the Server Keep Alive.
                  *
                  * Followed by a Two Byte Integer with the Keep Alive time assigned by the Server. If the Server
-                 * sends a Server Keep Alive on the CONNACK packet, the Client MUST use this value instead of the
-                 * Keep Alive value the Client sent on CONNECT [MQTT-3.2.2-21]. If the Server does not send the
-                 * Server Keep Alive, the Server MUST use the Keep Alive value set by the Client on CONNECT
-                 * [MQTT-3.2.2-22]. It is a Protocol Error to include the Server Keep Alive more than once.
-                 *
-                 * Non-normative comment
-                 *
-                 * The primary use of the Server Keep Alive is for the Server to inform the Client that it
-                 * will disconnect the Client for inactivity sooner than the Keep Alive specified by the Client.
-                 */
-                val serverKeepAlive: UShort? = null,
-                /**
-                 * 3.2.2.3.15 Response Information
-                 *
-                 * 26 (0x1A) Byte, Identifier of the Response Information.
-                 *
-                 * Followed by a UTF-8 Encoded String which is used as the basis for creating a Response Topic. The
-                 * way in which the Client creates a Response Topic from the Response Information is not defined by
-                 * this specification. It is a Protocol Error to include the Response Information more than once.
-                 *
-                 * If the Client sends a Request Response Information with a value 1, it is OPTIONAL for the Server
+             * sends a Server Keep Alive on the CONNACK packet, the Client MUST use this value instead of the
+             * Keep Alive value the Client sent on CONNECT [MQTT-3.2.2-21]. If the Server does not send the
+             * Server Keep Alive, the Server MUST use the Keep Alive value set by the Client on CONNECT
+             * [MQTT-3.2.2-22]. It is a Protocol Error to include the Server Keep Alive more than once.
+             *
+             * Non-normative comment
+             *
+             * The primary use of the Server Keep Alive is for the Server to inform the Client that it
+             * will disconnect the Client for inactivity sooner than the Keep Alive specified by the Client.
+             */
+            val serverKeepAlive: Int? = null,
+            /**
+             * 3.2.2.3.15 Response Information
+             *
+             * 26 (0x1A) Byte, Identifier of the Response Information.
+             *
+             * Followed by a UTF-8 Encoded String which is used as the basis for creating a Response Topic. The
+             * way in which the Client creates a Response Topic from the Response Information is not defined by
+             * this specification. It is a Protocol Error to include the Response Information more than once.
+             *
+             * If the Client sends a Request Response Information with a value 1, it is OPTIONAL for the Server
                  * to send the Response Information in the CONNACK.
                  *
                  * Non-normative comment
@@ -365,23 +373,24 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                  * 3.2.2.3.16 Server Reference
                  *
                  * 28 (0x1C) Byte, Identifier of the Server Reference.
-                 *
-                 * Followed by a UTF-8 Encoded String which can be used by the Client to identify another Server
-                 * to use. It is a Protocol Error to include the Server Reference more than once.
-                 *
-                 * The Server uses a Server Reference in either a CONNACK or DISCONNECT packet with Reason code of
-                 * 0x9C (Use another server) or Reason Code 0x9D (Server moved) as described in section 4.13.
-                 *
-                 * Refer to section 4.11 Server redirection for information about how Server Reference is used.
-                 */
-                val serverReference: MqttUtf8String? = null,
-                val authentication: Authentication? = null) {
+             *
+             * Followed by a UTF-8 Encoded String which can be used by the Client to identify another Server
+             * to use. It is a Protocol Error to include the Server Reference more than once.
+             *
+             * The Server uses a Server Reference in either a CONNACK or DISCONNECT packet with Reason code of
+             * 0x9C (Use another server) or Reason Code 0x9D (Server moved) as described in section 4.13.
+             *
+             * Refer to section 4.11 Server redirection for information about how Server Reference is used.
+             */
+            val serverReference: MqttUtf8String? = null,
+            val authentication: Authentication? = null
+        ) : Parcelable {
             fun packet(sendDefaults: Boolean = false): ByteReadPacket {
                 val propertiesPacket = buildPacket {
                     if (sessionExpiryIntervalSeconds != null) {
                         SessionExpiryInterval(sessionExpiryIntervalSeconds).write(this)
                     }
-                    if (receiveMaximum != UShort.MAX_VALUE || sendDefaults) {
+                    if (receiveMaximum != UShort.MAX_VALUE.toInt() || sendDefaults) {
                         ReceiveMaximum(receiveMaximum).write(this)
                     }
                     if (maximumQos != QualityOfService.EXACTLY_ONCE || sendDefaults) {
@@ -396,7 +405,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     if (assignedClientIdentifier != null) {
                         AssignedClientIdentifier(assignedClientIdentifier).write(this)
                     }
-                    if (topicAliasMaximum != 0.toUShort() || sendDefaults) {
+                    if (topicAliasMaximum != 0 || sendDefaults) {
                         TopicAliasMaximum(topicAliasMaximum).write(this)
                     }
                     if (reasonString != null) {
@@ -441,44 +450,46 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 }
             }
 
+            @Parcelize
             data class Authentication(
-                    /**
-                     * 3.2.2.3.17 Authentication Method
-                     *
-                     * 21 (0x15) Byte, Identifier of the Authentication Method.
-                     *
-                     * Followed by a UTF-8 Encoded String containing the name of the authentication method. It is a
-                     * Protocol Error to include the Authentication Method more than once. Refer to section 4.12 for
-                     * more information about extended authentication.
-                     */
-                    val method: MqttUtf8String,
-                    /**
-                     * 3.2.2.3.18 Authentication Data
-                     *
-                     * 22 (0x16) Byte, Identifier of the Authentication Data.
-                     *
-                     * Followed by Binary Data containing authentication data. The contents of this data are defined
-                     * by the authentication method and the state of already exchanged authentication data. It is a
-                     * Protocol Error to include the Authentication Data more than once. Refer to section 4.12 for
-                     * more information about extended authentication.
-                     */
-                    val data: ByteArrayWrapper)
+                /**
+                 * 3.2.2.3.17 Authentication Method
+                 *
+                 * 21 (0x15) Byte, Identifier of the Authentication Method.
+                 *
+                 * Followed by a UTF-8 Encoded String containing the name of the authentication method. It is a
+                 * Protocol Error to include the Authentication Method more than once. Refer to section 4.12 for
+                 * more information about extended authentication.
+                 */
+                val method: MqttUtf8String,
+                /**
+                 * 3.2.2.3.18 Authentication Data
+                 *
+                 * 22 (0x16) Byte, Identifier of the Authentication Data.
+                 *
+                 * Followed by Binary Data containing authentication data. The contents of this data are defined
+                 * by the authentication method and the state of already exchanged authentication data. It is a
+                 * Protocol Error to include the Authentication Data more than once. Refer to section 4.12 for
+                 * more information about extended authentication.
+                 */
+                val data: ByteArrayWrapper
+            ) : Parcelable
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var sessionExpiryIntervalSeconds: UInt? = null
-                    var receiveMaximum: UShort? = null
+                    var sessionExpiryIntervalSeconds: Long? = null
+                    var receiveMaximum: Int? = null
                     var maximumQos: QualityOfService? = null
                     var retainAvailable: Boolean? = null
-                    var maximumPacketSize: UInt? = null
+                    var maximumPacketSize: Long? = null
                     var assignedClientIdentifier: MqttUtf8String? = null
-                    var topicAliasMaximum: UShort? = null
+                    var topicAliasMaximum: Int? = null
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    var userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
                     var supportsWildcardSubscriptions: Boolean? = null
                     var subscriptionIdentifiersAvailable: Boolean? = null
                     var sharedSubscriptionAvailable: Boolean? = null
-                    var serverKeepAlive: UShort? = null
+                    var serverKeepAlive: Int? = null
                     var responseInformation: MqttUtf8String? = null
                     var serverReference: MqttUtf8String? = null
                     var authenticationMethod: MqttUtf8String? = null
@@ -494,12 +505,16 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                             }
                             is ReceiveMaximum -> {
                                 if (receiveMaximum != null) {
-                                    throw ProtocolError("Receive Maximum added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477383")
+                                    throw ProtocolError(
+                                        "Receive Maximum added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477383"
+                                    )
                                 }
-                                if (it.maxQos1Or2ConcurrentMessages == 0.toUShort()) {
-                                    throw ProtocolError("Receive Maximum cannot be set to 0 see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477383")
+                                if (it.maxQos1Or2ConcurrentMessages == 0) {
+                                    throw ProtocolError(
+                                        "Receive Maximum cannot be set to 0 see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477383"
+                                    )
                                 }
                                 receiveMaximum = it.maxQos1Or2ConcurrentMessages
                             }
@@ -519,12 +534,16 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                             }
                             is MaximumPacketSize -> {
                                 if (maximumPacketSize != null) {
-                                    throw ProtocolError("Maximum Packet Size added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477386")
+                                    throw ProtocolError(
+                                        "Maximum Packet Size added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477386"
+                                    )
                                 }
-                                if (it.packetSizeLimitationBytes == 0.toUInt()) {
-                                    throw ProtocolError("Maximum Packet Size cannot be set to 0 see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350")
+                                if (it.packetSizeLimitationBytes == 0L) {
+                                    throw ProtocolError(
+                                        "Maximum Packet Size cannot be set to 0 see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477350"
+                                    )
                                 }
                                 maximumPacketSize = it.packetSizeLimitationBytes
                             }
@@ -616,13 +635,15 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     } else {
                         null
                     }
-                    return Properties(sessionExpiryIntervalSeconds, receiveMaximum ?: UShort.MAX_VALUE,
-                            maximumQos ?: QualityOfService.EXACTLY_ONCE, retainAvailable ?: true,
-                            maximumPacketSize, assignedClientIdentifier, topicAliasMaximum ?: 0.toUShort(),
-                            reasonString, userProperty, supportsWildcardSubscriptions ?: true,
-                            subscriptionIdentifiersAvailable ?: true,
-                            sharedSubscriptionAvailable ?: true,
-                            serverKeepAlive, responseInformation, serverReference, auth)
+                    return Properties(
+                        sessionExpiryIntervalSeconds, receiveMaximum ?: UShort.MAX_VALUE.toInt(),
+                        maximumQos ?: QualityOfService.EXACTLY_ONCE, retainAvailable ?: true,
+                        maximumPacketSize, assignedClientIdentifier, topicAliasMaximum ?: 0,
+                        reasonString, userProperty, supportsWildcardSubscriptions ?: true,
+                        subscriptionIdentifiersAvailable ?: true,
+                        sharedSubscriptionAvailable ?: true,
+                        serverKeepAlive, responseInformation, serverReference, auth
+                    )
                 }
             }
         }

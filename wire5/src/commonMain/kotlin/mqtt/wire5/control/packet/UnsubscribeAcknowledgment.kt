@@ -3,6 +3,9 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -15,8 +18,9 @@ import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readProperties
 
-data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS))
-    : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
+@Parcelize
+data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS)) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
+    @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { reasonCodes.forEach { writeUByte(it.byte) } }
 
@@ -34,11 +38,15 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
      * UNSUBSCRIBE Packet that is being acknowledged, and Properties. The rules for encoding Properties are described
      * in section 2.2.2.
      */
-    data class VariableHeader(val packetIdentifier: UShort,
-                              val properties: Properties = Properties()) {
+    @Parcelize
+    data class VariableHeader(
+        val packetIdentifier: Int,
+        val properties: Properties = Properties()
+    ) : Parcelable {
+        @IgnoredOnParcel
         val packet by lazy {
             buildPacket {
-                writeUShort(packetIdentifier)
+                writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet)
             }
         }
@@ -46,35 +54,37 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
         /**
          * 3.9.2.1 SUBACK Properties
          */
+        @Parcelize
         data class Properties(
-                /**
-                 * 3.11.2.1.2 Reason String
-                 *
-                 * 31 (0x1F) Byte, Identifier of the Reason String.
-                 *
-                 * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
-                 * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the
-                 * Client.
-                 *
-                 * The Server uses this value to give additional information to the Client. The Server MUST NOT send
-                 * this Property if it would increase the size of the UNSUBACK packet beyond the Maximum Packet Size
-                 * specified by the Client [MQTT-3.11.2-1]. It is a Protocol Error to include the Reason String more
-                 * than once.
-                 */
-                val reasonString: MqttUtf8String? = null,
-                /**
-                 * 3.11.2.1.3 User Property
-                 *
-                 * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by UTF-8 String Pair. This property can be used to provide additional diagnostic or
-                 * other information. The Server MUST NOT send this property if it would increase the size of the
-                 * UNSUBACK packet beyond the Maximum Packet Size specified by the Client [MQTT-3.11.2-2]. The User
-                 * Property is allowed to appear multiple times to represent multiple name, value pairs. The same
-                 * name is allowed to appear more than once.
-                 */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()) {
-            val packet by lazy {
+            /**
+             * 3.11.2.1.2 Reason String
+             *
+             * 31 (0x1F) Byte, Identifier of the Reason String.
+             *
+             * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
+             * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the
+             * Client.
+             *
+             * The Server uses this value to give additional information to the Client. The Server MUST NOT send
+             * this Property if it would increase the size of the UNSUBACK packet beyond the Maximum Packet Size
+             * specified by the Client [MQTT-3.11.2-1]. It is a Protocol Error to include the Reason String more
+             * than once.
+             */
+            val reasonString: MqttUtf8String? = null,
+            /**
+             * 3.11.2.1.3 User Property
+             *
+             * 38 (0x26) Byte, Identifier of the User Property.
+             *
+             * Followed by UTF-8 String Pair. This property can be used to provide additional diagnostic or
+             * other information. The Server MUST NOT send this property if it would increase the size of the
+             * UNSUBACK packet beyond the Maximum Packet Size specified by the Client [MQTT-3.11.2-2]. The User
+             * Property is allowed to appear multiple times to represent multiple name, value pairs. The same
+             * name is allowed to appear more than once.
+             */
+            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+        ) : Parcelable {
+            @IgnoredOnParcel val packet by lazy {
                 val propertiesPacket = buildPacket {
                     if (reasonString != null) {
                         ReasonString(reasonString).write(this)
@@ -97,7 +107,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
@@ -120,7 +130,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort()
                 val props = Properties.from(buffer.readProperties())
-                return VariableHeader(packetIdentifier, props)
+                return VariableHeader(packetIdentifier.toInt(), props)
             }
         }
     }

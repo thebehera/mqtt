@@ -83,16 +83,16 @@ class PublishMessageTests {
 
     @Test
     fun messageExpiryInterval() {
-        val props = VariableHeader.Properties(messageExpiryInterval = 2.toUInt())
+        val props = VariableHeader.Properties(messageExpiryInterval = 2)
         val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals(2.toUInt(), publish.variable.properties.messageExpiryInterval)
+        assertEquals(2, publish.variable.properties.messageExpiryInterval)
     }
 
     @Test
     fun messageExpiryIntervalDuplicateThrowsProtocolError() {
-        val obj1 = MessageExpiryInterval(2.toUInt())
+        val obj1 = MessageExpiryInterval(2)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -111,22 +111,22 @@ class PublishMessageTests {
 
     @Test
     fun topicAlias() {
-        val props = VariableHeader.Properties(topicAlias = 2.toUShort())
+        val props = VariableHeader.Properties(topicAlias = 2)
         val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals(2.toUShort(), publish.variable.properties.topicAlias)
+        assertEquals(2, publish.variable.properties.topicAlias)
     }
 
 
     @Test
     fun topicAliasZeroValueThrowsProtocolError() {
         try {
-            VariableHeader.Properties(topicAlias = 0.toUShort())
+            VariableHeader.Properties(topicAlias = 0)
             fail()
         } catch (e: ProtocolError) {
         }
-        val obj1 = TopicAlias(0.toUShort())
+        val obj1 = TopicAlias(0)
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
         }.readBytes()
@@ -143,7 +143,7 @@ class PublishMessageTests {
 
     @Test
     fun topicAliasDuplicateThrowsProtocolError() {
-        val obj1 = TopicAlias(2.toUShort())
+        val obj1 = TopicAlias(2)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -235,16 +235,16 @@ class PublishMessageTests {
 
     @Test
     fun subscriptionIdentifier() {
-        val props = VariableHeader.Properties(subscriptionIdentifier = setOf(2.toUInt()))
+        val props = VariableHeader.Properties(subscriptionIdentifier = setOf(2))
         val variableHeader = VariableHeader(Name("t"), properties = props)
         val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
         val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals(2.toUInt(), publish.variable.properties.subscriptionIdentifier.first())
+        assertEquals(2, publish.variable.properties.subscriptionIdentifier.first())
     }
 
     @Test
     fun subscriptionIdentifierZeroThrowsProtocolError() {
-        val obj1 = SubscriptionIdentifier(0.toUInt())
+        val obj1 = SubscriptionIdentifier(0)
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
         }.readBytes()
@@ -289,7 +289,7 @@ class PublishMessageTests {
 
     @Test
     fun invalidPropertyOnVariableHeaderThrowsMalformedPacketException() {
-        val method = WillDelayInterval(3.toUInt())
+        val method = WillDelayInterval(3)
         try {
             VariableHeader.Properties.from(listOf(method, method))
             fail()
@@ -300,7 +300,7 @@ class PublishMessageTests {
     @Test
     fun qos0AndPacketIdentifierThrowsIllegalArgumentException() {
         val fixed = FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
-        val variable = VariableHeader(Name("t"), 2.toUShort())
+        val variable = VariableHeader(Name("t"), 2)
         try {
             PublishMessage(fixed, variable)
             fail()

@@ -445,13 +445,13 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
-        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
+        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
     }
 
     @Test
     fun variableHeaderKeepAlive0() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0.toUShort()))
+        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0))
         val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -464,14 +464,14 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
-        assertEquals(0.toUShort(), connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
+        assertEquals(0.toUShort(), connectionRequest.variableHeader.keepAliveSeconds.toUShort())
     }
 
 
     @Test
     fun variableHeaderKeepAliveMax() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE))
+        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE.toInt()))
         val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
         byteReader.decodeVariableByteInteger() // skip the remaining length
@@ -484,8 +484,8 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         val keepAliveSeconds = byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds)
-        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds)
+        assertEquals(keepAliveSeconds, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
+        assertEquals(UShort.MAX_VALUE, connectionRequest.variableHeader.keepAliveSeconds.toUShort())
     }
 
     @Test
@@ -515,7 +515,7 @@ class ConnectionRequestTests {
 
     @Test
     fun propertyLengthSessionExpiry() {
-        val props = VariableHeader.Properties(sessionExpiryIntervalSeconds = 1.toUInt())
+        val props = VariableHeader.Properties(sessionExpiryIntervalSeconds = 1L)
         val connectionRequest = ConnectionRequest(VariableHeader(properties = props))
         val byteReader = connectionRequest.serialize().copy()
         byteReader.readByte() // skip the first byte
@@ -536,14 +536,14 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderPropertySessionExpiryIntervalSeconds() {
-        val props = VariableHeader.Properties.from(setOf(SessionExpiryInterval(5.toUInt())))
-        assertEquals(props.sessionExpiryIntervalSeconds, 5.toUInt())
+        val props = VariableHeader.Properties.from(setOf(SessionExpiryInterval(5)))
+        assertEquals(props.sessionExpiryIntervalSeconds, 5L)
     }
 
     @Test
     fun variableHeaderPropertySessionExpiryIntervalSecondsProtocolExceptionMultipleTimes() {
         try {
-            VariableHeader.Properties.from(listOf(SessionExpiryInterval(5.toUInt()), SessionExpiryInterval(5.toUInt())))
+            VariableHeader.Properties.from(listOf(SessionExpiryInterval(5), SessionExpiryInterval(5)))
             fail("Should of hit a protocol exception for adding two session expiry intervals")
         } catch (e: ProtocolError) {
         }
@@ -551,18 +551,18 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderPropertyReceiveMaximum() {
-        val props = VariableHeader.Properties.from(setOf(ReceiveMaximum(5.toUShort())))
-        assertEquals(props.receiveMaximum, 5.toUShort())
+        val props = VariableHeader.Properties.from(setOf(ReceiveMaximum(5)))
+        assertEquals(props.receiveMaximum, 5)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
         val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
-        assertEquals(requestRead.variableHeader.properties.receiveMaximum, 5.toUShort())
+        assertEquals(requestRead.variableHeader.properties.receiveMaximum, 5)
     }
 
     @Test
     fun variableHeaderPropertyReceiveMaximumMultipleTimes() {
         try {
-            VariableHeader.Properties.from(listOf(ReceiveMaximum(5.toUShort()), ReceiveMaximum(5.toUShort())))
+            VariableHeader.Properties.from(listOf(ReceiveMaximum(5), ReceiveMaximum(5)))
             fail("Should of hit a protocol exception for adding two receive maximums")
         } catch (e: ProtocolError) {
         }
@@ -571,7 +571,7 @@ class ConnectionRequestTests {
     @Test
     fun variableHeaderPropertyReceiveMaximumSetTo0() {
         try {
-            VariableHeader.Properties.from(setOf(ReceiveMaximum(0.toUShort())))
+            VariableHeader.Properties.from(setOf(ReceiveMaximum(0)))
             fail("Should of hit a protocol exception for setting 0 as the receive maximum")
         } catch (e: ProtocolError) {
         }
@@ -580,7 +580,7 @@ class ConnectionRequestTests {
     @Test
     fun maximumPacketSizeCannotBeSetToZero() {
         try {
-            VariableHeader.Properties.from(setOf(MaximumPacketSize(0.toUInt())))
+            VariableHeader.Properties.from(setOf(MaximumPacketSize(0L)))
             fail("should of thrown an exception")
         } catch (e: ProtocolError) {
         }
@@ -588,18 +588,18 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderPropertyMaximumPacketSize() {
-        val props = VariableHeader.Properties.from(setOf(MaximumPacketSize(5.toUInt())))
-        assertEquals(props.maximumPacketSize, 5.toUInt())
+        val props = VariableHeader.Properties.from(setOf(MaximumPacketSize(5)))
+        assertEquals(props.maximumPacketSize, 5)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
         val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
-        assertEquals(requestRead.variableHeader.properties.maximumPacketSize, 5.toUInt())
+        assertEquals(requestRead.variableHeader.properties.maximumPacketSize, 5)
     }
 
     @Test
     fun variableHeaderPropertyMaximumPacketSizeMultipleTimes() {
         try {
-            VariableHeader.Properties.from(listOf(MaximumPacketSize(5.toUInt()), MaximumPacketSize(5.toUInt())))
+            VariableHeader.Properties.from(listOf(MaximumPacketSize(5), MaximumPacketSize(5)))
             fail("Should of hit a protocol exception for adding two maximum packet sizes")
         } catch (e: ProtocolError) {
         }
@@ -608,7 +608,7 @@ class ConnectionRequestTests {
     @Test
     fun variableHeaderPropertyMaximumPacketSizeZeroValue() {
         try {
-            VariableHeader.Properties.from(setOf(MaximumPacketSize(0.toUInt())))
+            VariableHeader.Properties.from(setOf(MaximumPacketSize(0)))
             fail("Should of hit a protocol exception for adding two maximum packet sizes")
         } catch (e: ProtocolError) {
         }
@@ -616,18 +616,18 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderPropertyTopicAliasMaximum() {
-        val props = VariableHeader.Properties.from(setOf(TopicAliasMaximum(5.toUShort())))
-        assertEquals(props.topicAliasMaximum, 5.toUShort())
+        val props = VariableHeader.Properties.from(setOf(TopicAliasMaximum(5)))
+        assertEquals(props.topicAliasMaximum, 5)
 
         val request = ConnectionRequest(VariableHeader(properties = props)).serialize()
         val requestRead = ControlPacketV5.from(request.copy()) as ConnectionRequest
-        assertEquals(requestRead.variableHeader.properties.topicAliasMaximum, 5.toUShort())
+        assertEquals(requestRead.variableHeader.properties.topicAliasMaximum, 5)
     }
 
     @Test
     fun variableHeaderPropertyTopicAliasMaximumMultipleTimes() {
         try {
-            VariableHeader.Properties.from(listOf(TopicAliasMaximum(5.toUShort()), TopicAliasMaximum(5.toUShort())))
+            VariableHeader.Properties.from(listOf(TopicAliasMaximum(5), TopicAliasMaximum(5)))
             fail("Should of hit a protocol exception for adding two topic alias maximums")
         } catch (e: ProtocolError) {
         }
@@ -794,7 +794,7 @@ class ConnectionRequestTests {
 
     @Test
     fun willPropertiesChangeDelayInterval() {
-        val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4.toUInt())
+        val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4)
         val data = actual.packet().readBytes()
         assertEquals(ByteArrayWrapper(byteArrayOf(5, 24, 0, 0, 0, 4)), ByteArrayWrapper(data))
         val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
@@ -803,7 +803,7 @@ class ConnectionRequestTests {
 
     @Test
     fun willPropertiesChangeDelayIntervalSendDefaults() {
-        val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4.toUInt())
+        val actual = ConnectionRequest.Payload.WillProperties(willDelayIntervalSeconds = 4)
         val data = actual.packet(true).readBytes()
         assertEquals(ByteArrayWrapper(byteArrayOf(7, 24, 0, 0, 0, 4, 1, 0)), ByteArrayWrapper(data))
         val expected = ConnectionRequest.Payload.WillProperties.from(ByteReadPacket(data))
@@ -822,7 +822,7 @@ class ConnectionRequestTests {
         assertNull(connectionRequestPreSerialized.validateOrGetWarning())
         val serialized = connectionRequestPreSerialized.serialize().copy()
         val connectionRequest = ControlPacketV5.from(serialized) as ConnectionRequest
-        assertEquals(connectionRequest.payload.willProperties?.willDelayIntervalSeconds, 0.toUInt())
+        assertEquals(connectionRequest.payload.willProperties?.willDelayIntervalSeconds, 0)
         assertEquals(connectionRequest.payload.willPayload, ByteArrayWrapper("Swag".toByteArray()))
         assertEquals(connectionRequest.payload.willTopic, MqttUtf8String("/yolo"))
     }
@@ -830,8 +830,8 @@ class ConnectionRequestTests {
     @Test
     fun willPropertiesWillDelayIntervalProtocolError() {
         val data = buildPacket {
-            WillDelayInterval(1.toUInt()).write(this)
-            WillDelayInterval(2.toUInt()).write(this)
+            WillDelayInterval(1).write(this)
+            WillDelayInterval(2).write(this)
         }.readBytes()
         val dataWithPropertyLength = buildPacket {
             writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
@@ -865,7 +865,7 @@ class ConnectionRequestTests {
     @Test
     fun willPropertiesMessageExpiryInterval() {
         val data = buildPacket {
-            MessageExpiryInterval(4.toUInt()).write(this)
+            MessageExpiryInterval(4).write(this)
         }.readBytes()
         val dataWithPropertyLength = buildPacket {
             writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())
@@ -874,17 +874,17 @@ class ConnectionRequestTests {
         val willProps = ConnectionRequest.Payload.WillProperties.from(dataWithPropertyLength)
         val withoutDefaults = willProps.packet()
         val willPropsWithoutDefaults = ConnectionRequest.Payload.WillProperties.from(withoutDefaults.copy())
-        assertEquals(willPropsWithoutDefaults.messageExpiryIntervalSeconds, 4.toUInt())
+        assertEquals(willPropsWithoutDefaults.messageExpiryIntervalSeconds, 4)
         val withDefaults = willProps.packet(true)
         val willPropsWithDefaults = ConnectionRequest.Payload.WillProperties.from(withDefaults.copy())
-        assertEquals(willPropsWithDefaults.messageExpiryIntervalSeconds, 4.toUInt())
+        assertEquals(willPropsWithDefaults.messageExpiryIntervalSeconds, 4)
     }
 
     @Test
     fun willPropertiesMessageExpiryIntervalProtocolError() {
         val data = buildPacket {
-            MessageExpiryInterval(1.toUInt()).write(this)
-            MessageExpiryInterval(2.toUInt()).write(this)
+            MessageExpiryInterval(1).write(this)
+            MessageExpiryInterval(2).write(this)
         }.readBytes()
         val dataWithPropertyLength = buildPacket {
             writePacket(VariableByteInteger(data.size.toUInt()).encodedValue())

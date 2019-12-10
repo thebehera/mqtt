@@ -65,15 +65,15 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun sessionExpiryInterval() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(4.toUInt())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(4L)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.sessionExpiryIntervalSeconds, 4.toUInt())
+        assertEquals(expected.header.properties.sessionExpiryIntervalSeconds, 4L)
     }
 
     @Test
     fun sessionExpiryIntervalMultipleTimesThrowsProtocolError() {
-        val obj1 = SessionExpiryInterval(4.toUInt())
+        val obj1 = SessionExpiryInterval(4L)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -92,15 +92,15 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun receiveMaximum() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(receiveMaximum = 4.toUShort())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(receiveMaximum = 4)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.receiveMaximum, 4.toUShort())
+        assertEquals(expected.header.properties.receiveMaximum, 4)
     }
 
     @Test
     fun receiveMaximumSetToZeroThrowsProtocolError() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(receiveMaximum = 0.toUShort())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(receiveMaximum = 0)))
         val bytes = actual.serialize()
         try {
             ControlPacketV5.from(bytes)
@@ -111,7 +111,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun receiveMaximumMultipleTimesThrowsProtocolError() {
-        val obj1 = ReceiveMaximum(4.toUShort())
+        val obj1 = ReceiveMaximum(4)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -202,15 +202,16 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun maximumPacketSize() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(maximumPacketSize = 4.toUInt())))
+            VariableHeader(properties = Properties(maximumPacketSize = 4))
+        )
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.maximumPacketSize, 4.toUInt())
+        assertEquals(expected.header.properties.maximumPacketSize, 4)
     }
 
     @Test
     fun maximumPacketSizeSetToZeroThrowsProtocolError() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumPacketSize = 0.toUInt())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumPacketSize = 0)))
         val bytes = actual.serialize()
         try {
             ControlPacketV5.from(bytes)
@@ -221,7 +222,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun maximumPacketSizeMultipleTimesThrowsProtocolError() {
-        val obj1 = MaximumPacketSize(4.toUInt())
+        val obj1 = MaximumPacketSize(4)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -269,15 +270,15 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun topicAliasMaximum() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(topicAliasMaximum = 4.toUShort())))
+                VariableHeader(properties = Properties(topicAliasMaximum = 4)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.topicAliasMaximum, 4.toUShort())
+        assertEquals(expected.header.properties.topicAliasMaximum, 4)
     }
 
     @Test
     fun topicAliasMaximumMultipleTimesThrowsProtocolError() {
-        val obj1 = TopicAliasMaximum(4.toUShort())
+        val obj1 = TopicAliasMaximum(4)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -446,7 +447,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun serverKeepAlive() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(serverKeepAlive = 5.toUShort())))
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(serverKeepAlive = 5)))
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.sharedSubscriptionAvailable, true)
@@ -454,7 +455,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun serverKeepAliveMultipleTimesThrowsProtocolError() {
-        val obj1 = ServerKeepAlive(5.toUShort())
+        val obj1 = ServerKeepAlive(5)
         val obj2 = obj1.copy()
         val propsWithoutPropertyLength = buildPacket {
             obj1.write(this)
@@ -579,7 +580,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun invalidPropertyOnVariableHeaderThrowsMalformedPacketException() {
-        val method = WillDelayInterval(3.toUInt())
+        val method = WillDelayInterval(3)
         try {
             Properties.from(listOf(method, method))
             fail()

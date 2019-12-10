@@ -3,6 +3,9 @@
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.*
+import mqtt.IgnoredOnParcel
+import mqtt.Parcelable
+import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -28,31 +31,43 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * Bits 3,2,1 and 0 of the Fixed Header of the SUBSCRIBE packet are reserved and MUST be set to 0,0,1 and 0
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
-data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Collection<Subscription>)
-    : ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
+@Parcelize
+data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set<Subscription>) :
+    ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
-    constructor(packetIdentifier: UShort, topic: String, qos: QualityOfService, props: Properties = Properties(),
-                noLocal: Boolean = false, retainAsPublished: Boolean = false,
-                retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE)
-            : this(VariableHeader(packetIdentifier, props),
-            listOf(Subscription.from(topic, qos, noLocal, retainAsPublished, retainHandling)))
+    constructor(
+        packetIdentifier: UShort, topic: String, qos: QualityOfService, props: Properties = Properties(),
+        noLocal: Boolean = false, retainAsPublished: Boolean = false,
+        retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+    )
+            : this(
+        VariableHeader(packetIdentifier.toInt(), props),
+        setOf(Subscription.from(topic, qos, noLocal, retainAsPublished, retainHandling))
+    )
 
-    constructor(packetIdentifier: UShort, topic: List<String>, qos: List<QualityOfService>,
-                props: Properties = Properties(), noLocalList: List<Boolean>? = null,
-                retainAsPublishedList: List<Boolean>? = null,
-                retainHandlingList: List<RetainHandling>? = null)
-            : this(VariableHeader(packetIdentifier, props),
-            Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList))
+    constructor(
+        packetIdentifier: UShort, topic: List<String>, qos: List<QualityOfService>,
+        props: Properties = Properties(), noLocalList: List<Boolean>? = null,
+        retainAsPublishedList: List<Boolean>? = null,
+        retainHandlingList: List<RetainHandling>? = null
+    )
+            : this(
+        VariableHeader(packetIdentifier.toInt(), props),
+        Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList)
+    )
 
-    override val packetIdentifier = variable.packetIdentifier.toInt()
+    @IgnoredOnParcel
+    override val packetIdentifier = variable.packetIdentifier
+    @IgnoredOnParcel
     override val variableHeaderPacket = variable.packet()
+    @IgnoredOnParcel
     private val payload by lazy {
         buildPacket {
             subscriptions.forEach { writePacket(it.packet) }
         }
     }
 
-    override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier, ReasonCode.SUCCESS)
+    override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier.toUShort(), ReasonCode.SUCCESS)
     override fun payloadPacket(sendDefaults: Boolean) = payload
     override fun getTopics() = subscriptions.map { it.topicFilter }
 
@@ -67,52 +82,57 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
      *
      * Figure 3-19 shows an example of a SUBSCRIBE variable header with a Packet Identifier of 10 and no properties.
      */
-    data class VariableHeader(val packetIdentifier: UShort,
-                              val properties: Properties = Properties()) {
+    @Parcelize
+    data class VariableHeader(
+        val packetIdentifier: Int,
+        val properties: Properties = Properties()
+    ) : Parcelable {
         fun packet(): ByteReadPacket {
             return buildPacket {
-                writeUShort(packetIdentifier)
+                writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet())
             }
         }
 
+        @Parcelize
         data class Properties(
-                /**
-                 * 3.2.2.3.9 Reason String
-                 *
-                 * 31 (0x1F) Byte Identifier of the Reason String.
-                 *
-                 * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
-                 * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by
-                 * the Client.
-                 *
-                 * The Server uses this value to give additional information to the Client. The Server MUST NOT send
-                 * this property if it would increase the size of the CONNACK packet beyond the Maximum Packet Size
-                 * specified by the Client [MQTT-3.2.2-19]. It is a Protocol Error to include the Reason String more
-                 * than once.
-                 *
-                 * Non-normative comment
-                 *
-                 * Proper uses for the reason string in the Client would include using this information in an exception
-                 * thrown by the Client code, or writing this string to a log.
-                 */
-                val reasonString: MqttUtf8String? = null,
-                /**
-                 * 3.8.2.1.3 User Property
-                 *
-                 * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by a UTF-8 String Pair.
-                 *
-                 * The User Property is allowed to appear multiple times to represent multiple name, value pairs. The
-                 * same name is allowed to appear more than once.
-                 *
-                 * Non-normative comment
-                 *
-                 * User Properties on the SUBSCRIBE packet can be used to send subscription related properties from
-                 * the Client to the Server. The meaning of these properties is not defined by this specification.
-                 */
-                val userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()) {
+            /**
+             * 3.2.2.3.9 Reason String
+             *
+             * 31 (0x1F) Byte Identifier of the Reason String.
+             *
+             * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
+             * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by
+             * the Client.
+             *
+             * The Server uses this value to give additional information to the Client. The Server MUST NOT send
+             * this property if it would increase the size of the CONNACK packet beyond the Maximum Packet Size
+             * specified by the Client [MQTT-3.2.2-19]. It is a Protocol Error to include the Reason String more
+             * than once.
+             *
+             * Non-normative comment
+             *
+             * Proper uses for the reason string in the Client would include using this information in an exception
+             * thrown by the Client code, or writing this string to a log.
+             */
+            val reasonString: MqttUtf8String? = null,
+            /**
+             * 3.8.2.1.3 User Property
+             *
+             * 38 (0x26) Byte, Identifier of the User Property.
+             *
+             * Followed by a UTF-8 String Pair.
+             *
+             * The User Property is allowed to appear multiple times to represent multiple name, value pairs. The
+             * same name is allowed to appear more than once.
+             *
+             * Non-normative comment
+             *
+             * User Properties on the SUBSCRIBE packet can be used to send subscription related properties from
+             * the Client to the Server. The meaning of these properties is not defined by this specification.
+             */
+            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+        ) : Parcelable {
             fun packet(): ByteReadPacket {
                 val propertiesPacket = buildPacket {
                     if (reasonString != null) {
@@ -136,7 +156,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
-                    var userProperty: Collection<Pair<MqttUtf8String, MqttUtf8String>> = mutableListOf()
+                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
@@ -157,7 +177,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
 
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort()
+                val packetIdentifier = buffer.readUShort().toInt()
                 val remaining = buffer.remaining.toInt()
                 return if (remaining == 2) {
                     VariableHeader(packetIdentifier)
@@ -179,6 +199,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Col
     }
 }
 
+@Parcelize
 data class Subscription(val topicFilter: Filter,
                         /**
                          * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
@@ -216,8 +237,9 @@ data class Subscription(val topicFilter: Filter,
                          *
                          * It is a Protocol Error to send a Retain Handling value of 3.
                          */
-                        val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) {
-    val packet by lazy {
+                        val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+) : Parcelable {
+    @IgnoredOnParcel val packet by lazy {
         val qosInt = maximumQos.integerValue
         val nlShifted = (if (noLocal) 1 else 0).shl(2)
         val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
@@ -230,7 +252,7 @@ data class Subscription(val topicFilter: Filter,
     }
 
     companion object {
-        fun fromMany(buffer: ByteReadPacket): Collection<Subscription> {
+        fun fromMany(buffer: ByteReadPacket): Set<Subscription> {
             val subscriptions = HashSet<Subscription>()
             while (buffer.remaining > 1.toLong()) {
                 subscriptions.add(from(buffer))
@@ -273,13 +295,15 @@ data class Subscription(val topicFilter: Filter,
                  noLocal: Boolean = false,
                  retainAsPublished: Boolean = false,
                  retainHandlingList: RetainHandling =
-                         SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) =
-                from(listOf(topic), listOf(qos), listOf(noLocal), listOf(retainAsPublished), listOf(retainHandlingList)).first()
+                     SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) =
+            from(listOf(topic), listOf(qos), listOf(noLocal), listOf(retainAsPublished), listOf(retainHandlingList)).first()
 
-        fun from(topics: List<String>, qos: List<QualityOfService>,
-                 noLocalList: List<Boolean>? = null,
-                 retainAsPublishedList: List<Boolean>? = null,
-                 retainHandlingList: List<RetainHandling>? = null): List<Subscription> {
+        fun from(
+            topics: List<String>, qos: List<QualityOfService>,
+            noLocalList: List<Boolean>? = null,
+            retainAsPublishedList: List<Boolean>? = null,
+            retainHandlingList: List<RetainHandling>? = null
+        ): Set<Subscription> {
             if (topics.size != qos.size) {
                 throw IllegalArgumentException("Non matching topics collection size with the QoS collection size")
             }
@@ -292,7 +316,7 @@ data class Subscription(val topicFilter: Filter,
             if (retainHandlingList != null && retainHandlingList.size != retainHandlingList.size) {
                 throw IllegalArgumentException("Non matching topics collection size with the retainHandlingList collection size")
             }
-            val subscriptions = mutableListOf<Subscription>()
+            val subscriptions = mutableSetOf<Subscription>()
             topics.forEachIndexed { index, topic ->
                 val noLocal = noLocalList?.get(index) ?: false
                 val retainAsPublished = retainAsPublishedList?.get(index) ?: false
