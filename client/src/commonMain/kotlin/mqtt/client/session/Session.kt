@@ -4,6 +4,7 @@ package mqtt.client.session
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.platform.PlatformSocketConnection
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.client.transport.SocketTransport
@@ -22,8 +23,9 @@ import kotlin.reflect.KClass
 
 class ClientSession(
     val remoteHost: IRemoteHost,
+    val queuedObjectCollection: QueuedObjectCollection,
     override val coroutineContext: CoroutineContext,
-    val state: ClientSessionState
+    val state: ClientSessionState = ClientSessionState(queuedObjectCollection, remoteHost)
 ) : CoroutineScope, OnMessageReceivedCallback {
     var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null

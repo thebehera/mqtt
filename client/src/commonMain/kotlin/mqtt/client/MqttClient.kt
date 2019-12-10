@@ -8,7 +8,6 @@ import mqtt.client.persistence.MemoryQueuedObjectCollection
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.platform.PlatformCoroutineDispatcher
 import mqtt.client.session.ClientSession
-import mqtt.client.session.ClientSessionState
 import mqtt.client.transport.OnMessageReceivedCallback
 import mqtt.connection.ConnectionFailure
 import mqtt.connection.ConnectionState
@@ -28,18 +27,12 @@ data class MqttClient(
 ) : CoroutineScope {
     private val job: Job = Job()
     private val dispatcher = PlatformCoroutineDispatcher.dispatcher
-    val state by lazy {
-        ClientSessionState(queuedObjectCollection, remoteHost).also {
-            launch {
-                it.start()
-            }
-        }
-    }
     override val coroutineContext: CoroutineContext = job + dispatcher
     var connectionCount = 0
     val session by lazy {
-        ClientSession(remoteHost, Job(job), state).also {
+        ClientSession(remoteHost, queuedObjectCollection, Job(job)).also {
             it.everyRecvMessageCallback = otherMsgCallback
+            launch { it.state.start() }
         }
     }
 
