@@ -49,6 +49,20 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
     android()
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        nodejs {
+            testTask {
+
+            }
+        }
+    }
     sourceSets {
         commonMain {
             dependencies {
@@ -87,6 +101,19 @@ kotlin {
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+                implementation(npm("text-encoding", "0.7.0"))
+                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
             }
         }
     }
