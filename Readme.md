@@ -6,12 +6,11 @@ This is currently a WIP project with the goal of creating a lightweight, perform
  
  
 # Prerequisites 
+Take a look at the `.travis.yml` file as a good reference on how we build automatically on Linux and MacOS
 - [Install JDK (at least java 8)](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
    - Used for the gradle build process
 - [Install Mosquitto](https://mosquitto.org/download/)
    - Used for client integration tests
-   - Windows
-       - TBD
    - Mac 
        - `brew install mosquitto` #Install mosquitto using [Homebrew](https://brew.sh/)
        - `echo "" >> ~/.bashrc`  # Add a new line to your bashrc
@@ -22,6 +21,24 @@ This is currently a WIP project with the goal of creating a lightweight, perform
             - `sudo apt-get update` # update local references to packages with the newly added PPA
             - `sudo apt-get install mosquitto` # install mosquitto and add it to your path
        - Snap `snap install mosquitto`
-- [Install Chrome] (https://www.google.com/chrome/)
+   - Windows
+       - TBD (Basicaly install mosquitto with websockets support and add it to your PATH)
+- [Install Chrome](https://www.google.com/chrome/)
     - Used for headless unit testing browser JS code
 
+
+# Current Status
+| OS            | Travis Build and Test |
+|-------------- |---------------------- |
+| Android       | :white_check_mark:    |
+| iOS           | :white_square_button: |
+| js - server   | :heavy_check_mark:    |
+| js - browser  | :heavy_check_mark:    |
+| linux         | :white_square_button: |
+| macOS         | :white_square_button: |
+| windows       | :white_square_button: |
+
+
+- :heavy_check_mark:  - Working as intended
+- :white_check_mark:  - Almost working as intended
+- :white_square_button:  - Not implemented yet
