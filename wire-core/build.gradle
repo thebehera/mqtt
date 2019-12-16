@@ -25,6 +25,10 @@ kotlin {
             }
         }
     }
+    ios("iOS")
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
     sourceSets {
         commonMain {
             dependencies {
@@ -78,6 +82,27 @@ kotlin {
             dependencies {
                 implementation kotlin('test-js')
             }
+        }
+        nativeMain {
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
+            }
+        }
+        iOSX64Main {
+            dependsOn nativeMain
+        }
+        iOSArm64Main {
+            dependsOn nativeMain
+        }
+        linuxMain {
+            dependsOn nativeMain
+        }
+        macosMain {
+            dependsOn nativeMain
+        }
+        windowsMain {
+            dependsOn nativeMain
         }
     }
     targets.all {
