@@ -33,6 +33,11 @@ matrix:
         - export PATH=$ANDROID_HOME/tools:$PATH
         - export PATH=$ANDROID_HOME/platform-tools:$PATH
         - export PATH=$ANDROID_HOME/build-tools/29.1.0:$PATH
+        - echo "executing: sdkmanager --update"
+        - yes y | ${ANDROID_SDK_ROOT}/tools/bin/sdkmanager --update
+        - echo "executing: sdkmanager \"build-tools;${androidBuildToolsVersion}\" \"platform-tools\" \"platforms;${androidPlatformVerion}\""
+        - ${ANDROID_SDK_ROOT}/tools/bin/sdkmanager "build-tools;${androidBuildToolsVersion}" "platform-tools" "platforms;${androidPlatformVerion}"
+
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
