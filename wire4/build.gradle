@@ -33,6 +33,10 @@ kotlin {
         }
     }
     android()
+    ios("iOS")
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
     sourceSets {
         commonMain {
             dependencies {
