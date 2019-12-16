@@ -28,15 +28,15 @@ Take a look at the `.travis.yml` file as a good reference on how we build automa
 
 
 # Current Status
-| OS            | Travis Build and Test |
-|-------------- |---------------------- |
-| Android       | :white_check_mark:    |
-| iOS           | :white_square_button: |
-| js - server   | :heavy_check_mark:    |
-| js - browser  | :heavy_check_mark:    |
-| linux         | :white_square_button: |
-| macOS         | :white_square_button: |
-| windows       | :white_square_button: |
+| OS            | Travis Build and Test | Wire Core | Wire 4 (3.1.1 | Wire 5 | Client | App Sample |
+|-------------- |---------------------- |--- |--- |--- |--- |--- |
+| Android       | :white_check_mark:    | | | | | |
+| iOS           | :white_square_button: | | | | | |
+| js - server   | :heavy_check_mark:    | | | | | |
+| js - browser  | :heavy_check_mark:    | | | | | |
+| linux         | :white_square_button: | | | | | |
+| macOS         | :white_square_button: | | | | | |
+| windows       | :white_square_button: | | | | | |
 
 
 - :heavy_check_mark:  - Working as intended
