@@ -12,9 +12,9 @@ import javax.net.ssl.X509TrustManager
 import kotlin.coroutines.CoroutineContext
 
 actual class PlatformSocketConnection actual constructor(
-    override val remoteHost: IRemoteHost,
+    remoteHost: IRemoteHost,
     ctx: CoroutineContext
-) : SocketTransport(ctx) {
+) : SocketTransport(remoteHost, ctx) {
 
     override val supportsNativeSockets = true
 

@@ -75,12 +75,3 @@ dependencies {
 }
 
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
-
-tasks.whenTaskAdded { task ->
-    if (task.name == "testDebugUnitTest") {
-        task.enabled = false
-    }
-    if(task.name == "testReleaseUnitTest") {
-        task.enabled = false
-    }
-}
