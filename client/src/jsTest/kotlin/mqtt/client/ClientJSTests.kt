@@ -2,7 +2,7 @@ package mqtt.client
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.sync.Mutex
-import mqtt.client.connection.ConnectionParameters
+import mqtt.connection.ConnectionState
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.test.Test
@@ -11,25 +11,24 @@ import kotlin.test.assertEquals
 class ClientJSTests {
 
 
-    fun createClient(websockets: Boolean = false, clientId: String = getClientId()): Pair<MqttClient, Deferred<Unit>> {
+    fun createClient(
+        websockets: Boolean = true,
+        clientId: String = getClientId()
+    ): Pair<MqttClient, Deferred<ConnectionState>> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
-        val port = if (websockets) {
-            60002
-        } else {
-            60000
-        }
-        val params = ConnectionParameters(
-            "172.16.74.128", port, secure = false,
-            connectionRequest = request, useWebsockets = websockets,
-            logIncomingControlPackets = true,
-            logOutgoingControlPackets = true,
-            logConnectionAttempt = true,
-            logIncomingPublish = true,
-            logOutgoingPublishOrSubscribe = true,
-            connectionTimeoutMilliseconds = 15000
+        val client = MqttClient(
+            RemoteHost(
+                "localhost",
+                port = port,
+                request = request,
+                security = RemoteHost.Security(
+                    isTransportLayerSecurityEnabled = false
+                ),
+                websocket = RemoteHost.Websocket(websockets),
+                maxNumberOfRetries = 3
+            )
         )
-        val client = MqttClient(params)
-        val job = client.startAsyncWaitUntilFirstConnection()
+        val job = client.connectAsync()
         return Pair(client, job)
     }
 
@@ -46,11 +45,11 @@ class ClientJSTests {
             val client1Session1 = createClientAwaitConnection(true)
             val client2 = createClientAwaitConnection()
             val mutex = Mutex(true)
-            client1Session1.subscribe<String>("yolo2/+", QualityOfService.AT_MOST_ONCE) { topic, qos, message ->
+            client1Session1.subscribe<String>("yolo2/+", QualityOfService.AT_MOST_ONCE, 4.toUShort()) { _, _, message ->
                 assertEquals(ogMessage, message)
                 mutex.unlock()
             }
-            client2.session.publish("yolo2/23", QualityOfService.AT_LEAST_ONCE, ogMessage)
+            client2.session.publish("yolo2/23", QualityOfService.AT_LEAST_ONCE, 4.toUShort(), ogMessage)
             mutex.lock()
         }
     }

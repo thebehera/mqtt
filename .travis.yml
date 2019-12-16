@@ -6,6 +6,7 @@ addons:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
     packages: mosquitto
+  chrome: stable
 matrix:
   include:
     - os: linux

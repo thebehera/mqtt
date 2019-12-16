@@ -1,16 +1,14 @@
-package mqtt.client.platform
+package mqtt.client.session.transport
 
 import io.ktor.util.KtorExperimentalAPI
-import mqtt.client.connection.ConnectionParameters
-import mqtt.client.transport.SocketTransport
+import mqtt.connection.IRemoteHost
 import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI
 actual class PlatformSocketConnection actual constructor(
-    override val parameters: ConnectionParameters,
+    override val remoteHost: IRemoteHost,
     ctx: CoroutineContext
 ) : SocketTransport(ctx) {
-
     override val supportsNativeSockets = false
 
     override suspend fun buildNativeSocket() =

@@ -15,8 +15,23 @@ repositories {
     jcenter()
 }
 apply from: "../gradle/experimental.gradle"
+
 kotlin {
     jvm()
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        nodejs {
+            testTask {
+
+            }
+        }
+    }
     android()
     sourceSets {
         commonMain {
@@ -58,6 +73,19 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+                implementation(npm("text-encoding", "0.7.0"))
+                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+            }
+        }
     }
 
     targets.all {
@@ -69,9 +97,6 @@ kotlin {
             }
         }
     }
-}
-configurations {
-    compileClasspath
 }
 dependencies {
     implementation project(':wire-core')

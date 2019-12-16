@@ -10,7 +10,20 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     android()
     jvm()
-    js()
+    js() {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        nodejs {
+            testTask {
+
+            }
+        }
+    }
     ios("iOS")
     mingwX64("windows")
     macosX64("macos")
