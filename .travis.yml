@@ -24,6 +24,8 @@ matrix:
       osx_image: xcode11.2
       jdk: openjdk12
       before_install:
+        - echo "executing: brew cask install android-sdk"
+        - brew cask install android-sdk
         - export PATH="$PATH:/usr/local/sbin/"
         - export ANDROID_HOME=/usr/local/opt/android-sdk
         - export PATH=$ANDROID_HOME/tools:$PATH
