@@ -3,6 +3,7 @@ addons:
     packages:
       - mosquitto
       - android-sdk
+      - adoptopenjdk8
     update: true
   apt:
     sources:
