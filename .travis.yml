@@ -2,6 +2,9 @@ addons:
   homebrew:
     packages:
       - mosquitto
+    casks:
+      - android-sdk
+      - adoptopenjdk8
     update: true
   apt:
     sources:
@@ -23,9 +26,6 @@ matrix:
       osx_image: xcode11.2
       jdk: openjdk12
       before_install:
-        - brew cask install homebrew/cask-versions/adoptopenjdk8
-        - echo "brew cask install android-sdk"
-        - brew cask install android-sdk
         - export PATH="$PATH:/usr/local/sbin/"
         - export ANDROID_HOME=/usr/local/share/android-sdk
         - export PATH=$ANDROID_HOME/tools:$PATH
