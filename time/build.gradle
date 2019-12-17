@@ -43,8 +43,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "jakarta.xml.bind:jakarta.xml.bind-api:2.3.2"
-                implementation "org.glassfish.jaxb:jaxb-runtime:2.3.2"
             }
         }
         jvmTest {
