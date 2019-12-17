@@ -3,6 +3,7 @@ addons:
     packages:
       - mosquitto
       - android-sdk
+      - adoptopenjdk8
     update: true
   apt:
     sources:
@@ -22,7 +23,6 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.2
-      jdk: openjdk9
       before_install:
         - echo "brew cask install android-sdk"
         - brew cask install android-sdk
