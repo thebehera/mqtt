@@ -29,6 +29,7 @@ matrix:
         - /usr/libexec/java_home -V
         - java -version
         - which java
+        - export JAVA_HOME=/Library/Java/JavaVirtualMachines/adoptopenjdk-8.jdk/Contents/Home
         - echo $JAVA_HOME
         - export PATH="$PATH:/usr/local/sbin/"
         - export ANDROID_HOME=/usr/local/share/android-sdk
