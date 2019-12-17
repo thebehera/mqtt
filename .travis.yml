@@ -26,7 +26,6 @@ matrix:
       language: java
       osx_image: xcode11.2
       before_install:
-        - javac
         - echo $JAVA_HOME
         - export PATH="$PATH:/usr/local/sbin/"
         - export ANDROID_HOME=/usr/local/share/android-sdk
