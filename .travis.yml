@@ -22,7 +22,7 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.2
-      jdk: openjdk12
+      jdk: openjdk8
       before_install:
         - echo "brew cask install android-sdk"
         - brew cask install android-sdk
