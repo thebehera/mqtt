@@ -43,4 +43,12 @@ allprojects {
             options.compilerArgs << "-Xlint:all" << "-Werror"
         }
     }
+
+    gradle.taskGraph.whenReady { graph ->
+        graph.allTasks.findAll {
+            if (System.getenv("CONTINUOUS_INTEGRATION") == "true" && System.getenv("TRAVIS_OS_NAME") != "linux") {
+                it.name ==~ /android.*/ || it.name ==~ /lint.*/
+            }
+        }*.enabled = false
+    }
 }
