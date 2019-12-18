@@ -18,6 +18,25 @@ val port = 60000
 
 class ClientTests {
 
+    companion object {
+        fun createClient(clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
+            val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
+            val client = MqttClient(
+                RemoteHost(
+                    "localhost",
+                    port = port,
+                    request = request,
+                    security = RemoteHost.Security(
+                        isTransportLayerSecurityEnabled = false
+                    ),
+                    maxNumberOfRetries = 3
+                )
+            )
+            val job = client.connectAsync()
+            return Pair(client, job)
+        }
+    }
+
     val areWebsocketTestsEnabled = false
 
     @Test
@@ -42,22 +61,7 @@ class ClientTests {
         assertEquals(3, client.connectionCount)
     }
 
-    private fun createClient(clientId: String = getClientId()): Pair<MqttClient, Deferred<Any>> {
-        val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
-        val client = MqttClient(
-            RemoteHost(
-                "localhost",
-                port = port,
-                request = request,
-                security = RemoteHost.Security(
-                    isTransportLayerSecurityEnabled = false
-                ),
-                maxNumberOfRetries = 3
-            )
-        )
-        val job = client.connectAsync()
-        return Pair(client, job)
-    }
+
 
     private suspend fun createClientAwaitConnection(clientId: String = getClientId()): MqttClient {
         val (client, job) = createClient(clientId)
