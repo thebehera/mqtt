@@ -43,7 +43,10 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install android-sdk
+        - until "choco install android-sdk"
+        - do
+        - sleep 1000
+        - done
         - refreshenv
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
