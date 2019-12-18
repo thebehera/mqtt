@@ -54,3 +54,4 @@ cache:
     - $HOME/.android/build-cache
 script:
   - ./build.sh
+
