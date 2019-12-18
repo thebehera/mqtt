@@ -9,6 +9,10 @@ This is currently a WIP project with the goal of creating a lightweight, perform
 Take a look at the `.travis.yml` file as a good reference on how we build automatically on Linux and MacOS
 - [Install JDK (at least java 8)](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
    - Used for the gradle build process
+- Install Android SDK
+   - Mac `brew cask install android-sdk` using [Hombrew](https://brew.sh/)
+   - Ubuntu `sudo apt install android-sdk` using Aptitude package manager
+   - Windows `choco install android-sdk` using [Chocolatey](https://chocolatey.org/install)
 - [Install Mosquitto](https://mosquitto.org/download/)
    - Used for client integration tests
    - Mac 
