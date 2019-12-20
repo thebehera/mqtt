@@ -43,9 +43,9 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install jdk8 -params "source=false installdir=c:\\java8"
+        - choco install jdk8 -params "source=false"
         - choco install android-sdk
-        - export JAVA_HOME="/C/java8/"
+        - refreshenv
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
