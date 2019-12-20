@@ -47,3 +47,8 @@ Take a look at the `.travis.yml` file as a good reference on how we build automa
 - :white_check_mark:  - Almost working as intended
 - :white_square_button:  - Not implemented yet
 - :no_entry_sign: - Not Available
+
+
+# Thanks for donating!
+[![(JetBrains)](readme/jetbrains-variant-3.svg)](https://www.jetbrains.com/?from=thebehera.mqtt)
+ - [Jetbrains](https://www.jetbrains.com/?from=thebehera.mqtt)
