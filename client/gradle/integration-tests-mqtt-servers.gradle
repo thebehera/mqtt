@@ -5,7 +5,7 @@ class MosquittoServer extends DefaultTask {
     String configurationFileName
     
     MosquittoServer() {
-        configurationDirectory = new File(project.projectDir, File.separatorChar +  "gradle"+ File.separatorChar +"configurations")
+        configurationDirectory = new File(project.projectDir, "${File.separatorChar}gradle${File.separatorChar}configurations")
     }
 
 
