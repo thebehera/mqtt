@@ -4,7 +4,6 @@
 This is currently a WIP project with the goal of creating a lightweight, performant, MQTT3.1.1 & 5 easy to use library with two simple APIs
 
  
- 
 # Prerequisites 
 Take a look at the `.travis.yml` file as a good reference on how we build automatically on Linux and MacOS
 - [Install JDK (at least java 8)](https://www.oracle.com/technetwork/java/javase/downloads/index.html)
@@ -30,15 +29,17 @@ Take a look at the `.travis.yml` file as a good reference on how we build automa
 - [Install Chrome](https://www.google.com/chrome/)
     - Used for headless unit testing browser JS code
 
-| OS            | Travis Build and Test | Wire Core         | Wire 4 (3.1.1)    | Wire 5            | Client               | IPC/Service Worker   | Authentication API   | Server               | App Sample           |
-|-------------- |---------------------- |------------------ |------------------ |------------------ |--------------------- |--------------------- |--------------------- |--------------------- |--------------------- |
-| Android       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark:    |:white_check_mark:    |:white_square_button: |:heavy_check_mark:    |:white_square_button: |
-| iOS           | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:no_entry_sign:       |:white_square_button: |:white_square_button: |:white_square_button: |
-| js - server   | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| js - browser  | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:no_entry_sign:?      |:white_square_button: |
-| linux         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| macOS         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| windows       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+
+# Current Status
+| OS            | Travis Build and Test | Wire Core         | Wire 4 (3.1.1)    | Wire 5            | IPC/Service Worker   | Client Sync Api      | Client Auth API      | App Sample           |
+|-------------- |---------------------- |------------------ |------------------ |------------------ |--------------------- |--------------------- |--------------------- |--------------------- |
+| Android       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_check_mark:    |:heavy_check_mark:    |:white_square_button: |:heavy_check_mark:    |
+| iOS           | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:no_entry_sign:       |:white_square_button: |:white_square_button: |:white_square_button: |
+| js - server   | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| js - browser  | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| linux         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| macOS         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| windows       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
 
 
 - :heavy_check_mark:  - Working as intended
