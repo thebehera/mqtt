@@ -11,6 +11,7 @@ import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.io.ClosedWriteChannelException
 import mqtt.ConnectionTimeout
 import mqtt.FailedToReadConnectionAck
@@ -25,9 +26,8 @@ import platform.Platform
 import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI
-abstract class SocketTransport(override val coroutineContext: CoroutineContext) : CoroutineScope {
-    abstract val remoteHost: IRemoteHost
-
+open class SocketTransport(val remoteHost: IRemoteHost, override val coroutineContext: CoroutineContext) :
+    CoroutineScope {
     val state = atomic<ConnectionState>(Initializing)
 
     var currentSocket: Transport? = null
@@ -57,20 +57,43 @@ abstract class SocketTransport(override val coroutineContext: CoroutineContext) 
             }
             val session =
                 httpClient.webSocketSession(host = remoteHost.name, port = remoteHost.port.toInt(), path = "/mqtt") {
-                request {
-                    url.protocol = if (remoteHost.security.isTransportLayerSecurityEnabled) {
-                        WSS
-                    } else {
-                        WS
+                    request {
+                        url.protocol = if (remoteHost.security.isTransportLayerSecurityEnabled) {
+                            WSS
+                        } else {
+                            WS
+                        }
                     }
+                    headers["Sec-WebSocket-Protocol"] = "mqttv3.1"
                 }
-                headers["Sec-WebSocket-Protocol"] = "mqttv3.1"
-            }
             session.flush()
             return WebSocketTransport(remoteHost.request.protocolVersion, session, coroutineContext)
         } else {
             return buildNativeSocket()
         }
+    }
+
+    fun openConnection() = flow<ConnectionState> {
+        if (!state.compareAndSet(Initializing, Connecting)) {
+            throw ConcurrentModificationException("Invalid previous state before connecting")
+        }
+        var socketConnectException: Throwable? = null
+        val platformSocketConnected = withTimeoutOrNull(remoteHost.connectionTimeout) {
+            try {
+                buildSocket()
+            } catch (e: Exception) {
+                socketConnectException = e
+                null
+            }
+        }
+        currentSocket = platformSocketConnected
+        if (platformSocketConnected == null) {
+            val e = socketConnectException
+                ?: ConnectionTimeout("Failed to connect within ${remoteHost.connectionTimeout}ms")
+            val connectionState = ConnectionFailure(e)
+            state.lazySet(connectionState)
+        }
+
     }
 
     /**

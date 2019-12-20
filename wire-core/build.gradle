@@ -116,19 +116,3 @@ kotlin {
     }
 
 }
-
-
-tasks.whenTaskAdded { task ->
-    if (task.name == "compileDebugUnitTestKotlinAndroid") {
-        task.enabled = false
-    }
-    if(task.name == "compileReleaseUnitTestKotlinAndroid") {
-        task.enabled = false
-    }
-    if (task.name == "testDebugUnitTest") {
-        task.enabled = false
-    }
-    if(task.name == "testReleaseUnitTest") {
-        task.enabled = false
-    }
-}
