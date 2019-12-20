@@ -44,7 +44,8 @@ matrix:
       language: sh
       before_install:
         - choco install jdk8
-        - choco install androidstudio
+        - choco install android-sdk
+        - refreshenv
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
