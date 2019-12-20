@@ -20,7 +20,7 @@ import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 
-public data class MqttClient(
+data class MqttClient(
     val remoteHost: IRemoteHost,
     val otherMsgCallback: OnMessageReceivedCallback? = null,
     val queuedObjectCollection: QueuedObjectCollection = MemoryQueuedObjectCollection(remoteHost.connectionIdentifier())

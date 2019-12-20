@@ -62,7 +62,6 @@ class ClientTests {
     }
 
 
-
     private suspend fun createClientAwaitConnection(clientId: String = getClientId()): MqttClient {
         val (client, job) = createClient(clientId)
         job.await()
