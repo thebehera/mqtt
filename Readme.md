@@ -30,18 +30,16 @@ Take a look at the `.travis.yml` file as a good reference on how we build automa
 - [Install Chrome](https://www.google.com/chrome/)
     - Used for headless unit testing browser JS code
 
-
 # Current Status
-| OS            | Travis Build and Test | Wire Core         | Wire 4 (3.1.1)    | Wire 5            | Client               | IPC/Service Worker   | Authentication API   | App Sample           |
-|-------------- |---------------------- |------------------ |------------------ |------------------ |--------------------- |--------------------- |--------------------- |--------------------- |
-| Android       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark:    |:white_check_mark:    |:white_square_button: |:heavy_check_mark:    |
-| iOS           | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:no_entry_sign:       |:white_square_button: |:white_square_button: |
-| js - server   | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| js - browser  | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| linux         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| macOS         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-| windows       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
-
+| OS            | Travis Build and Test | Wire Core         | Wire 4 (3.1.1)    | Wire 5            | Client               | IPC/Service Worker   | Authentication API   | Server               | App Sample           |
+|-------------- |---------------------- |------------------ |------------------ |------------------ |--------------------- |--------------------- |--------------------- |--------------------- |--------------------- |
+| Android       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark:    |:white_check_mark:    |:white_square_button: |:heavy_check_mark:    |:white_square_button: |
+| iOS           | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:no_entry_sign:       |:white_square_button: |:white_square_button: |:white_square_button: |
+| js - server   | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| js - browser  | :heavy_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:no_entry_sign:?      |:white_square_button: |
+| linux         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| macOS         | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
+| windows       | :white_check_mark:    |:heavy_check_mark: |:heavy_check_mark: |:heavy_check_mark: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |:white_square_button: |
 
 - :heavy_check_mark:  - Working as intended
 - :white_check_mark:  - Almost working as intended
