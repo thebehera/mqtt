@@ -1,9 +1,11 @@
 package mqtt.client.session.transport
 
-import mqtt.client.*
+import mqtt.client.MqttClient
+import mqtt.client.RemoteHost
+import mqtt.client.getClientId
+import mqtt.client.port
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.test.Test
-import kotlin.test.assertEquals
 
 class SocketTransportTests {
     @Test

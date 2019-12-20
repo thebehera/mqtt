@@ -26,7 +26,8 @@ import platform.Platform
 import kotlin.coroutines.CoroutineContext
 
 @KtorExperimentalAPI
-open class SocketTransport(val remoteHost: IRemoteHost, override val coroutineContext: CoroutineContext) : CoroutineScope {
+open class SocketTransport(val remoteHost: IRemoteHost, override val coroutineContext: CoroutineContext) :
+    CoroutineScope {
     val state = atomic<ConnectionState>(Initializing)
 
     var currentSocket: Transport? = null
@@ -56,15 +57,15 @@ open class SocketTransport(val remoteHost: IRemoteHost, override val coroutineCo
             }
             val session =
                 httpClient.webSocketSession(host = remoteHost.name, port = remoteHost.port.toInt(), path = "/mqtt") {
-                request {
-                    url.protocol = if (remoteHost.security.isTransportLayerSecurityEnabled) {
-                        WSS
-                    } else {
-                        WS
+                    request {
+                        url.protocol = if (remoteHost.security.isTransportLayerSecurityEnabled) {
+                            WSS
+                        } else {
+                            WS
+                        }
                     }
+                    headers["Sec-WebSocket-Protocol"] = "mqttv3.1"
                 }
-                headers["Sec-WebSocket-Protocol"] = "mqttv3.1"
-            }
             session.flush()
             return WebSocketTransport(remoteHost.request.protocolVersion, session, coroutineContext)
         } else {
