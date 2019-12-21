@@ -26,6 +26,8 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.2
+        addons:
+          chrome: stable
       before_install:
         - /usr/libexec/java_home -V
         - java -version
@@ -43,8 +45,6 @@ matrix:
         - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
     - os: windows
       language: sh
-      addons:
-        chrome: stable
       before_install:
         - choco install jdk8 -params "source=false"
         - choco install android-sdk
