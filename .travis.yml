@@ -11,13 +11,12 @@ addons:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
     packages: mosquitto
+  chrome: stable
 matrix:
   include:
     - os: linux
       language: android
       dist: trusty
-      addons:
-        chrome: stable
       before_install:
         - mkdir "$ANDROID_HOME/licenses/"
         - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
@@ -26,8 +25,6 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.2
-      addons:
-        chrome: stable
       before_install:
         - /usr/libexec/java_home -V
         - java -version
