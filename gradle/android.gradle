@@ -38,3 +38,11 @@ android {
 configurations {
     compileClasspath
 }
+
+if (!new File(System.getenv("ANDROID_HOME")).exists()) {
+    tasks.whenTaskAdded {task ->
+        if(task.name.contains("lint")) {
+            task.enabled = false
+        }
+    }
+}
