@@ -33,8 +33,8 @@ allprojects {
         }
     }
 
-    if (System.getenv("TRAVIS_OS_NAME") == "windows") {
-        logger.warn("Integration tests are disabled for travis windows! Reason: Headless chrome isn't working properly")
+    if (System.properties['os.name'].toLowerCase().contains('windows')) {
+        logger.warn("Integration tests are disabled for windows! Reason: Headless chrome isn't working properly")
         tasks.whenTaskAdded {task ->
             if(task.name.contains("jsBrowserTest")) {
                 task.enabled = false
