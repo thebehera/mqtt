@@ -38,12 +38,3 @@ android {
 configurations {
     compileClasspath
 }
-
-if (System.getenv("ANDROID_HOME") == null) {
-    logger.warn('Android & Integration tests are disabled for the client! Reason: Failed to find ANDROID_HOME installed on the PATH. Please install android and add it to your path')
-    tasks.whenTaskAdded {task ->
-        if(task.name.contains("lint") || task.name.contains("android")) {
-            task.enabled = false
-        }
-    }
-}
