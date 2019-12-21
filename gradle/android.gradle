@@ -40,6 +40,7 @@ configurations {
 }
 
 if (!new File(System.getenv("ANDROID_HOME")).exists()) {
+    logger.warn('Integration tests are disabled for the client! Reason: Failed to find ANDROID_HOME installed on the PATH. Please install android and add it to your path')
     tasks.whenTaskAdded {task ->
         if(task.name.contains("lint")) {
             task.enabled = false
