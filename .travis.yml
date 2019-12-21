@@ -26,8 +26,8 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.2
-        addons:
-          chrome: stable
+      addons:
+        chrome: stable
       before_install:
         - /usr/libexec/java_home -V
         - java -version
