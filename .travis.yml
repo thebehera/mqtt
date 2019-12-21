@@ -40,9 +40,26 @@ matrix:
         - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
+    - os: windows
+      language: sh
+      before_install:
+        - choco install jdk8 -params "source=false"
+        - choco install android-sdk
+        - export JAVA_HOME="/C/Program Files/Java/jdk1.8.0_231/"
+        - export ANDROID_HOME="/C/Android/android-sdk"
+        - export PATH=$ANDROID_HOME/tools:$PATH
+        - export PATH=$ANDROID_HOME/platform-tools:$PATH
+        - export PATH=$ANDROID_HOME/build-tools/29.0.2:$PATH
+        - mkdir "$ANDROID_HOME/licenses/"
+        - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
+        - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
+        - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
+      before_cache:
+        - rm -rf $HOME/.gradle/
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -rf $HOME/.gradle/wrapper/dists/
 cache:
   directories:
     - $HOME/travis/.rvm/
@@ -53,3 +70,4 @@ cache:
     - $HOME/.android/build-cache
 script:
   - ./build.sh
+

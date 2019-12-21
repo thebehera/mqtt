@@ -47,6 +47,10 @@ Take a look at the `.travis.yml` file as a good reference on how we build automa
 - :white_square_button:  - Not implemented yet
 - :no_entry_sign: - Not Available
 
+
+# Test Status (>1528 tests as of now)
+Currently most of the tests are unit tests and there are some integration tests validating that we can connect to a mosquitto server
+
 # Thanks for donating!
 [![(JetBrains)](readme/jetbrains-variant-3.svg)](https://www.jetbrains.com/?from=thebehera.mqtt)
  - [Jetbrains](https://www.jetbrains.com/?from=thebehera.mqtt)
