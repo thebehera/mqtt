@@ -3,7 +3,7 @@ class MosquittoServer extends DefaultTask {
     Thread childThread
     File configurationDirectory
     String configurationFileName
-    
+
     MosquittoServer() {
         configurationDirectory = new File(project.projectDir, "${File.separatorChar}gradle${File.separatorChar}configurations")
     }
@@ -48,30 +48,48 @@ class MosquittoServer extends DefaultTask {
     }
 }
 
-task stopMosquittoTLS60001() {
-    doLast {
-        tasks.startMosquittoTLS60001.shutdown()
+boolean checkMosquitto() {
+    ProcessBuilder pb = new ProcessBuilder()
+            .command "mosquitto"
+    try {
+        pb.start().destroy()
+        return true
+    } catch(Exception e) {
+        return false
     }
 }
 
-task startMosquittoTLS60001(type: MosquittoServer) {
-    configurationFileName = "mosquitto_tls_1.3_60001.conf"
-}
+if (checkMosquitto()) {
+    task stopMosquittoTLS60001() {
+        doLast {
+            tasks.startMosquittoTLS60001.shutdown()
+        }
+    }
 
-task stopMosquitto60000Default() {
-    doLast {
-        tasks.startMosquitto60000Default.shutdown()
+    task startMosquittoTLS60001(type: MosquittoServer) {
+        configurationFileName = "mosquitto_tls_1.3_60001.conf"
+    }
+
+    task stopMosquitto60000Default() {
+        doLast {
+            tasks.startMosquitto60000Default.shutdown()
+        }
+    }
+
+    task startMosquitto60000Default(type: MosquittoServer) {
+        configurationFileName = "mosquitto_default_60000.conf"
+    }
+    check {
+        dependsOn startMosquittoTLS60001
+        dependsOn startMosquitto60000Default
+        finalizedBy stopMosquittoTLS60001
+        finalizedBy stopMosquitto60000Default
+    }
+} else {
+    logger.warn('Integration tests are disabled for the client! Reason: Failed to find mosquitto installed on the PATH. Please add it to your path.')
+    tasks.whenTaskAdded {task ->
+        if(task.name.contains("testDebugUnitTest") || task.name.contains("testReleaseUnitTest")) {
+            task.enabled = false
+        }
     }
 }
-
-task startMosquitto60000Default(type: MosquittoServer) {
-    configurationFileName = "mosquitto_default_60000.conf"
-}
-
-check {
-    dependsOn startMosquittoTLS60001
-    dependsOn startMosquitto60000Default
-    finalizedBy stopMosquittoTLS60001
-    finalizedBy stopMosquitto60000Default
-}
-
