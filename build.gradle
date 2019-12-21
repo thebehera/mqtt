@@ -44,3 +44,12 @@ allprojects {
         }
     }
 }
+
+if (System.getenv("TRAVIS_OS_NAME") == "windows") {
+    logger.warn("Integration tests are disabled for travis windows! Reason: Headless chrome isn't working properly")
+    tasks.whenTaskAdded {task ->
+        if(task.name.contains("jsBrowserTest")) {
+            task.enabled = false
+        }
+    }
+}
