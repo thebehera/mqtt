@@ -11,6 +11,7 @@ import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IDisconnectNotification
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -31,8 +32,10 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * [MQTT-3.14.0-1].
  */
 @Parcelize
-data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) : ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL) {
-    @IgnoredOnParcel override val variableHeaderPacket = variable.packet
+data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) :
+    ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL), IDisconnectNotification {
+    @IgnoredOnParcel
+    override val variableHeaderPacket = variable.packet
 
     @Parcelize
     data class VariableHeader(
