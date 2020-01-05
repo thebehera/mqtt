@@ -7,7 +7,10 @@ import kotlinx.io.core.Closeable
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 interface ControlPacketTransport : Closeable {
     val scope: CoroutineScope
     val maxBufferSize: Int
@@ -15,14 +18,20 @@ interface ControlPacketTransport : Closeable {
     val incomingControlPackets: Flow<ControlPacket>
     var completedWrite: SendChannel<ControlPacket>?
     fun assignedPort(): UShort?
+
+
+    suspend fun read(timeout: Duration): ControlPacket
+    suspend fun write(packet: ControlPacket, timeout: Duration): Int
 }
 
 
+@ExperimentalTime
 interface ClientControlPacketTransport : ControlPacketTransport {
     val connectionRequest: IConnectionRequest
     suspend fun open(port: UShort, host: String? = null): IConnectionAcknowledgment
 }
 
+@ExperimentalTime
 interface ServerControlPacketTransport : Closeable {
     val scope: CoroutineScope
     suspend fun listen(port: UShort? = null, host: String = "127.0.0.1"): Flow<ControlPacketTransport>

@@ -2,7 +2,6 @@ package mqtt.client.session.transport.nio
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -28,7 +27,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-    lateinit var scope: CoroutineScope
+    val scope = CoroutineScope(Dispatchers.Default)
     private lateinit var transport: ClientControlPacketTransport
     private val integrationTestTimeout = 2101
     private val timeoutOffset = 100
@@ -36,7 +35,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Before
     fun connect() {
-        scope = CoroutineScope(Job() + Dispatchers.Default)
+
         val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 2.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
         scope.blockWithTimeout(timeoutOffset.toLong()) {
@@ -49,24 +48,23 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingRequest() {
-        CoroutineScope(Job() + Dispatchers.Default)
-            .blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
-                val completedWriteChannel = Channel<ControlPacket>()
-                transport.completedWrite = completedWriteChannel
-                val expectedCount = max(
-                    1,
-                    integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
-                )
-                assertEquals(
-                    expectedCount,
-                    completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
-                )
+        scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
+            val completedWriteChannel = Channel<ControlPacket>()
+            transport.completedWrite = completedWriteChannel
+            val expectedCount = max(
+                1,
+                integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+            )
+            assertEquals(
+                expectedCount,
+                completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
+            )
             }
     }
 
     @Test
     fun pingResponse() {
-        CoroutineScope(Job() + Dispatchers.Default).blockWithTimeout(
+        scope.blockWithTimeout(
             transport,
             integrationTestTimeout.toLong() + timeoutOffset
         ) {
@@ -86,8 +84,8 @@ class AsyncClientControlPacketTransportIntegrationTests {
             assert(completedWrite.isClosedForSend)
         }
         assert(transport.outboundChannel.isClosedForSend)
-        scope.cancel()
         assertNull(transport.assignedPort(), "Leaked socket")
+        scope.cancel()
     }
 }
 

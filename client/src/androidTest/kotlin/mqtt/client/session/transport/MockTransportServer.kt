@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
+import mqtt.client.session.transport.nio.JavaAsyncClientControlPacketTransport
 import mqtt.connection.ControlPacketTransport
 import mqtt.connection.ServerControlPacketTransport
 import java.net.InetSocketAddress
@@ -14,7 +15,10 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 class MockTransportServer(
     override val scope: CoroutineScope
 ) : ServerControlPacketTransport {
@@ -46,6 +50,13 @@ class MockTransportServer(
     }
 
 }
+
+@ExperimentalTime
+class AsyncServerClient(
+    scope: CoroutineScope, socket: AsynchronousSocketChannel,
+    protocolVersion: Int, timeout: Duration, maxBufferSize: Int
+) :
+    JavaAsyncClientControlPacketTransport(scope, socket, protocolVersion, timeout, maxBufferSize)
 
 suspend fun openAsyncServerSocketChannel(): AsynchronousServerSocketChannel = suspendCoroutine { continuation ->
     try {
