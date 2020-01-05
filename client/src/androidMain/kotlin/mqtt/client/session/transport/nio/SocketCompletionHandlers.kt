@@ -3,6 +3,7 @@ package mqtt.client.session.transport.nio
 import android.os.Build
 import androidx.annotation.RequiresApi
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.CompletionHandler
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
@@ -25,17 +26,18 @@ object ConnectCompletionHandler : CompletionHandler<Void?, Continuation<Void?>> 
         attachment.resume(null)
     }
 
-    override fun failed(exc: Throwable, attachment: Continuation<Void?>) =
+    override fun failed(exc: Throwable, attachment: Continuation<Void?>) {
         attachment.resumeWithException(exc)
+    }
 }
 
 
 @RequiresApi(Build.VERSION_CODES.O)
 class FixedHeaderCompletionHandler(private val buffer: ByteBuffer) :
-    CompletionHandler<Int, Continuation<FixedHeaderMetadata?>> {
-    override fun completed(result: Int, attachment: Continuation<FixedHeaderMetadata?>) {
+    CompletionHandler<Int, Continuation<FixedHeaderMetadata>> {
+    override fun completed(result: Int, attachment: Continuation<FixedHeaderMetadata>) {
         if (result == -1) {
-            attachment.resume(null)
+            attachment.resumeWithException(AsynchronousCloseException())
             return
         }
         try {
@@ -49,8 +51,9 @@ class FixedHeaderCompletionHandler(private val buffer: ByteBuffer) :
         }
     }
 
-    override fun failed(exc: Throwable, attachment: Continuation<FixedHeaderMetadata?>) =
+    override fun failed(exc: Throwable, attachment: Continuation<FixedHeaderMetadata>) {
         attachment.resumeWithException(exc)
+    }
 }
 
 data class FixedHeaderMetadata(val firstByte: UByte, val remainingLength: UInt)

@@ -3,9 +3,6 @@ package mqtt.client.session.transport.nio
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.io.core.readByteBuffer
 import mqtt.connection.ClientControlPacketTransport
 import mqtt.wire.control.packet.ControlPacket
@@ -17,6 +14,7 @@ import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
+import java.nio.channels.ClosedChannelException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -61,6 +59,7 @@ class AsyncClientControlPacketTransport(
         write(connectionRequest)
         val packet = read()
         if (packet is IConnectionAcknowledgment) {
+            startReadChannel()
             startWriteChannel()
             startPingTimer()
         } else {
@@ -69,22 +68,13 @@ class AsyncClientControlPacketTransport(
         return packet
     }
 
-    override val incomingControlPackets = flow {
-        while (scope.isActive) {
-            val packet = read() ?: continue
-            emit(packet)
+    override suspend fun read(timeout: Duration): ControlPacket {
+        val metadata = suspendCoroutine<FixedHeaderMetadata> { continuation ->
+            socket.read(
+                packetBuffer, timeout.inMilliseconds.roundToLong(), TimeUnit.MILLISECONDS,
+                continuation, FixedHeaderCompletionHandler(packetBuffer)
+            )
         }
-    }
-
-    override suspend fun read(timeout: Duration): ControlPacket? {
-        val metadata = suspendCoroutine<FixedHeaderMetadata?> { continuation ->
-            scope.launch {
-                socket.read(
-                    packetBuffer, timeout.inMilliseconds.roundToLong(), TimeUnit.MILLISECONDS,
-                    continuation, FixedHeaderCompletionHandler(packetBuffer)
-                )
-            }
-        } ?: return null
         return if (metadata.remainingLength.toLong() < packetBuffer.remaining()) { // we already read the entire message in the buffer
             packetBuffer.read(connectionRequest.protocolVersion)
         } else {
@@ -96,19 +86,24 @@ class AsyncClientControlPacketTransport(
 
     override suspend fun write(packet: ControlPacket, timeout: Duration): Int {
         val bytes = suspendCoroutine<Int> { continuation ->
-            socket.write(
-                packet.serialize().readByteBuffer(), timeout.inMilliseconds.roundToLong(),
-                TimeUnit.MILLISECONDS, continuation, WriteCompletionHandler
-            )
+            try {
+                socket.write(
+                    packet.serialize().readByteBuffer(), timeout.inMilliseconds.roundToLong(),
+                    TimeUnit.MILLISECONDS, continuation, WriteCompletionHandler
+                )
+//                println("wrote $packet")
+            } catch (e: Exception) {
+                continuation.resumeWithException(RuntimeException("failed to write $packet", e))
+            }
         }
         if (packet is IDisconnectNotification) {
             suspendCoroutine<Void?> { continuation ->
                 try {
                     outboundChannel.close()
                     socket.close()
-                } catch (e: Exception) {
-                } finally {
                     continuation.resume(null)
+                } catch (e: Exception) {
+                    continuation.resumeWithException(RuntimeException("failed to close after writing $packet", e))
                 }
             }
         }
@@ -123,7 +118,16 @@ class AsyncClientControlPacketTransport(
 
     override fun close() {
         super.close()
-        socket.close()
+        var count = 0
+        while (count < Int.MAX_VALUE) {
+            count++
+            try {
+                socket.remoteAddress
+            } catch (e: ClosedChannelException) {
+                break
+            }
+        }
+        println("count $count")
     }
 
 }

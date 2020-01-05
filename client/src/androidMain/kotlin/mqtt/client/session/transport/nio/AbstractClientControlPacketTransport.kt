@@ -5,10 +5,11 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mqtt.connection.ClientControlPacketTransport
+import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import kotlin.time.Duration
@@ -25,42 +26,66 @@ abstract class AbstractClientControlPacketTransport(
     ClientControlPacketTransport {
     override val outboundChannel: SendChannel<ControlPacket> = Channel()
     protected val outbound by lazy { this.outboundChannel as Channel<ControlPacket> }
-
+    protected val inboxChannel = Channel<ControlPacket>(Channel.UNLIMITED)
+    private var lastMessageReadAt: Long = currentTimestampMs()
     override var completedWrite: SendChannel<ControlPacket>? = null
     abstract fun isOpen(): Boolean
+    private var isClosing = false
 
     protected fun startPingTimer() = scope.launch {
-        delay(connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L)
-        while (isActive && isOpen()) {
+        delayUntilPingInterval()
+        while (!isClosing && isActive && isOpen()) {
             outboundChannel.send(ping(connectionRequest.protocolVersion))
-            delay(connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L)
+            delayUntilPingInterval()
         }
+    }
+
+    private suspend fun delayUntilPingInterval() {
+        val keepAliveMs = connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L
+        val nextMessageTime = lastMessageReadAt + keepAliveMs
+        val time = currentTimestampMs()
+        var deltaTime = nextMessageTime - time
+        if (deltaTime < 0) {
+            deltaTime = keepAliveMs
+        }
+        delay(deltaTime)
     }
 
     protected fun startWriteChannel() = scope.launch {
-        for (packet in outbound) {
-            write(packet)
-            val outboundCompletion = completedWrite ?: continue
-            scope.launch {
-                outboundCompletion.send(packet)
+        try {
+            for (packet in outbound) {
+                write(packet)
+                val outboundCompletion = completedWrite ?: continue
+                scope.launch {
+                    outboundCompletion.send(packet)
+                }
             }
-        }
-        outbound.close()
-    }
-
-    override val incomingControlPackets = flow {
-        while (scope.isActive && isOpen()) {
-            val packet = read() ?: return@flow
-            emit(packet)
+            outbound.close()
+        } catch (e: Exception) {
+            outbound.close(e)
         }
     }
 
-    protected abstract suspend fun read(timeout: Duration = timeoutMs.milliseconds): ControlPacket?
+    protected fun startReadChannel() = scope.launch {
+        try {
+            while (!isClosing && scope.isActive && isOpen()) {
+                inboxChannel.send(read())
+            }
+            inboxChannel.close()
+        } catch (e: Exception) {
+            inboxChannel.close(e)
+        }
+    }
+
+    override val incomingControlPackets = inboxChannel.consumeAsFlow()
+
+    protected abstract suspend fun read(timeout: Duration = timeoutMs.milliseconds): ControlPacket
     protected abstract suspend fun write(packet: ControlPacket, timeout: Duration = timeoutMs.milliseconds): Int
 
     override fun close() {
+        isClosing = true
         outboundChannel.sendBlocking(disconnect(connectionRequest.protocolVersion))
-        outbound.close()
+        outboundChannel.close()
         completedWrite?.close()
     }
 }

@@ -33,6 +33,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     private val integrationTestTimeout = 2101
     private val timeoutOffset = 100
 
+
     @Before
     fun connect() {
         scope = CoroutineScope(Job() + Dispatchers.Default)
@@ -47,21 +48,28 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     @Test
-    fun pingRequest() = CoroutineScope(Dispatchers.Default)
-        .blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
-            val completedWriteChannel = Channel<ControlPacket>()
-            transport.completedWrite = completedWriteChannel
-            val expectedCount =
-                max(1, integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000))
-            assertEquals(
-                expectedCount,
-                completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
-            )
-        }
+    fun pingRequest() {
+        CoroutineScope(Job() + Dispatchers.Default)
+            .blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
+                val completedWriteChannel = Channel<ControlPacket>()
+                transport.completedWrite = completedWriteChannel
+                val expectedCount = max(
+                    1,
+                    integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                )
+                assertEquals(
+                    expectedCount,
+                    completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
+                )
+            }
+    }
 
     @Test
-    fun pingResponse() = CoroutineScope(Dispatchers.Default)
-        .blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
+    fun pingResponse() {
+        CoroutineScope(Job() + Dispatchers.Default).blockWithTimeout(
+            transport,
+            integrationTestTimeout.toLong() + timeoutOffset
+        ) {
             val expectedCount =
                 max(1, integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000))
             assertEquals(
@@ -69,6 +77,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
             )
         }
+    }
 
     @After
     fun disconnect() {
