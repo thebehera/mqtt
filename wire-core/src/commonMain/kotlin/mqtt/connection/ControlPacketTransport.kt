@@ -9,14 +9,21 @@ import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
 
 interface ControlPacketTransport : Closeable {
-    val connectionRequest: IConnectionRequest
     val scope: CoroutineScope
     val maxBufferSize: Int
     val outboundChannel: SendChannel<ControlPacket>
     val incomingControlPackets: Flow<ControlPacket>
+    var completedWrite: SendChannel<ControlPacket>?
+    fun assignedPort(): UShort?
 }
 
 
 interface ClientControlPacketTransport : ControlPacketTransport {
-    suspend fun open(port: Int, host: String? = null): IConnectionAcknowledgment
+    val connectionRequest: IConnectionRequest
+    suspend fun open(port: UShort, host: String? = null): IConnectionAcknowledgment
+}
+
+interface ServerControlPacketTransport : Closeable {
+    val scope: CoroutineScope
+    suspend fun listen(port: UShort? = null, host: String = "127.0.0.1"): Flow<ControlPacketTransport>
 }

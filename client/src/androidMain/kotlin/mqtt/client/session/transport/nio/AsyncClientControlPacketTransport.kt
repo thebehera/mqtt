@@ -3,9 +3,6 @@ package mqtt.client.session.transport.nio
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.SendChannel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -25,32 +22,42 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.math.min
+import kotlin.math.roundToLong
+import kotlin.time.Duration
+import kotlin.time.ExperimentalTime
 
+
+@ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
 class AsyncClientControlPacketTransport(
     override val scope: CoroutineScope,
     val socket: AsynchronousSocketChannel,
     override val connectionRequest: IConnectionRequest,
     override val maxBufferSize: Int
-) : ClientControlPacketTransport {
+) : AbstractClientControlPacketTransport(scope, connectionRequest, maxBufferSize) {
 
-    override val outboundChannel: SendChannel<ControlPacket> = Channel()
+    override fun isOpen() = try {
+        socket.remoteAddress != null
+    } catch (e: Exception) {
+        false
+    }
 
-    private val outbound = outboundChannel as Channel<ControlPacket>
-    private val timeoutMs = connectionRequest.keepAliveTimeoutSeconds.toLong() * 1500L
     private val packetBuffer =
         ByteBuffer.allocateDirect(min(maxBufferSize, socket.getOption(StandardSocketOptions.SO_RCVBUF)))
-    private var lastMessageReceived: Long = 0L
 
-    override suspend fun open(port: Int, host: String?): IConnectionAcknowledgment {
-        val address = address(host)
+
+    suspend fun AsynchronousSocketChannel.suspendConnectSocket(inetSocketAddress: InetSocketAddress) {
         suspendCoroutine<Void?> { continuation ->
             try {
-                socket.connect(InetSocketAddress(address, port), continuation, ConnectCompletionHandler)
+                socket.connect(inetSocketAddress, continuation, ConnectCompletionHandler)
             } catch (e: Exception) {
                 continuation.resumeWithException(e)
             }
         }
+    }
+
+    override suspend fun open(port: UShort, host: String?): IConnectionAcknowledgment {
+        socket.suspendConnectSocket(InetSocketAddress(address(host), port.toInt()))
         write(connectionRequest)
         val packet = read()
         if (packet is IConnectionAcknowledgment) {
@@ -64,30 +71,20 @@ class AsyncClientControlPacketTransport(
 
     override val incomingControlPackets = flow {
         while (scope.isActive) {
-            val packet = read() ?: return@flow
+            val packet = read() ?: continue
             emit(packet)
         }
     }
 
-    override fun close() {
-        scope.launch { outboundChannel.send(disconnect(connectionRequest.protocolVersion)) }
-    }
-
-    private suspend inline fun readFixedHeader(timeout: Long, unit: TimeUnit): FixedHeaderMetadata? {
-        // TODO: Handle if the end of stream is where the packet buffer underflows when reading the size
+    override suspend fun read(timeout: Duration): ControlPacket? {
         val metadata = suspendCoroutine<FixedHeaderMetadata?> { continuation ->
             scope.launch {
                 socket.read(
-                    packetBuffer, timeout, unit, continuation,
-                    FixedHeaderCompletionHandler(packetBuffer)
+                    packetBuffer, timeout.inMilliseconds.roundToLong(), TimeUnit.MILLISECONDS,
+                    continuation, FixedHeaderCompletionHandler(packetBuffer)
                 )
             }
-        }
-        lastMessageReceived = System.currentTimeMillis()
-        return metadata
-    }
-
-    private suspend inline fun readRestOfPacket(metadata: FixedHeaderMetadata): ControlPacket {
+        } ?: return null
         return if (metadata.remainingLength.toLong() < packetBuffer.remaining()) { // we already read the entire message in the buffer
             packetBuffer.read(connectionRequest.protocolVersion)
         } else {
@@ -97,34 +94,12 @@ class AsyncClientControlPacketTransport(
         }
     }
 
-    private suspend inline fun read(timeout: Long = timeoutMs, unit: TimeUnit = TimeUnit.MILLISECONDS): ControlPacket? {
-        val metadata = readFixedHeader(timeout, unit) ?: return null
-        return readRestOfPacket(metadata)
-    }
-
-    private fun startPingTimer() = scope.launch {
-        delay(2000)
-        while (isActive && socket.isOpen) {
-            outboundChannel.send(ping(connectionRequest.protocolVersion))
-            delay(2000)
-        }
-    }
-
-    private fun startWriteChannel() = scope.launch {
-        for (packet in outbound) {
-            write(packet)
-        }
-    }
-
-
-    private suspend inline fun write(
-        packet: ControlPacket,
-        timeout: Long = timeoutMs,
-        unit: TimeUnit = TimeUnit.MILLISECONDS
-    ): Int {
+    override suspend fun write(packet: ControlPacket, timeout: Duration): Int {
         val bytes = suspendCoroutine<Int> { continuation ->
-            println("writing $packet")
-            socket.write(packet.serialize().readByteBuffer(), timeout, unit, continuation, WriteCompletionHandler)
+            socket.write(
+                packet.serialize().readByteBuffer(), timeout.inMilliseconds.roundToLong(),
+                TimeUnit.MILLISECONDS, continuation, WriteCompletionHandler
+            )
         }
         if (packet is IDisconnectNotification) {
             suspendCoroutine<Void?> { continuation ->
@@ -139,6 +114,18 @@ class AsyncClientControlPacketTransport(
         }
         return bytes
     }
+
+    override fun assignedPort() = try {
+        (socket.remoteAddress as? InetSocketAddress)?.port?.toUShort()
+    } catch (e: Exception) {
+        null
+    }
+
+    override fun close() {
+        super.close()
+        socket.close()
+    }
+
 }
 
 suspend fun address(host: String?) = suspendCoroutine<InetAddress> {
@@ -149,13 +136,13 @@ suspend fun address(host: String?) = suspendCoroutine<InetAddress> {
     }
 }
 
+@ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun asyncClientTransport(
     connectionRequest: IConnectionRequest,
     scope: CoroutineScope,
     maxBufferSize: Int = 12_000
-)
-        : ClientControlPacketTransport {
+): ClientControlPacketTransport {
     val socket = suspendCoroutine<AsynchronousSocketChannel> {
         try {
             it.resume(AsynchronousSocketChannel.open())
