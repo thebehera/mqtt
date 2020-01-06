@@ -14,8 +14,6 @@ import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire4.control.packet.ConnectionRequest
-import org.junit.After
-import org.junit.Before
 import org.junit.Test
 import kotlin.math.max
 import kotlin.random.Random
@@ -27,58 +25,67 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-    val scope = CoroutineScope(Dispatchers.Default)
-    private lateinit var transport: ClientControlPacketTransport
     private val integrationTestTimeout = 2101
     private val timeoutOffset = 100
 
-
-    @Before
-    fun connect() {
-
+    fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
+        val scope = CoroutineScope(Dispatchers.Default)
         val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 2.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
+        var transport: ClientControlPacketTransport? = null
         scope.blockWithTimeout(timeoutOffset.toLong()) {
-            val transport = asyncClientTransport(scope, connectionRequest)
-            assert(transport.open(60_000.toUShort()).isSuccessful) { "incorrect connack message" }
-            this@AsyncClientControlPacketTransportIntegrationTests.transport = transport
+            val t = asyncClientTransport(scope, connectionRequest)
+            assert(t.open(60_000.toUShort()).isSuccessful) { "incorrect connack message" }
+            transport = t
         }
-        assertNotNull(transport.assignedPort())
+        assertNotNull(transport!!.assignedPort())
+        return Pair(scope, transport!!)
     }
 
     @Test
     fun pingRequest() {
-        scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
-            val completedWriteChannel = Channel<ControlPacket>()
-            transport.completedWrite = completedWriteChannel
-            val expectedCount = max(
-                1,
-                integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
-            )
-            assertEquals(
-                expectedCount,
-                completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
-            )
+        repeat(1) {
+            val (scope, transport) = connect()
+            scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
+                val completedWriteChannel = Channel<ControlPacket>()
+                transport.completedWrite = completedWriteChannel
+                val expectedCount = max(
+                    1,
+                    integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                )
+                assertEquals(
+                    expectedCount,
+                    completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
+                )
             }
+            disconnect(scope, transport)
+        }
     }
 
     @Test
     fun pingResponse() {
-        scope.blockWithTimeout(
-            transport,
-            integrationTestTimeout.toLong() + timeoutOffset
-        ) {
-            val expectedCount =
-                max(1, integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000))
-            assertEquals(
-                expectedCount,
-                transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
-            )
+        repeat(1) {
+            val (scope, transport) = connect()
+            scope.blockWithTimeout(
+                transport,
+                integrationTestTimeout.toLong() + timeoutOffset
+            ) {
+                val expectedCount =
+                    max(
+                        1,
+                        integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                    )
+                assertEquals(
+                    expectedCount,
+                    transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
+                )
+            }
+            disconnect(scope, transport)
+            println(it)
         }
     }
 
-    @After
-    fun disconnect() {
+    fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
         val completedWrite = transport.completedWrite
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
