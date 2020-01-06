@@ -1,6 +1,7 @@
 package mqtt.connection
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.io.core.Closeable
@@ -15,6 +16,7 @@ interface ControlPacketTransport : Closeable {
     val scope: CoroutineScope
     val maxBufferSize: Int
     val outboundChannel: SendChannel<ControlPacket>
+    val inboxChannel: Channel<ControlPacket>
     val incomingControlPackets: Flow<ControlPacket>
     var completedWrite: SendChannel<ControlPacket>?
     fun assignedPort(): UShort?

@@ -137,8 +137,8 @@ suspend fun AsynchronousSocketChannel.suspendConnectSocket(inetSocketAddress: In
 @ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun asyncClientTransport(
-    connectionRequest: IConnectionRequest,
     scope: CoroutineScope,
+    connectionRequest: IConnectionRequest,
     maxBufferSize: Int = 12_000
 ): ClientControlPacketTransport {
     val socket = suspendCoroutine<AsynchronousSocketChannel> {

@@ -39,7 +39,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 2.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
         scope.blockWithTimeout(timeoutOffset.toLong()) {
-            val transport = asyncClientTransport(connectionRequest, scope)
+            val transport = asyncClientTransport(scope, connectionRequest)
             assert(transport.open(60_000.toUShort()).isSuccessful) { "incorrect connack message" }
             this@AsyncClientControlPacketTransportIntegrationTests.transport = transport
         }

@@ -22,7 +22,7 @@ abstract class AbstractClientControlPacketTransport(
 
     override val outboundChannel: SendChannel<ControlPacket> = Channel()
     protected val outbound by lazy { this.outboundChannel as Channel<ControlPacket> }
-    protected val inboxChannel = Channel<ControlPacket>(Channel.UNLIMITED)
+    override val inboxChannel = Channel<ControlPacket>(Channel.UNLIMITED)
     protected var lastMessageReadAt: Long = currentTimestampMs()
     override var completedWrite: SendChannel<ControlPacket>? = null
     protected var isClosing = false
