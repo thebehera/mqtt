@@ -47,7 +47,8 @@ abstract class AbstractClientControlPacketTransport(
     protected fun startReadChannel() = scope.launch {
         try {
             while (!isClosing && scope.isActive && assignedPort() != null) {
-                inboxChannel.send(read(timeout))
+                println("reading")
+                inboxChannel.send(read(timeout * 1.5))
             }
             inboxChannel.close()
         } catch (e: Exception) {

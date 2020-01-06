@@ -2,6 +2,7 @@ package mqtt.client.session.transport.nio
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import mqtt.time.currentTimestampMs
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.CompletionHandler
@@ -35,6 +36,10 @@ object ConnectCompletionHandler : CompletionHandler<Void?, Continuation<Void?>> 
 @RequiresApi(Build.VERSION_CODES.O)
 class FixedHeaderCompletionHandler(private val buffer: ByteBuffer) :
     CompletionHandler<Int, Continuation<FixedHeaderMetadata>> {
+    init {
+        println("read ${currentTimestampMs()}")
+    }
+
     override fun completed(result: Int, attachment: Continuation<FixedHeaderMetadata>) {
         if (result == -1) {
             attachment.resumeWithException(AsynchronousCloseException())

@@ -62,7 +62,9 @@ abstract class JavaAsyncClientControlPacketTransport(
     }
 
     override fun close() {
+        println("send blocking close")
         outboundChannel.sendBlocking(disconnect(protocolVersion))
+        println("sbc done")
         super.close()
     }
 
@@ -183,6 +185,7 @@ suspend fun AsynchronousSocketChannel.writePacket(packet: ControlPacket, timeout
                 packet.serialize().readByteBuffer(), timeout.inMilliseconds.roundToLong(),
                 TimeUnit.MILLISECONDS, continuation, WriteCompletionHandler
             )
+            println("wrote $packet")
         } catch (e: Exception) {
             continuation.resumeWithException(RuntimeException("failed to write $packet", e))
         }
