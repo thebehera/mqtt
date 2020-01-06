@@ -44,7 +44,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingRequest() {
-        repeat(15) {
+        repeat(1) {
             println(it)
             val (scope, transport) = connect()
             scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
@@ -65,7 +65,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingResponse() {
-        repeat(15) {
+        repeat(1) {
             println(it)
             val (scope, transport) = connect()
             scope.blockWithTimeout(
