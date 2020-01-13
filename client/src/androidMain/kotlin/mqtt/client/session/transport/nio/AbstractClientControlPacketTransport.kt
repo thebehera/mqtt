@@ -22,7 +22,7 @@ abstract class AbstractClientControlPacketTransport(
 
     override val outboundChannel: SendChannel<ControlPacket> = Channel()
     protected val outbound by lazy { this.outboundChannel as Channel<ControlPacket> }
-    override val inboxChannel = Channel<ControlPacket>(Channel.UNLIMITED)
+    final override val inboxChannel = Channel<ControlPacket>(Channel.UNLIMITED)
     protected var lastMessageReadAt: Long = currentTimestampMs()
     override var completedWrite: SendChannel<ControlPacket>? = null
     protected var isClosing = false
@@ -46,8 +46,7 @@ abstract class AbstractClientControlPacketTransport(
 
     protected fun startReadChannel() = scope.launch {
         try {
-            while (!isClosing && scope.isActive && assignedPort() != null) {
-                println("reading")
+            while (scope.isActive) {
                 inboxChannel.send(read(timeout * 1.5))
             }
             inboxChannel.close()
@@ -59,7 +58,6 @@ abstract class AbstractClientControlPacketTransport(
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
     override fun close() {
-        isClosing = true
         inboxChannel.close()
         outboundChannel.close()
         completedWrite?.close()

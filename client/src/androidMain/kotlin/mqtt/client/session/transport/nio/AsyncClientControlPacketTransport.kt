@@ -62,9 +62,7 @@ abstract class JavaAsyncClientControlPacketTransport(
     }
 
     override fun close() {
-        println("send blocking close")
         outboundChannel.sendBlocking(disconnect(protocolVersion))
-        println("sbc done")
         super.close()
     }
 
@@ -182,7 +180,6 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(packet: ControlPacket, ch
     }
     channelToClose.close()
     aClose()
-    println("$this closed")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

@@ -25,12 +25,12 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-    private val integrationTestTimeout = 10101
+    private val integrationTestTimeout = 3200
     private val timeoutOffset = 100
 
     fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
         val scope = CoroutineScope(Dispatchers.Default)
-        val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 3.toUShort())
+        val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 1.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
         scope.blockWithTimeout(timeoutOffset.toLong()) {
@@ -44,8 +44,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingRequest() {
-        repeat(15) {
-            println(it)
+        repeat(5) {
             val (scope, transport) = connect()
             scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
                 val completedWriteChannel = Channel<ControlPacket>()
@@ -65,8 +64,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingResponse() {
-        repeat(15) {
-            println(it)
+        repeat(5) {
             val (scope, transport) = connect()
             scope.blockWithTimeout(
                 transport,
