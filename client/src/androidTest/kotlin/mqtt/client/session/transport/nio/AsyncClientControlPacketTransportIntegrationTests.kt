@@ -25,8 +25,8 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-    private val integrationTestTimeout = 3200
-    private val timeoutOffset = 100
+    private val integrationTestTimeout = 3900
+    private val timeoutOffset = 150
 
     fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
         val scope = CoroutineScope(Dispatchers.Default)
@@ -86,11 +86,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
+        transport.close()
         val completedWrite = transport.completedWrite
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
         }
         assert(transport.outboundChannel.isClosedForSend)
+        assert(transport.inboxChannel.isClosedForSend)
         assertNull(transport.assignedPort(), "Leaked socket")
         scope.cancel()
     }

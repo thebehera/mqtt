@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -52,7 +53,7 @@ abstract class JavaAsyncClientControlPacketTransport(
 
     override suspend fun write(packet: ControlPacket, timeout: Duration): Int {
         val bytes = socket.writePacket(packet, timeout)
-        socket.handleDisconnect(packet, outbound)
+        socket.handleDisconnect(packet, outbound, inboxChannel)
         return bytes
     }
 
@@ -62,7 +63,10 @@ abstract class JavaAsyncClientControlPacketTransport(
     }
 
     override fun close() {
-        outboundChannel.sendBlocking(disconnect(protocolVersion))
+        try {
+            outboundChannel.sendBlocking(disconnect(protocolVersion))
+        } catch (e: ClosedSendChannelException) {
+        }
         super.close()
     }
 
@@ -174,11 +178,14 @@ suspend fun AsynchronousSocketChannel.writePacket(packet: ControlPacket, timeout
     )
 
 @RequiresApi(Build.VERSION_CODES.O)
-suspend fun AsynchronousSocketChannel.handleDisconnect(packet: ControlPacket, channelToClose: Channel<ControlPacket>) {
+suspend fun AsynchronousSocketChannel.handleDisconnect(
+    packet: ControlPacket,
+    vararg channelsToClose: Channel<ControlPacket>
+) {
     if (packet !is IDisconnectNotification) {
         return
     }
-    channelToClose.close()
+    channelsToClose.forEach { it.close() }
     aClose()
 }
 
