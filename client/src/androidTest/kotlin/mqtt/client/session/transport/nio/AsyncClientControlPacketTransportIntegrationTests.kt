@@ -90,7 +90,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
-        transport.close()
+        executors.awaitTermination(timeoutOffset.toLong(), TimeUnit.MILLISECONDS)
         val completedWrite = transport.completedWrite
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
@@ -99,7 +99,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assert(transport.inboxChannel.isClosedForSend)
         assertNull(transport.assignedPort(), "Leaked socket")
         scope.cancel()
-        executors.awaitTermination(timeoutOffset.toLong(), TimeUnit.MILLISECONDS)
     }
 }
 
