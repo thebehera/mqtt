@@ -10,6 +10,7 @@ import java.nio.channels.*
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * Performs [AsynchronousFileChannel.lock] without blocking a thread and resumes when asynchronous operation completes.
@@ -127,16 +128,31 @@ suspend fun AsynchronousSocketChannel.aWrite(
     closeOnCancel(cont)
 }
 
+/**
+ * Performs [AsynchronousSocketChannel.close] without blocking a thread and resumes when asynchronous operation completes.
+ * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * *closes the underlying channel* and immediately resumes with [CancellationException].
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+suspend fun AsynchronousSocketChannel.aClose() = suspendCoroutine<Void?> { cont ->
+    blockingClose()
+    cont.resume(null)
+}
+
 // ---------------- private details ----------------
+
+private fun Channel.blockingClose() {
+    try {
+        close()
+    } catch (ex: Throwable) {
+        // Specification says that it is Ok to call it any time, but reality is different,
+        // so we have just to ignore exception
+    }
+}
 
 private fun Channel.closeOnCancel(cont: CancellableContinuation<*>) {
     cont.invokeOnCancellation {
-        try {
-            close()
-        } catch (ex: Throwable) {
-            // Specification says that it is Ok to call it any time, but reality is different,
-            // so we have just to ignore exception
-        }
+        blockingClose()
     }
 }
 
