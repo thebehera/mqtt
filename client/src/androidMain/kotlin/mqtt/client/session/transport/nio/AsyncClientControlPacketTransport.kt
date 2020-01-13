@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -65,7 +64,7 @@ abstract class JavaAsyncClientControlPacketTransport(
     override fun close() {
         try {
             outboundChannel.sendBlocking(disconnect(protocolVersion))
-        } catch (e: ClosedSendChannelException) {
+        } catch (e: Exception) {
         }
         super.close()
     }

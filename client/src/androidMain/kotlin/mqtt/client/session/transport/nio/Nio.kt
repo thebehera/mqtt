@@ -10,7 +10,6 @@ import java.nio.channels.*
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 /**
  * Performs [AsynchronousFileChannel.lock] without blocking a thread and resumes when asynchronous operation completes.
@@ -134,7 +133,7 @@ suspend fun AsynchronousSocketChannel.aWrite(
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 @RequiresApi(Build.VERSION_CODES.O)
-suspend fun AsynchronousSocketChannel.aClose() = suspendCoroutine<Void?> { cont ->
+suspend fun AsynchronousSocketChannel.aClose() = suspendCancellableCoroutine<Void?> { cont ->
     blockingClose()
     cont.resume(null)
 }
