@@ -1,7 +1,7 @@
 package mqtt.client.session.transport.nio
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -15,6 +15,7 @@ import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire4.control.packet.ConnectionRequest
 import org.junit.Test
+import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.random.Random
 import kotlin.test.assertEquals
@@ -25,11 +26,12 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
+
     private val integrationTestTimeout = 4200
     private val timeoutOffset = 150
 
     fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
-        val scope = CoroutineScope(Dispatchers.Default)
+        val scope = CoroutineScope(Executors.newSingleThreadExecutor().asCoroutineDispatcher())
         val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 1.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
