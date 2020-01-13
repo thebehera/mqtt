@@ -16,6 +16,7 @@ import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire4.control.packet.ConnectionRequest
 import org.junit.Test
 import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.random.Random
 import kotlin.test.assertEquals
@@ -26,12 +27,13 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-
     private val integrationTestTimeout = 4200
     private val timeoutOffset = 150
 
+    val executors = Executors.newSingleThreadExecutor()
+
     fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
-        val scope = CoroutineScope(Executors.newSingleThreadExecutor().asCoroutineDispatcher())
+        val scope = CoroutineScope(executors.asCoroutineDispatcher())
         val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 1.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
@@ -97,6 +99,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assert(transport.inboxChannel.isClosedForSend)
         assertNull(transport.assignedPort(), "Leaked socket")
         scope.cancel()
+        executors.awaitTermination(timeoutOffset.toLong(), TimeUnit.MILLISECONDS)
     }
 }
 
