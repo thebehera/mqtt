@@ -25,7 +25,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-    private val integrationTestTimeout = 3900
+    private val integrationTestTimeout = 4200
     private val timeoutOffset = 150
 
     fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
