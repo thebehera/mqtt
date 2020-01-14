@@ -72,7 +72,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
             }
 
             block {
+                println("Disconnecting Ping request")
                 disconnect(this, transport)
+                delay(100)
+                println("delay done ping request")
             }
         }
     }
@@ -97,6 +100,8 @@ class AsyncClientControlPacketTransportIntegrationTests {
         blockWithTimeout(integrationTestTimeout.toLong() + timeoutOffset) {
             println("Disconnecting Ping response")
             disconnect(scope, transport)
+            delay(100)
+            println("delay done ping response")
         }
     }
 
