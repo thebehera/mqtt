@@ -3,10 +3,12 @@ package mqtt.client.session.transport.nio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.isActive
 import mqtt.client.blockWithTimeout
 import mqtt.connection.ClientControlPacketTransport
 import mqtt.wire.control.packet.ControlPacket
@@ -30,10 +32,14 @@ class AsyncClientControlPacketTransportIntegrationTests {
     private val integrationTestTimeout = 4200
     private val timeoutOffset = 150
 
-    val executors = Executors.newSingleThreadExecutor()
+    val processors = Runtime.getRuntime().availableProcessors()
+    val runCount = processors * 3
 
-    fun connect(): Pair<CoroutineScope, ClientControlPacketTransport> {
-        val scope = CoroutineScope(executors.asCoroutineDispatcher())
+    val executors = Executors.newSingleThreadExecutor()
+    val scope = CoroutineScope(executors.asCoroutineDispatcher())
+
+    fun connect(): ClientControlPacketTransport {
+        println("processor count $processors $executors")
         val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 1.toUShort())
         assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
@@ -43,16 +49,14 @@ class AsyncClientControlPacketTransportIntegrationTests {
             transport = t
         }
         assertNotNull(transport!!.assignedPort())
-        return Pair(scope, transport!!)
+        return transport!!
     }
 
     @Test
     fun pingRequest() {
-        val processors = Runtime.getRuntime().availableProcessors()
-        println("available processors $processors")
-        repeat(processors * 3) {
-            println("Ping request run# $it/${processors * 5}")
-            val (scope, transport) = connect()
+        repeat(runCount) {
+            println("Ping request run# $it/$runCount")
+            val transport = connect()
             scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
                 val completedWriteChannel = Channel<ControlPacket>()
                 transport.completedWrite = completedWriteChannel
@@ -73,11 +77,9 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingResponse() {
-        val processors = Runtime.getRuntime().availableProcessors()
-        println("available processors $processors")
-        repeat(processors * 3) {
-            println("Ping response run# $it/${processors * 5}")
-            val (scope, transport) = connect()
+        repeat(runCount) {
+            println("Ping response run# $it/$runCount")
+            val transport = connect()
             scope.blockWithTimeout(
                 transport,
                 integrationTestTimeout.toLong() + timeoutOffset
@@ -93,6 +95,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 )
             }
             scope.blockWithTimeout(timeoutOffset.toLong()) {
+                println("Disconnecting Ping response run# $it/$runCount")
                 disconnect(transport)
             }
         }
@@ -108,8 +111,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
         println("check isopen")
         var count = 0
         val time = measureTime {
-            while (transport.isOpen()) {
+            while (scope.isActive && transport.isOpen()) {
                 count++
+                println(count)
+                delay(count.toLong())
             }
         }
         assertFalse(transport.isOpen())

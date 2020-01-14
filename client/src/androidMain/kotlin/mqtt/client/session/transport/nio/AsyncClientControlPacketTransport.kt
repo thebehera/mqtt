@@ -4,7 +4,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.sendBlocking
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -64,16 +63,22 @@ abstract class JavaAsyncClientControlPacketTransport(
     override fun isOpen() = socket.isOpen
 
     override fun close() {
-
-        try {
-            println("transport try closing")
-            outboundChannel.sendBlocking(disconnect(protocolVersion))
-            println("sent blocking disconnect")
-        } catch (e: Exception) {
-            println("transport exception send blocking $e")
-            e.printStackTrace()
+        if (outboundChannel.isClosedForSend) {
+            println("closed for send")
+            return
         }
-        super.close()
+        scope.launch {
+            try {
+                println("transport try closing")
+                outboundChannel.send(disconnect(protocolVersion))
+                println("sent blocking disconnect")
+            } catch (e: Exception) {
+                println("transport exception send blocking $e")
+                e.printStackTrace()
+            } finally {
+                super.close()
+            }
+        }
     }
 
 }
