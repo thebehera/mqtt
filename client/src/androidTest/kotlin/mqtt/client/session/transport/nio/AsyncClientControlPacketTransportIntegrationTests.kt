@@ -3,7 +3,6 @@ package mqtt.client.session.transport.nio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
@@ -23,6 +22,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
@@ -48,8 +48,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingRequest() {
-        repeat(5) {
-            println("Ping request run# $it")
+        val processors = Runtime.getRuntime().availableProcessors()
+        println("available processors $processors")
+        repeat(processors * 5) {
+            println("Ping request run# $it/${processors * 5}")
             val (scope, transport) = connect()
             scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
                 val completedWriteChannel = Channel<ControlPacket>()
@@ -62,7 +64,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
                 )
-                delay(10)
             }
             scope.blockWithTimeout(timeoutOffset.toLong()) {
                 disconnect(transport)
@@ -75,7 +76,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         val processors = Runtime.getRuntime().availableProcessors()
         println("available processors $processors")
         repeat(processors * 5) {
-            println("Ping response run# $it")
+            println("Ping response run# $it/${processors * 5}")
             val (scope, transport) = connect()
             scope.blockWithTimeout(
                 transport,
@@ -90,7 +91,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
-                delay(10)
             }
             scope.blockWithTimeout(timeoutOffset.toLong()) {
                 disconnect(transport)
@@ -99,32 +99,23 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     suspend fun disconnect(transport: ClientControlPacketTransport) {
-        val processors = Runtime.getRuntime().availableProcessors()
-        println("available processors $processors")
-        repeat(processors * 5) {
-            try {
-                println("disconnect try $it")
-                val completedWrite = transport.completedWrite
-                if (completedWrite != null) {
-                    assert(completedWrite.isClosedForSend)
-                }
-                assert(transport.outboundChannel.isClosedForSend)
-                assert(transport.inboxChannel.isClosedForSend)
-                println("check isopen")
-                assertFalse(transport.isOpen())
-                println("check assigned port")
-                assertNull(transport.assignedPort(), "Leaked socket")
-                println("validated assigned port")
-                return
-            } catch (e: Exception) {
-                println("failed to disconnect because of $e")
-                e.printStackTrace()
-            } finally {
-                println("sleeeping for 100ms")
-                delay(100)
-                println("done sleeping")
+        val completedWrite = transport.completedWrite
+        if (completedWrite != null) {
+            assert(completedWrite.isClosedForSend)
+        }
+        assert(transport.outboundChannel.isClosedForSend)
+        assert(transport.inboxChannel.isClosedForSend)
+        println("check isopen")
+        var count = 0
+        val time = measureTime {
+            while (transport.isOpen()) {
+                count++
             }
         }
+        assertFalse(transport.isOpen())
+        println("check assigned port $time $count")
+        assertNull(transport.assignedPort(), "Leaked socket")
+        println("validated assigned port")
     }
 }
 
