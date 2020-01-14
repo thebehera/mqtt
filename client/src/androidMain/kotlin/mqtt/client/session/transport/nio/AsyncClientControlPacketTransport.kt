@@ -64,9 +64,14 @@ abstract class JavaAsyncClientControlPacketTransport(
     override fun isOpen() = socket.isOpen
 
     override fun close() {
+
         try {
+            println("transport try closing")
             outboundChannel.sendBlocking(disconnect(protocolVersion))
+            println("sent blocking disconnect")
         } catch (e: Exception) {
+            println("transport exception send blocking $e")
+            e.printStackTrace()
         }
         super.close()
     }

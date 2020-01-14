@@ -59,7 +59,10 @@ abstract class AbstractClientControlPacketTransport(
 
     override fun close() {
         inboxChannel.close()
+        println("inbox channel close")
         outboundChannel.close()
+        println("outbound channel close")
         completedWrite?.close()
+        println("completed write channel close")
     }
 }
