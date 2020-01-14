@@ -36,7 +36,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     val processors = Runtime.getRuntime().availableProcessors()
     val runCount = processors * 3
 
-    val executors = Executors.newCachedThreadPool()
+    val executors = Executors.newSingleThreadExecutor()
     val scope = CoroutineScope(executors.asCoroutineDispatcher())
 
     fun connect(): ClientControlPacketTransport {
