@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
+import mqtt.client.block
 import mqtt.client.blockWithTimeout
 import mqtt.connection.ClientControlPacketTransport
 import mqtt.wire.control.packet.ControlPacket
@@ -69,7 +70,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
                 )
             }
-            scope.blockWithTimeout(timeoutOffset.toLong()) {
+            block {
                 disconnect(transport)
             }
         }
@@ -94,7 +95,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
             }
-            scope.blockWithTimeout(timeoutOffset.toLong()) {
+            block {
                 println("Disconnecting Ping response run# $it/$runCount")
                 disconnect(transport)
             }
