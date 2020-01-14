@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
@@ -62,6 +63,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
                 )
+                delay(10)
             }
             disconnect(scope, transport)
         }
@@ -85,6 +87,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
+                delay(10)
             }
             disconnect(scope, transport)
         }
