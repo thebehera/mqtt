@@ -16,7 +16,6 @@ import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire4.control.packet.ConnectionRequest
 import org.junit.Test
 import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.random.Random
 import kotlin.test.assertEquals
@@ -49,6 +48,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingRequest() {
         repeat(5) {
+            println("Ping request run# $it")
             val (scope, transport) = connect()
             scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
                 val completedWriteChannel = Channel<ControlPacket>()
@@ -69,6 +69,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingResponse() {
         repeat(5) {
+            println("Ping response run# $it")
             val (scope, transport) = connect()
             scope.blockWithTimeout(
                 transport,
@@ -83,22 +84,23 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
-
             }
             disconnect(scope, transport)
         }
     }
 
     fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
-        executors.awaitTermination(timeoutOffset.toLong(), TimeUnit.MILLISECONDS)
+        println("disconnect")
         val completedWrite = transport.completedWrite
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
         }
         assert(transport.outboundChannel.isClosedForSend)
         assert(transport.inboxChannel.isClosedForSend)
+        println("check assigned port")
         assertNull(transport.assignedPort(), "Leaked socket")
         scope.cancel()
+        println("cancel scope")
     }
 }
 
