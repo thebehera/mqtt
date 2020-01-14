@@ -2,7 +2,6 @@ package mqtt.client.session.transport.nio
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -94,19 +93,30 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
-        println("disconnect")
-        val completedWrite = transport.completedWrite
-        if (completedWrite != null) {
-            assert(completedWrite.isClosedForSend)
+        repeat(5) {
+            try {
+                println("disconnect")
+                val completedWrite = transport.completedWrite
+                if (completedWrite != null) {
+                    assert(completedWrite.isClosedForSend)
+                }
+                assert(transport.outboundChannel.isClosedForSend)
+                assert(transport.inboxChannel.isClosedForSend)
+                println("check isopen")
+                assertFalse(transport.isOpen())
+                println("check assigned port")
+                assertNull(transport.assignedPort(), "Leaked socket")
+                println("cancel scope")
+                return
+            } catch (e: Exception) {
+                println("failed to disconnect because of $e")
+                e.printStackTrace()
+            } finally {
+                println("sleeeping for 100ms")
+                Thread.sleep(100)
+                println("done sleeping")
+            }
         }
-        assert(transport.outboundChannel.isClosedForSend)
-        assert(transport.inboxChannel.isClosedForSend)
-        println("check isopen")
-        assertFalse(transport.isOpen())
-        println("check assigned port")
-        assertNull(transport.assignedPort(), "Leaked socket")
-        scope.cancel()
-        println("cancel scope")
     }
 }
 
