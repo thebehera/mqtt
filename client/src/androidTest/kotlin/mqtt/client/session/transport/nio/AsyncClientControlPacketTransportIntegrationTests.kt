@@ -19,6 +19,7 @@ import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.random.Random
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
@@ -97,6 +98,8 @@ class AsyncClientControlPacketTransportIntegrationTests {
         }
         assert(transport.outboundChannel.isClosedForSend)
         assert(transport.inboxChannel.isClosedForSend)
+        println("check isopen")
+        assertFalse(transport.isOpen())
         println("check assigned port")
         assertNull(transport.assignedPort(), "Leaked socket")
         scope.cancel()

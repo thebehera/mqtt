@@ -61,6 +61,8 @@ abstract class JavaAsyncClientControlPacketTransport(
         return socket.assignedPort()
     }
 
+    override fun isOpen() = socket.isOpen
+
     override fun close() {
         try {
             outboundChannel.sendBlocking(disconnect(protocolVersion))

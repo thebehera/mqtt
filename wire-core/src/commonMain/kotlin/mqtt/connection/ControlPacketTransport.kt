@@ -20,6 +20,7 @@ interface ControlPacketTransport : Closeable {
     val incomingControlPackets: Flow<ControlPacket>
     var completedWrite: SendChannel<ControlPacket>?
     fun assignedPort(): UShort?
+    fun isOpen(): Boolean
 
 
     suspend fun read(timeout: Duration): ControlPacket
