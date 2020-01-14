@@ -70,7 +70,9 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingResponse() {
-        repeat(5) {
+        val processors = Runtime.getRuntime().availableProcessors()
+        println("available processors $processors")
+        repeat(processors * 5) {
             println("Ping response run# $it")
             val (scope, transport) = connect()
             scope.blockWithTimeout(
@@ -93,7 +95,9 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
-        repeat(5) {
+        val processors = Runtime.getRuntime().availableProcessors()
+        println("available processors $processors")
+        repeat(processors * 5) {
             try {
                 println("disconnect")
                 val completedWrite = transport.completedWrite
