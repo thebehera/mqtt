@@ -64,7 +64,9 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 )
                 delay(10)
             }
-            disconnect(scope, transport)
+            scope.blockWithTimeout(timeoutOffset.toLong()) {
+                disconnect(transport)
+            }
         }
     }
 
@@ -90,11 +92,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 )
                 delay(10)
             }
-            disconnect(scope, transport)
+            scope.blockWithTimeout(timeoutOffset.toLong()) {
+                disconnect(transport)
+            }
         }
     }
 
-    fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
+    suspend fun disconnect(transport: ClientControlPacketTransport) {
         val processors = Runtime.getRuntime().availableProcessors()
         println("available processors $processors")
         repeat(processors * 5) {
@@ -110,14 +114,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 assertFalse(transport.isOpen())
                 println("check assigned port")
                 assertNull(transport.assignedPort(), "Leaked socket")
-                println("cancel scope")
                 return
             } catch (e: Exception) {
                 println("failed to disconnect because of $e")
                 e.printStackTrace()
             } finally {
                 println("sleeeping for 100ms")
-                Thread.sleep(100)
+                delay(100)
                 println("done sleeping")
             }
         }
