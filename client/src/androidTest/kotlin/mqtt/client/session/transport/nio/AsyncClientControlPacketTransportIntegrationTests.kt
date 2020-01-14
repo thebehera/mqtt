@@ -82,26 +82,28 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun pingResponse() {
-        val transport = connect()
-        scope.blockWithTimeout(
-            transport,
-            integrationTestTimeout.toLong() + timeoutOffset
-        ) {
-            val expectedCount =
-                max(
-                    1,
-                    integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+        repeat(runCount) {
+            val transport = connect()
+            scope.blockWithTimeout(
+                transport,
+                integrationTestTimeout.toLong() + timeoutOffset
+            ) {
+                val expectedCount =
+                    max(
+                        1,
+                        integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                    )
+                assertEquals(
+                    expectedCount,
+                    transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
-            assertEquals(
-                expectedCount,
-                transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
-            )
-        }
-        blockWithTimeout(integrationTestTimeout.toLong() + timeoutOffset) {
-            println("Disconnecting Ping response")
-            disconnect(scope, transport)
-            delay(100)
-            println("delay done ping response")
+            }
+            blockWithTimeout(integrationTestTimeout.toLong() + timeoutOffset) {
+                println("Disconnecting Ping response")
+                disconnect(scope, transport)
+                delay(100)
+                println("delay done ping response")
+            }
         }
     }
 
