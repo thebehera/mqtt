@@ -103,7 +103,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         println("available processors $processors")
         repeat(processors * 5) {
             try {
-                println("disconnect")
+                println("disconnect try $it")
                 val completedWrite = transport.completedWrite
                 if (completedWrite != null) {
                     assert(completedWrite.isClosedForSend)
