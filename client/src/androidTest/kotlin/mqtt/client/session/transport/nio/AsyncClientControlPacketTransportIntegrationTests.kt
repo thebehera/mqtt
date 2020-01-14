@@ -114,6 +114,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 assertFalse(transport.isOpen())
                 println("check assigned port")
                 assertNull(transport.assignedPort(), "Leaked socket")
+                println("validated assigned port")
                 return
             } catch (e: Exception) {
                 println("failed to disconnect because of $e")
