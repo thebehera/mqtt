@@ -50,7 +50,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingRequest() {
         val processors = Runtime.getRuntime().availableProcessors()
         println("available processors $processors")
-        repeat(processors * 5) {
+        repeat(processors * 3) {
             println("Ping request run# $it/${processors * 5}")
             val (scope, transport) = connect()
             scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
@@ -75,7 +75,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingResponse() {
         val processors = Runtime.getRuntime().availableProcessors()
         println("available processors $processors")
-        repeat(processors * 5) {
+        repeat(processors * 3) {
             println("Ping response run# $it/${processors * 5}")
             val (scope, transport) = connect()
             scope.blockWithTimeout(
