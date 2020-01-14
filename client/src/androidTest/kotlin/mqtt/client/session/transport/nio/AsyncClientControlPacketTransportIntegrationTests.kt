@@ -84,6 +84,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingResponse() {
         repeat(runCount) {
+            println("Ping response run# $it/$runCount")
             val transport = connect()
             scope.blockWithTimeout(
                 transport,
@@ -116,8 +117,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
         }
-        assert(transport.outboundChannel.isClosedForSend)
-        assert(transport.inboxChannel.isClosedForSend)
         println("check isopen")
         var count = 0
         val time = measureTime {
@@ -131,6 +130,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
         println("check assigned port $time $count")
         assertNull(transport.assignedPort(), "Leaked socket")
         println("validated assigned port")
+        assert(transport.outboundChannel.isClosedForSend)
+        println("outbound validated close")
+        assert(transport.inboxChannel.isClosedForSend)
+        println("inbox validated close")
     }
 
 }
