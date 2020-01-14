@@ -142,7 +142,9 @@ suspend fun AsynchronousSocketChannel.aClose() = suspendCancellableCoroutine<Voi
 
 private fun Channel.blockingClose() {
     try {
+        println("sending close")
         close()
+        println("successfully sent close")
     } catch (ex: Throwable) {
         // Specification says that it is Ok to call it any time, but reality is different,
         // so we have just to ignore exception
