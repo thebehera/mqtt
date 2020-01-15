@@ -82,6 +82,23 @@ suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCorout
 }
 
 /**
+ * Performs [AsynchronousServerSocketChannel.bind] without blocking a thread and resumes when asynchronous operation completes.
+ * This suspending function is cancellable.
+ * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
+ * *closes the underlying channel* and immediately resumes with [CancellationException].
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress?) =
+    suspendCancellableCoroutine<AsynchronousServerSocketChannel> { cont ->
+        try {
+            closeOnCancel(cont)
+            cont.resume(bind(socketAddress))
+        } catch (e: Throwable) {
+            cont.cancel(e)
+        }
+    }
+
+/**
  * Performs [AsynchronousSocketChannel.connect] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
  * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
@@ -151,7 +168,7 @@ private fun Channel.blockingClose() {
     }
 }
 
-private fun Channel.closeOnCancel(cont: CancellableContinuation<*>) {
+fun Channel.closeOnCancel(cont: CancellableContinuation<*>) {
     cont.invokeOnCancellation {
         blockingClose()
     }

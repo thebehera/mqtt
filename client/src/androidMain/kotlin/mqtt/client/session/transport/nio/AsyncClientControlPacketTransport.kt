@@ -18,6 +18,7 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousSocketChannel
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -31,13 +32,13 @@ import kotlin.time.seconds
 
 @ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
-abstract class JavaAsyncClientControlPacketTransport(
+open class JavaAsyncClientControlPacketTransport(
     override val scope: CoroutineScope,
     open val socket: AsynchronousSocketChannel,
     protocolVersion: Int,
-    timeout: Duration,
-    override val maxBufferSize: Int
-) : AbstractClientControlPacketTransport(scope, protocolVersion, timeout, maxBufferSize) {
+    override val maxBufferSize: Int,
+    timeout: Duration, timeoutMultiplier: Double = 1.5
+) : AbstractClientControlPacketTransport(scope, protocolVersion, timeout, timeoutMultiplier, maxBufferSize) {
     private val packetBuffer: ByteBuffer by lazy {
         ByteBuffer.allocateDirect(
             min(
@@ -91,8 +92,8 @@ class AsyncClientControlPacketTransport(
     override val connectionRequest: IConnectionRequest,
     override val maxBufferSize: Int
 ) : JavaAsyncClientControlPacketTransport(
-    scope, socket, connectionRequest.protocolVersion,
-    connectionRequest.keepAliveTimeoutSeconds.toLong().seconds, maxBufferSize
+    scope, socket, connectionRequest.protocolVersion, maxBufferSize,
+    connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
 ), ClientControlPacketTransport {
 
     override suspend fun open(port: UShort, host: String?): IConnectionAcknowledgment {
@@ -145,12 +146,13 @@ suspend fun address(host: String?) = suspendCoroutine<InetAddress> {
 suspend fun asyncClientTransport(
     scope: CoroutineScope,
     connectionRequest: IConnectionRequest,
+    group: AsynchronousChannelGroup,
     maxBufferSize: Int = 12_000
 ): ClientControlPacketTransport {
     val socket = suspendCoroutine<AsynchronousSocketChannel> {
         try {
-            it.resume(AsynchronousSocketChannel.open())
-        } catch (e: Exception) {
+            it.resume(AsynchronousSocketChannel.open(group))
+        } catch (e: Throwable) {
             it.resumeWithException(e)
         }
     }

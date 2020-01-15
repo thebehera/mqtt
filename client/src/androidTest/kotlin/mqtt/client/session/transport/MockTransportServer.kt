@@ -1,46 +1,69 @@
 package mqtt.client.session.transport
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
-import mqtt.client.session.transport.nio.JavaAsyncClientControlPacketTransport
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import mqtt.client.session.transport.nio.*
 import mqtt.connection.ControlPacketTransport
 import mqtt.connection.ServerControlPacketTransport
+import mqtt.wire.control.packet.ControlPacket
+import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
-import java.nio.channels.CompletionHandler
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalTime
 class MockTransportServer(
-    override val scope: CoroutineScope
+    override val scope: CoroutineScope,
+    val maxBufferSize: Int,
+    val timeout: Duration
 ) : ServerControlPacketTransport {
 
     private lateinit var server: AsynchronousServerSocketChannel
     var localAddress: InetSocketAddress? = null
+    private val outgoing = Channel<ControlPacket>()
+    private val readBuffer = ByteBuffer.allocateDirect(maxBufferSize)
+    suspend fun queuePacket(packet: ControlPacket) {
+        outgoing.send(packet)
+    }
 
     override suspend fun listen(port: UShort?, host: String): Flow<ControlPacketTransport> {
         val server = openAsyncServerSocketChannel()
         this.server = if (port != null) {
-            server.suspendBind(InetSocketAddress(host, port.toInt()))
+            server.aBind(InetSocketAddress(host, port.toInt()))
         } else {
-            server.suspendBind(null)
+            server.aBind(null)
         }
         localAddress = server.localAddress as? InetSocketAddress
-        val asyncSocketFlow = flow {
-            while (scope.isActive) {
-                emit(server.suspendAccept())
-            }
-        }
         return flow {
-
+            while (scope.isActive) {
+                val connection = server.aAccept()
+                scope.launch {
+                    val connectionRequest =
+                        connection.readPacket(readBuffer, 1.seconds, 4)
+                    if (connectionRequest is IConnectionRequest) {
+                        val transport =
+                            AsyncServerControlPacketTransport(scope, connection, maxBufferSize, connectionRequest)
+                        emit(transport)
+                        // start connection in a seperate method
+                        //val incomingPacket = connection.readPacket(readBuffer, connectionRequest.keepAliveTimeoutSeconds.toLong().seconds, connectionRequest.protocolVersion)
+                    } else {
+                        connection.aClose()
+                    }
+                }
+            }
         }
     }
 
@@ -52,39 +75,32 @@ class MockTransportServer(
 }
 
 @ExperimentalTime
-class AsyncServerClient(
-    scope: CoroutineScope, socket: AsynchronousSocketChannel,
-    protocolVersion: Int, timeout: Duration, maxBufferSize: Int
-) :
-    JavaAsyncClientControlPacketTransport(scope, socket, protocolVersion, timeout, maxBufferSize)
+@RequiresApi(Build.VERSION_CODES.O)
+class AsyncServerControlPacketTransport(
+    override val scope: CoroutineScope,
+    socket: AsynchronousSocketChannel,
+    maxBufferSize: Int,
+    connectionRequest: IConnectionRequest
+) : JavaAsyncClientControlPacketTransport(
+    scope,
+    socket,
+    4,
+    maxBufferSize,
+    connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
+) {
 
-suspend fun openAsyncServerSocketChannel(): AsynchronousServerSocketChannel = suspendCoroutine { continuation ->
-    try {
-        continuation.resume(AsynchronousServerSocketChannel.open())
-    } catch (e: Exception) {
-        continuation.resumeWithException(e)
+
+    override fun close() {
+        socket.close()
     }
 }
 
-suspend fun AsynchronousServerSocketChannel.suspendBind(address: InetSocketAddress? = null, backlog: Int = 0)
-        : AsynchronousServerSocketChannel = suspendCoroutine { continuation ->
-    try {
-        continuation.resume(bind(address, backlog))
-    } catch (e: Exception) {
-        continuation.resumeWithException(e)
-    }
-}
 
-object ServerAcceptCompletionHandler :
-    CompletionHandler<AsynchronousSocketChannel, Continuation<AsynchronousSocketChannel>> {
-    override fun completed(result: AsynchronousSocketChannel, attachment: Continuation<AsynchronousSocketChannel>) =
-        attachment.resume(result)
-
-    override fun failed(exc: Throwable, attachment: Continuation<AsynchronousSocketChannel>) =
-        attachment.resumeWithException(exc)
-}
-
-suspend fun AsynchronousServerSocketChannel.suspendAccept(): AsynchronousSocketChannel =
-    suspendCoroutine { continuation ->
-        accept(continuation, ServerAcceptCompletionHandler)
+suspend fun openAsyncServerSocketChannel(): AsynchronousServerSocketChannel =
+    suspendCancellableCoroutine { continuation ->
+        try {
+            continuation.resume(AsynchronousServerSocketChannel.open())
+        } catch (e: Exception) {
+            continuation.resumeWithException(e)
+        }
     }

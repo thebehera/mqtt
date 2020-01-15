@@ -17,6 +17,7 @@ abstract class AbstractClientControlPacketTransport(
     override val scope: CoroutineScope,
     val protocolVersion: Int,
     val timeout: Duration,
+    val timeoutMultiplier: Double = 1.5,
     override val maxBufferSize: Int
 ) : ControlPacketTransport {
 
@@ -47,7 +48,7 @@ abstract class AbstractClientControlPacketTransport(
     protected fun startReadChannel() = scope.launch {
         try {
             while (scope.isActive) {
-                inboxChannel.send(read(timeout * 1.5))
+                inboxChannel.send(read(timeout * timeoutMultiplier))
             }
             inboxChannel.close()
         } catch (e: Exception) {
@@ -58,6 +59,7 @@ abstract class AbstractClientControlPacketTransport(
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
     override fun close() {
+        isClosing = true
         inboxChannel.close()
         println("inbox channel close")
         outboundChannel.close()

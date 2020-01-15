@@ -1,5 +1,6 @@
 package mqtt.client.session.transport.nio
 
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
@@ -17,8 +18,10 @@ import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire4.control.packet.ConnectionRequest
 import org.junit.Test
+import java.nio.channels.AsynchronousChannelGroup
 import java.util.concurrent.Executors
 import kotlin.math.max
+import kotlin.math.round
 import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -26,26 +29,30 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
-
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
-    private val integrationTestTimeout = 4200
-    private val timeoutOffset = 150
+    private val timeoutOffsetMs = 150
+    private val keepAliveTimeoutSeconds = 1
+    private val integrationTestTimeoutMs = round(keepAliveTimeoutSeconds * 1.5).toInt() * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
     val runCount = processors * 3
 
     val executors = Executors.newSingleThreadExecutor()
     val scope = CoroutineScope(executors.asCoroutineDispatcher())
+    val provider = AsynchronousChannelGroup.withThreadPool(executors)!!
 
     fun connect(): ClientControlPacketTransport {
         println("processor count $processors $executors")
-        val connectionRequest = ConnectionRequest(clientId = "test${Random.nextInt()}", keepAliveSeconds = 1.toUShort())
-        assert(integrationTestTimeout > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffset) { "Integration timeout too low" }
+        val connectionRequest = ConnectionRequest(
+            clientId = "test${Random.nextInt()}",
+            keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
+        )
+        assert(integrationTestTimeoutMs > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffsetMs) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
-        scope.blockWithTimeout(timeoutOffset.toLong()) {
-            val t = asyncClientTransport(scope, connectionRequest)
+        scope.blockWithTimeout(timeoutOffsetMs.toLong()) {
+            val t = asyncClientTransport(scope, connectionRequest, provider)
             assert(t.open(60_000.toUShort()).isSuccessful) { "incorrect connack message" }
             transport = t
         }
@@ -58,12 +65,12 @@ class AsyncClientControlPacketTransportIntegrationTests {
         repeat(runCount) {
             println("Ping request run# $it/$runCount")
             val transport = connect()
-            scope.blockWithTimeout(transport, integrationTestTimeout.toLong() + timeoutOffset) {
+            scope.blockWithTimeout(transport, integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
                 val completedWriteChannel = Channel<ControlPacket>()
                 transport.completedWrite = completedWriteChannel
                 val expectedCount = max(
                     1,
-                    integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                    integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
                 )
                 assertEquals(
                     expectedCount,
@@ -88,19 +95,19 @@ class AsyncClientControlPacketTransportIntegrationTests {
             val transport = connect()
             scope.blockWithTimeout(
                 transport,
-                integrationTestTimeout.toLong() + timeoutOffset
+                integrationTestTimeoutMs.toLong() + timeoutOffsetMs
             ) {
                 val expectedCount =
                     max(
                         1,
-                        integrationTestTimeout / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                        integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
                     )
                 assertEquals(
                     expectedCount,
                     transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
             }
-            blockWithTimeout(integrationTestTimeout.toLong() + timeoutOffset) {
+            blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
                 println("Disconnecting Ping response")
                 delay(100)
                 println("delay complete")

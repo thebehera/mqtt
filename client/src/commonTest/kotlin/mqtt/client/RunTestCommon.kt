@@ -1,7 +1,6 @@
 package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.withTimeout
 import kotlinx.io.core.Closeable
 import kotlin.coroutines.CoroutineContext
@@ -23,9 +22,6 @@ fun <T> CoroutineScope.blockWithTimeout(timeoutMs: Long = 1000L, body: suspend C
         withTimeout(timeoutMs) {
             body()
         }
-    }
-    block {
-        delay(1)
     }
 }
 
