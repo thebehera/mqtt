@@ -9,8 +9,6 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.isActive
-import mqtt.client.block
 import mqtt.client.blockWithTimeout
 import mqtt.connection.ClientControlPacketTransport
 import mqtt.wire.control.packet.ControlPacket
@@ -28,7 +26,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
+
 @ExperimentalTime
 class AsyncClientControlPacketTransportIntegrationTests {
 
@@ -44,7 +42,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
     val provider = AsynchronousChannelGroup.withThreadPool(executors)!!
 
     fun connect(): ClientControlPacketTransport {
-        println("processor count $processors $executors")
         val connectionRequest = ConnectionRequest(
             clientId = "test${Random.nextInt()}",
             keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
@@ -63,7 +60,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingRequest() {
         repeat(runCount) {
-            println("Ping request run# $it/$runCount")
             val transport = connect()
             scope.blockWithTimeout(transport, integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
                 val completedWriteChannel = Channel<ControlPacket>()
@@ -77,13 +73,8 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
                 )
             }
-
-            block {
-                println("Disconnecting Ping request")
-                delay(100)
-                println("delay complete")
-                disconnect(this, transport)
-                println("delay done ping request")
+            blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
+                disconnect(transport)
             }
         }
     }
@@ -91,7 +82,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingResponse() {
         repeat(runCount) {
-            println("Ping response run# $it/$runCount")
             val transport = connect()
             scope.blockWithTimeout(
                 transport,
@@ -108,39 +98,23 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 )
             }
             blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
-                println("Disconnecting Ping response")
-                delay(100)
-                println("delay complete")
-                disconnect(scope, transport)
-                println("delay done ping response")
+                disconnect(transport)
             }
         }
     }
 
 
     @ExperimentalTime
-    suspend fun disconnect(scope: CoroutineScope, transport: ClientControlPacketTransport) {
+    suspend fun disconnect(transport: ClientControlPacketTransport) {
+        delay(1)
         val completedWrite = transport.completedWrite
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
         }
-        println("check isopen")
-        var count = 0
-        val time = measureTime {
-            while (scope.isActive && transport.isOpen()) {
-                count++
-                println(count)
-                delay(count.toLong())
-            }
-        }
         assertFalse(transport.isOpen())
-        println("check assigned port $time $count")
         assertNull(transport.assignedPort(), "Leaked socket")
-        println("validated assigned port")
         assert(transport.outboundChannel.isClosedForSend)
-        println("outbound validated close")
         assert(transport.inboxChannel.isClosedForSend)
-        println("inbox validated close")
     }
 
 }

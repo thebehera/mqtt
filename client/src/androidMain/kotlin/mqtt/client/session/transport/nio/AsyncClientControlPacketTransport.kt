@@ -162,9 +162,7 @@ suspend fun AsynchronousSocketChannel.readPacket(
     val metadata = FixedHeaderMetadata(packetBuffer.get().toUByte(), packetBuffer.decodeVariableByteInteger())
     packetBuffer.position(position)
     return if (metadata.remainingLength.toLong() < packetBuffer.remaining()) { // we already read the entire message in the buffer
-        val pkt = packetBuffer.read(protocolVersion)
-        println("read $pkt")
-        pkt
+        packetBuffer.read(protocolVersion)
     } else {
         throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
     }
@@ -175,13 +173,11 @@ data class FixedHeaderMetadata(val firstByte: UByte, val remainingLength: UInt)
 @RequiresApi(Build.VERSION_CODES.O)
 @UseExperimental(ExperimentalTime::class)
 suspend fun AsynchronousSocketChannel.writePacket(packet: ControlPacket, timeout: Duration): Int {
-    val bytesRead = aWrite(
+    return aWrite(
         packet.serialize().readByteBuffer(direct = true),
         timeout.inMilliseconds.roundToLong(),
         TimeUnit.MILLISECONDS
     )
-    println("wrote $packet")
-    return bytesRead
 }
 
 
@@ -194,9 +190,7 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(
         return
     }
     channelsToClose.forEach { it.close() }
-    println("calling aClose")
     aClose()
-    println("aClose complete")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

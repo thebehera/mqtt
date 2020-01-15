@@ -52,9 +52,7 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     protected open suspend fun disconnect() {
-        println("writing disconnect because of invoke close")
         write(disconnect(protocolVersion), 1.seconds)
-        println("done writing disconnect because of invoke close")
     }
 
     protected fun startReadChannel() = scope.launch {
@@ -73,10 +71,7 @@ abstract class AbstractClientControlPacketTransport(
     override fun close() {
         isClosing = true
         inboxChannel.close()
-        println("inbox channel close")
         outboundChannel.close()
-        println("outbound channel close")
         completedWrite?.close()
-        println("completed write channel close")
     }
 }

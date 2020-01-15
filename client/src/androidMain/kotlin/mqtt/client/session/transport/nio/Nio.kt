@@ -152,18 +152,14 @@ suspend fun AsynchronousSocketChannel.aWrite(
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun AsynchronousSocketChannel.aClose() = suspendCancellableCoroutine<Void?> { cont ->
     blockingClose()
-    println("close complete")
     cont.resume(null)
-    println("cont close done")
 }
 
 // ---------------- private details ----------------
 
 private fun Channel.blockingClose() {
     try {
-        println("sending close")
         close()
-        println("successfully sent close")
     } catch (ex: Throwable) {
         // Specification says that it is Ok to call it any time, but reality is different,
         // so we have just to ignore exception

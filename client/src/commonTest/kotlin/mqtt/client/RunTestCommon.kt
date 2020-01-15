@@ -28,7 +28,6 @@ fun <T> CoroutineScope.blockWithTimeout(timeoutMs: Long = 1000L, body: suspend C
 fun CoroutineScope.blockWithTimeout(closeable: Closeable, timeoutMs: Long, body: suspend () -> Unit) {
     blockWithTimeout(timeoutMs) {
         body()
-        println("run close")
         closeable.close()
     }
 }
