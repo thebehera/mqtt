@@ -2,7 +2,6 @@ package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withTimeout
-import kotlinx.io.core.Closeable
 import kotlin.coroutines.CoroutineContext
 
 expect fun <T> block(body: suspend CoroutineScope.() -> T)
@@ -22,12 +21,5 @@ fun <T> CoroutineScope.blockWithTimeout(timeoutMs: Long = 1000L, body: suspend C
         withTimeout(timeoutMs) {
             body()
         }
-    }
-}
-
-fun CoroutineScope.blockWithTimeout(closeable: Closeable, timeoutMs: Long, body: suspend () -> Unit) {
-    blockWithTimeout(timeoutMs) {
-        body()
-        closeable.close()
     }
 }

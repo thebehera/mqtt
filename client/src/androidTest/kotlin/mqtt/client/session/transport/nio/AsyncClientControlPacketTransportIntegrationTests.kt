@@ -4,7 +4,6 @@ package mqtt.client.session.transport.nio
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
@@ -35,7 +34,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     private val integrationTestTimeoutMs = round(keepAliveTimeoutSeconds * 1.5).toInt() * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * 3
+    val runCount = processors / 2
 
     val executors = Executors.newSingleThreadExecutor()
     val scope = CoroutineScope(executors.asCoroutineDispatcher())
@@ -61,7 +60,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingRequest() {
         repeat(runCount) {
             val transport = connect()
-            scope.blockWithTimeout(transport, integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
+            scope.blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
                 val completedWriteChannel = Channel<ControlPacket>()
                 transport.completedWrite = completedWriteChannel
                 val expectedCount = max(
@@ -72,10 +71,9 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList().count()
                 )
+                transport.suspendClose()
             }
-            blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
-                disconnect(transport)
-            }
+            disconnect(transport)
         }
     }
 
@@ -84,7 +82,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
         repeat(runCount) {
             val transport = connect()
             scope.blockWithTimeout(
-                transport,
                 integrationTestTimeoutMs.toLong() + timeoutOffsetMs
             ) {
                 val expectedCount =
@@ -96,17 +93,15 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     expectedCount,
                     transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
                 )
+                transport.suspendClose()
             }
-            blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
-                disconnect(transport)
-            }
+            disconnect(transport)
         }
     }
 
 
     @ExperimentalTime
-    suspend fun disconnect(transport: ClientControlPacketTransport) {
-        delay(1)
+    fun disconnect(transport: ClientControlPacketTransport) {
         val completedWrite = transport.completedWrite
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)

@@ -30,11 +30,6 @@ abstract class AbstractClientControlPacketTransport(
     protected var isClosing = false
 
     protected fun startWriteChannel() = scope.launch {
-        outbound.invokeOnClose {
-            scope.launch {
-                disconnect()
-            }
-        }
         try {
             for (packet in outbound) {
                 write(packet, timeout)
@@ -43,16 +38,13 @@ abstract class AbstractClientControlPacketTransport(
                     outboundCompletion.send(packet)
                 }
             }
+            suspendClose()
             completedWrite?.close()
             outbound.close()
         } catch (e: Exception) {
             completedWrite?.close(e)
             outbound.close(e)
         }
-    }
-
-    protected open suspend fun disconnect() {
-        write(disconnect(protocolVersion), 1.seconds)
     }
 
     protected fun startReadChannel() = scope.launch {
@@ -67,6 +59,11 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
+
+    override suspend fun suspendClose() {
+        close()
+        write(disconnect(protocolVersion), 1.seconds)
+    }
 
     override fun close() {
         isClosing = true

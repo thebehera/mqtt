@@ -25,6 +25,8 @@ interface ControlPacketTransport : Closeable {
 
     suspend fun read(timeout: Duration): ControlPacket
     suspend fun write(packet: ControlPacket, timeout: Duration): Int
+
+    suspend fun suspendClose()
 }
 
 

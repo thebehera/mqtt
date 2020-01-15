@@ -150,9 +150,11 @@ suspend fun AsynchronousSocketChannel.aWrite(
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 @RequiresApi(Build.VERSION_CODES.O)
-suspend fun AsynchronousSocketChannel.aClose() = suspendCancellableCoroutine<Void?> { cont ->
-    blockingClose()
-    cont.resume(null)
+suspend fun AsynchronousSocketChannel.aClose() {
+    suspendCancellableCoroutine<Void?> { cont ->
+        blockingClose()
+        cont.resume(null)
+    }
 }
 
 // ---------------- private details ----------------

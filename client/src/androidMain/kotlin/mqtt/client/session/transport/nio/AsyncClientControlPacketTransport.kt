@@ -65,7 +65,6 @@ open class JavaAsyncClientControlPacketTransport(
 
     override fun close() {
         if (outboundChannel.isClosedForSend) {
-            println("closed for send")
             return
         }
         super.close()
@@ -173,11 +172,13 @@ data class FixedHeaderMetadata(val firstByte: UByte, val remainingLength: UInt)
 @RequiresApi(Build.VERSION_CODES.O)
 @UseExperimental(ExperimentalTime::class)
 suspend fun AsynchronousSocketChannel.writePacket(packet: ControlPacket, timeout: Duration): Int {
-    return aWrite(
+    val bytes = aWrite(
         packet.serialize().readByteBuffer(direct = true),
         timeout.inMilliseconds.roundToLong(),
         TimeUnit.MILLISECONDS
     )
+//    println("wrote $packet")
+    return bytes
 }
 
 
