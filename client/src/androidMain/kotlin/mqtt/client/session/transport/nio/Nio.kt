@@ -152,7 +152,9 @@ suspend fun AsynchronousSocketChannel.aWrite(
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun AsynchronousSocketChannel.aClose() = suspendCancellableCoroutine<Void?> { cont ->
     blockingClose()
+    println("close complete")
     cont.resume(null)
+    println("cont close done")
 }
 
 // ---------------- private details ----------------

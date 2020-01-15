@@ -11,6 +11,7 @@ import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalTime
 abstract class AbstractClientControlPacketTransport(
@@ -29,6 +30,11 @@ abstract class AbstractClientControlPacketTransport(
     protected var isClosing = false
 
     protected fun startWriteChannel() = scope.launch {
+        outbound.invokeOnClose {
+            scope.launch {
+                disconnect()
+            }
+        }
         try {
             for (packet in outbound) {
                 write(packet, timeout)
@@ -43,6 +49,12 @@ abstract class AbstractClientControlPacketTransport(
             completedWrite?.close(e)
             outbound.close(e)
         }
+    }
+
+    protected open suspend fun disconnect() {
+        println("writing disconnect because of invoke close")
+        write(disconnect(protocolVersion), 1.seconds)
+        println("done writing disconnect because of invoke close")
     }
 
     protected fun startReadChannel() = scope.launch {

@@ -68,18 +68,7 @@ open class JavaAsyncClientControlPacketTransport(
             println("closed for send")
             return
         }
-        scope.launch {
-            try {
-                println("transport try closing")
-                outboundChannel.send(disconnect(protocolVersion))
-                println("sent blocking disconnect")
-            } catch (e: Exception) {
-                println("transport exception send blocking $e")
-                e.printStackTrace()
-            } finally {
-                super.close()
-            }
-        }
+        super.close()
     }
 
 }
@@ -205,7 +194,9 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(
         return
     }
     channelsToClose.forEach { it.close() }
+    println("calling aClose")
     aClose()
+    println("aClose complete")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
