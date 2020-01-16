@@ -62,7 +62,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingRequestSingleThread() {
         repeat(runCount) {
             println("ping request st $it / $runCount")
-            pingRequestImpl(singleThreadScope, singleThreadProvider)
+            try {
+                pingRequestImpl(singleThreadScope, singleThreadProvider)
+            } catch (e: Throwable) {
+                println("error from pingRequestMultiThread $it")
+                e.printStackTrace()
+                throw e
+            }
         }
     }
 
@@ -70,7 +76,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingRequestMultiThread() {
         repeat(runCount) {
             println("ping request mt $it / $runCount")
-            pingRequestImpl(multiThreadScope, multiThreadProvider)
+            try {
+                pingRequestImpl(multiThreadScope, multiThreadProvider)
+            } catch (e: Throwable) {
+                println("error from pingRequestMultiThread $it")
+                e.printStackTrace()
+                throw e
+            }
         }
     }
 
@@ -116,7 +128,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingResponseSingleThread() {
         repeat(runCount) {
             println("ping response st $it / $runCount")
-            pingResponseImpl(singleThreadScope, singleThreadProvider)
+            try {
+                pingResponseImpl(singleThreadScope, singleThreadProvider)
+            } catch (e: Throwable) {
+                println("error from pingResponseSingleThread $it")
+                e.printStackTrace()
+                throw e
+            }
         }
     }
 
@@ -125,7 +143,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun pingResponseMultiThreaded() {
         repeat(runCount) {
             println("ping response mt $it / $runCount")
-            pingResponseImpl(multiThreadScope, multiThreadProvider)
+            try {
+                pingResponseImpl(multiThreadScope, multiThreadProvider)
+            } catch (e: Throwable) {
+                println("error from pingResponseMultiThreaded $it")
+                e.printStackTrace()
+                throw e
+            }
         }
     }
 
@@ -136,11 +160,25 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 delay(runCount * 50.toLong())
                 launch {
                     println("ultra async ping request st $it / $runCount")
+                    try {
+                        pingRequestImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
                     pingRequestImpl(singleThreadScope, singleThreadProvider)
                 }
                 delay(runCount * 50.toLong())
                 launch {
                     println("ultra async ping response st $it / $runCount")
+                    try {
+                        pingResponseImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
                     pingResponseImpl(singleThreadScope, singleThreadProvider)
                 }
             }
@@ -154,14 +192,25 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 delay(runCount * 50.toLong())
                 launch {
                     println("ultra async ping request mt $it / $runCount")
-                    pingRequestImpl(multiThreadScope, multiThreadProvider)
-
+                    try {
+                        pingRequestImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestMultiThreaded.pingRequestImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
                     println("ultra async ping request done mt $it / $runCount")
                 }
                 delay(runCount * 50.toLong())
                 launch {
                     println("ultra async ping response mt $it / $runCount")
-                    pingResponseImpl(multiThreadScope, multiThreadProvider)
+                    try {
+                        pingResponseImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestMultiThreaded.pingResponseImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
                     println("ultra async ping response mt $it / $runCount")
                 }
             }
