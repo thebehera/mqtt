@@ -155,6 +155,10 @@ suspend fun AsynchronousSocketChannel.aClose() {
         blockingClose()
         cont.resume(null)
     }
+    while (isOpen) {
+        println("still open")
+    }
+    println("unsuspend close")
 }
 
 // ---------------- private details ----------------

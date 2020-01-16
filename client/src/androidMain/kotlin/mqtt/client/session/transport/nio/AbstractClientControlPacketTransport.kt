@@ -1,17 +1,20 @@
 package mqtt.client.session.transport.nio
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
+import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import mqtt.connection.ControlPacketTransport
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
+import kotlin.time.measureTime
 
 @ExperimentalTime
 abstract class AbstractClientControlPacketTransport(
@@ -31,19 +34,25 @@ abstract class AbstractClientControlPacketTransport(
 
     protected fun startWriteChannel() = scope.launch {
         try {
-            for (packet in outbound) {
+            outbound.consumeEach { packet ->
+                println("consume start")
                 write(packet, timeout)
-                val outboundCompletion = completedWrite ?: continue
-                scope.launch {
-                    outboundCompletion.send(packet)
+                try {
+                    completedWrite?.send(packet)
+                } catch (e: Exception) {
+                    println("got exception while trying to send write packtet $e")
+                    completedWrite?.close(e)
                 }
+                println("consume end")
             }
-            suspendClose()
-            completedWrite?.close()
-            outbound.close()
+        } catch (e: CancellationException) {
+            println("cancellation e $e")
+            // ignore cancellation exceptions
         } catch (e: Exception) {
-            completedWrite?.close(e)
-            outbound.close(e)
+            println("closed with exception $e")
+        } finally {
+            suspendClose()
+            close()
         }
     }
 
@@ -61,12 +70,25 @@ abstract class AbstractClientControlPacketTransport(
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
     override suspend fun suspendClose() {
-        close()
-        write(disconnect(protocolVersion), 1.seconds)
+        if (outbound.isClosedForSend) {
+            return
+        }
+        isClosing = true
+        println("sending suspend close")
+        outbound.send(disconnect(protocolVersion))
+        println("waiting for mutex")
+        val time = measureTime {
+            val mutex = Mutex(true)
+            outbound.invokeOnClose {
+                mutex.unlock()
+                println("unlock")
+            }
+            mutex.lock()
+        }
+        println("sent suspend close and suspended for $time")
     }
 
     override fun close() {
-        isClosing = true
         inboxChannel.close()
         outboundChannel.close()
         completedWrite?.close()

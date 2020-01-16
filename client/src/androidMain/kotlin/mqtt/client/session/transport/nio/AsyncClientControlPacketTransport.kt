@@ -134,7 +134,7 @@ suspend fun address(host: String?) = suspendCoroutine<InetAddress> {
 suspend fun asyncClientTransport(
     scope: CoroutineScope,
     connectionRequest: IConnectionRequest,
-    group: AsynchronousChannelGroup,
+    group: AsynchronousChannelGroup? = null,
     maxBufferSize: Int = 12_000
 ): ClientControlPacketTransport {
     val socket = suspendCoroutine<AsynchronousSocketChannel> {
@@ -177,7 +177,7 @@ suspend fun AsynchronousSocketChannel.writePacket(packet: ControlPacket, timeout
         timeout.inMilliseconds.roundToLong(),
         TimeUnit.MILLISECONDS
     )
-//    println("wrote $packet")
+    println("wrote $packet")
     return bytes
 }
 
@@ -190,8 +190,11 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(
     if (packet !is IDisconnectNotification) {
         return
     }
-    channelsToClose.forEach { it.close() }
+    println("closing socket")
     aClose()
+    println("closed")
+    channelsToClose.forEach { it.close() }
+    println("channels closed")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
