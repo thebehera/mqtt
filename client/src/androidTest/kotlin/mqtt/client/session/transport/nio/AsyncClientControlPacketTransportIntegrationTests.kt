@@ -61,6 +61,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingRequestSingleThread() {
         repeat(runCount) {
+            println("ping request st $it / count")
             pingRequestImpl(singleThreadScope, singleThreadProvider)
         }
     }
@@ -68,6 +69,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingRequestMultiThread() {
         repeat(runCount) {
+            println("ping request mt $it / count")
             pingRequestImpl(multiThreadScope, multiThreadProvider)
         }
     }
@@ -113,6 +115,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingResponseSingleThread() {
         repeat(runCount) {
+            println("ping response st $it / count")
             pingResponseImpl(singleThreadScope, singleThreadProvider)
         }
     }
@@ -121,6 +124,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @Test
     fun pingResponseMultiThreaded() {
         repeat(runCount) {
+            println("ping response mt $it / count")
             pingResponseImpl(multiThreadScope, multiThreadProvider)
         }
     }
@@ -131,10 +135,12 @@ class AsyncClientControlPacketTransportIntegrationTests {
             repeat(runCount) {
                 delay(runCount * 50.toLong())
                 launch {
+                    println("ultra async ping request st $it / count")
                     pingRequestImpl(singleThreadScope, singleThreadProvider)
                 }
                 delay(runCount * 50.toLong())
                 launch {
+                    println("ultra async ping response st $it / count")
                     pingResponseImpl(singleThreadScope, singleThreadProvider)
                 }
             }
@@ -147,11 +153,16 @@ class AsyncClientControlPacketTransportIntegrationTests {
             repeat(runCount) {
                 delay(runCount * 50.toLong())
                 launch {
+                    println("ultra async ping request mt $it / count")
                     pingRequestImpl(multiThreadScope, multiThreadProvider)
+
+                    println("ultra async ping request done mt $it / count")
                 }
                 delay(runCount * 50.toLong())
                 launch {
+                    println("ultra async ping response mt $it / count")
                     pingResponseImpl(multiThreadScope, multiThreadProvider)
+                    println("ultra async ping response mt $it / count")
                 }
             }
         }

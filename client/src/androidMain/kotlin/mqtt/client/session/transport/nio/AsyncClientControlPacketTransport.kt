@@ -162,7 +162,7 @@ suspend fun AsynchronousSocketChannel.readPacket(
     val metadata = FixedHeaderMetadata(packetBuffer.get().toUByte(), packetBuffer.decodeVariableByteInteger())
     packetBuffer.position(position)
     return if (metadata.remainingLength.toLong() < packetBuffer.remaining()) { // we already read the entire message in the buffer
-        println("deserializing buffer")
+        println("deserializing buffer $packetBuffer")
         val pkt = packetBuffer.read(protocolVersion)
         println("read $pkt")
         pkt
