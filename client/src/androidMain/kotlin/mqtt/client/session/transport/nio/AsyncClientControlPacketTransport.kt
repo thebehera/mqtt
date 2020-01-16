@@ -155,13 +155,17 @@ suspend fun AsynchronousSocketChannel.readPacket(
     timeout: Duration,
     protocolVersion: Int
 ): ControlPacket {
+    println("reading packet")
     aRead(packetBuffer, timeout.inMilliseconds.roundToLong(), TimeUnit.MILLISECONDS)
     packetBuffer.flip()
     val position = packetBuffer.position()
     val metadata = FixedHeaderMetadata(packetBuffer.get().toUByte(), packetBuffer.decodeVariableByteInteger())
     packetBuffer.position(position)
     return if (metadata.remainingLength.toLong() < packetBuffer.remaining()) { // we already read the entire message in the buffer
-        packetBuffer.read(protocolVersion)
+        println("deserializing buffer")
+        val pkt = packetBuffer.read(protocolVersion)
+        println("read $pkt")
+        pkt
     } else {
         throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
     }
