@@ -137,18 +137,28 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ): ControlPacket {
     aRead(buf, timeout, timeUnit)
-    buf.flip()
-    val position = buf.position()
-    val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
-    buf.position(position)
-    return if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
-        println("deserializing buffer $buf")
-        val pkt = buf.read(protocolVersion)
-        println("read $pkt")
-        pkt
-    } else {
-        throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
+    return suspendCancellableCoroutine { contination ->
+        try {
+            buf.flip()
+            val position = buf.position()
+            val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
+            buf.position(position)
+            if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
+                val pkt = buf.read(protocolVersion)
+                contination.resume(pkt)
+            } else {
+                throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
+            }
+        } catch (ex: Throwable) {
+            if (!(ex is AsynchronousCloseException && contination.isCancelled)) {
+                println("async close exception and cancelled")
+            }
+            contination.cancel()
+        } finally {
+            closeOnCancel(contination)
+        }
     }
+
 }
 
 /**
@@ -181,7 +191,6 @@ suspend fun AsynchronousSocketChannel.aClose() {
     while (isOpen) {
         println("still open")
     }
-    println("unsuspend close")
 }
 
 // ---------------- private details ----------------

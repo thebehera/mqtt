@@ -35,21 +35,15 @@ abstract class AbstractClientControlPacketTransport(
     protected fun startWriteChannel() = scope.launch {
         try {
             outbound.consumeEach { packet ->
-                println("consume start")
                 write(packet, timeout)
                 try {
                     completedWrite?.send(packet)
-                } catch (e: Throwable) {
-                    println("got exception while trying to send write packtet $e")
-                    completedWrite?.close(e)
+                } catch (e: CancellationException) {
+                    completedWrite?.close()
                 }
-                println("consume end")
             }
-        } catch (e: CancellationException) {
-            println("cancellation e $e")
-            // ignore cancellation exceptions
         } catch (e: Throwable) {
-            println("closed with exception $e")
+//            println("closed with exception $e")
         } finally {
             suspendClose()
             close()
@@ -61,9 +55,8 @@ abstract class AbstractClientControlPacketTransport(
             while (scope.isActive) {
                 inboxChannel.send(read(timeout * timeoutMultiplier))
             }
-            println("read channel close normallly")
         } catch (e: Throwable) {
-            println("read channel closed with exception $e")
+//            println("read channel closed with exception $e")
         } finally {
             suspendClose()
             close()
@@ -78,14 +71,11 @@ abstract class AbstractClientControlPacketTransport(
         }
         try {
             isClosing = true
-            println("sending suspend close")
             outbound.send(disconnect(protocolVersion))
-            println("waiting for mutex")
             val time = measureTime {
                 val mutex = Mutex(true)
                 outbound.invokeOnClose {
                     mutex.unlock()
-                    println("unlock")
                 }
                 mutex.lock()
             }

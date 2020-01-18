@@ -95,10 +95,8 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 1,
                 integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
             )
-            println("get flow as response")
             val responses =
                 completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList()
-            println("got responses $responses")
             assertEquals(expectedCount, responses.count())
             transport.suspendClose()
         }

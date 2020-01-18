@@ -155,9 +155,8 @@ suspend fun AsynchronousSocketChannel.readPacket(
     timeout: Duration,
     protocolVersion: Int
 ): ControlPacket {
-    println("reading packet")
     val pkt = aReadPacket(packetBuffer, protocolVersion, timeout.toLongMilliseconds(), TimeUnit.MILLISECONDS)
-    println("aReadPacket $pkt")
+    println("aReadPacket $pkt end")
     return pkt
 }
 
