@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
+import mqtt.wire.control.packet.ControlPacket
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.*
@@ -126,6 +127,28 @@ suspend fun AsynchronousSocketChannel.aRead(
 ) = suspendCancellableCoroutine<Int> { cont ->
     read(buf, timeout, timeUnit, cont, asyncIOHandler())
     closeOnCancel(cont)
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+suspend fun AsynchronousSocketChannel.aReadPacket(
+    buf: ByteBuffer,
+    protocolVersion: Int,
+    timeout: Long = 0L,
+    timeUnit: TimeUnit = TimeUnit.MILLISECONDS
+): ControlPacket {
+    aRead(buf, timeout, timeUnit)
+    buf.flip()
+    val position = buf.position()
+    val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
+    buf.position(position)
+    return if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
+        println("deserializing buffer $buf")
+        val pkt = buf.read(protocolVersion)
+        println("read $pkt")
+        pkt
+    } else {
+        throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
+    }
 }
 
 /**

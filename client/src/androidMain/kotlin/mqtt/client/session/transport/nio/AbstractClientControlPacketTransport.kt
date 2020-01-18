@@ -39,7 +39,7 @@ abstract class AbstractClientControlPacketTransport(
                 write(packet, timeout)
                 try {
                     completedWrite?.send(packet)
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     println("got exception while trying to send write packtet $e")
                     completedWrite?.close(e)
                 }
@@ -48,7 +48,7 @@ abstract class AbstractClientControlPacketTransport(
         } catch (e: CancellationException) {
             println("cancellation e $e")
             // ignore cancellation exceptions
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             println("closed with exception $e")
         } finally {
             suspendClose()
@@ -61,9 +61,12 @@ abstract class AbstractClientControlPacketTransport(
             while (scope.isActive) {
                 inboxChannel.send(read(timeout * timeoutMultiplier))
             }
-            inboxChannel.close()
-        } catch (e: Exception) {
-            inboxChannel.close(e)
+            println("read channel close normallly")
+        } catch (e: Throwable) {
+            println("read channel closed with exception $e")
+        } finally {
+            suspendClose()
+            close()
         }
     }
 
@@ -73,19 +76,23 @@ abstract class AbstractClientControlPacketTransport(
         if (outbound.isClosedForSend) {
             return
         }
-        isClosing = true
-        println("sending suspend close")
-        outbound.send(disconnect(protocolVersion))
-        println("waiting for mutex")
-        val time = measureTime {
-            val mutex = Mutex(true)
-            outbound.invokeOnClose {
-                mutex.unlock()
-                println("unlock")
+        try {
+            isClosing = true
+            println("sending suspend close")
+            outbound.send(disconnect(protocolVersion))
+            println("waiting for mutex")
+            val time = measureTime {
+                val mutex = Mutex(true)
+                outbound.invokeOnClose {
+                    mutex.unlock()
+                    println("unlock")
+                }
+                mutex.lock()
             }
-            mutex.lock()
+            println("sent suspend close and suspended for $time")
+        } catch (e: Exception) {
+            println("suspend close cancelled with Exception $e")
         }
-        println("sent suspend close and suspended for $time")
     }
 
     override fun close() {

@@ -123,7 +123,7 @@ class AsyncClientControlPacketTransport(
 suspend fun address(host: String?) = suspendCoroutine<InetAddress> {
     try {
         it.resume(InetAddress.getByName(host))
-    } catch (e: Exception) {
+    } catch (e: Throwable) {
         it.resumeWithException(e)
     }
 }
@@ -156,19 +156,9 @@ suspend fun AsynchronousSocketChannel.readPacket(
     protocolVersion: Int
 ): ControlPacket {
     println("reading packet")
-    aRead(packetBuffer, timeout.inMilliseconds.roundToLong(), TimeUnit.MILLISECONDS)
-    packetBuffer.flip()
-    val position = packetBuffer.position()
-    val metadata = FixedHeaderMetadata(packetBuffer.get().toUByte(), packetBuffer.decodeVariableByteInteger())
-    packetBuffer.position(position)
-    return if (metadata.remainingLength.toLong() < packetBuffer.remaining()) { // we already read the entire message in the buffer
-        println("deserializing buffer $packetBuffer")
-        val pkt = packetBuffer.read(protocolVersion)
-        println("read $pkt")
-        pkt
-    } else {
-        throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
-    }
+    val pkt = aReadPacket(packetBuffer, protocolVersion, timeout.toLongMilliseconds(), TimeUnit.MILLISECONDS)
+    println("aReadPacket $pkt")
+    return pkt
 }
 
 data class FixedHeaderMetadata(val firstByte: UByte, val remainingLength: UInt)
