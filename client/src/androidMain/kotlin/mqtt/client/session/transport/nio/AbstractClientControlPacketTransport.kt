@@ -67,10 +67,12 @@ abstract class AbstractClientControlPacketTransport(
 
     override suspend fun suspendClose() {
         if (outbound.isClosedForSend) {
+            println("suspend close already closed for send")
             return
         }
         try {
             isClosing = true
+            println("try disconnecting")
             outbound.send(disconnect(protocolVersion))
             val time = measureTime {
                 val mutex = Mutex(true)

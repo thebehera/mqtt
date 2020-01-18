@@ -153,7 +153,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun ultraAsyncTestSingleThreaded() {
-        runBlocking {
+        runBlocking(singleThreadScope.coroutineContext) {
             repeat(runCount) {
                 delay(runCount * 50.toLong())
                 launch {
@@ -185,7 +185,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun ultraAsyncTestMultiThreaded() {
-        runBlocking {
+        runBlocking(multiThreadScope.coroutineContext) {
             repeat(runCount) {
                 delay(runCount * 50.toLong())
                 launch {
