@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
-import mqtt.client.blockWithTimeout
 import mqtt.connection.ClientControlPacketTransport
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPingRequest
@@ -42,20 +41,23 @@ class AsyncClientControlPacketTransportIntegrationTests {
     val multiThreadScope = CoroutineScope(multiThreadExecutor.asCoroutineDispatcher())
     val multiThreadProvider = AsynchronousChannelGroup.withThreadPool(multiThreadExecutor)
 
-    fun connect(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null): ClientControlPacketTransport {
+    suspend fun connect(
+        scope: CoroutineScope,
+        channelGroup: AsynchronousChannelGroup? = null
+    ): ClientControlPacketTransport {
         val connectionRequest = ConnectionRequest(
             clientId = "test${Random.nextInt()}",
             keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
         )
         assert(integrationTestTimeoutMs > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffsetMs) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
-        scope.blockWithTimeout(timeoutOffsetMs.toLong()) {
-            val t = asyncClientTransport(scope, connectionRequest, channelGroup)
-            assert(t.open(60_000.toUShort()).isSuccessful) { "incorrect connack message" }
-            transport = t
-        }
-        assertNotNull(transport!!.assignedPort())
-        return transport!!
+        println("block connect with timeout")
+        val t = asyncClientTransport(scope, connectionRequest, channelGroup)
+        println("async client transport")
+        assert(t.open(60_000.toUShort()).isSuccessful) { "incorrect connack message" }
+        transport = t
+        assertNotNull(transport.assignedPort())
+        return transport
     }
 
     @Test
@@ -63,7 +65,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         repeat(runCount) {
             println("ping request st $it / $runCount")
             try {
-                pingRequestImpl(singleThreadScope, singleThreadProvider)
+                runBlocking { pingRequestImpl(singleThreadScope, singleThreadProvider) }
             } catch (e: Throwable) {
                 println("error from pingRequestMultiThread $it")
                 e.printStackTrace()
@@ -77,7 +79,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         repeat(runCount) {
             println("ping request mt $it / $runCount")
             try {
-                pingRequestImpl(multiThreadScope, multiThreadProvider)
+                runBlocking { pingRequestImpl(multiThreadScope, multiThreadProvider) }
             } catch (e: Throwable) {
                 println("error from pingRequestMultiThread $it")
                 e.printStackTrace()
@@ -86,48 +88,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
         }
     }
 
-    fun pingRequestImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
-        val transport = connect(scope, channelGroup)
-        scope.blockWithTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
-            val completedWriteChannel = Channel<ControlPacket>()
-            transport.completedWrite = completedWriteChannel
-            val expectedCount = max(
-                1,
-                integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
-            )
-            val responses =
-                completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList()
-            assertEquals(expectedCount, responses.count())
-            transport.suspendClose()
-        }
-        disconnect(transport)
-    }
-
-    fun pingResponseImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
-        val transport = connect(scope, channelGroup)
-        scope.blockWithTimeout(
-            integrationTestTimeoutMs.toLong() + timeoutOffsetMs
-        ) {
-            val expectedCount =
-                max(
-                    1,
-                    integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
-                )
-            assertEquals(
-                expectedCount,
-                transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
-            )
-            transport.suspendClose()
-        }
-        disconnect(transport)
-    }
 
     @Test
     fun pingResponseSingleThread() {
         repeat(runCount) {
             println("ping response st $it / $runCount")
             try {
-                pingResponseImpl(singleThreadScope, singleThreadProvider)
+                runBlocking { pingResponseImpl(singleThreadScope, singleThreadProvider) }
             } catch (e: Throwable) {
                 println("error from pingResponseSingleThread $it")
                 e.printStackTrace()
@@ -142,7 +109,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         repeat(runCount) {
             println("ping response mt $it / $runCount")
             try {
-                pingResponseImpl(multiThreadScope, multiThreadProvider)
+                runBlocking { pingResponseImpl(multiThreadScope, multiThreadProvider) }
             } catch (e: Throwable) {
                 println("error from pingResponseMultiThreaded $it")
                 e.printStackTrace()
@@ -151,15 +118,59 @@ class AsyncClientControlPacketTransportIntegrationTests {
         }
     }
 
+    suspend fun pingRequestImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
+        withTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
+            println("ping req connect")
+            val transport = connect(scope, channelGroup)
+            println("ping req done connecting")
+            val completedWriteChannel = Channel<ControlPacket>()
+            transport.completedWrite = completedWriteChannel
+            val expectedCount = max(
+                1,
+                integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+            )
+
+            println("ping req consume")
+            val responses =
+                completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList()
+            println("ping consumed")
+            assertEquals(expectedCount, responses.count())
+            transport.suspendClose()
+            disconnect(transport)
+            println("ping request done")
+        }
+    }
+
+    suspend fun pingResponseImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
+        withTimeout(integrationTestTimeoutMs.toLong() + timeoutOffsetMs) {
+            val transport = connect(scope, channelGroup)
+            val expectedCount =
+                max(
+                    1,
+                    integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
+                )
+            assertEquals(
+                expectedCount,
+                transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
+            )
+            transport.suspendClose()
+            disconnect(transport)
+            println("ping response done")
+        }
+    }
+
     @Test
     fun ultraAsyncTestSingleThreaded() {
         runBlocking(singleThreadScope.coroutineContext) {
             repeat(runCount) {
                 delay(runCount * 50.toLong())
+                println("launching scope req")
                 launch {
                     println("ultra async ping request st $it / $runCount")
                     try {
-                        pingRequestImpl(multiThreadScope, multiThreadProvider)
+                        println("ping req impl")
+                        pingRequestImpl(singleThreadScope, singleThreadProvider)
+                        println("ping req impl done")
                     } catch (e: Throwable) {
                         println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it")
                         e.printStackTrace()
@@ -167,11 +178,13 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     }
                     pingRequestImpl(singleThreadScope, singleThreadProvider)
                 }
+                println("delayed")
                 delay(runCount * 50.toLong())
+                println("launching scope resp")
                 launch {
                     println("ultra async ping response st $it / $runCount")
                     try {
-                        pingResponseImpl(multiThreadScope, multiThreadProvider)
+                        pingResponseImpl(singleThreadScope, singleThreadProvider)
                     } catch (e: Throwable) {
                         println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it")
                         e.printStackTrace()
@@ -227,6 +240,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assertNull(transport.assignedPort(), "Leaked socket")
         assert(transport.outboundChannel.isClosedForSend)
         assert(transport.inboxChannel.isClosedForSend)
+        println("done")
     }
 
 }
