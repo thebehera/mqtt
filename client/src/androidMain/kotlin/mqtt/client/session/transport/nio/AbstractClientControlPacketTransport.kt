@@ -52,14 +52,17 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     protected fun startReadChannel() = scope.launch {
+        var startTime = currentTimestampMs()
         try {
             while (scope.isActive) {
+                startTime = currentTimestampMs()
                 println("read loop")
                 inboxChannel.send(read(timeout * timeoutMultiplier))
             }
         } catch (e: Throwable) {
 //            println("read channel closed with exception $e")
         } finally {
+            println("closing after ${currentTimestampMs() - startTime}ms")
             suspendClose()
             close()
         }
