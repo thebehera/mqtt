@@ -131,6 +131,7 @@ suspend fun AsynchronousSocketChannel.aRead(
     closeOnCancel(cont)
 }
 
+
 @ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun AsynchronousSocketChannel.aReadPacket(
@@ -141,9 +142,10 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
 ): ControlPacket {
     println("preread: $buf")
     val time = measureTime {
-        while (aRead(buf, timeout, timeUnit) < 2) {
+        var bytesRead = aRead(buf, timeout, timeUnit)
+        while (bytesRead < 2) {
             println("read($timeout $timeUnit): $buf")
-            println("reading more into the buffer since we read less than two bytes")
+            bytesRead = aRead(buf, timeout, timeUnit)
         }
     }
     println("preflip ($time): $buf")
