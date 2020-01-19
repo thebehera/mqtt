@@ -151,7 +151,8 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
             }
         } catch (ex: Throwable) {
             if (!(ex is AsynchronousCloseException && contination.isCancelled)) {
-                println("async close exception and cancelled")
+                println("async close exception and cancelled $ex")
+                ex.printStackTrace()
             }
             contination.cancel()
         } finally {
