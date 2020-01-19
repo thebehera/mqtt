@@ -11,6 +11,7 @@ import java.nio.channels.*
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
 /**
@@ -130,6 +131,7 @@ suspend fun AsynchronousSocketChannel.aRead(
     closeOnCancel(cont)
 }
 
+@ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun AsynchronousSocketChannel.aReadPacket(
     buf: ByteBuffer,
