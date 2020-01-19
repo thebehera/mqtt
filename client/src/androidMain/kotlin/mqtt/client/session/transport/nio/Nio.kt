@@ -150,10 +150,7 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
                 throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
             }
         } catch (ex: Throwable) {
-            if (!(ex is AsynchronousCloseException && contination.isCancelled)) {
-                println("async close exception and cancelled $ex")
-                ex.printStackTrace()
-            }
+            println("read failed $ex")
             contination.cancel()
         } finally {
             closeOnCancel(contination)
