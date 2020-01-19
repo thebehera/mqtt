@@ -146,6 +146,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
             println("ping consumed")
             assertEquals(expectedCount, responses.count())
             transport.suspendClose()
+            transport.close()
             disconnect(transport)
             println("ping request done")
         }
@@ -168,6 +169,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
             )
             transport.suspendClose()
+            transport.close()
             disconnect(transport)
             println("ping response done")
         }
