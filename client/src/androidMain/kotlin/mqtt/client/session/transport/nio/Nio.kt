@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
+import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import java.net.SocketAddress
 import java.nio.ByteBuffer
@@ -140,35 +141,40 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ): ControlPacket {
-    println("preread: $buf")
-    val time = measureTime {
-        var bytesRead = aRead(buf, timeout, timeUnit)
-        while (bytesRead < 2) {
-            println("read($timeout $timeUnit): $buf")
-            bytesRead = aRead(buf, timeout, timeUnit)
-        }
-    }
-    println("preflip ($time): $buf")
-    return suspendCancellableCoroutine { contination ->
-        try {
-            buf.flip()
-            println("postflip: $buf")
-            val position = buf.position()
-            val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
-            buf.position(position)
-            if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
-                val pkt = buf.read(protocolVersion)
-                contination.resume(pkt)
-            } else {
-                throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
+    val start = currentTimestampMs()
+    try {
+        println("preread: $buf")
+        val time = measureTime {
+            var bytesRead = aRead(buf, timeout, timeUnit)
+            while (bytesRead < 2) {
+                println("read($timeout $timeUnit): $buf")
+                bytesRead = aRead(buf, timeout, timeUnit)
             }
-        } catch (ex: Throwable) {
-            println("read failed $ex")
-            ex.printStackTrace()
-            contination.cancel()
-        } finally {
-            closeOnCancel(contination)
         }
+        println("preflip ($time): $buf")
+        return suspendCancellableCoroutine { contination ->
+            try {
+                buf.flip()
+                println("postflip: $buf")
+                val position = buf.position()
+                val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
+                buf.position(position)
+                if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
+                    val pkt = buf.read(protocolVersion)
+                    contination.resume(pkt)
+                } else {
+                    throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
+                }
+            } catch (ex: Throwable) {
+                println("read failed $ex")
+                ex.printStackTrace()
+                contination.cancel()
+            } finally {
+                closeOnCancel(contination)
+            }
+        }
+    } finally {
+        println("reading complete packet took ${currentTimestampMs() - start}ms")
     }
 
 }
