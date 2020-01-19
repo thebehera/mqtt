@@ -138,7 +138,7 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
 ): ControlPacket {
     println("preread: $buf")
     while (aRead(buf, timeout, timeUnit) < 2) {
-        println("read: $buf")
+        println("read($timeout $timeUnit): $buf")
         println("reading more into the buffer since we read less than two bytes")
     }
     println("preflip: $buf")
