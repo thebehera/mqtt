@@ -101,7 +101,8 @@ class AsyncClientControlPacketTransport(
 
     private fun startPingTimer() = scope.launch {
         delayUntilPingInterval()
-        while (!isClosing && isActive && assignedPort() != null) {
+        while (!isClosing && isActive) {
+            println("ping timer loop")
             outboundChannel.send(ping(connectionRequest.protocolVersion))
             delayUntilPingInterval()
         }

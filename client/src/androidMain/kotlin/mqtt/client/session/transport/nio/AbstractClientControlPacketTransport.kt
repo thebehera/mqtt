@@ -35,6 +35,7 @@ abstract class AbstractClientControlPacketTransport(
     protected fun startWriteChannel() = scope.launch {
         try {
             outbound.consumeEach { packet ->
+                println("write outbound loop")
                 write(packet, timeout)
                 try {
                     completedWrite?.send(packet)
@@ -53,6 +54,7 @@ abstract class AbstractClientControlPacketTransport(
     protected fun startReadChannel() = scope.launch {
         try {
             while (scope.isActive) {
+                println("read loop")
                 inboxChannel.send(read(timeout * timeoutMultiplier))
             }
         } catch (e: Throwable) {
