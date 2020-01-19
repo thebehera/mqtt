@@ -12,8 +12,11 @@ import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.control.packet.IPingResponse
 import mqtt.wire4.control.packet.ConnectionRequest
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import java.nio.channels.AsynchronousChannelGroup
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import kotlin.math.max
 import kotlin.random.Random
@@ -33,18 +36,20 @@ class AsyncClientControlPacketTransportIntegrationTests {
     val processors = Runtime.getRuntime().availableProcessors()
     val runCount = processors * 3
 
-    val singleThreadExecutor = Executors.newSingleThreadExecutor()
-    val singleThreadScope = CoroutineScope(singleThreadExecutor.asCoroutineDispatcher())
-    val singleThreadProvider = AsynchronousChannelGroup.withThreadPool(singleThreadExecutor)!!
+    lateinit var singleThreadExecutor: ExecutorService
+    lateinit var singleThreadScope: CoroutineScope
+    lateinit var singleThreadProvider: AsynchronousChannelGroup
 
-    val multiThreadExecutor = Executors.newFixedThreadPool(runCount * 2)
-    val multiThreadScope = CoroutineScope(multiThreadExecutor.asCoroutineDispatcher())
-    val multiThreadProvider = AsynchronousChannelGroup.withThreadPool(multiThreadExecutor)
+    lateinit var multiThreadExecutor: ExecutorService
+    lateinit var multiThreadScope: CoroutineScope
+    lateinit var multiThreadProvider: AsynchronousChannelGroup
+
 
     suspend fun connect(
         scope: CoroutineScope,
         channelGroup: AsynchronousChannelGroup? = null
     ): ClientControlPacketTransport {
+
         val connectionRequest = ConnectionRequest(
             clientId = "test${Random.nextInt()}",
             keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
@@ -241,6 +246,36 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assert(transport.outboundChannel.isClosedForSend)
         assert(transport.inboxChannel.isClosedForSend)
         println("done")
+    }
+
+
+    @Before
+    fun reset() {
+        singleThreadExecutor = Executors.newSingleThreadExecutor()
+        singleThreadScope = CoroutineScope(singleThreadExecutor.asCoroutineDispatcher())
+        singleThreadProvider = AsynchronousChannelGroup.withThreadPool(singleThreadExecutor)!!
+
+        multiThreadExecutor = Executors.newFixedThreadPool(runCount * 2)
+        multiThreadScope = CoroutineScope(multiThreadExecutor.asCoroutineDispatcher())
+        multiThreadProvider = AsynchronousChannelGroup.withThreadPool(multiThreadExecutor)
+    }
+
+    @After
+    fun close() {
+        println("cancel single thread scope")
+        singleThreadScope.cancel()
+        println("shut down single thread provider")
+        singleThreadProvider.shutdownNow()
+        println("shut down single thread executor")
+        singleThreadExecutor.shutdownNow()
+
+
+        println("cancel multi thread scope")
+        multiThreadScope.cancel()
+        println("shut down multi thread provider")
+        multiThreadProvider.shutdownNow()
+        println("shut down multi thread executor")
+        multiThreadExecutor.shutdownNow()
     }
 
 }
