@@ -273,18 +273,16 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun close() {
         println("cancel single thread scope")
         singleThreadScope.cancel()
-        println("shut down single thread provider")
-        singleThreadProvider.shutdownNow()
-        println("shut down single thread executor")
-        singleThreadExecutor.shutdownNow()
+        println("shut down single thread provider ${singleThreadProvider.shutdownNow()}")
+
+        println("shut down single thread executor ${singleThreadExecutor.shutdownNow()}")
 
 
         println("cancel multi thread scope")
         multiThreadScope.cancel()
-        println("shut down multi thread provider")
-        multiThreadProvider.shutdownNow()
-        println("shut down multi thread executor")
-        multiThreadExecutor.shutdownNow()
+        println("shut down multi thread provider ${multiThreadProvider.shutdownNow()}")
+        println("shut down multi thread executor ${multiThreadExecutor.shutdownNow()}")
+
 
         println("awaiting termination st provider")
         val singleThreadAwaited = singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
