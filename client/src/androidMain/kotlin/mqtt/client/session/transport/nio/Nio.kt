@@ -145,9 +145,12 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     try {
         println("preread: $buf")
         val time = measureTime {
+            println("aread start")
+            var c = 0
             var bytesRead = aRead(buf, timeout, timeUnit)
+            println("aread${++c}($timeout $timeUnit): $buf")
             while (bytesRead < 2) {
-                println("read($timeout $timeUnit): $buf")
+                println("aread${++c}($timeout $timeUnit): $buf")
                 bytesRead = aRead(buf, timeout, timeUnit)
             }
         }
