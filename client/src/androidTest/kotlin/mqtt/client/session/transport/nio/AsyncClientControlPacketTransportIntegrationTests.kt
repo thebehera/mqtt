@@ -125,6 +125,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     suspend fun pingRequestImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
+        if (!scope.isActive) {
+            println("stopping pingRequestImpl not active")
+            return
+        }
         withTimeout((integrationTestTimeoutMs.toLong() + timeoutOffsetMs) * 2) {
             println("ping req connect")
             val transport = connect(scope, channelGroup)
@@ -148,6 +152,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
     suspend fun pingResponseImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
+        if (!scope.isActive) {
+            println("stopping pingResponseImpl not active")
+            return
+        }
         withTimeout((integrationTestTimeoutMs.toLong() + timeoutOffsetMs) * 2) {
             val transport = connect(scope, channelGroup)
             val expectedCount =
