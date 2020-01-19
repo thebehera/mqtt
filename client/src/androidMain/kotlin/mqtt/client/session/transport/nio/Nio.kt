@@ -176,7 +176,6 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     } finally {
         println("reading complete packet took ${currentTimestampMs() - start}ms")
     }
-
 }
 
 /**
