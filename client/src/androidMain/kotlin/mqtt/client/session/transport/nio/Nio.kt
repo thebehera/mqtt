@@ -11,6 +11,7 @@ import java.nio.channels.*
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.time.measureTime
 
 /**
  * Performs [AsynchronousFileChannel.lock] without blocking a thread and resumes when asynchronous operation completes.
@@ -137,11 +138,13 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ): ControlPacket {
     println("preread: $buf")
-    while (aRead(buf, timeout, timeUnit) < 2) {
-        println("read($timeout $timeUnit): $buf")
-        println("reading more into the buffer since we read less than two bytes")
+    val time = measureTime {
+        while (aRead(buf, timeout, timeUnit) < 2) {
+            println("read($timeout $timeUnit): $buf")
+            println("reading more into the buffer since we read less than two bytes")
+        }
     }
-    println("preflip: $buf")
+    println("preflip ($time): $buf")
     return suspendCancellableCoroutine { contination ->
         try {
             buf.flip()
