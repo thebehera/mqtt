@@ -73,7 +73,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
             try {
                 runBlocking { pingRequestImpl(singleThreadScope, singleThreadProvider) }
             } catch (e: Throwable) {
-                println("error from pingRequestMultiThread $it")
+                println("error from pingRequestSingleThread $it")
                 e.printStackTrace()
                 throw e
             }

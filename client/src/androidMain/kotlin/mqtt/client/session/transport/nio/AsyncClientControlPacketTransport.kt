@@ -63,12 +63,6 @@ open class JavaAsyncClientControlPacketTransport(
 
     override fun isOpen() = socket.isOpen
 
-    override fun close() {
-        if (outboundChannel.isClosedForSend) {
-            return
-        }
-        super.close()
-    }
 
 }
 
