@@ -64,6 +64,7 @@ kotlin {
     }
 }
 
+
 dependencies {
     implementation project(":android_roomdb_core")
     implementation "io.ktor:ktor-client-cio:$ktor_version"
