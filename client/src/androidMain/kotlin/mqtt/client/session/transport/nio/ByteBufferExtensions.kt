@@ -63,6 +63,7 @@ fun ByteBuffer.decodeVariableByteInteger(): UInt {
     var count = 0.toUInt()
     try {
         do {
+            println("getting digit ${remaining()}")
             digit = get()
             count++
             value += (digit and 0x7F).toUInt() * multiplier

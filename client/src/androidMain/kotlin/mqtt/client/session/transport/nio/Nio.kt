@@ -136,10 +136,16 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ): ControlPacket {
-    aRead(buf, timeout, timeUnit)
+    println("preread: $buf")
+    while (aRead(buf, timeout, timeUnit) < 2) {
+        println("read: $buf")
+        println("reading more into the buffer since we read less than two bytes")
+    }
+    println("preflip: $buf")
     return suspendCancellableCoroutine { contination ->
         try {
             buf.flip()
+            println("postflip: $buf")
             val position = buf.position()
             val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
             buf.position(position)
@@ -151,6 +157,7 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
             }
         } catch (ex: Throwable) {
             println("read failed $ex")
+            ex.printStackTrace()
             contination.cancel()
         } finally {
             closeOnCancel(contination)

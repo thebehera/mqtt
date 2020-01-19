@@ -35,7 +35,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * 3
+    val runCount = processors / 2
 
     lateinit var singleThreadExecutor: ExecutorService
     lateinit var singleThreadScope: CoroutineScope
