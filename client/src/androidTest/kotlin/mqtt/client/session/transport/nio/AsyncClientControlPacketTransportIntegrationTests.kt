@@ -78,7 +78,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
                 throw e
             }
         }
-        throw IllegalStateException("RAHUL")
     }
 
     @Test
