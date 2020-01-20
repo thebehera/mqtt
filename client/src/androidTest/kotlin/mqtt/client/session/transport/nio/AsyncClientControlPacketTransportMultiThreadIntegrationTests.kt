@@ -28,7 +28,7 @@ import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-class AsyncClientControlPacketTransportIntegrationTests {
+class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
     private val timeoutOffsetMs = 150
     private val keepAliveTimeoutSeconds = 1
@@ -36,10 +36,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     val processors = Runtime.getRuntime().availableProcessors()
     val runCount = processors * 3
+    lateinit var multiThreadExecutor: ExecutorService
+    lateinit var multiThreadScope: CoroutineScope
+    lateinit var multiThreadProvider: AsynchronousChannelGroup
 
-    lateinit var singleThreadExecutor: ExecutorService
-    lateinit var singleThreadScope: CoroutineScope
-    lateinit var singleThreadProvider: AsynchronousChannelGroup
 
     suspend fun connect(
         scope: CoroutineScope,
@@ -61,29 +61,29 @@ class AsyncClientControlPacketTransportIntegrationTests {
         return transport
     }
 
+
     @Test
-    fun pingRequestSingleThread() {
+    fun pingRequestMultiThread() {
         repeat(runCount) {
-            println("ping request st $it / $runCount")
+            println("ping request mt $it / $runCount")
             try {
-                runBlocking { pingRequestImpl(singleThreadScope, singleThreadProvider) }
+                runBlocking { pingRequestImpl(multiThreadScope, multiThreadProvider) }
             } catch (e: Throwable) {
-                println("error from pingRequestSingleThread $it")
+                println("error from pingRequestMultiThread $it")
                 e.printStackTrace()
                 throw e
             }
         }
     }
 
-
     @Test
-    fun pingResponseSingleThread() {
+    fun pingResponseMultiThreaded() {
         repeat(runCount) {
-            println("ping response st $it / $runCount")
+            println("ping response mt $it / $runCount")
             try {
-                runBlocking { pingResponseImpl(singleThreadScope, singleThreadProvider) }
+                runBlocking { pingResponseImpl(multiThreadScope, multiThreadProvider) }
             } catch (e: Throwable) {
-                println("error from pingResponseSingleThread $it")
+                println("error from pingResponseMultiThreaded $it")
                 e.printStackTrace()
                 throw e
             }
@@ -159,26 +159,22 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Before
     fun reset() {
-        singleThreadExecutor = Executors.newSingleThreadExecutor()
-        singleThreadScope = CoroutineScope(singleThreadExecutor.asCoroutineDispatcher())
-        singleThreadProvider = AsynchronousChannelGroup.withThreadPool(singleThreadExecutor)!!
+        multiThreadExecutor = Executors.newFixedThreadPool(runCount * 2)
+        multiThreadScope = CoroutineScope(multiThreadExecutor.asCoroutineDispatcher())
+        multiThreadProvider = AsynchronousChannelGroup.withThreadPool(multiThreadExecutor)
     }
 
     @After
     fun close() {
-        println("cancel single thread scope")
-        singleThreadScope.cancel()
-        println("shut down single thread provider ${singleThreadProvider.shutdownNow()}")
+        println("cancel multi thread scope")
+        multiThreadScope.cancel()
+        println("shut down multi thread provider ${multiThreadProvider.shutdownNow()}")
+        println("shut down multi thread executor ${multiThreadExecutor.shutdownNow()}")
 
-        println("shut down single thread executor ${singleThreadExecutor.shutdownNow()}")
-
-
-        println("awaiting termination st provider")
-        val singleThreadAwaited = singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
-        println("st provider awaited $singleThreadAwaited, awaiting st executor")
-        val singleExecutorAwaited =
-            singleThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
-        println("st executor awaited $singleExecutorAwaited, awaiting mt executor")
+        val multiThreadAwaited = multiThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
+        println("mt provider awaited $multiThreadAwaited, awaiting st executor")
+        val multiExecutorAwaited = multiThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
+        println("mt executor awaited $multiExecutorAwaited, awaiting mt executor")
 
     }
 
