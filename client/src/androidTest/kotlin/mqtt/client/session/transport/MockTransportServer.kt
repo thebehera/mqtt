@@ -52,7 +52,7 @@ class MockTransportServer(
                 val connection = server.aAccept()
                 scope.launch {
                     val connectionRequest =
-                        connection.readPacket(readBuffer, 1.seconds, 4)
+                        connection.readPacket(readBuffer, this, 1.seconds, 4)
                     if (connectionRequest is IConnectionRequest) {
                         val transport =
                             AsyncServerControlPacketTransport(scope, connection, maxBufferSize, connectionRequest)

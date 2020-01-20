@@ -3,6 +3,8 @@ package mqtt.client.session.transport.nio
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
@@ -137,6 +139,7 @@ suspend fun AsynchronousSocketChannel.aRead(
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun AsynchronousSocketChannel.aReadPacket(
     buf: ByteBuffer,
+    scope: CoroutineScope,
     protocolVersion: Int,
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
@@ -149,7 +152,7 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
             var c = 0
             var bytesRead = aRead(buf, timeout, timeUnit)
             println("aread${++c}($timeout $timeUnit): $buf")
-            while (bytesRead < 2) {
+            while (scope.isActive && bytesRead < 2) {
                 println("aread${++c}($timeout $timeUnit): $buf")
                 bytesRead = aRead(buf, timeout, timeUnit)
             }

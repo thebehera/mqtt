@@ -49,7 +49,7 @@ open class JavaAsyncClientControlPacketTransport(
         )
     }
 
-    override suspend fun read(timeout: Duration) = socket.readPacket(packetBuffer, timeout, protocolVersion)
+    override suspend fun read(timeout: Duration) = socket.readPacket(packetBuffer, scope, timeout, protocolVersion)
 
     override suspend fun write(packet: ControlPacket, timeout: Duration): Int {
         val bytes = socket.writePacket(packet, timeout)
@@ -153,10 +153,11 @@ suspend fun asyncClientTransport(
 @ExperimentalTime
 suspend fun AsynchronousSocketChannel.readPacket(
     packetBuffer: ByteBuffer,
+    scope: CoroutineScope,
     timeout: Duration,
     protocolVersion: Int
 ): ControlPacket {
-    val pkt = aReadPacket(packetBuffer, protocolVersion, timeout.toLongMilliseconds(), TimeUnit.MILLISECONDS)
+    val pkt = aReadPacket(packetBuffer, scope, protocolVersion, timeout.toLongMilliseconds(), TimeUnit.MILLISECONDS)
     println("aReadPacket $pkt end")
     return pkt
 }
