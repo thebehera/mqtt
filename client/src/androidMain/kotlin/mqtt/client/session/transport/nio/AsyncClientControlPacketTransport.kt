@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -94,11 +95,16 @@ class AsyncClientControlPacketTransport(
     }
 
     private fun startPingTimer() = scope.launch {
-        delayUntilPingInterval()
-        while (!isClosing && isActive) {
-            println("ping timer loop")
-            outboundChannel.send(ping(connectionRequest.protocolVersion))
+        while (isActive) {
             delayUntilPingInterval()
+            println("ping timer loop")
+            try {
+                outboundChannel.send(ping(connectionRequest.protocolVersion))
+            } catch (e: ClosedSendChannelException) {
+                println("ping timer stopped")
+                return@launch
+            }
+            println("ping")
         }
     }
 
