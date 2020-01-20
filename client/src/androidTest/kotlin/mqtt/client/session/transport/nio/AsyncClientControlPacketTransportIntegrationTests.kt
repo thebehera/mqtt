@@ -65,34 +65,34 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assertNotNull(transport.assignedPort())
         return transport
     }
-//
-//    @Test
-//    fun pingRequestSingleThread() {
-//        repeat(runCount) {
-//            println("ping request st $it / $runCount")
-//            try {
-//                runBlocking { pingRequestImpl(singleThreadScope, singleThreadProvider) }
-//            } catch (e: Throwable) {
-//                println("error from pingRequestSingleThread $it")
-//                e.printStackTrace()
-//                throw e
-//            }
-//        }
-//    }
-//
-//    @Test
-//    fun pingRequestMultiThread() {
-//        repeat(runCount) {
-//            println("ping request mt $it / $runCount")
-//            try {
-//                runBlocking { pingRequestImpl(multiThreadScope, multiThreadProvider) }
-//            } catch (e: Throwable) {
-//                println("error from pingRequestMultiThread $it")
-//                e.printStackTrace()
-//                throw e
-//            }
-//        }
-//    }
+
+    @Test
+    fun pingRequestSingleThread() {
+        repeat(runCount) {
+            println("ping request st $it / $runCount")
+            try {
+                runBlocking { pingRequestImpl(singleThreadScope, singleThreadProvider) }
+            } catch (e: Throwable) {
+                println("error from pingRequestSingleThread $it")
+                e.printStackTrace()
+                throw e
+            }
+        }
+    }
+
+    @Test
+    fun pingRequestMultiThread() {
+        repeat(runCount) {
+            println("ping request mt $it / $runCount")
+            try {
+                runBlocking { pingRequestImpl(multiThreadScope, multiThreadProvider) }
+            } catch (e: Throwable) {
+                println("error from pingRequestMultiThread $it")
+                e.printStackTrace()
+                throw e
+            }
+        }
+    }
 
 
     @Test
@@ -110,19 +110,19 @@ class AsyncClientControlPacketTransportIntegrationTests {
     }
 
 
-//    @Test
-//    fun pingResponseMultiThreaded() {
-//        repeat(runCount) {
-//            println("ping response mt $it / $runCount")
-//            try {
-//                runBlocking { pingResponseImpl(multiThreadScope, multiThreadProvider) }
-//            } catch (e: Throwable) {
-//                println("error from pingResponseMultiThreaded $it")
-//                e.printStackTrace()
-//                throw e
-//            }
-//        }
-//    }
+    @Test
+    fun pingResponseMultiThreaded() {
+        repeat(runCount) {
+            println("ping response mt $it / $runCount")
+            try {
+                runBlocking { pingResponseImpl(multiThreadScope, multiThreadProvider) }
+            } catch (e: Throwable) {
+                println("error from pingResponseMultiThreaded $it")
+                e.printStackTrace()
+                throw e
+            }
+        }
+    }
 
     suspend fun pingRequestImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
         if (!scope.isActive) {
