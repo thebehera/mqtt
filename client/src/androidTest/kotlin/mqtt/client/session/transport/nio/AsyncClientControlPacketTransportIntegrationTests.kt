@@ -177,74 +177,74 @@ class AsyncClientControlPacketTransportIntegrationTests {
         }
     }
 
-//    @Test
-//    fun ultraAsyncTestSingleThreaded() {
-//        runBlocking(singleThreadScope.coroutineContext) {
-//            repeat(runCount) {
-//                delay(runCount * 50.toLong())
-//                println("launching scope req")
-//                launch {
-//                    println("ultra async ping request st $it / $runCount")
-//                    try {
-//                        println("ping req impl")
-//                        pingRequestImpl(singleThreadScope, singleThreadProvider)
-//                        println("ping req impl done")
-//                    } catch (e: Throwable) {
-//                        println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it")
-//                        e.printStackTrace()
-//                        throw e
-//                    }
-//                    pingRequestImpl(singleThreadScope, singleThreadProvider)
-//                }
-//                println("delayed")
-//                delay(runCount * 50.toLong())
-//                println("launching scope resp")
-//                launch {
-//                    println("ultra async ping response st $it / $runCount")
-//                    try {
-//                        pingResponseImpl(singleThreadScope, singleThreadProvider)
-//                    } catch (e: Throwable) {
-//                        println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it")
-//                        e.printStackTrace()
-//                        throw e
-//                    }
-//                    pingResponseImpl(singleThreadScope, singleThreadProvider)
-//                }
-//            }
-//        }
-//    }
-//
-//    @Test
-//    fun ultraAsyncTestMultiThreaded() {
-//        runBlocking(multiThreadScope.coroutineContext) {
-//            repeat(runCount) {
-//                delay(runCount * 50.toLong())
-//                launch {
-//                    println("ultra async ping request mt $it / $runCount")
-//                    try {
-//                        pingRequestImpl(multiThreadScope, multiThreadProvider)
-//                    } catch (e: Throwable) {
-//                        println("error from ultraAsyncTestMultiThreaded.pingRequestImpl $it")
-//                        e.printStackTrace()
-//                        throw e
-//                    }
-//                    println("ultra async ping request done mt $it / $runCount")
-//                }
-//                delay(runCount * 50.toLong())
-//                launch {
-//                    println("ultra async ping response mt $it / $runCount")
-//                    try {
-//                        pingResponseImpl(multiThreadScope, multiThreadProvider)
-//                    } catch (e: Throwable) {
-//                        println("error from ultraAsyncTestMultiThreaded.pingResponseImpl $it")
-//                        e.printStackTrace()
-//                        throw e
-//                    }
-//                    println("ultra async ping response mt $it / $runCount")
-//                }
-//            }
-//        }
-//    }
+    @Test
+    fun ultraAsyncTestSingleThreaded() {
+        runBlocking(singleThreadScope.coroutineContext) {
+            repeat(runCount) {
+                delay(runCount * 50.toLong())
+                println("launching scope req")
+                launch {
+                    println("ultra async ping request st $it / $runCount")
+                    try {
+                        println("ping req impl")
+                        pingRequestImpl(singleThreadScope, singleThreadProvider)
+                        println("ping req impl done")
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    pingRequestImpl(singleThreadScope, singleThreadProvider)
+                }
+                println("delayed")
+                delay(runCount * 50.toLong())
+                println("launching scope resp")
+                launch {
+                    println("ultra async ping response st $it / $runCount")
+                    try {
+                        pingResponseImpl(singleThreadScope, singleThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    pingResponseImpl(singleThreadScope, singleThreadProvider)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun ultraAsyncTestMultiThreaded() {
+        runBlocking(multiThreadScope.coroutineContext) {
+            repeat(runCount) {
+                delay(runCount * 50.toLong())
+                launch {
+                    println("ultra async ping request mt $it / $runCount")
+                    try {
+                        pingRequestImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestMultiThreaded.pingRequestImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    println("ultra async ping request done mt $it / $runCount")
+                }
+                delay(runCount * 50.toLong())
+                launch {
+                    println("ultra async ping response mt $it / $runCount")
+                    try {
+                        pingResponseImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestMultiThreaded.pingResponseImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    println("ultra async ping response mt $it / $runCount")
+                }
+            }
+        }
+    }
 
 
     @ExperimentalTime
