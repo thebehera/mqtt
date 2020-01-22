@@ -35,7 +35,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * 3
+    val runCount = processors * processors
 
     lateinit var singleThreadExecutor: ExecutorService
     lateinit var singleThreadScope: CoroutineScope
@@ -48,7 +48,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
         val connectionRequest = ConnectionRequest(
             clientId = "test${Random.nextInt()}",
-            keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
+            keepAliveSeconds = (keepAliveTimeoutSeconds * 10).toUShort()
         )
         assert(integrationTestTimeoutMs > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffsetMs) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null

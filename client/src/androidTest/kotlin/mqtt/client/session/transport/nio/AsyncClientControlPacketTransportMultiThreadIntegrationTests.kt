@@ -49,7 +49,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
         val connectionRequest = ConnectionRequest(
             clientId = "test${Random.nextInt()}",
-            keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
+            keepAliveSeconds = (keepAliveTimeoutSeconds * 10).toUShort()
         )
         assert(integrationTestTimeoutMs > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffsetMs) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
@@ -159,7 +159,6 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
         assertNull(transport.assignedPort(), "Leaked socket")
         assert(transport.outboundChannel.isClosedForSend)
         assert(transport.inboxChannel.isClosedForSend)
-        println("done")
     }
 
 
