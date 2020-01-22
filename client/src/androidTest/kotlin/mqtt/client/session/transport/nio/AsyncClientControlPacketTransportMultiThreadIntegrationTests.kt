@@ -124,6 +124,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
             println("stopping pingResponseImpl not active")
             return
         }
+        delay(50)
         withTimeout((integrationTestTimeoutMs.toLong() + timeoutOffsetMs) * 2) {
             val transport = connect(scope, channelGroup)
             val expectedCount =
