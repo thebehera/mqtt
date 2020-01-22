@@ -43,7 +43,7 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install jdk8 -params 'installdir=c:\\java8' "source=false"
+        - choco install jdk8 -params "installdir=c:\\java8 source=false"
         - choco install android-sdk
         - export JAVA_HOME="/C/java8/"
         - export ANDROID_HOME="/C/Android/android-sdk"
