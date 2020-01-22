@@ -45,6 +45,7 @@ matrix:
       before_install:
         - choco install jdk8 -params "source=false"
         - choco install android-sdk
+        - refreshenv
         - export ANDROID_HOME="/C/Android/android-sdk"
         - export PATH=$ANDROID_HOME/tools:$PATH
         - export PATH=$ANDROID_HOME/platform-tools:$PATH
