@@ -32,7 +32,7 @@ import kotlin.time.measureTime
 class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
     private val timeoutOffsetMs = 150
-    private val keepAliveTimeoutSeconds = 1
+    private val keepAliveTimeoutSeconds = 2
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
@@ -49,9 +49,9 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
         val connectionRequest = ConnectionRequest(
             clientId = "test${Random.nextInt()}",
-            keepAliveSeconds = (keepAliveTimeoutSeconds * 10).toUShort()
+            keepAliveSeconds = keepAliveTimeoutSeconds.toUShort()
         )
-//        assert(integrationTestTimeoutMs > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffsetMs) { "Integration timeout too low" }
+        assert(integrationTestTimeoutMs > connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000 + timeoutOffsetMs) { "Integration timeout too low" }
         var transport: ClientControlPacketTransport? = null
         println("block connect with timeout")
         val t = asyncClientTransport(scope, connectionRequest, channelGroup)
