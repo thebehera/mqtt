@@ -146,22 +146,15 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
 ): ControlPacket {
     val start = currentTimestampMs()
     try {
-        println("preread: $buf")
         val time = measureTime {
-            println("aread start")
-            var c = 0
             var bytesRead = aRead(buf, timeout, timeUnit)
-            println("aread${++c}($timeout $timeUnit): $buf")
             while (scope.isActive && bytesRead < 2) {
-                println("aread${++c}($timeout $timeUnit): $buf")
                 bytesRead = aRead(buf, timeout, timeUnit)
             }
         }
-        println("preflip ($time): $buf")
         return suspendCancellableCoroutine { contination ->
             try {
                 buf.flip()
-                println("postflip: $buf")
                 val position = buf.position()
                 val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
                 buf.position(position)
@@ -231,14 +224,17 @@ private fun Channel.blockingClose() {
 internal fun AsynchronousSocketChannel.blockingClose() {
     try {
         shutdownOutput()
+        println("shutdown output")
     } catch (ex: Throwable) {
     }
     try {
         shutdownInput()
+        println("shutdown input")
     } catch (ex: Throwable) {
     }
     try {
         close()
+        println("closed socket")
     } catch (ex: Throwable) {
         // Specification says that it is Ok to call it any time, but reality is different,
         // so we have just to ignore exception

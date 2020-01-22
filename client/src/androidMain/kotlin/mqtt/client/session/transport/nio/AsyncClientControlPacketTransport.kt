@@ -119,9 +119,12 @@ class AsyncClientControlPacketTransport(
         delay(deltaTime)
     }
 
-    override fun close() {
-        super.close()
-        socket.blockingClose()
+    override suspend fun suspendClose() {
+        try {
+            super.suspendClose()
+        } finally {
+            socket.aClose()
+        }
     }
 
 }
@@ -192,7 +195,6 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(
     }
     println("closing socket")
     aClose()
-    println("closed")
     channelsToClose.forEach { it.close() }
     println("channels closed")
 }

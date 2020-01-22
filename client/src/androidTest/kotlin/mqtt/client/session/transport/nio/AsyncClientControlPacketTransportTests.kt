@@ -30,6 +30,5 @@ class AsyncClientControlPacketTransportTests {
             delay(65_0000)
             println("done with delay")
         }
-        println("done")
     }
 }

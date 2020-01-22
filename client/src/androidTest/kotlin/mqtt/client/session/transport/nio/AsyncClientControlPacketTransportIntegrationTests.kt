@@ -153,7 +153,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assertNull(transport.assignedPort(), "Leaked socket")
         assert(transport.outboundChannel.isClosedForSend)
         assert(transport.inboxChannel.isClosedForSend)
-        println("done")
     }
 
 
@@ -166,14 +165,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @After
     fun close() {
-        println("cancel single thread scope")
         singleThreadScope.cancel()
         println("shut down single thread provider ${singleThreadProvider.shutdownNow()}")
 
         println("shut down single thread executor ${singleThreadExecutor.shutdownNow()}")
-
-
-        println("awaiting termination st provider")
         val singleThreadAwaited = singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
         println("st provider awaited $singleThreadAwaited, awaiting st executor")
         val singleExecutorAwaited =
