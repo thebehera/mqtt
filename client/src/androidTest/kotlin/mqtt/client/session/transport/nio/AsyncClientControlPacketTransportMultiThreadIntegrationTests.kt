@@ -26,6 +26,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 
 @ExperimentalTime
 class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
@@ -35,7 +36,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * 3
+    val runCount = processors * processors
     lateinit var multiThreadExecutor: ExecutorService
     lateinit var multiThreadScope: CoroutineScope
     lateinit var multiThreadProvider: AsynchronousChannelGroup
@@ -95,7 +96,6 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
             println("stopping pingRequestImpl not active")
             return
         }
-        delay(50)
         withTimeout((integrationTestTimeoutMs.toLong() + timeoutOffsetMs) * 2) {
             println("ping req connect")
             val transport = connect(scope, channelGroup)
@@ -107,10 +107,13 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
                 integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
             )
 
-            println("ping req consume")
-            val responses =
-                completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList()
-            println("ping consumed")
+            println("ping req consume $expectedCount")
+            val responses: List<IPingRequest>
+            val time = measureTime {
+                responses =
+                    completedWriteChannel.consumeAsFlow().filterIsInstance<IPingRequest>().take(expectedCount).toList()
+            }
+            println("ping consumed $time")
             assertEquals(expectedCount, responses.count())
             transport.suspendClose()
             transport.close()
@@ -124,7 +127,6 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
             println("stopping pingResponseImpl not active")
             return
         }
-        delay(50)
         withTimeout((integrationTestTimeoutMs.toLong() + timeoutOffsetMs) * 2) {
             val transport = connect(scope, channelGroup)
             val expectedCount =
@@ -132,10 +134,13 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
                     1,
                     integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
                 )
-            assertEquals(
-                expectedCount,
-                transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
-            )
+            val time = measureTime {
+                assertEquals(
+                    expectedCount,
+                    transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(expectedCount).toList().count()
+                )
+            }
+            println("ping response impl $time")
             transport.suspendClose()
             transport.close()
             disconnect(transport)
