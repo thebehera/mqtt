@@ -6,7 +6,6 @@ import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
-import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import java.net.SocketAddress
 import java.nio.ByteBuffer
@@ -14,6 +13,7 @@ import java.nio.channels.*
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
@@ -144,9 +144,9 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ): ControlPacket {
-    val start = currentTimestampMs()
+    var time: Duration = Duration.ZERO
     try {
-        val time = measureTime {
+        time = measureTime {
             var bytesRead = aRead(buf, timeout, timeUnit)
             while (scope.isActive && bytesRead < 2) {
                 bytesRead = aRead(buf, timeout, timeUnit)
@@ -173,7 +173,7 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
             }
         }
     } finally {
-        println("reading complete packet took ${currentTimestampMs() - start}ms")
+        println("reading complete packet took $time")
     }
 }
 

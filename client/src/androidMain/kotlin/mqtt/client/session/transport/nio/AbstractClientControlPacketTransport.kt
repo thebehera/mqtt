@@ -70,7 +70,6 @@ abstract class AbstractClientControlPacketTransport(
 
     override suspend fun suspendClose() {
         if (outbound.isClosedForSend) {
-            println("suspend close already closed for send")
             return
         }
         try {
@@ -91,7 +90,6 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     override fun close() {
-        println("closing channels")
         inboxChannel.close()
         outboundChannel.close()
         completedWrite?.close()

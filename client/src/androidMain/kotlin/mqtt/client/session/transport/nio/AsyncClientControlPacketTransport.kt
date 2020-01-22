@@ -97,14 +97,11 @@ class AsyncClientControlPacketTransport(
     private fun startPingTimer() = scope.launch {
         while (isActive) {
             delayUntilPingInterval()
-            println("ping timer loop")
             try {
                 outboundChannel.send(ping(connectionRequest.protocolVersion))
             } catch (e: ClosedSendChannelException) {
-                println("ping timer stopped")
                 return@launch
             }
-            println("ping")
         }
     }
 
@@ -193,7 +190,6 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(
     if (packet !is IDisconnectNotification) {
         return
     }
-    println("closing socket")
     aClose()
     channelsToClose.forEach { it.close() }
     println("channels closed")
