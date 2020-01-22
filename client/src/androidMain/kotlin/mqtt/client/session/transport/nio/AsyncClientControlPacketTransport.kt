@@ -119,6 +119,11 @@ class AsyncClientControlPacketTransport(
         delay(deltaTime)
     }
 
+    override fun close() {
+        super.close()
+        socket.blockingClose()
+    }
+
 }
 
 suspend fun address(host: String?) = suspendCoroutine<InetAddress> {

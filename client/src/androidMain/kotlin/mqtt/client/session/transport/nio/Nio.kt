@@ -227,6 +227,24 @@ private fun Channel.blockingClose() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+internal fun AsynchronousSocketChannel.blockingClose() {
+    try {
+        shutdownOutput()
+    } catch (ex: Throwable) {
+    }
+    try {
+        shutdownInput()
+    } catch (ex: Throwable) {
+    }
+    try {
+        close()
+    } catch (ex: Throwable) {
+        // Specification says that it is Ok to call it any time, but reality is different,
+        // so we have just to ignore exception
+    }
+}
+
 fun Channel.closeOnCancel(cont: CancellableContinuation<*>) {
     cont.invokeOnCancellation {
         blockingClose()
