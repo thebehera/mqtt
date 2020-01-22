@@ -43,8 +43,9 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install ojdkbuild8
+        - choco install jdk8 -params 'installdir=c:\\java8' "source=false"
         - choco install android-sdk
+        - export JAVA_HOME="/C/java8/"
         - export ANDROID_HOME="/C/Android/android-sdk"
         - export PATH=$ANDROID_HOME/tools:$PATH
         - export PATH=$ANDROID_HOME/platform-tools:$PATH
@@ -69,3 +70,4 @@ cache:
     - $HOME/.android/build-cache
 script:
   - ./build.sh
+
