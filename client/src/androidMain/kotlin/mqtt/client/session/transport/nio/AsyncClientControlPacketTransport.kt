@@ -79,6 +79,8 @@ class AsyncClientControlPacketTransport(
 ), ClientControlPacketTransport {
 
     private var pingTimerJob: Job? = null
+    private var readJob: Job? = null
+    private var writeJob: Job? = null
 
     override suspend fun open(port: UShort, host: String?): IConnectionAcknowledgment {
         val socketAddress = InetSocketAddress(address(host), port.toInt())
@@ -86,8 +88,8 @@ class AsyncClientControlPacketTransport(
         write(connectionRequest, timeout)
         val packet = read(timeout)
         if (packet is IConnectionAcknowledgment) {
-            startReadChannel()
-            startWriteChannel()
+            readJob = startReadChannel()
+            writeJob = startWriteChannel()
             pingTimerJob = startPingTimer()
         } else {
             throw IllegalStateException("Expected a Connection Acknowledgement, got $packet instead")
@@ -109,6 +111,8 @@ class AsyncClientControlPacketTransport(
     override suspend fun suspendClose() {
         try {
             pingTimerJob?.cancel()
+            readJob?.cancel()
+            writeJob?.cancel()
             super.suspendClose()
         } finally {
             socket.aClose()
