@@ -116,6 +116,7 @@ class AsyncClientControlPacketTransport(
             pingTimerJob?.cancel()
             readJob?.cancel()
             writeJob?.cancel()
+            println("suspend close done")
         }
     }
 
