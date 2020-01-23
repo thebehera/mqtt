@@ -3,6 +3,7 @@ package mqtt.client.session.transport.nio
 import android.os.Build
 import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.isActive
@@ -77,6 +78,8 @@ class AsyncClientControlPacketTransport(
     connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
 ), ClientControlPacketTransport {
 
+    private var pingTimerJob: Job? = null
+
     override suspend fun open(port: UShort, host: String?): IConnectionAcknowledgment {
         val socketAddress = InetSocketAddress(address(host), port.toInt())
         socket.aConnect(socketAddress)
@@ -85,7 +88,7 @@ class AsyncClientControlPacketTransport(
         if (packet is IConnectionAcknowledgment) {
             startReadChannel()
             startWriteChannel()
-            startPingTimer()
+            pingTimerJob = startPingTimer()
         } else {
             throw IllegalStateException("Expected a Connection Acknowledgement, got $packet instead")
         }
@@ -105,6 +108,7 @@ class AsyncClientControlPacketTransport(
 
     override suspend fun suspendClose() {
         try {
+            pingTimerJob?.cancel()
             super.suspendClose()
         } finally {
             socket.aClose()

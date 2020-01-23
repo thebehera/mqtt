@@ -21,10 +21,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.random.Random
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.*
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
@@ -201,16 +198,11 @@ class AsyncClientControlPacketTransportIntegrationTests {
     @After
     fun close() {
         singleThreadScope.cancel()
-        println("shut down single thread provider ${singleThreadProvider.shutdownNow()}")
-
-        println("shut down single thread executor ${singleThreadExecutor.shutdownNow()}")
-        val singleThreadAwaited = singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
-        println("st provider awaited $singleThreadAwaited, awaiting st executor")
-        val singleExecutorAwaited =
-            singleThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
-        println("st executor awaited $singleExecutorAwaited, awaiting mt executor")
-
+        singleThreadProvider.shutdownNow()
+        val executorTasks = singleThreadExecutor.shutdownNow()
+        executorTasks.forEach { println("leftover task $it") }
+        assertTrue(executorTasks.isNullOrEmpty())
+        assertTrue(singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
+        assertTrue(singleThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
     }
-
 }
-

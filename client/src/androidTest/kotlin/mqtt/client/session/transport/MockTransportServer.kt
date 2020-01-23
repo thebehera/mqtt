@@ -107,7 +107,7 @@ class AsyncServerControlPacketTransport(
         disconnectIfKeepAliveExpires()
     }
 
-    fun disconnectIfKeepAliveExpires() = scope.launch {
+    private fun disconnectIfKeepAliveExpires() = scope.launch {
         val timeout = round(connectionRequest.keepAliveTimeoutSeconds.toFloat() * 1.5f).toLong()
         do {
             delayUntilPingInterval(timeout)

@@ -21,10 +21,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import kotlin.math.max
 import kotlin.random.Random
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
+import kotlin.test.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 
@@ -201,17 +198,12 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
     @After
     fun close() {
-        println("cancel multi thread scope")
         multiThreadScope.cancel()
-        println("shut down multi thread provider ${multiThreadProvider.shutdownNow()}")
-        println("shut down multi thread executor ${multiThreadExecutor.shutdownNow()}")
-
-        val multiThreadAwaited = multiThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
-        println("mt provider awaited $multiThreadAwaited, awaiting st executor")
-        val multiExecutorAwaited = multiThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS)
-        println("mt executor awaited $multiExecutorAwaited, awaiting mt executor")
-
+        multiThreadProvider.shutdownNow()
+        val executorTasks = multiThreadExecutor.shutdownNow()
+        executorTasks.forEach { println("leftover task $it") }
+        assertTrue(executorTasks.isNullOrEmpty())
+        assertTrue(multiThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
+        assertTrue(multiThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
     }
-
 }
-

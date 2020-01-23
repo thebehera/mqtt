@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.random.Random
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 @ExperimentalCoroutinesApi
@@ -82,13 +83,10 @@ class AsyncClientControlPacketTransportTests {
 
     @After
     fun close() {
-//        singleThreadScope.cancel()
-        println("shut down single thread provider ${singleThreadProvider.shutdownNow()}")
-        println("shut down single thread executor ${singleThreadExecutor.shutdownNow()}")
-        val singleThreadAwaited = singleThreadProvider.awaitTermination(5.toLong(), TimeUnit.SECONDS)
-        println("st provider awaited $singleThreadAwaited, awaiting st executor")
-        val singleExecutorAwaited =
-            singleThreadExecutor.awaitTermination(1.toLong(), TimeUnit.SECONDS)
-        println("st executor awaited $singleExecutorAwaited, awaiting mt executor")
+        singleThreadScope.cancel()
+        singleThreadProvider.shutdownNow()
+        assertTrue(singleThreadExecutor.shutdownNow().isNullOrEmpty())
+        assertTrue(singleThreadProvider.awaitTermination(5.toLong(), TimeUnit.SECONDS))
+        assertTrue(singleThreadExecutor.awaitTermination(1.toLong(), TimeUnit.SECONDS))
     }
 }
