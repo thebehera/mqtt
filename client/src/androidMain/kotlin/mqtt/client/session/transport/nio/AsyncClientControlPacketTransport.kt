@@ -5,12 +5,10 @@ import androidx.annotation.RequiresApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedSendChannelException
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.io.core.readByteBuffer
 import mqtt.connection.ClientControlPacketTransport
-import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
@@ -96,24 +94,13 @@ class AsyncClientControlPacketTransport(
 
     private fun startPingTimer() = scope.launch {
         while (isActive) {
-            delayUntilPingInterval()
+            delayUntilPingInterval(connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L)
             try {
                 outboundChannel.send(ping(connectionRequest.protocolVersion))
             } catch (e: ClosedSendChannelException) {
                 return@launch
             }
         }
-    }
-
-    private suspend fun delayUntilPingInterval() {
-        val keepAliveMs = connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L
-        val nextMessageTime = lastMessageReadAt + keepAliveMs
-        val time = currentTimestampMs()
-        var deltaTime = nextMessageTime - time
-        if (deltaTime < 0) {
-            deltaTime = keepAliveMs
-        }
-        delay(deltaTime)
     }
 
     override suspend fun suspendClose() {

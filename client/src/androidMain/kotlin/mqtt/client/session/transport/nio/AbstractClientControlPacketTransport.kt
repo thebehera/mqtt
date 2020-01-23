@@ -1,13 +1,10 @@
 package mqtt.client.session.transport.nio
 
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.consumeAsFlow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.connection.ControlPacketTransport
 import mqtt.time.currentTimestampMs
@@ -55,7 +52,9 @@ abstract class AbstractClientControlPacketTransport(
         try {
             while (scope.isActive) {
                 startTime = currentTimestampMs()
-                inboxChannel.send(read(timeout * timeoutMultiplier))
+                val packetRead = read(timeout * timeoutMultiplier)
+                lastMessageReadAt = currentTimestampMs()
+                inboxChannel.send(packetRead)
             }
         } catch (e: Throwable) {
 //            println("read channel closed with exception $e")
@@ -64,6 +63,16 @@ abstract class AbstractClientControlPacketTransport(
             suspendClose()
             close()
         }
+    }
+
+    protected suspend fun delayUntilPingInterval(keepAliveMs: Long) {
+        val nextMessageTime = lastMessageReadAt + keepAliveMs
+        val time = currentTimestampMs()
+        var deltaTime = nextMessageTime - time
+        if (deltaTime < 0) {
+            deltaTime = keepAliveMs
+        }
+        delay(deltaTime)
     }
 
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
