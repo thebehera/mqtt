@@ -141,7 +141,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun ultraAsyncTestSingleThreaded() {
         runBlocking(singleThreadScope.coroutineContext) {
             repeat(runCount) {
-                delay(runCount * 50.toLong())
+                delay(runCount.toLong())
                 println("launching scope req")
                 launch {
                     println("ultra async ping request st $it / $runCount")
@@ -157,7 +157,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     pingRequestImpl(singleThreadScope, singleThreadProvider)
                 }
                 println("delayed")
-                delay(runCount * 50.toLong())
+                delay(runCount.toLong())
                 println("launching scope resp")
                 launch {
                     println("ultra async ping response st $it / $runCount")
@@ -202,10 +202,11 @@ class AsyncClientControlPacketTransportIntegrationTests {
         println("delay")
         runBlocking { delay(10) }
         println("delay done")
+        assertTrue(singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
+        assertTrue(singleThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
+
         val executorTasks = singleThreadExecutor.shutdownNow()
         executorTasks.forEach { println("leftover task $it") }
         assertTrue(executorTasks.isNullOrEmpty())
-        assertTrue(singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
-        assertTrue(singleThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
     }
 }

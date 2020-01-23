@@ -147,7 +147,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
     fun ultraAsyncTestMultiThreaded() {
         runBlocking(multiThreadScope.coroutineContext) {
             repeat(runCount) {
-                delay(runCount * 50.toLong())
+                delay(runCount.toLong())
                 launch {
                     println("ultra async ping request mt $it / $runCount")
                     try {
@@ -159,7 +159,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
                     }
                     println("ultra async ping request done mt $it / $runCount")
                 }
-                delay(runCount * 50.toLong())
+                delay(runCount.toLong())
                 launch {
                     println("ultra async ping response mt $it / $runCount")
                     try {
@@ -200,10 +200,11 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
     fun close() {
         multiThreadScope.cancel()
         multiThreadProvider.shutdownNow()
+        assertTrue(multiThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
+        assertTrue(multiThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
+
         val executorTasks = multiThreadExecutor.shutdownNow()
         executorTasks.forEach { println("leftover task $it") }
         assertTrue(executorTasks.isNullOrEmpty())
-        assertTrue(multiThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
-        assertTrue(multiThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
     }
 }
