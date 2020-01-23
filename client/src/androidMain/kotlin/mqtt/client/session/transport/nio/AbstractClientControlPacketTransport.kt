@@ -74,7 +74,6 @@ abstract class AbstractClientControlPacketTransport(
         }
         try {
             isClosing = true
-            println("try disconnecting")
             outbound.send(disconnect(protocolVersion))
             val time = measureTime {
                 val mutex = Mutex(true)
@@ -93,6 +92,5 @@ abstract class AbstractClientControlPacketTransport(
         inboxChannel.close()
         outboundChannel.close()
         completedWrite?.close()
-        println("closing channels complete")
     }
 }

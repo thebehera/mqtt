@@ -2,20 +2,15 @@ package mqtt.client.session.transport
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.flow.channelFlow
 import mqtt.client.session.transport.nio.*
-import mqtt.connection.ControlPacketTransport
 import mqtt.connection.ServerControlPacketTransport
-import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.resume
@@ -28,48 +23,64 @@ import kotlin.time.seconds
 class MockTransportServer(
     override val scope: CoroutineScope,
     val maxBufferSize: Int,
-    val timeout: Duration
+    val group: AsynchronousChannelGroup? = null
 ) : ServerControlPacketTransport {
 
     private lateinit var server: AsynchronousServerSocketChannel
     var localAddress: InetSocketAddress? = null
-    private val outgoing = Channel<ControlPacket>()
     private val readBuffer = ByteBuffer.allocateDirect(maxBufferSize)
-    suspend fun queuePacket(packet: ControlPacket) {
-        outgoing.send(packet)
-    }
+    private val connections = HashSet<AsyncServerControlPacketTransport>()
 
-    override suspend fun listen(port: UShort?, host: String): Flow<ControlPacketTransport> {
-        val server = openAsyncServerSocketChannel()
+    override suspend fun listen(
+        port: UShort?,
+        host: String,
+        readTimeout: Duration
+    ): Flow<AsyncServerControlPacketTransport> {
+        val server = openAsyncServerSocketChannel(group)
         this.server = if (port != null) {
             server.aBind(InetSocketAddress(host, port.toInt()))
         } else {
             server.aBind(null)
         }
+        println("Mock server bound to ${server.localAddress}")
         localAddress = server.localAddress as? InetSocketAddress
-        return flow {
-            while (scope.isActive) {
-                val connection = server.aAccept()
-                scope.launch {
-                    val connectionRequest =
-                        connection.readPacket(readBuffer, this, 1.seconds, 4)
-                    if (connectionRequest is IConnectionRequest) {
-                        val transport =
-                            AsyncServerControlPacketTransport(scope, connection, maxBufferSize, connectionRequest)
-                        emit(transport)
-                        // start connection in a seperate method
-                        //val incomingPacket = connection.readPacket(readBuffer, connectionRequest.keepAliveTimeoutSeconds.toLong().seconds, connectionRequest.protocolVersion)
-                    } else {
-                        connection.aClose()
+        return channelFlow {
+            try {
+                while (scope.isActive && server.isOpen) {
+                    val connection = server.aAccept()
+                    scope.launch {
+                        val connectionRequest = connection.readConnectionRequest(readBuffer, 1.seconds)
+                        if (connectionRequest != null) {
+                            val transport =
+                                AsyncServerControlPacketTransport(scope, connection, maxBufferSize, connectionRequest)
+                            transport.openChannels()
+                            connections.add(transport)
+                            send(transport)
+                        } else {
+                            println("aClose")
+                            connection.aClose()
+                        }
                     }
                 }
+            } catch (e: Throwable) {
+                println("server closed $e")
+            } finally {
+                close()
+                println("done listening")
             }
         }
     }
 
 
     override fun close() {
+        connections.forEach { runBlocking { it.socket.aClose() } }
+        try {
+            this.server.close()
+        } catch (e: Throwable) {
 
+        } finally {
+            println("closed server")
+        }
     }
 
 }
@@ -80,7 +91,7 @@ class AsyncServerControlPacketTransport(
     override val scope: CoroutineScope,
     socket: AsynchronousSocketChannel,
     maxBufferSize: Int,
-    connectionRequest: IConnectionRequest
+    val connectionRequest: IConnectionRequest
 ) : JavaAsyncClientControlPacketTransport(
     scope,
     socket,
@@ -89,17 +100,31 @@ class AsyncServerControlPacketTransport(
     connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
 ) {
 
+    fun openChannels() {
+        startReadChannel()
+        startWriteChannel()
+    }
+
+    override suspend fun suspendClose() {
+        isClosing = true
+        try {
+            super.suspendClose()
+        } catch (e: Throwable) {
+
+        }
+    }
 
     override fun close() {
+        super.close()
         socket.close()
     }
 }
 
 
-suspend fun openAsyncServerSocketChannel(): AsynchronousServerSocketChannel =
+suspend fun openAsyncServerSocketChannel(group: AsynchronousChannelGroup? = null): AsynchronousServerSocketChannel =
     suspendCancellableCoroutine { continuation ->
         try {
-            continuation.resume(AsynchronousServerSocketChannel.open())
+            continuation.resume(AsynchronousServerSocketChannel.open(group))
         } catch (e: Exception) {
             continuation.resumeWithException(e)
         }

@@ -10,6 +10,7 @@ import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalTime
 interface ControlPacketTransport : Closeable {
@@ -39,5 +40,9 @@ interface ClientControlPacketTransport : ControlPacketTransport {
 @ExperimentalTime
 interface ServerControlPacketTransport : Closeable {
     val scope: CoroutineScope
-    suspend fun listen(port: UShort? = null, host: String = "127.0.0.1"): Flow<ControlPacketTransport>
+    suspend fun listen(
+        port: UShort? = null,
+        host: String = "127.0.0.1",
+        readTimeout: Duration = 1.seconds
+    ): Flow<ControlPacketTransport>
 }

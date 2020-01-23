@@ -13,9 +13,7 @@ import java.nio.channels.*
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 /**
  * Performs [AsynchronousFileChannel.lock] without blocking a thread and resumes when asynchronous operation completes.
@@ -144,36 +142,33 @@ suspend fun AsynchronousSocketChannel.aReadPacket(
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
 ): ControlPacket {
-    var time: Duration = Duration.ZERO
-    try {
-        time = measureTime {
-            var bytesRead = aRead(buf, timeout, timeUnit)
-            while (scope.isActive && bytesRead < 2) {
-                bytesRead = aRead(buf, timeout, timeUnit)
-            }
+    var bytesRead = aRead(buf, timeout, timeUnit)
+    while (scope.isActive && bytesRead < 2) {
+        bytesRead = aRead(buf, timeout, timeUnit)
+    }
+    return suspendCancellableCoroutine { contination ->
+        if (!scope.isActive || !isOpen) {
+            contination.cancel()
+            return@suspendCancellableCoroutine
         }
-        return suspendCancellableCoroutine { contination ->
-            try {
-                buf.flip()
-                val position = buf.position()
-                val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
-                buf.position(position)
-                if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
-                    val pkt = buf.read(protocolVersion)
-                    contination.resume(pkt)
-                } else {
-                    throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
-                }
-            } catch (ex: Throwable) {
-                println("read failed $ex")
-                ex.printStackTrace()
-                contination.cancel()
-            } finally {
-                closeOnCancel(contination)
+        try {
+            buf.flip()
+            val position = buf.position()
+            val metadata = FixedHeaderMetadata(buf.get().toUByte(), buf.decodeVariableByteInteger())
+            buf.position(position)
+            if (metadata.remainingLength.toLong() < buf.remaining()) { // we already read the entire message in the buffer
+                val pkt = buf.read(protocolVersion)
+                contination.resume(pkt)
+            } else {
+                throw UnsupportedOperationException("TODO: WIP to read buffers larger than whats larger than max buffer")
             }
+        } catch (ex: Throwable) {
+            println("read failed $buf $ex")
+            ex.printStackTrace()
+            contination.cancel()
+        } finally {
+            closeOnCancel(contination)
         }
-    } finally {
-        println("reading complete packet took $time")
     }
 }
 
@@ -188,9 +183,11 @@ suspend fun AsynchronousSocketChannel.aWrite(
     buf: ByteBuffer,
     timeout: Long = 0L,
     timeUnit: TimeUnit = TimeUnit.MILLISECONDS
-) = suspendCancellableCoroutine<Int> { cont ->
-    write(buf, timeout, timeUnit, cont, asyncIOHandler())
-    closeOnCancel(cont)
+): Int {
+    return suspendCancellableCoroutine<Int> { cont ->
+        write(buf, timeout, timeUnit, cont, asyncIOHandler())
+        closeOnCancel(cont)
+    }
 }
 
 /**
@@ -203,9 +200,6 @@ suspend fun AsynchronousSocketChannel.aClose() {
     suspendCancellableCoroutine<Void?> { cont ->
         blockingClose()
         cont.resume(null)
-    }
-    while (isOpen) {
-        println("still open")
     }
 }
 
@@ -224,17 +218,15 @@ private fun Channel.blockingClose() {
 internal fun AsynchronousSocketChannel.blockingClose() {
     try {
         shutdownOutput()
-        println("shutdown output")
     } catch (ex: Throwable) {
     }
     try {
         shutdownInput()
-        println("shutdown input")
     } catch (ex: Throwable) {
     }
     try {
         close()
-        println("closed socket")
+        println("socket closed")
     } catch (ex: Throwable) {
         // Specification says that it is Ok to call it any time, but reality is different,
         // so we have just to ignore exception

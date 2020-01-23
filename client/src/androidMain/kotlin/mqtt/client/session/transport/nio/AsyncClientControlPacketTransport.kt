@@ -153,6 +153,16 @@ suspend fun asyncClientTransport(
     return AsyncClientControlPacketTransport(scope, socket, connectionRequest, maxBufferSize)
 }
 
+//readConnectionRequest
+@RequiresApi(Build.VERSION_CODES.O)
+@ExperimentalTime
+suspend fun AsynchronousSocketChannel.readConnectionRequest(
+    packetBuffer: ByteBuffer,
+    timeout: Duration
+): IConnectionRequest? {
+    aRead(packetBuffer, timeout.toLongMilliseconds())
+    return packetBuffer.readConnectionRequest()
+}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @ExperimentalTime
@@ -177,7 +187,6 @@ suspend fun AsynchronousSocketChannel.writePacket(packet: ControlPacket, timeout
         timeout.inMilliseconds.roundToLong(),
         TimeUnit.MILLISECONDS
     )
-    println("wrote $packet")
     return bytes
 }
 
