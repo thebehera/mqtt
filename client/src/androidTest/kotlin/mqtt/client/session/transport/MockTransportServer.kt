@@ -15,6 +15,7 @@ import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.round
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
@@ -103,6 +104,16 @@ class AsyncServerControlPacketTransport(
     fun openChannels() {
         startReadChannel()
         startWriteChannel()
+        disconnectIfKeepAliveExpires()
+    }
+
+    fun disconnectIfKeepAliveExpires() = scope.launch {
+        val timeout = round(connectionRequest.keepAliveTimeoutSeconds.toFloat() * 1.5f).toLong()
+        do {
+            delayUntilPingInterval(timeout)
+        } while (isActive && !isClosing && nextDelay(timeout) >= 0)
+        println("closing $socket because of nextDelay timeout")
+        suspendClose()
     }
 
     override suspend fun suspendClose() {

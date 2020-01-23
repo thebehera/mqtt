@@ -116,7 +116,6 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
             println("ping consumed $time")
             assertEquals(expectedCount, responses.count())
             transport.suspendClose()
-            transport.close()
             disconnect(transport)
             println("ping request done")
         }
@@ -142,7 +141,6 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
             }
             println("ping response impl $time")
             transport.suspendClose()
-            transport.close()
             disconnect(transport)
             println("ping response done")
         }

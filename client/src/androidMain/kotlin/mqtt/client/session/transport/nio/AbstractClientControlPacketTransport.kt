@@ -43,7 +43,6 @@ abstract class AbstractClientControlPacketTransport(
 //            println("closed with exception $e")
         } finally {
             suspendClose()
-            close()
         }
     }
 
@@ -61,23 +60,27 @@ abstract class AbstractClientControlPacketTransport(
         } finally {
             println("closing after ${currentTimestampMs() - startTime}ms")
             suspendClose()
-            close()
         }
     }
 
-    protected suspend fun delayUntilPingInterval(keepAliveMs: Long) {
+    protected fun nextDelay(keepAliveMs: Long): Long {
         val nextMessageTime = lastMessageReadAt + keepAliveMs
         val time = currentTimestampMs()
         var deltaTime = nextMessageTime - time
         if (deltaTime < 0) {
             deltaTime = keepAliveMs
         }
+        return deltaTime
+    }
+
+    protected suspend fun delayUntilPingInterval(keepAliveMs: Long) {
+        val deltaTime = nextDelay(keepAliveMs)
         delay(deltaTime)
     }
 
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
-    override suspend fun suspendClose() {
+    override suspend fun suspendClose() = use {
         if (outbound.isClosedForSend) {
             return
         }

@@ -61,7 +61,6 @@ class AsyncClientControlPacketTransportTests {
             val connack = clientTransport.open(address.port.toUShort())
             assert(connack.isSuccessful) { "incorrect connack message" }
             clientTransport.suspendClose()
-            clientTransport.close()
             disconnect(clientTransport)
             server.close()
         }
