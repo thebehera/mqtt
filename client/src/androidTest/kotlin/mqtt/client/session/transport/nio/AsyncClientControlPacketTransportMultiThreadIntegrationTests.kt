@@ -36,7 +36,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * processors
+    val runCount = processors * 2
     lateinit var multiThreadExecutor: ExecutorService
     lateinit var multiThreadScope: CoroutineScope
     lateinit var multiThreadProvider: AsynchronousChannelGroup
@@ -145,6 +145,38 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
             transport.close()
             disconnect(transport)
             println("ping response done")
+        }
+    }
+
+    @Test
+    fun ultraAsyncTestMultiThreaded() {
+        runBlocking(multiThreadScope.coroutineContext) {
+            repeat(runCount) {
+                delay(runCount * 50.toLong())
+                launch {
+                    println("ultra async ping request mt $it / $runCount")
+                    try {
+                        pingRequestImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestMultiThreaded.pingRequestImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    println("ultra async ping request done mt $it / $runCount")
+                }
+                delay(runCount * 50.toLong())
+                launch {
+                    println("ultra async ping response mt $it / $runCount")
+                    try {
+                        pingResponseImpl(multiThreadScope, multiThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestMultiThreaded.pingResponseImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    println("ultra async ping response mt $it / $runCount")
+                }
+            }
         }
     }
 

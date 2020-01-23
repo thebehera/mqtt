@@ -35,7 +35,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * processors
+    val runCount = processors * 2
 
     lateinit var singleThreadExecutor: ExecutorService
     lateinit var singleThreadScope: CoroutineScope
@@ -139,6 +139,43 @@ class AsyncClientControlPacketTransportIntegrationTests {
             transport.close()
             disconnect(transport)
             println("ping response done")
+        }
+    }
+
+    @Test
+    fun ultraAsyncTestSingleThreaded() {
+        runBlocking(singleThreadScope.coroutineContext) {
+            repeat(runCount) {
+                delay(runCount * 50.toLong())
+                println("launching scope req")
+                launch {
+                    println("ultra async ping request st $it / $runCount")
+                    try {
+                        println("ping req impl")
+                        pingRequestImpl(singleThreadScope, singleThreadProvider)
+                        println("ping req impl done")
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    pingRequestImpl(singleThreadScope, singleThreadProvider)
+                }
+                println("delayed")
+                delay(runCount * 50.toLong())
+                println("launching scope resp")
+                launch {
+                    println("ultra async ping response st $it / $runCount")
+                    try {
+                        pingResponseImpl(singleThreadScope, singleThreadProvider)
+                    } catch (e: Throwable) {
+                        println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it")
+                        e.printStackTrace()
+                        throw e
+                    }
+                    pingResponseImpl(singleThreadScope, singleThreadProvider)
+                }
+            }
         }
     }
 
