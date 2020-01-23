@@ -199,6 +199,9 @@ class AsyncClientControlPacketTransportIntegrationTests {
     fun close() {
         singleThreadScope.cancel()
         singleThreadProvider.shutdownNow()
+        println("delay")
+        runBlocking { delay(10) }
+        println("delay done")
         val executorTasks = singleThreadExecutor.shutdownNow()
         executorTasks.forEach { println("leftover task $it") }
         assertTrue(executorTasks.isNullOrEmpty())
