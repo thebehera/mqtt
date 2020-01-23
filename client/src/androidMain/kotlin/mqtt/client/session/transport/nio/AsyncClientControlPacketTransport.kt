@@ -110,12 +110,12 @@ class AsyncClientControlPacketTransport(
 
     override suspend fun suspendClose() {
         try {
-            pingTimerJob?.cancel()
-            readJob?.cancel()
-            writeJob?.cancel()
             super.suspendClose()
         } finally {
             socket.aClose()
+            pingTimerJob?.cancel()
+            readJob?.cancel()
+            writeJob?.cancel()
         }
     }
 
