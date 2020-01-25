@@ -116,7 +116,6 @@ class AsyncClientControlPacketTransport(
             pingTimerJob?.cancel()
             readJob?.cancel()
             writeJob?.cancel()
-            println("suspend close done")
         }
     }
 
@@ -197,7 +196,6 @@ suspend fun AsynchronousSocketChannel.handleDisconnect(
     }
     aClose()
     channelsToClose.forEach { it.close() }
-    println("channels closed")
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

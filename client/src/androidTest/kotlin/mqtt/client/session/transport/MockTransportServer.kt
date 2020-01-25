@@ -67,7 +67,6 @@ class MockTransportServer(
                 println("server closed $e")
             } finally {
                 close()
-                println("done listening")
             }
         }
     }

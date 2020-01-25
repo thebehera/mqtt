@@ -95,7 +95,7 @@ abstract class AbstractClientControlPacketTransport(
                 mutex.lock()
             }
             println("sent suspend close and suspended for $time")
-        } catch (e: Exception) {
+        } catch (e: CancellationException) {
             println("suspend close cancelled with Exception $e")
         }
     }

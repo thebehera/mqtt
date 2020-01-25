@@ -226,7 +226,6 @@ internal fun AsynchronousSocketChannel.blockingClose() {
     }
     try {
         close()
-        println("socket closed")
     } catch (ex: Throwable) {
         // Specification says that it is Ok to call it any time, but reality is different,
         // so we have just to ignore exception

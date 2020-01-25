@@ -36,7 +36,7 @@ class AsyncClientControlPacketTransportTests {
 
     @InternalCoroutinesApi
     @ExperimentalTime
-    @Test
+    @Test(timeout = 6000)
     fun testAsyncConnection() {
         singleThreadScope.blockWithTimeout(6000) {
             val server = MockTransportServer(this, 3000, singleThreadProvider)
@@ -74,7 +74,6 @@ class AsyncClientControlPacketTransportTests {
         if (completedWrite != null) {
             assert(completedWrite.isClosedForSend)
         }
-        println("test isopen")
         assertFalse(transport.isOpen())
         assertNull(transport.assignedPort(), "Leaked socket")
         assert(transport.outboundChannel.isClosedForSend)
@@ -83,7 +82,6 @@ class AsyncClientControlPacketTransportTests {
 
     @After
     fun close() {
-        singleThreadScope.cancel()
         singleThreadProvider.shutdownNow()
         assertTrue(singleThreadExecutor.shutdownNow().isNullOrEmpty())
         assertTrue(singleThreadProvider.awaitTermination(5.toLong(), TimeUnit.SECONDS))
