@@ -15,6 +15,7 @@ import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.IDisconnectNotification
+import mqtt.wire.control.packet.format.ReasonCode
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
@@ -93,7 +94,10 @@ class AsyncClientControlPacketTransport(
             writeJob = startWriteChannel()
             pingTimerJob = startPingTimer()
         } else {
-            throw MqttException("Expected a Connection Acknowledgement, got $packet instead")
+            throw MqttException(
+                "Expected a Connection Acknowledgement, got $packet instead",
+                ReasonCode.UNSUPPORTED_PROTOCOL_VERSION.byte
+            )
         }
         return packet
     }
