@@ -60,32 +60,36 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
     }
 
 
-    @Test
+    @Test(timeout = 6000)
     fun pingRequestMultiThread() {
+        val jobs = ArrayList<Job>()
         repeat(runCount) {
-            println("ping request mt $it / $runCount")
+            println("ping request st $it / $runCount")
             try {
-                runBlocking { pingRequestImpl(multiThreadScope, multiThreadProvider) }
+                jobs += multiThreadScope.launch { pingRequestImpl(multiThreadScope, multiThreadProvider) }
             } catch (e: Throwable) {
-                println("error from pingRequestMultiThread $it")
+                println("error from pingRequestSingleThread $it")
                 e.printStackTrace()
                 throw e
             }
         }
+        runBlocking { jobs.joinAll() }
     }
 
-    @Test
+    @Test(timeout = 6000)
     fun pingResponseMultiThreaded() {
+        val jobs = ArrayList<Job>()
         repeat(runCount) {
-            println("ping response mt $it / $runCount")
+            println("ping response st $it / $runCount")
             try {
-                runBlocking { pingResponseImpl(multiThreadScope, multiThreadProvider) }
+                jobs += multiThreadScope.launch { pingResponseImpl(multiThreadScope, multiThreadProvider) }
             } catch (e: Throwable) {
-                println("error from pingResponseMultiThreaded $it")
+                println("error from pingResponseSingleThread $it")
                 e.printStackTrace()
                 throw e
             }
         }
+        runBlocking { jobs.joinAll() }
     }
 
     suspend fun pingRequestImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
@@ -145,10 +149,10 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
     @Test
     fun ultraAsyncTestMultiThreaded() {
+        val jobs = ArrayList<Job>()
         runBlocking(multiThreadScope.coroutineContext) {
             repeat(runCount) {
-                delay(runCount.toLong())
-                launch {
+                jobs += launch {
                     println("ultra async ping request mt $it / $runCount")
                     try {
                         pingRequestImpl(multiThreadScope, multiThreadProvider)
@@ -159,8 +163,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
                     }
                     println("ultra async ping request done mt $it / $runCount")
                 }
-                delay(runCount.toLong())
-                launch {
+                jobs += launch {
                     println("ultra async ping response mt $it / $runCount")
                     try {
                         pingResponseImpl(multiThreadScope, multiThreadProvider)
@@ -172,6 +175,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
                     println("ultra async ping response mt $it / $runCount")
                 }
             }
+            jobs.joinAll()
         }
     }
 

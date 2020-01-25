@@ -89,10 +89,15 @@ abstract class AbstractClientControlPacketTransport(
             outbound.send(disconnect(protocolVersion))
             val time = measureTime {
                 val mutex = Mutex(true)
-                outbound.invokeOnClose {
-                    mutex.unlock()
+                try {
+                    outbound.invokeOnClose {
+                        mutex.unlock()
+                    }
+                    mutex.lock()
+                } catch (e: IllegalStateException) {
+                    println("ignoring $e")
                 }
-                mutex.lock()
+
             }
             println("sent suspend close and suspended for $time")
         } catch (e: CancellationException) {

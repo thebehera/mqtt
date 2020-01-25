@@ -58,33 +58,37 @@ class AsyncClientControlPacketTransportIntegrationTests {
         return transport
     }
 
-    @Test
+    @Test(timeout = 6000)
     fun pingRequestSingleThread() {
+        val jobs = ArrayList<Job>()
         repeat(runCount) {
             println("ping request st $it / $runCount")
             try {
-                runBlocking { pingRequestImpl(singleThreadScope, singleThreadProvider) }
+                jobs += singleThreadScope.launch { pingRequestImpl(singleThreadScope, singleThreadProvider) }
             } catch (e: Throwable) {
                 println("error from pingRequestSingleThread $it")
                 e.printStackTrace()
                 throw e
             }
         }
+        runBlocking { jobs.joinAll() }
     }
 
 
-    @Test
+    @Test(timeout = 6000)
     fun pingResponseSingleThread() {
+        val jobs = ArrayList<Job>()
         repeat(runCount) {
             println("ping response st $it / $runCount")
             try {
-                runBlocking { pingResponseImpl(singleThreadScope, singleThreadProvider) }
+                jobs += singleThreadScope.launch { pingResponseImpl(singleThreadScope, singleThreadProvider) }
             } catch (e: Throwable) {
                 println("error from pingResponseSingleThread $it")
                 e.printStackTrace()
                 throw e
             }
         }
+        runBlocking { jobs.joinAll() }
     }
 
     suspend fun pingRequestImpl(scope: CoroutineScope, channelGroup: AsynchronousChannelGroup? = null) {
@@ -92,7 +96,6 @@ class AsyncClientControlPacketTransportIntegrationTests {
             println("stopping pingRequestImpl not active")
             return
         }
-        delay(50)
         withTimeout((integrationTestTimeoutMs.toLong() + timeoutOffsetMs) * 2) {
             println("ping req connect")
             val transport = connect(scope, channelGroup)
@@ -139,11 +142,10 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @Test
     fun ultraAsyncTestSingleThreaded() {
+        val jobs = ArrayList<Job>()
         runBlocking(singleThreadScope.coroutineContext) {
             repeat(runCount) {
-                delay(runCount.toLong())
-                println("launching scope req")
-                launch {
+                jobs += launch {
                     println("ultra async ping request st $it / $runCount")
                     try {
                         println("ping req impl")
@@ -156,10 +158,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     }
                     pingRequestImpl(singleThreadScope, singleThreadProvider)
                 }
-                println("delayed")
-                delay(runCount.toLong())
-                println("launching scope resp")
-                launch {
+                jobs += launch {
                     println("ultra async ping response st $it / $runCount")
                     try {
                         pingResponseImpl(singleThreadScope, singleThreadProvider)
@@ -171,6 +170,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
                     pingResponseImpl(singleThreadScope, singleThreadProvider)
                 }
             }
+            jobs.joinAll()
         }
     }
 
@@ -197,11 +197,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
 
     @After
     fun close() {
-        singleThreadScope.cancel()
         singleThreadProvider.shutdownNow()
-        println("delay")
-        runBlocking { delay(10) }
-        println("delay done")
         assertTrue(singleThreadProvider.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
         assertTrue(singleThreadExecutor.awaitTermination(timeoutOffsetMs.toLong(), TimeUnit.MILLISECONDS))
 
