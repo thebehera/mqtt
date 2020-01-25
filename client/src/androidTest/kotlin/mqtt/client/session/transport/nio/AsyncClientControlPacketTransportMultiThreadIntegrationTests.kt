@@ -195,7 +195,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
 
     @Before
     fun reset() {
-        multiThreadExecutor = Executors.newFixedThreadPool(runCount * 2)
+        multiThreadExecutor = Executors.newFixedThreadPool(processors * processors)
         multiThreadScope = CoroutineScope(multiThreadExecutor.asCoroutineDispatcher())
         multiThreadProvider = AsynchronousChannelGroup.withThreadPool(multiThreadExecutor)
     }
