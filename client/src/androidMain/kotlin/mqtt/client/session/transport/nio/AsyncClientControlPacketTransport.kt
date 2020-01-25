@@ -10,6 +10,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.io.core.readByteBuffer
 import mqtt.connection.ClientControlPacketTransport
+import mqtt.wire.MqttException
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
@@ -92,7 +93,7 @@ class AsyncClientControlPacketTransport(
             writeJob = startWriteChannel()
             pingTimerJob = startPingTimer()
         } else {
-            throw IllegalStateException("Expected a Connection Acknowledgement, got $packet instead")
+            throw MqttException("Expected a Connection Acknowledgement, got $packet instead")
         }
         return packet
     }
