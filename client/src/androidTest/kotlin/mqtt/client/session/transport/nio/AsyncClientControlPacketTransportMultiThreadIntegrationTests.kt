@@ -33,7 +33,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
 
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * 2
+    val runCount = processors * processors
     lateinit var multiThreadExecutor: ExecutorService
     lateinit var multiThreadScope: CoroutineScope
     lateinit var multiThreadProvider: AsynchronousChannelGroup
