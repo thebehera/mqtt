@@ -6,7 +6,7 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.sync.Mutex
-import mqtt.connection.ControlPacketTransport
+import mqtt.connection.ClientControlPacketTransport
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.time.Duration
@@ -20,7 +20,7 @@ abstract class AbstractClientControlPacketTransport(
     val timeout: Duration,
     val timeoutMultiplier: Double = 1.5,
     override val maxBufferSize: Int
-) : ControlPacketTransport {
+) : ClientControlPacketTransport {
 
     override val outboundChannel: SendChannel<ControlPacket> = Channel()
     protected val outbound by lazy { this.outboundChannel as Channel<ControlPacket> }

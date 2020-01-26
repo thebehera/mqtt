@@ -1,4 +1,4 @@
-package mqtt.transport.nio.util
+package mqtt.transport.nio2.util
 
 import kotlinx.coroutines.CancellableContinuation
 import java.nio.channels.Channel

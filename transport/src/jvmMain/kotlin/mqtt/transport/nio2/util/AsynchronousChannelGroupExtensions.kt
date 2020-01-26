@@ -1,4 +1,4 @@
-package mqtt.transport.nio.util
+package mqtt.transport.nio2.util
 
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.nio.channels.AsynchronousChannelGroup

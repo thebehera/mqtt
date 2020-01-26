@@ -1,11 +1,11 @@
-package mqtt.transport.nio
+package mqtt.transport.nio2
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.channels.ClosedSendChannelException
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import mqtt.transport.AbstractClientControlPacketTransport
-import mqtt.transport.nio.util.*
+import mqtt.transport.nio2.util.aClose
+import mqtt.transport.nio2.util.aReadPacket
+import mqtt.transport.nio2.util.assignedPort
+import mqtt.transport.nio2.util.writePacket
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.IDisconnectNotification
@@ -17,7 +17,7 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-open class AsyncBaseClientTransport(
+abstract class AsyncBaseClientTransport(
     override val scope: CoroutineScope,
     open val socket: AsynchronousSocketChannel,
     connectionRequest: IConnectionRequest,
@@ -31,17 +31,6 @@ open class AsyncBaseClientTransport(
                 socket.getOption(StandardSocketOptions.SO_RCVBUF)
             )
         )
-    }
-
-    protected fun startPingTimer() = scope.launch {
-        while (isActive) {
-            delayUntilPingInterval(connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L)
-            try {
-                outboundChannel.send(ping(connectionRequest.protocolVersion))
-            } catch (e: ClosedSendChannelException) {
-                return@launch
-            }
-        }
     }
 
     override suspend fun read(timeout: Duration) = socket.aReadPacket(packetBuffer, scope, protocolVersion, timeout)

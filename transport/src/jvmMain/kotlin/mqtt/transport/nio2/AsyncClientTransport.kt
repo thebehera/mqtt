@@ -1,11 +1,11 @@
-package mqtt.transport.nio
+package mqtt.transport.nio2
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import mqtt.connection.ClientControlPacketTransport
-import mqtt.transport.nio.util.aClose
-import mqtt.transport.nio.util.aConnect
-import mqtt.transport.nio.util.asInetAddress
+import mqtt.transport.nio2.util.aClose
+import mqtt.transport.nio2.util.aConnect
+import mqtt.transport.util.asInetAddress
 import mqtt.wire.MqttException
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
@@ -19,11 +19,11 @@ import kotlin.time.seconds
 class AsyncClientTransport(
     override val scope: CoroutineScope,
     override val socket: AsynchronousSocketChannel,
-    connectionReq: IConnectionRequest,
+    override val connectionRequest: IConnectionRequest,
     override val maxBufferSize: Int
 ) : AsyncBaseClientTransport(
-    scope, socket, connectionReq, maxBufferSize,
-    connectionReq.keepAliveTimeoutSeconds.toLong().seconds
+    scope, socket, connectionRequest, maxBufferSize,
+    connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
 ), ClientControlPacketTransport {
 
     private var pingTimerJob: Job? = null

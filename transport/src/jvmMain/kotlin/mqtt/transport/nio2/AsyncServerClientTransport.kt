@@ -1,8 +1,9 @@
-package mqtt.transport.nio
+package mqtt.transport.nio2
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
 import java.nio.channels.AsynchronousSocketChannel
 import kotlin.math.round
@@ -14,13 +15,13 @@ internal class AsyncServerClientTransport(
     override val scope: CoroutineScope,
     socket: AsynchronousSocketChannel,
     maxBufferSize: Int,
-    val connectionReq: IConnectionRequest
+    override val connectionRequest: IConnectionRequest
 ) : AsyncBaseClientTransport(
     scope,
     socket,
-    connectionReq,
+    connectionRequest,
     maxBufferSize,
-    connectionReq.keepAliveTimeoutSeconds.toLong().seconds
+    connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
 ) {
     internal fun openChannels() {
         startReadChannel()
@@ -49,5 +50,9 @@ internal class AsyncServerClientTransport(
     override fun close() {
         super.close()
         socket.close()
+    }
+
+    override suspend fun open(port: UShort, host: String?): IConnectionAcknowledgment {
+        throw UnsupportedOperationException("Can't open a port directly")
     }
 }

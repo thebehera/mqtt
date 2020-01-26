@@ -36,6 +36,12 @@ abstract class ControlPacketV4(
             }
             return packets
         }
+
+        fun from(bufferArray: ByteArray, byte1: UByte): ControlPacketV4 {
+            val buffer = ByteReadPacket(bufferArray)
+            return from(buffer, byte1)
+        }
+
         fun from(buffer: ByteReadPacket, throwOnWarning: Boolean = true): ControlPacketV4 {
             val byte1 = buffer.readUByte()
             val remainingStart = buffer.remaining

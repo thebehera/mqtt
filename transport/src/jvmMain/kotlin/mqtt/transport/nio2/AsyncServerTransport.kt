@@ -1,4 +1,4 @@
-package mqtt.transport.nio
+package mqtt.transport.nio2
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -7,7 +7,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import mqtt.connection.ServerControlPacketTransport
-import mqtt.transport.nio.util.*
+import mqtt.transport.nio2.util.*
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
@@ -49,7 +49,12 @@ internal class AsyncServerTransport(
                         val connectionRequest = connection.readConnectionRequest(readBuffer, 1.seconds)
                         if (connectionRequest != null) {
                             val transport =
-                                AsyncServerClientTransport(scope, connection, maxBufferSize, connectionRequest)
+                                AsyncServerClientTransport(
+                                    scope,
+                                    connection,
+                                    maxBufferSize,
+                                    connectionRequest
+                                )
                             transport.openChannels()
                             connections.add(transport)
                             send(transport)

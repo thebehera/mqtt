@@ -2,16 +2,19 @@ package mqtt.transport
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.sync.Mutex
-import mqtt.connection.ControlPacketTransport
+import mqtt.connection.ClientControlPacketTransport
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.IDisconnectNotification
+import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire4.control.packet.DisconnectNotification
+import mqtt.wire4.control.packet.PingRequest
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -20,11 +23,11 @@ import kotlin.time.measureTime
 @ExperimentalTime
 abstract class AbstractClientControlPacketTransport(
     override val scope: CoroutineScope,
-    val connectionRequest: IConnectionRequest,
+    connectionRequest: IConnectionRequest,
     val timeout: Duration,
     val timeoutMultiplier: Double = 1.5,
     override val maxBufferSize: Int
-) : ControlPacketTransport {
+) : ClientControlPacketTransport {
     internal val protocolVersion = connectionRequest.protocolVersion
     override val outboundChannel: SendChannel<ControlPacket> = Channel()
     protected val outbound by lazy { this.outboundChannel as Channel<ControlPacket> }
@@ -47,6 +50,26 @@ abstract class AbstractClientControlPacketTransport(
 //            println("closed with exception $e")
         } finally {
             suspendClose()
+        }
+    }
+
+
+    protected fun startPingTimer() = scope.launch {
+        while (isActive) {
+            delayUntilPingInterval(connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L)
+            try {
+                outboundChannel.send(ping(connectionRequest.protocolVersion))
+            } catch (e: ClosedSendChannelException) {
+                return@launch
+            }
+        }
+    }
+
+    private fun ping(protocolVersion: Int): IPingRequest {
+        return when (protocolVersion) {
+            3, 4 -> PingRequest
+            5 -> mqtt.wire5.control.packet.PingRequest
+            else -> throw IllegalArgumentException("Received an unsupported protocol version $protocolVersion")
         }
     }
 
@@ -89,12 +112,12 @@ abstract class AbstractClientControlPacketTransport(
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
     override suspend fun suspendClose() {
+        isClosing = true
         try {
             if (outbound.isClosedForSend) {
                 return
             }
             try {
-                isClosing = true
                 outbound.send(disconnect(protocolVersion))
                 val time = measureTime {
                     val mutex = Mutex(true)
@@ -118,6 +141,7 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     override fun close() {
+        isClosing = true
         inboxChannel.close()
         outboundChannel.close()
         completedWrite?.close()

@@ -1,4 +1,4 @@
-package mqtt.transport.nio.util
+package mqtt.transport.nio2.util
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.use
@@ -6,11 +6,9 @@ import mqtt.wire.MalformedInvalidVariableByteInteger
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
-import mqtt.wire.control.packet.IPingRequest
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VARIABLE_BYTE_INT_MAX
 import mqtt.wire4.control.packet.ControlPacketV4
-import mqtt.wire4.control.packet.PingRequest
 import mqtt.wire5.control.packet.ControlPacketV5
 import java.nio.ByteBuffer
 import kotlin.experimental.and
@@ -86,14 +84,6 @@ fun ByteBuffer.read(protocolVersion: Int): ControlPacket {
         }
     } finally {
         compact()
-    }
-}
-
-fun ping(protocolVersion: Int): IPingRequest {
-    return when (protocolVersion) {
-        3, 4 -> PingRequest
-        5 -> mqtt.wire5.control.packet.PingRequest
-        else -> throw IllegalArgumentException("Received an unsupported protocol version $protocolVersion")
     }
 }
 

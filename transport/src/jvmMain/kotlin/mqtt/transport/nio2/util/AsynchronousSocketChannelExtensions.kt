@@ -1,4 +1,4 @@
-package mqtt.transport.nio.util
+package mqtt.transport.nio2.util
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
@@ -6,15 +6,12 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.core.readByteBuffer
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
-import java.net.InetAddress
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousSocketChannel
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -149,15 +146,6 @@ fun AsynchronousSocketChannel.assignedPort(): UShort? {
         (remoteAddress as? InetSocketAddress)?.port?.toUShort()
     } catch (e: Exception) {
         null
-    }
-}
-
-
-suspend fun String?.asInetAddress() = suspendCoroutine<InetAddress> {
-    try {
-        it.resume(InetAddress.getByName(this))
-    } catch (e: Throwable) {
-        it.resumeWithException(e)
     }
 }
 
