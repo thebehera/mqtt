@@ -88,7 +88,7 @@ if (checkMosquitto()) {
 } else {
     logger.warn('Integration tests are disabled for the client! Reason: Failed to find mosquitto installed on the PATH. Please add it to your path.')
     tasks.whenTaskAdded {task ->
-        if(task.name.contains("testDebugUnitTest") || task.name.contains("testReleaseUnitTest")) {
+        if(task.name.contains("test")) {
             task.enabled = false
         }
     }
