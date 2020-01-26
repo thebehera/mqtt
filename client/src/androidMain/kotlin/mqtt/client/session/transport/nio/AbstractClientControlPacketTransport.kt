@@ -29,6 +29,9 @@ abstract class AbstractClientControlPacketTransport(
     override var completedWrite: SendChannel<ControlPacket>? = null
     protected var isClosing = false
 
+    abstract suspend fun read(timeout: Duration): ControlPacket
+    abstract suspend fun write(packet: ControlPacket, timeout: Duration): Int
+
     protected fun startWriteChannel() = scope.launch {
         try {
             outbound.consumeEach { packet ->
@@ -80,28 +83,32 @@ abstract class AbstractClientControlPacketTransport(
 
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
-    override suspend fun suspendClose() = use {
-        if (outbound.isClosedForSend) {
-            return
-        }
+    override suspend fun suspendClose() {
         try {
-            isClosing = true
-            outbound.send(disconnect(protocolVersion))
-            val time = measureTime {
-                val mutex = Mutex(true)
-                try {
-                    outbound.invokeOnClose {
-                        mutex.unlock()
-                    }
-                    mutex.lock()
-                } catch (e: IllegalStateException) {
-                    println("ignoring $e")
-                }
-
+            if (outbound.isClosedForSend) {
+                return
             }
-            println("sent suspend close and suspended for $time")
-        } catch (e: CancellationException) {
-            println("suspend close cancelled with Exception $e")
+            try {
+                isClosing = true
+                outbound.send(disconnect(protocolVersion))
+                val time = measureTime {
+                    val mutex = Mutex(true)
+                    try {
+                        outbound.invokeOnClose {
+                            mutex.unlock()
+                        }
+                        mutex.lock()
+                    } catch (e: IllegalStateException) {
+                        println("ignoring $e")
+                    }
+
+                }
+                println("sent suspend close and suspended for $time")
+            } catch (e: CancellationException) {
+                println("suspend close cancelled with Exception $e")
+            }
+        } finally {
+            close()
         }
     }
 

@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.io.core.Closeable
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.IConnectionRequest
@@ -13,7 +12,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
 @ExperimentalTime
-interface ControlPacketTransport : Closeable {
+interface ControlPacketTransport {
     val scope: CoroutineScope
     val maxBufferSize: Int
     val outboundChannel: SendChannel<ControlPacket>
@@ -24,6 +23,7 @@ interface ControlPacketTransport : Closeable {
     fun isOpen(): Boolean
 
     suspend fun suspendClose()
+    fun close()
 }
 
 
@@ -34,11 +34,13 @@ interface ClientControlPacketTransport : ControlPacketTransport {
 }
 
 @ExperimentalTime
-interface ServerControlPacketTransport : Closeable {
+interface ServerControlPacketTransport {
     val scope: CoroutineScope
     suspend fun listen(
         port: UShort? = null,
         host: String = "127.0.0.1",
         readTimeout: Duration = 1.seconds
     ): Flow<ControlPacketTransport>
+
+    fun close()
 }
