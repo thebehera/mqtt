@@ -152,6 +152,7 @@ class AsyncClientControlPacketTransportMultiThreadIntegrationTests {
         val jobs = ArrayList<Job>()
         runBlocking(multiThreadScope.coroutineContext) {
             repeat(runCount) {
+                delay(runCount.toLong())
                 jobs += launch {
                     println("ultra async ping request mt $it / $runCount")
                     try {
