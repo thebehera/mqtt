@@ -34,17 +34,17 @@ class MosquittoServer extends DefaultTask {
     }
 
     void shutdown() {
-        try {
-            if (process != null && process.alive) {
-                process.destroy()
-                process = null
-            }
-        } catch (Exception e) {
-        } finally {
-            if (process != null && process.alive) {
-                process.destroyForcibly()
-            }
-        }
+//        try {
+//            if (process != null && process.alive) {
+//                process.destroy()
+//                process = null
+//            }
+//        } catch (Exception e) {
+//        } finally {
+//            if (process != null && process.alive) {
+//                process.destroyForcibly()
+//            }
+//        }
     }
 }
 
