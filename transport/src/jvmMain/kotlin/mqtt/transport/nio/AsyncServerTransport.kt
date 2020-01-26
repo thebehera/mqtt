@@ -1,27 +1,23 @@
-package mqtt.client.session.transport
+package mqtt.transport.nio
 
-import android.os.Build
-import androidx.annotation.RequiresApi
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
-import mqtt.client.session.transport.nio.*
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mqtt.connection.ServerControlPacketTransport
-import mqtt.wire.control.packet.IConnectionRequest
+import mqtt.transport.nio.util.*
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousServerSocketChannel
-import java.nio.channels.AsynchronousSocketChannel
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.math.round
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
 @ExperimentalTime
-class MockTransportServer(
+internal class AsyncServerTransport(
     override val scope: CoroutineScope,
     val maxBufferSize: Int,
     val group: AsynchronousChannelGroup? = null
@@ -30,13 +26,13 @@ class MockTransportServer(
     private lateinit var server: AsynchronousServerSocketChannel
     var localAddress: InetSocketAddress? = null
     private val readBuffer = ByteBuffer.allocateDirect(maxBufferSize)
-    private val connections = HashSet<AsyncServerControlPacketTransport>()
+    private val connections = HashSet<AsyncServerClientTransport>()
 
     override suspend fun listen(
         port: UShort?,
         host: String,
         readTimeout: Duration
-    ): Flow<AsyncServerControlPacketTransport> {
+    ): Flow<AsyncServerClientTransport> {
         val server = group.openAsyncServerSocketChannel()
         this.server = if (port != null) {
             server.aBind(InetSocketAddress(host, port.toInt()))
@@ -53,7 +49,7 @@ class MockTransportServer(
                         val connectionRequest = connection.readConnectionRequest(readBuffer, 1.seconds)
                         if (connectionRequest != null) {
                             val transport =
-                                AsyncServerControlPacketTransport(scope, connection, maxBufferSize, connectionRequest)
+                                AsyncServerClientTransport(scope, connection, maxBufferSize, connectionRequest)
                             transport.openChannels()
                             connections.add(transport)
                             send(transport)
@@ -84,58 +80,3 @@ class MockTransportServer(
     }
 
 }
-
-@ExperimentalTime
-@RequiresApi(Build.VERSION_CODES.O)
-class AsyncServerControlPacketTransport(
-    override val scope: CoroutineScope,
-    socket: AsynchronousSocketChannel,
-    maxBufferSize: Int,
-    val connectionRequest: IConnectionRequest
-) : JavaAsyncClientControlPacketTransport(
-    scope,
-    socket,
-    4,
-    maxBufferSize,
-    connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
-) {
-
-    fun openChannels() {
-        startReadChannel()
-        startWriteChannel()
-        disconnectIfKeepAliveExpires()
-    }
-
-    private fun disconnectIfKeepAliveExpires() = scope.launch {
-        val timeout = round(connectionRequest.keepAliveTimeoutSeconds.toFloat() * 1.5f).toLong()
-        do {
-            delayUntilPingInterval(timeout)
-        } while (isActive && !isClosing && nextDelay(timeout) >= 0)
-        println("closing $socket because of nextDelay timeout")
-        suspendClose()
-    }
-
-    override suspend fun suspendClose() {
-        isClosing = true
-        try {
-            super.suspendClose()
-        } catch (e: Throwable) {
-
-        }
-    }
-
-    override fun close() {
-        super.close()
-        socket.close()
-    }
-}
-
-
-suspend fun AsynchronousChannelGroup?.openAsyncServerSocketChannel(): AsynchronousServerSocketChannel =
-    suspendCancellableCoroutine { continuation ->
-        try {
-            continuation.resume(AsynchronousServerSocketChannel.open(this))
-        } catch (e: Exception) {
-            continuation.resumeWithException(e)
-        }
-    }

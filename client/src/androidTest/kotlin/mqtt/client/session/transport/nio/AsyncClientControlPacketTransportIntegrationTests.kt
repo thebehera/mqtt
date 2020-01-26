@@ -1,6 +1,5 @@
 package mqtt.client.session.transport.nio
 
-
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -184,7 +183,7 @@ class AsyncClientControlPacketTransportIntegrationTests {
         assertFalse(transport.isOpen())
         assertNull(transport.assignedPort(), "Leaked socket")
         assert(transport.outboundChannel.isClosedForSend)
-        assert(transport.inboxChannel.isClosedForSend)
+        assert((transport.inboxChannel as Channel<ControlPacket>).isClosedForSend)
     }
 
 
