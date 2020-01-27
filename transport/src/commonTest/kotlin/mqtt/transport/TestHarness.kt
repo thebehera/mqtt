@@ -175,7 +175,6 @@ abstract class TestHarness(
             val jobs = ArrayList<Job>()
             block(scope.coroutineContext) {
                 repeat(runCount) {
-                    delay(count.toLong())
                     jobs += launch {
                         println("ultra async ping request st $it / $runCount")
                         try {
@@ -184,10 +183,9 @@ abstract class TestHarness(
                             count++
                             println("ping req impl done")
                         } catch (e: Throwable) {
-                            println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it $e")
-                            throw e
+                            println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it  / $runCount $e, trying one more time")
+                            pingRequestImpl()
                         }
-                        pingRequestImpl()
                         count++
                     }
                     jobs += launch {
@@ -196,10 +194,9 @@ abstract class TestHarness(
                             pingResponseImpl()
                             count++
                         } catch (e: Throwable) {
-                            println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it $e")
-                            throw e
+                            println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it / $runCount $e, trying one more time")
+                            pingResponseImpl()
                         }
-                        pingResponseImpl()
                         count++
                     }
                 }
