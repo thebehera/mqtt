@@ -91,7 +91,17 @@ abstract class TestHarness(
         }
         withTimeout((integrationTestTimeoutMs + timeoutOffsetMs) * 2) {
             println("ping req connect")
-            val transport = connect()
+            val transport = try {
+                connect()
+            } catch (e: Exception) {
+                delay(1)
+                try {
+                    connect()
+                } catch (e2: Exception) {
+                    println("Still failed after $e, aborting $e2")
+                    throw e2
+                }
+            }
             println("ping req done connecting")
             val completedWriteChannel =
                 Channel<ControlPacket>()
@@ -121,7 +131,22 @@ abstract class TestHarness(
             return
         }
         withTimeout((integrationTestTimeoutMs + timeoutOffsetMs) * 2) {
-            val transport = connect()
+            val transport = try {
+                connect()
+            } catch (e: Exception) {
+                if (e.message == "Connection reset by peer") {
+                    println("connection reset, adding a delay")
+                    delay(1)
+                    try {
+                        connect()
+                    } catch (e: Exception) {
+                        println("Still failed, aborting $e")
+                        throw e
+                    }
+                } else {
+                    throw e
+                }
+            }
             val expectedCount =
                 max(
                     1,
