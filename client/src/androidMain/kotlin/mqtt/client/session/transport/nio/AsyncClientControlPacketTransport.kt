@@ -34,7 +34,7 @@ import kotlin.time.seconds
 
 @ExperimentalTime
 @RequiresApi(Build.VERSION_CODES.O)
-open class JavaAsyncClientControlPacketTransport(
+abstract class JavaAsyncClientControlPacketTransport(
     override val scope: CoroutineScope,
     open val socket: AsynchronousSocketChannel,
     protocolVersion: Int,
