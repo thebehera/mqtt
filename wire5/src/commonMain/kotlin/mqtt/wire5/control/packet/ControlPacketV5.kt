@@ -35,6 +35,10 @@ abstract class ControlPacketV5(override val controlPacketValue: Byte,
             return packet
         }
 
+        fun from(buffer: ByteArray, byte1: UByte): ControlPacketV5 {
+            return from(ByteReadPacket(buffer), byte1)
+        }
+
         fun from(buffer: ByteReadPacket, byte1: UByte): ControlPacketV5 {
             val byte1AsUInt = byte1.toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()

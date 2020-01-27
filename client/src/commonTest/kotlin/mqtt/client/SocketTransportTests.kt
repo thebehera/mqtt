@@ -73,7 +73,7 @@ class SocketTransportTests {
         val params = buildParams()
         val connection = PlatformSocketConnection(params, ctx)
         val result = connection.openConnectionAsync(true)
-        block {
+        blockWithTimeout {
             result.await()
         }
     }

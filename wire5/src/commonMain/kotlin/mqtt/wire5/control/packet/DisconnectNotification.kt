@@ -11,8 +11,8 @@ import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IDisconnectNotification
 import mqtt.wire.control.packet.format.ReasonCode
-import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
@@ -31,12 +31,14 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * [MQTT-3.14.0-1].
  */
 @Parcelize
-data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) : ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL) {
-    @IgnoredOnParcel override val variableHeaderPacket = variable.packet
+data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) :
+    ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL), IDisconnectNotification {
+    @IgnoredOnParcel
+    override val variableHeaderPacket = variable.packet
 
     @Parcelize
     data class VariableHeader(
-        val reasonCode: ReasonCode = NORMAL_DISCONNECTION,
+        val reasonCode: ReasonCode = ReasonCode.NORMAL_DISCONNECTION,
         val properties: Properties = Properties()
     ) : Parcelable {
         init {
@@ -200,35 +202,35 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
 
 private fun getDisconnectCode(byte: UByte): ReasonCode {
     return when (byte) {
-        NORMAL_DISCONNECTION.byte -> NORMAL_DISCONNECTION
-        DISCONNECT_WITH_WILL_MESSAGE.byte -> DISCONNECT_WITH_WILL_MESSAGE
-        UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
-        MALFORMED_PACKET.byte -> MALFORMED_PACKET
-        PROTOCOL_ERROR.byte -> PROTOCOL_ERROR
-        IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
-        NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
-        SERVER_BUSY.byte -> SERVER_BUSY
-        SERVER_SHUTTING_DOWN.byte -> SERVER_SHUTTING_DOWN
-        KEEP_ALIVE_TIMEOUT.byte -> KEEP_ALIVE_TIMEOUT
-        SESSION_TAKE_OVER.byte -> SESSION_TAKE_OVER
-        TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
-        TOPIC_NAME_INVALID.byte -> TOPIC_NAME_INVALID
-        RECEIVE_MAXIMUM_EXCEEDED.byte -> RECEIVE_MAXIMUM_EXCEEDED
-        TOPIC_ALIAS_INVALID.byte -> TOPIC_ALIAS_INVALID
-        PACKET_TOO_LARGE.byte -> PACKET_TOO_LARGE
-        MESSAGE_RATE_TOO_HIGH.byte -> MESSAGE_RATE_TOO_HIGH
-        QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
-        ADMINISTRATIVE_ACTION.byte -> ADMINISTRATIVE_ACTION
-        PAYLOAD_FORMAT_INVALID.byte -> PAYLOAD_FORMAT_INVALID
-        RETAIN_NOT_SUPPORTED.byte -> RETAIN_NOT_SUPPORTED
-        QOS_NOT_SUPPORTED.byte -> QOS_NOT_SUPPORTED
-        USE_ANOTHER_SERVER.byte -> USE_ANOTHER_SERVER
-        SERVER_MOVED.byte -> SERVER_MOVED
-        SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
-        CONNECTION_RATE_EXCEEDED.byte -> CONNECTION_RATE_EXCEEDED
-        MAXIMUM_CONNECTION_TIME.byte -> MAXIMUM_CONNECTION_TIME
-        SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
-        WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
+        ReasonCode.NORMAL_DISCONNECTION.byte -> ReasonCode.NORMAL_DISCONNECTION
+        ReasonCode.DISCONNECT_WITH_WILL_MESSAGE.byte -> ReasonCode.DISCONNECT_WITH_WILL_MESSAGE
+        ReasonCode.UNSPECIFIED_ERROR.byte -> ReasonCode.UNSPECIFIED_ERROR
+        ReasonCode.MALFORMED_PACKET.byte -> ReasonCode.MALFORMED_PACKET
+        ReasonCode.PROTOCOL_ERROR.byte -> ReasonCode.PROTOCOL_ERROR
+        ReasonCode.IMPLEMENTATION_SPECIFIC_ERROR.byte -> ReasonCode.IMPLEMENTATION_SPECIFIC_ERROR
+        ReasonCode.NOT_AUTHORIZED.byte -> ReasonCode.NOT_AUTHORIZED
+        ReasonCode.SERVER_BUSY.byte -> ReasonCode.SERVER_BUSY
+        ReasonCode.SERVER_SHUTTING_DOWN.byte -> ReasonCode.SERVER_SHUTTING_DOWN
+        ReasonCode.KEEP_ALIVE_TIMEOUT.byte -> ReasonCode.KEEP_ALIVE_TIMEOUT
+        ReasonCode.SESSION_TAKE_OVER.byte -> ReasonCode.SESSION_TAKE_OVER
+        ReasonCode.TOPIC_FILTER_INVALID.byte -> ReasonCode.TOPIC_FILTER_INVALID
+        ReasonCode.TOPIC_NAME_INVALID.byte -> ReasonCode.TOPIC_NAME_INVALID
+        ReasonCode.RECEIVE_MAXIMUM_EXCEEDED.byte -> ReasonCode.RECEIVE_MAXIMUM_EXCEEDED
+        ReasonCode.TOPIC_ALIAS_INVALID.byte -> ReasonCode.TOPIC_ALIAS_INVALID
+        ReasonCode.PACKET_TOO_LARGE.byte -> ReasonCode.PACKET_TOO_LARGE
+        ReasonCode.MESSAGE_RATE_TOO_HIGH.byte -> ReasonCode.MESSAGE_RATE_TOO_HIGH
+        ReasonCode.QUOTA_EXCEEDED.byte -> ReasonCode.QUOTA_EXCEEDED
+        ReasonCode.ADMINISTRATIVE_ACTION.byte -> ReasonCode.ADMINISTRATIVE_ACTION
+        ReasonCode.PAYLOAD_FORMAT_INVALID.byte -> ReasonCode.PAYLOAD_FORMAT_INVALID
+        ReasonCode.RETAIN_NOT_SUPPORTED.byte -> ReasonCode.RETAIN_NOT_SUPPORTED
+        ReasonCode.QOS_NOT_SUPPORTED.byte -> ReasonCode.QOS_NOT_SUPPORTED
+        ReasonCode.USE_ANOTHER_SERVER.byte -> ReasonCode.USE_ANOTHER_SERVER
+        ReasonCode.SERVER_MOVED.byte -> ReasonCode.SERVER_MOVED
+        ReasonCode.SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> ReasonCode.SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
+        ReasonCode.CONNECTION_RATE_EXCEEDED.byte -> ReasonCode.CONNECTION_RATE_EXCEEDED
+        ReasonCode.MAXIMUM_CONNECTION_TIME.byte -> ReasonCode.MAXIMUM_CONNECTION_TIME
+        ReasonCode.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> ReasonCode.SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
+        ReasonCode.WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> ReasonCode.WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
         else -> throw MalformedPacketException("Invalid disconnect reason code $byte")
     }
 }

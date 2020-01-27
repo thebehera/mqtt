@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.transport
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking

@@ -49,6 +49,7 @@ kotlin {
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
             }
         }
     }
@@ -62,6 +63,7 @@ kotlin {
         }
     }
 }
+
 
 dependencies {
     implementation project(":android_roomdb_core")

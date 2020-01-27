@@ -100,15 +100,3 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
     val bytesRead = propertyIndexStart - remaining
     return Pair(property, bytesRead)
 }
-
-fun ByteReadPacket.readProperties(): Collection<Property>? {
-    val propertyLength = decodeVariableByteInteger().toInt()
-    val list = mutableListOf<Property>()
-    var totalBytesRead = 0L
-    while (totalBytesRead < propertyLength) {
-        val (property, bytesRead) = readMqttProperty()
-        totalBytesRead += bytesRead
-        list += property
-    }
-    return if (list.isEmpty()) null else list
-}

@@ -1,7 +1,5 @@
 package mqtt.connection
 
-import mqtt.Log
-import mqtt.NoOpLog
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.control.packet.IConnectionRequest
@@ -62,19 +60,6 @@ interface IRemoteHost : Parcelable {
             name: String,
             port: Int
         ) = uniqueIdentifier(protocolName, protocolVersion, clientId, name, port).hashCode()
-    }
-}
-
-interface ILogConfiguration : Parcelable {
-    val connectionAttempt: Boolean
-    val outgoingPublishOrSubscribe: Boolean
-    val outgoingControlPackets: Boolean
-    val incomingControlPackets: Boolean
-    val incomingPublish: Boolean
-    fun getLogClass(): Log = noOpLog
-
-    companion object {
-        private val noOpLog by lazy { NoOpLog() }
     }
 }
 

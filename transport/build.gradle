@@ -1,0 +1,55 @@
+plugins {
+    id 'kotlin-multiplatform'
+}
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+apply from: "../gradle/android.gradle"
+apply from: "../gradle/experimental.gradle"
+kotlin {
+    jvm()
+    android()
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin('stdlib-common')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
+                api project(":wire-core")
+                implementation project(":time")
+                compileOnly project(":wire4")
+                compileOnly project(":wire5")
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation project(":wire4")
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+        androidMain {
+            dependsOn jvmMain
+        }
+        androidTest {
+            dependsOn jvmTest
+        }
+        jvmMain {
+            dependencies {
+                implementation kotlin('stdlib-jdk7')
+                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+            }
+        }
+    }
+}
+
+apply from: "./gradle/integration-tests-mqtt-servers.gradle"
