@@ -52,5 +52,4 @@ kotlin {
     }
 }
 
-
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
