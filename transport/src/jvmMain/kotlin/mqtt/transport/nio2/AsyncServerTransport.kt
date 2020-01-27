@@ -72,9 +72,17 @@ internal class AsyncServerTransport(
         }
     }
 
+    override fun port() = (this.server.localAddress as? InetSocketAddress)?.port?.toUShort()
 
     override fun close() {
-        connections.forEach { runBlocking { it.socket.aClose() } }
+        println("closing")
+        connections.forEach {
+            if (scope.isActive) {
+                scope.launch { it.socket.aClose() }
+            } else {
+                runBlocking { it.socket.aClose() }
+            }
+        }
         try {
             this.server.close()
         } catch (e: Throwable) {

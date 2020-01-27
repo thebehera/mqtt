@@ -9,12 +9,10 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.sync.Mutex
 import mqtt.connection.ClientControlPacketTransport
 import mqtt.time.currentTimestampMs
-import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.control.packet.IConnectionRequest
-import mqtt.wire.control.packet.IDisconnectNotification
-import mqtt.wire.control.packet.IPingRequest
+import mqtt.wire.control.packet.*
 import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
+import mqtt.wire4.control.packet.PingResponse
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -32,7 +30,7 @@ abstract class AbstractClientControlPacketTransport(
     protected val outbound by lazy { this.outboundChannel as Channel<ControlPacket> }
     final override val inboxChannel = Channel<ControlPacket>(Channel.UNLIMITED)
     protected var lastMessageReadAt: Long = currentTimestampMs()
-    override var completedWrite: SendChannel<ControlPacket>? = null
+    override var completedWrite: Channel<ControlPacket>? = null
     protected var isClosing = false
 
     protected fun startWriteChannel() = scope.launch {
@@ -73,6 +71,14 @@ abstract class AbstractClientControlPacketTransport(
     }
 
 
+    private fun pong(protocolVersion: Int): IPingResponse {
+        return when (protocolVersion) {
+            3, 4 -> PingResponse
+            5 -> mqtt.wire5.control.packet.PingResponse
+            else -> throw IllegalArgumentException("Received an unsupported protocol version $protocolVersion")
+        }
+    }
+
     protected abstract suspend fun read(timeout: Duration): ControlPacket
     protected abstract suspend fun write(packet: ControlPacket, timeout: Duration): Int
 
@@ -80,6 +86,11 @@ abstract class AbstractClientControlPacketTransport(
         try {
             while (scope.isActive) {
                 val packetRead = read(timeout * timeoutMultiplier)
+                if (packetRead is IPingRequest) {
+                    scope.launch {
+                        outboundChannel.send(pong(connectionRequest.protocolVersion))
+                    }
+                }
                 lastMessageReadAt = currentTimestampMs()
                 inboxChannel.send(packetRead)
             }

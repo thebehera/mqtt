@@ -2,7 +2,6 @@ package mqtt.transport.io
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.SendChannel
 import kotlinx.io.core.Input
 import kotlinx.io.core.readFully
 import kotlinx.io.streams.asInput
@@ -29,9 +28,6 @@ class BlockingClientTransport(
     override val maxBufferSize: Int,
     timeout: Duration
 ) : AbstractClientControlPacketTransport(scope, connectionRequest, maxBufferSize = maxBufferSize, timeout = timeout) {
-
-    override var completedWrite: SendChannel<ControlPacket>? = null
-
     var socket: Socket? = null
     var outputStream: OutputStream? = null
     var input: Input? = null
