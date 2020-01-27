@@ -103,8 +103,6 @@ abstract class TestHarness(
                 }
             }
             println("ping req done connecting")
-            transport.outboundChannel.send(PingRequest)
-            transport.outboundChannel.send(PingRequest)
 
             val completedWriteChannel =
                 Channel<ControlPacket>()
@@ -114,6 +112,9 @@ abstract class TestHarness(
                 integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
             )
 
+            repeat(expectedCount.toInt()) {
+                transport.outboundChannel.send(PingRequest)
+            }
             println("ping req consume")
             val responses =
                 completedWriteChannel.consumeAsFlow()
@@ -155,8 +156,9 @@ abstract class TestHarness(
                     1,
                     integrationTestTimeoutMs / (transport.connectionRequest.keepAliveTimeoutSeconds.toInt() * 1000)
                 )
-            transport.outboundChannel.send(PingRequest)
-            transport.outboundChannel.send(PingRequest)
+            repeat(expectedCount.toInt()) {
+                transport.outboundChannel.send(PingRequest)
+            }
             assertEquals(
                 expectedCount.toInt(),
                 transport.incomingControlPackets.filterIsInstance<IPingResponse>().take(
