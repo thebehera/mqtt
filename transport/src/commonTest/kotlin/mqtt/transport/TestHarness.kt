@@ -160,7 +160,6 @@ abstract class TestHarness(
                     jobs += launch {
                         try {
                             pingRequestImpl()
-                            count++
                         } catch (e: Throwable) {
                             println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it  / $runCount  $count $e from ${e.cause}, trying one more time")
                             pingRequestImpl()
@@ -170,7 +169,6 @@ abstract class TestHarness(
                     jobs += launch {
                         try {
                             pingResponseImpl()
-                            count++
                         } catch (e: Throwable) {
                             println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it  / $runCount $e  $count from ${e.cause}, trying one more time")
                             pingResponseImpl()

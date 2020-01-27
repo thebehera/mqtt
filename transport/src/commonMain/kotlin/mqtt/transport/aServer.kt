@@ -8,5 +8,5 @@ import kotlin.time.ExperimentalTime
 expect fun aServer(
     scope: CoroutineScope,
     maxBufferSize: Int,
-    group: Any?
+    group: Any? = null
 ): ServerControlPacketTransport

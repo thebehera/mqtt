@@ -33,7 +33,11 @@ abstract class AsyncBaseClientTransport(
         )
     }
 
-    override suspend fun read(timeout: Duration) = socket.aReadPacket(packetBuffer, scope, protocolVersion, timeout)
+    override suspend fun read(timeout: Duration): ControlPacket {
+        val packet = socket.aReadPacket(packetBuffer, scope, protocolVersion, timeout)
+
+        return packet
+    }
 
     override suspend fun write(packet: ControlPacket, timeout: Duration): Int {
         val bytes = socket.writePacket(packet, timeout)

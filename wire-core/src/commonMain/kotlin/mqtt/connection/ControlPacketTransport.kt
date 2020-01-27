@@ -1,6 +1,7 @@
 package mqtt.connection
 
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
@@ -14,11 +15,12 @@ import kotlin.time.seconds
 @ExperimentalTime
 interface ControlPacketTransport {
     val scope: CoroutineScope
+    val connectionRequest: IConnectionRequest
     val maxBufferSize: Int
     val outboundChannel: SendChannel<ControlPacket>
     val inboxChannel: ReceiveChannel<ControlPacket>
     val incomingControlPackets: Flow<ControlPacket>
-    var completedWrite: SendChannel<ControlPacket>?
+    var completedWrite: Channel<ControlPacket>?
     fun assignedPort(): UShort?
     fun isOpen(): Boolean
 
@@ -29,13 +31,13 @@ interface ControlPacketTransport {
 
 @ExperimentalTime
 interface ClientControlPacketTransport : ControlPacketTransport {
-    val connectionRequest: IConnectionRequest
     suspend fun open(port: UShort, host: String? = null): IConnectionAcknowledgment
 }
 
 @ExperimentalTime
 interface ServerControlPacketTransport {
     val scope: CoroutineScope
+    fun port(): UShort?
     suspend fun listen(
         port: UShort? = null,
         host: String = "127.0.0.1",
