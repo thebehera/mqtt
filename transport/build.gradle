@@ -10,6 +10,7 @@ apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
+    android()
     sourceSets {
         commonMain {
             dependencies {
@@ -29,14 +30,10 @@ kotlin {
             }
         }
         androidMain {
-            dependencies {
-                implementation kotlin('stdlib-jdk7')
-            }
+            dependsOn jvmMain
         }
         androidTest {
-            dependencies {
-
-            }
+            dependsOn jvmTest
         }
         jvmMain {
             dependencies {
