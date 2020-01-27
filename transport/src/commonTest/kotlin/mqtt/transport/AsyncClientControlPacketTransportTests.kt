@@ -67,7 +67,9 @@ class AsyncClientControlPacketTransportTests {
             } catch (e: ClosedSendChannelException) {
                 // ignore
             }
+            println("lock")
             server2ClientMutex.lock()
+            println("unlock")
             clientTransport.suspendClose()
             clientTransport.close()
             server.close()
