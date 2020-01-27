@@ -103,6 +103,9 @@ abstract class TestHarness(
                 }
             }
             println("ping req done connecting")
+            transport.outboundChannel.send(PingRequest)
+            transport.outboundChannel.send(PingRequest)
+
             val completedWriteChannel =
                 Channel<ControlPacket>()
             transport.completedWrite = completedWriteChannel
@@ -172,6 +175,7 @@ abstract class TestHarness(
             val jobs = ArrayList<Job>()
             block(scope.coroutineContext) {
                 repeat(runCount) {
+                    delay(count.toLong())
                     jobs += launch {
                         println("ultra async ping request st $it / $runCount")
                         try {
