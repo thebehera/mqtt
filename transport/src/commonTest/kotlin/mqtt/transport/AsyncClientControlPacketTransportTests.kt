@@ -3,6 +3,7 @@ package mqtt.transport
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.take
@@ -59,8 +60,12 @@ class AsyncClientControlPacketTransportTests {
             }
             val connack = clientTransport.open(port)
             assertTrue(connack.isSuccessful, "incorrect connack message")
-            repeat(keepAliveCount) {
-                clientTransport.outboundChannel.send(PingRequest)
+            try {
+                repeat(keepAliveCount) {
+                    clientTransport.outboundChannel.send(PingRequest)
+                }
+            } catch (e: ClosedSendChannelException) {
+                // ignore
             }
             server2ClientMutex.lock()
             clientTransport.suspendClose()
