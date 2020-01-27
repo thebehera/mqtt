@@ -17,7 +17,6 @@ import mqtt.wire4.control.packet.DisconnectNotification
 import mqtt.wire4.control.packet.PingRequest
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 
 @ExperimentalTime
@@ -78,10 +77,8 @@ abstract class AbstractClientControlPacketTransport(
     protected abstract suspend fun write(packet: ControlPacket, timeout: Duration): Int
 
     protected fun startReadChannel() = scope.launch {
-        var startTime = currentTimestampMs()
         try {
             while (scope.isActive) {
-                startTime = currentTimestampMs()
                 val packetRead = read(timeout * timeoutMultiplier)
                 lastMessageReadAt = currentTimestampMs()
                 inboxChannel.send(packetRead)
@@ -89,7 +86,6 @@ abstract class AbstractClientControlPacketTransport(
         } catch (e: Throwable) {
 //            println("read channel closed with exception $e")
         } finally {
-            println("closing after ${currentTimestampMs() - startTime}ms")
             suspendClose()
         }
     }
@@ -119,19 +115,15 @@ abstract class AbstractClientControlPacketTransport(
             }
             try {
                 outbound.send(disconnect(protocolVersion))
-                val time = measureTime {
-                    val mutex = Mutex(true)
-                    try {
-                        outbound.invokeOnClose {
-                            mutex.unlock()
-                        }
-                        mutex.lock()
-                    } catch (e: IllegalStateException) {
-                        println("ignoring $e")
+                val mutex = Mutex(true)
+                try {
+                    outbound.invokeOnClose {
+                        mutex.unlock()
                     }
-
+                    mutex.lock()
+                } catch (e: IllegalStateException) {
+                    println("ignoring $e")
                 }
-                println("sent suspend close and suspended for $time")
             } catch (e: CancellationException) {
                 println("suspend close cancelled with Exception $e")
             }

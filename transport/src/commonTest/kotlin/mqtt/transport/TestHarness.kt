@@ -47,9 +47,7 @@ abstract class TestHarness(
             "Integration timeout too low"
         )
         var transport: ClientControlPacketTransport? = null
-        println("block connect with timeout")
         val t = createClient(connectionRequest)
-        println("async client transport")
         assertTrue(t.open(60_000.toUShort()).isSuccessful, "incorrect connack message")
         transport = t
         assertNotNull(transport.assignedPort())
@@ -59,11 +57,10 @@ abstract class TestHarness(
     open fun pingRequest() {
         val jobs = ArrayList<Job>()
         repeat(runCount) {
-            println("ping request $it / $runCount")
             try {
                 jobs += scope.launch { pingRequestImpl() }
             } catch (e: Throwable) {
-                println("error from pingRequest $it $e")
+                println("error from pingRequest $it/ $runCount $e")
                 throw e
             }
         }
@@ -73,11 +70,10 @@ abstract class TestHarness(
     open fun pingResponse() {
         val jobs = ArrayList<Job>()
         repeat(runCount) {
-            println("ping response st $it / $runCount")
             try {
                 jobs += scope.launch { pingResponseImpl() }
             } catch (e: Throwable) {
-                println("error from pingResponse $it $e")
+                println("error from pingResponse $it / $runCount $e")
                 throw e
             }
         }
@@ -90,7 +86,6 @@ abstract class TestHarness(
             return
         }
         withTimeout((integrationTestTimeoutMs + timeoutOffsetMs) * 2) {
-            println("ping req connect")
             val transport = try {
                 connect()
             } catch (e: Exception) {
@@ -102,7 +97,6 @@ abstract class TestHarness(
                     throw e2
                 }
             }
-            println("ping req done connecting")
 
             val completedWriteChannel =
                 Channel<ControlPacket>()
@@ -115,17 +109,14 @@ abstract class TestHarness(
             repeat(expectedCount.toInt()) {
                 transport.outboundChannel.send(PingRequest)
             }
-            println("ping req consume")
             val responses =
                 completedWriteChannel.consumeAsFlow()
                     .filterIsInstance<IPingRequest>()
                     .take(expectedCount.toInt())
                     .toList()
-            println("ping consumed")
             assertEquals(expectedCount, responses.count().toLong())
             transport.suspendClose()
             disconnect(transport)
-            println("ping request done $expectedCount")
         }
     }
 
@@ -138,18 +129,8 @@ abstract class TestHarness(
             val transport = try {
                 connect()
             } catch (e: Exception) {
-                if (e.message == "Connection reset by peer") {
-                    println("connection reset, adding a delay")
-                    delay(1)
-                    try {
-                        connect()
-                    } catch (e: Exception) {
-                        println("Still failed, aborting $e")
-                        throw e
-                    }
-                } else {
-                    throw e
-                }
+                delay(1)
+                connect()
             }
             val expectedCount =
                 max(
@@ -167,7 +148,6 @@ abstract class TestHarness(
             )
             transport.suspendClose()
             disconnect(transport)
-            println("ping response done $expectedCount")
         }
     }
 
@@ -178,25 +158,21 @@ abstract class TestHarness(
             block(scope.coroutineContext) {
                 repeat(runCount) {
                     jobs += launch {
-                        println("ultra async ping request st $it / $runCount")
                         try {
-                            println("ping req impl")
                             pingRequestImpl()
                             count++
-                            println("ping req impl done")
                         } catch (e: Throwable) {
-                            println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it  / $runCount $e from ${e.cause}, trying one more time")
+                            println("error from ultraAsyncTestSingleThreaded.pingRequestImpl $it  / $runCount  $count $e from ${e.cause}, trying one more time")
                             pingRequestImpl()
                         }
                         count++
                     }
                     jobs += launch {
-                        println("ultra async ping response st $it / $runCount")
                         try {
                             pingResponseImpl()
                             count++
                         } catch (e: Throwable) {
-                            println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it  / $runCount $e from ${e.cause}, trying one more time")
+                            println("error from ultraAsyncTestSingleThreaded.pingResponseImpl $it  / $runCount $e  $count from ${e.cause}, trying one more time")
                             pingResponseImpl()
                         }
                         count++
@@ -214,7 +190,6 @@ abstract class TestHarness(
         if (completedWrite != null) {
             assertTrue(completedWrite.isClosedForSend)
         }
-        println("test isopen")
         assertFalse(transport.isOpen())
         assertNull(transport.assignedPort(), "Leaked socket")
         assertTrue(transport.outboundChannel.isClosedForSend)

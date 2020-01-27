@@ -89,27 +89,22 @@ class BlockingClientTransport(
         super.close()
         try {
             socket?.shutdownInput()
-            println("shutting down input")
         } catch (e: Exception) {
         }
         try {
             input?.close()
-            println("close input")
         } catch (e: Exception) {
         }
         try {
             socket?.shutdownOutput()
-            println("shutting down output")
         } catch (e: Exception) {
         }
         try {
             outputStream?.close()
-            println("close output stream")
         } catch (e: Exception) {
         }
         try {
             socket?.close()
-            println("close socket")
         } catch (e: Exception) {
         }
     }

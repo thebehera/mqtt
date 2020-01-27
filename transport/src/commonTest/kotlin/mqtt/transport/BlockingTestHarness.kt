@@ -33,13 +33,12 @@ abstract class BlockingTestHarness(
     override val scope: CoroutineScope = CoroutineScope(EmptyCoroutineContext)
     override fun pingRequest() {
         repeat(runCount) {
-            println("ping request $it / $runCount")
             try {
                 blockWithTimeout(keepAliveTimeoutSeconds * 2000L) {
                     pingRequestImpl()
                 }
             } catch (e: Throwable) {
-                println("error from pingRequest $it $e")
+                println("error from pingRequest $it/ $runCount $e")
                 throw e
             }
         }
@@ -47,13 +46,12 @@ abstract class BlockingTestHarness(
 
     override fun pingResponse() {
         repeat(runCount) {
-            println("ping response st $it / $runCount")
             try {
                 blockWithTimeout(keepAliveTimeoutSeconds * 2000L) {
                     pingResponseImpl()
                 }
             } catch (e: Throwable) {
-                println("error from pingResponse $it $e")
+                println("error from pingResponse $it / $runCount $e")
                 throw e
             }
         }

@@ -27,7 +27,6 @@ actual suspend fun aMqttClient(
             it.resumeWithException(e)
         }
     }
-    println("scope $scope, socket $socket con $connectionRequest maxBuffer $maxBufferSize")
     return AsyncClientTransport(scope, socket, connectionRequest, maxBufferSize)
 }
 
