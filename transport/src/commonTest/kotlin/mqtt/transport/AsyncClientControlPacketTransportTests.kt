@@ -43,7 +43,7 @@ class AsyncClientControlPacketTransportTests {
             val clientTransport = aMqttClient(this, connectionRequest, 12000, null)
             val flow = server.listen()
             val port = server.port()!!
-            val server2ClientMutex = Mutex(true)
+            val server2ClientMutex = Mutex()
             launch {
                 flow.collect { server2ClientTransport ->
                     println("mock incoming ${server2ClientTransport.connectionRequest}")
