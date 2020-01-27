@@ -14,7 +14,7 @@ class AsyncMultiThreadedClientControlPacketTransportIntegrationTests {
     val port = 60000
     private lateinit var asyncClientTestHarness: AsyncClientTestHarness
     val processors = Runtime.getRuntime().availableProcessors()
-    val runCount = processors * processors
+    val runCount = Math.min(1000, processors * processors)
 
     @Before
     fun connect() {
