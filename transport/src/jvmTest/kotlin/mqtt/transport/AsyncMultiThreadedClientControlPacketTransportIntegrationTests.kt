@@ -35,7 +35,7 @@ class AsyncMultiThreadedClientControlPacketTransportIntegrationTests {
         asyncClientTestHarness.pingResponse()
     }
 
-    @Test(timeout = 15000)
+    @Test(timeout = 60000)
     fun ultraAsync() {
         asyncClientTestHarness.ultraAsync()
     }
