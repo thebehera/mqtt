@@ -8,7 +8,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class BlockingClientControlPacketTransportIntegrationTests {
     private val timeoutOffsetMs = 150
-    private val keepAliveTimeoutSeconds = 2
+    private val keepAliveTimeoutSeconds = 1
     private val integrationTestTimeoutMs = keepAliveTimeoutSeconds * 1000 + timeoutOffsetMs + 1
     val runCount = 1
     val port = 60000
