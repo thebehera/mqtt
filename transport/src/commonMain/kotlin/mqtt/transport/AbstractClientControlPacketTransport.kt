@@ -35,6 +35,7 @@ abstract class AbstractClientControlPacketTransport(
 
     protected fun startWriteChannel() = scope.launch {
         try {
+            println("start write channel")
             outbound.consumeEach { packet ->
                 write(packet, timeout)
                 try {
@@ -52,8 +53,10 @@ abstract class AbstractClientControlPacketTransport(
 
 
     protected fun startPingTimer() = scope.launch {
-        while (isActive) {
-            delayUntilPingInterval(connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L)
+        println("start ping timer")
+        val delay = connectionRequest.keepAliveTimeoutSeconds.toLong() * 1000L
+        while (isActive && !isClosing) {
+            delayUntilPingInterval(delay)
             try {
                 outboundChannel.send(ping(connectionRequest.protocolVersion))
             } catch (e: ClosedSendChannelException) {
@@ -84,19 +87,21 @@ abstract class AbstractClientControlPacketTransport(
 
     protected fun startReadChannel() = scope.launch {
         try {
-            while (scope.isActive) {
-                val packetRead = read(timeout * timeoutMultiplier)
+            println("start read channel")
+            while (scope.isActive && !isClosing) {
+                val readTimeout = timeout
+//                println("$this@AbstractClientControlPacketTransport reading channel with delay $readTimeout")
+                val packetRead = read(readTimeout)
                 if (packetRead is IPingRequest) {
-                    scope.launch {
-                        outboundChannel.send(pong(connectionRequest.protocolVersion))
-                    }
+                    outboundChannel.send(pong(connectionRequest.protocolVersion))
                 }
                 lastMessageReadAt = currentTimestampMs()
                 inboxChannel.send(packetRead)
             }
         } catch (e: Throwable) {
-//            println("read channel closed with exception $e")
+            println("$this@AbstractClientControlPacketTransport read channel closed with exception $e")
         } finally {
+            println("done reading, close")
             suspendClose()
         }
     }
@@ -112,19 +117,25 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     protected suspend fun delayUntilPingInterval(keepAliveMs: Long) {
-        val deltaTime = nextDelay(keepAliveMs)
-        delay(deltaTime)
+        do {
+            var delay = nextDelay(keepAliveMs)
+            println("${currentTimestampMs()} delay by $delay $keepAliveMs")
+            delay(delay)
+            delay = nextDelay(keepAliveMs)
+        } while (delay > 0 && !isClosing && scope.isActive)
     }
 
     override val incomingControlPackets = inboxChannel.consumeAsFlow()
 
     override suspend fun suspendClose() {
+        println("suspend close")
         isClosing = true
         try {
             if (outbound.isClosedForSend) {
                 return
             }
             try {
+                println("$this sending disconnect")
                 outbound.send(disconnect(protocolVersion))
                 val mutex = Mutex(true)
                 try {
@@ -144,6 +155,7 @@ abstract class AbstractClientControlPacketTransport(
     }
 
     override fun close() {
+        println("close")
         isClosing = true
         inboxChannel.close()
         outboundChannel.close()
