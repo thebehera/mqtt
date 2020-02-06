@@ -10,7 +10,7 @@ import kotlin.test.Test
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 
-const val clientCount = 512L
+const val clientCount = 1000L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -18,7 +18,7 @@ const val clientCount = 512L
 class SocketTests {
 
 
-    @Test(timeout = (clientCount.toFloat() * 1.1f).toLong())
+    @Test(timeout = clientCount * 2)
     fun test() = runBlocking {
         var count = 0
         val clientsMap = HashMap<UShort, SuspendCloseable>()
@@ -28,6 +28,7 @@ class SocketTests {
         launch {
             server.listen().collect {
                 ++count
+//                println("$count")
                 if (count >= clientCount) {
                     mutex.unlock()
                 }

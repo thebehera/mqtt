@@ -41,11 +41,11 @@ suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCorout
 suspend fun AsynchronousSocketChannel.aConnect(
     socketAddress: SocketAddress
 ) = suspendCancellableCoroutine<Unit> { cont ->
+    closeOnCancel(cont)
     val time = measureTime { connect(socketAddress, cont, AsyncVoidIOHandler) }
     if (time > 1.milliseconds) {
         println("${currentTimestampMs()} took $time to connect to socket")
     }
-    closeOnCancel(cont)
 }
 
 /**
