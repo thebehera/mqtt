@@ -4,16 +4,31 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.core.readByteBuffer
+import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.ByteBuffer
+import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousSocketChannel
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
+import kotlin.time.milliseconds
+
+
+suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCoroutine<AsynchronousSocketChannel> {
+    try {
+        it.resume(AsynchronousSocketChannel.open(group))
+    } catch (e: Throwable) {
+        it.resumeWithException(e)
+    }
+}
 
 /**
  * Performs [AsynchronousSocketChannel.connect] without blocking a thread and resumes when asynchronous operation completes.
@@ -22,10 +37,14 @@ import kotlin.time.ExperimentalTime
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 
+@ExperimentalTime
 suspend fun AsynchronousSocketChannel.aConnect(
     socketAddress: SocketAddress
 ) = suspendCancellableCoroutine<Unit> { cont ->
-    connect(socketAddress, cont, AsyncVoidIOHandler)
+    val time = measureTime { connect(socketAddress, cont, AsyncVoidIOHandler) }
+    if (time > 1.milliseconds) {
+        println("${currentTimestampMs()} took $time to connect to socket")
+    }
     closeOnCancel(cont)
 }
 
@@ -133,10 +152,11 @@ suspend fun AsynchronousSocketChannel.aWrite(
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
 
+@ExperimentalTime
 suspend fun AsynchronousSocketChannel.aClose() {
-    suspendCancellableCoroutine<Void?> { cont ->
+    suspendCoroutine<Unit> { cont ->
         blockingClose()
-        cont.resume(null)
+        cont.resume(Unit)
     }
 }
 
@@ -149,19 +169,26 @@ fun AsynchronousSocketChannel.assignedPort(): UShort? {
     }
 }
 
+@ExperimentalTime
 internal fun AsynchronousSocketChannel.blockingClose() {
-    try {
-        shutdownOutput()
-    } catch (ex: Throwable) {
+    val text = toString()
+    val time = measureTime {
+        try {
+            shutdownInput()
+        } catch (ex: Throwable) {
+        }
+        try {
+            shutdownOutput()
+        } catch (ex: Throwable) {
+        }
+        try {
+            close()
+        } catch (ex: Throwable) {
+            // Specification says that it is Ok to call it any time, but reality is different,
+            // so we have just to ignore exception
+        }
     }
-    try {
-        shutdownInput()
-    } catch (ex: Throwable) {
-    }
-    try {
-        close()
-    } catch (ex: Throwable) {
-        // Specification says that it is Ok to call it any time, but reality is different,
-        // so we have just to ignore exception
+    if (time > 1.milliseconds) {
+        println("${currentTimestampMs()} took $time to close $text $this")
     }
 }

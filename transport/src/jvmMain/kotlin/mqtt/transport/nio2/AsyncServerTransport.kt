@@ -33,7 +33,7 @@ internal class AsyncServerTransport(
         host: String,
         readTimeout: Duration
     ): Flow<AsyncServerClientTransport> {
-        val server = group.openAsyncServerSocketChannel()
+        val server = openAsyncServerSocketChannel(group)
         this.server = if (port != null) {
             server.aBind(InetSocketAddress(host, port.toInt()))
         } else {

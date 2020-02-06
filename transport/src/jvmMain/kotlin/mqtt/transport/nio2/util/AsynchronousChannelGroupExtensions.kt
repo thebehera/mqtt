@@ -7,10 +7,10 @@ import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-suspend fun AsynchronousChannelGroup?.openAsyncServerSocketChannel(): AsynchronousServerSocketChannel =
+suspend fun openAsyncServerSocketChannel(group: AsynchronousChannelGroup? = null): AsynchronousServerSocketChannel =
     suspendCancellableCoroutine { continuation ->
         try {
-            continuation.resume(AsynchronousServerSocketChannel.open(this))
+            continuation.resume(AsynchronousServerSocketChannel.open(group))
         } catch (e: Exception) {
             continuation.resumeWithException(e)
         }
