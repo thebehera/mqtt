@@ -18,7 +18,7 @@ const val clientCount = 1024L
 class SocketTests {
 
 
-    @Test(timeout = clientCount * clientCount)
+    @Test(timeout = (clientCount / 1000 * clientCount / 1000) * 1000)
     fun test() = runBlocking {
         var count = 0
         val clientsMap = HashMap<UShort, SuspendCloseable>()
