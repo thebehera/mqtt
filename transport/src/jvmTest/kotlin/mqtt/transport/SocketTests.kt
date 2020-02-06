@@ -10,7 +10,7 @@ import kotlin.test.Test
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 
-const val clientCount = 1024L
+const val clientCount = 2000L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -31,9 +31,11 @@ class SocketTests {
                 println("$count")
                 if (count >= clientCount) {
                     mutex.unlock()
+                    return@collect
                 }
                 it.close()
             }
+            server.close()
         }
         repeat(clientCount.toInt()) {
             val client = asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
@@ -42,6 +44,7 @@ class SocketTests {
             if (clientPort != null) {
                 clientsMap[clientPort] = client
             }
+            client.close()
         }
 
         mutex.lock()
