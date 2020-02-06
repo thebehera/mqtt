@@ -28,7 +28,7 @@ class SocketTests {
         launch {
             server.listen().collect {
                 ++count
-//                println("$count")
+                println("$count")
                 if (count >= clientCount) {
                     mutex.unlock()
                 }
