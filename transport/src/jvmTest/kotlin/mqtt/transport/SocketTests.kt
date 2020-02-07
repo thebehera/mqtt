@@ -10,7 +10,7 @@ import kotlin.test.Test
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 
-const val clientCount = 512L
+const val clientCount = 1024L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -18,7 +18,7 @@ const val clientCount = 512L
 class SocketTests {
 
 
-    @Test(timeout = (clientCount / 1000 * clientCount / 1000) * 1000)
+    @Test(timeout = 10_000)
     fun test() = runBlocking {
         var count = 0
         val clientsMap = HashMap<UShort, SuspendCloseable>()
