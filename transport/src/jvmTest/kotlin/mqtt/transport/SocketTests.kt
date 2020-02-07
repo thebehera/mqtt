@@ -10,7 +10,7 @@ import kotlin.test.Test
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 
-const val clientCount = 2000L
+const val clientCount = 1024L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
