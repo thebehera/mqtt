@@ -5,6 +5,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.core.readByteBuffer
 import mqtt.time.currentTimestampMs
+import mqtt.transport.nio.socket.util.blockingClose
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
@@ -19,7 +20,6 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 
 suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCoroutine<AsynchronousSocketChannel> {
@@ -183,31 +183,4 @@ fun AsynchronousSocketChannel.assignedPort(remote: Boolean = true): UShort? {
     } catch (e: Exception) {
         null
     }
-}
-
-@ExperimentalTime
-internal fun AsynchronousSocketChannel.blockingClose() {
-    val text = toString()
-    val time = measureTime {
-        try {
-            shutdownInput()
-//            println("${currentTimestampMs()} shutdown input")
-        } catch (ex: Throwable) {
-        }
-        try {
-            shutdownOutput()
-//            println("${currentTimestampMs()} shutdown output")
-        } catch (ex: Throwable) {
-        }
-        try {
-            close()
-//            println("${currentTimestampMs()} closed ${!isOpen}")
-        } catch (ex: Throwable) {
-            // Specification says that it is Ok to call it any time, but reality is different,
-            // so we have just to ignore exception
-        }
-    }
-//    if (time > minTimeBeforeLogging) {
-//        println("${currentTimestampMs()} took $time to close $text $this")
-//    }
 }

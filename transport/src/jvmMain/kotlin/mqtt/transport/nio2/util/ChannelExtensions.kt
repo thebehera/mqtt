@@ -1,9 +1,13 @@
 package mqtt.transport.nio2.util
 
 import kotlinx.coroutines.CancellableContinuation
+import mqtt.transport.nio.socket.util.blockingClose
+import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.Channel
+import java.nio.channels.NetworkChannel
+import kotlin.time.ExperimentalTime
 
-private fun Channel.blockingClose() {
+fun Channel.blockingClose() {
     try {
         close()
     } catch (ex: Throwable) {
@@ -13,7 +17,14 @@ private fun Channel.blockingClose() {
 }
 
 
-fun Channel.closeOnCancel(cont: CancellableContinuation<*>) {
+fun AsynchronousFileChannel.closeOnCancel(cont: CancellableContinuation<*>) {
+    cont.invokeOnCancellation {
+        blockingClose()
+    }
+}
+
+@ExperimentalTime
+fun NetworkChannel.closeOnCancel(cont: CancellableContinuation<*>) {
     cont.invokeOnCancellation {
         blockingClose()
     }
