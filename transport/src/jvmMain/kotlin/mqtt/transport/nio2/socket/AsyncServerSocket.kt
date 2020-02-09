@@ -13,28 +13,12 @@ import mqtt.transport.nio2.util.openAsyncServerSocketChannel
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
 import java.nio.ByteBuffer
-import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.util.*
-import java.util.concurrent.SynchronousQueue
-import java.util.concurrent.ThreadFactory
-import java.util.concurrent.ThreadPoolExecutor
-import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-
-val queue = SynchronousQueue<Runnable>()
-
-val threadGroup = ThreadGroup("async socket group")
-var threadCount = 0
-val factory = ThreadFactory {
-    Thread(threadGroup, it, "async thread ${++threadCount}")
-}
-val group = AsynchronousChannelGroup.withCachedThreadPool(
-    ThreadPoolExecutor(0, 8, 0L, TimeUnit.MILLISECONDS, queue, factory), 1
-)
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -64,7 +48,7 @@ class AsyncServerSocket(
         } else {
             null
         }
-        val serverLocal = openAsyncServerSocketChannel(group)
+        val serverLocal = openAsyncServerSocketChannel()
 
         serverLocal.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, false)
         serverLocal.asyncSetOption(StandardSocketOptions.SO_RCVBUF, 100)

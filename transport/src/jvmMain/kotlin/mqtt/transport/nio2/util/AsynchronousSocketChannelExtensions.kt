@@ -5,8 +5,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.core.readByteBuffer
 import mqtt.time.currentTimestampMs
-import mqtt.transport.nio2.socket.group
-import mqtt.transport.nio2.socket.minTimeBeforeLogging
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
@@ -53,11 +51,11 @@ suspend fun AsynchronousSocketChannel.aConnect(
     tag: String? = null
 ) = suspendCoroutine<Unit> { cont ->
     val time = currentTimestampMs()
-    println("$time $tag client connecting $this ${group.provider()}")
+    println("$time $tag client connecting $this")
     connect(socketAddress, cont, AsyncVoidIOHandler {
         if (tag != null) {
             val now = currentTimestampMs()
-            println("$now $tag client connected(${now - time}ms) $this  ${group.provider()}")
+            println("$now $tag client connected(${now - time}ms) $this")
         }
     })
 }

@@ -3,7 +3,6 @@ package mqtt.transport.nio2.util
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import mqtt.time.currentTimestampMs
-import mqtt.transport.nio2.socket.group
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.CompletionHandler
 import kotlin.coroutines.Continuation
@@ -13,13 +12,13 @@ import kotlin.coroutines.resumeWithException
 internal class AsyncVoidIOHandler(val cb: () -> Unit) :
     CompletionHandler<Void?, Continuation<Unit>> {
     override fun completed(result: Void?, cont: Continuation<Unit>) {
-        println("${currentTimestampMs()}      client connected $this ${group.provider()}")
+        println("${currentTimestampMs()}      client connected $this")
         cb()
         cont.resume(Unit)
     }
 
     override fun failed(ex: Throwable, cont: Continuation<Unit>) {
-        println("${currentTimestampMs()}      client failed $ex $this ${group.provider()}")
+        println("${currentTimestampMs()}      client failed $ex $this")
         // just return if already cancelled and got an expected exception for that case
         if (cont is CancellableContinuation<Unit>) {
             if (ex is AsynchronousCloseException && cont.isCancelled) return
