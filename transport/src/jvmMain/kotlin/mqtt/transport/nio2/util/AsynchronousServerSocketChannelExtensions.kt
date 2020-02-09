@@ -41,15 +41,6 @@ suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCorout
 
 }
 
-suspend fun <T> AsynchronousServerSocketChannel.asyncSetOption(option: SocketOption<T>, value: T) =
-    suspendCoroutine<AsynchronousServerSocketChannel> {
-        try {
-            it.resume(setOption(option, value))
-        } catch (e: Throwable) {
-            it.resumeWithException(e)
-        }
-    }
-
 /**
  * Performs [AsynchronousServerSocketChannel.bind] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
@@ -65,5 +56,15 @@ suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress?)
             cont.resume(bind(socketAddress))
         } catch (e: Throwable) {
             cont.cancel(e)
+        }
+    }
+
+
+suspend fun <T> AsynchronousServerSocketChannel.asyncSetOption(option: SocketOption<T>, value: T) =
+    suspendCoroutine<AsynchronousServerSocketChannel> {
+        try {
+            it.resume(setOption(option, value))
+        } catch (e: Throwable) {
+            it.resumeWithException(e)
         }
     }

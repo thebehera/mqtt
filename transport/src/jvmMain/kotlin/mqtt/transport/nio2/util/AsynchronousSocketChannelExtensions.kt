@@ -10,7 +10,6 @@ import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
 import java.net.SocketAddress
-import java.net.SocketOption
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousSocketChannel
@@ -30,14 +29,6 @@ suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCorout
     }
 }
 
-suspend fun <T> AsynchronousSocketChannel.asyncSetOption(option: SocketOption<T>, value: T) =
-    suspendCoroutine<AsynchronousSocketChannel> {
-        try {
-            it.resume(setOption(option, value))
-        } catch (e: Throwable) {
-            it.resumeWithException(e)
-        }
-    }
 
 /**
  * Performs [AsynchronousSocketChannel.connect] without blocking a thread and resumes when asynchronous operation completes.

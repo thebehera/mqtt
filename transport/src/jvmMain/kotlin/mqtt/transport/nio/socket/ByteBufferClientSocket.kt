@@ -8,10 +8,8 @@ import kotlinx.coroutines.flow.flow
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
 import mqtt.transport.nio.socket.util.aClose
-import mqtt.transport.nio2.util.aWrite
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
@@ -32,8 +30,10 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
     private val isClosing = AtomicBoolean(false)
     override var tag: Any? = null
 
+    open fun setupIncomingBuffer() {}
     override val incoming = flow {
         try {
+            setupIncomingBuffer()
             while (isOpen()) {
                 val buffer = pool.borrow()
                 aRead(buffer)
@@ -51,12 +51,13 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
     }
 
     abstract suspend fun aRead(buffer: ByteBuffer): Int
+    abstract suspend fun aWrite(buffer: ByteBuffer): Int
 
-    protected fun startWriteChannel(socket: AsynchronousSocketChannel) = scope.launch {
+    protected fun startWriteChannel() = scope.launch {
         try {
             writeChannel.consumeAsFlow().collect {
                 if (isActive) {
-                    socket.aWrite(it, writeTimeout)
+                    aWrite(it)
                 }
             }
         } finally {

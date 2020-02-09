@@ -2,6 +2,7 @@ package mqtt.transport
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import mqtt.transport.nio.socket.NioClientSocket
 import mqtt.transport.nio2.socket.AsyncClientSocket
 import mqtt.transport.nio2.socket.AsyncServerSocket
 import java.nio.ByteBuffer
@@ -19,6 +20,24 @@ actual fun asyncClientSocket(
     return AsyncClientSocket(
         coroutineScope,
         ByteBufferPool,
+        readTimeout,
+        writeTimeout
+    )
+}
+
+@ExperimentalCoroutinesApi
+@ExperimentalTime
+@ExperimentalUnsignedTypes
+actual fun clientSocket(
+    coroutineScope: CoroutineScope,
+    blocking: Boolean,
+    readTimeout: Duration,
+    writeTimeout: Duration
+): ClientToServerSocket<*> {
+    return NioClientSocket(
+        coroutineScope,
+        ByteBufferPool,
+        blocking,
         readTimeout,
         writeTimeout
     )

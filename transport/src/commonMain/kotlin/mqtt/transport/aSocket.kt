@@ -63,3 +63,13 @@ expect fun asyncServerSocket(
     readTimeout: Duration,
     writeTimeout: Duration
 ): ServerToClientSocket<*>
+
+@ExperimentalUnsignedTypes
+@ExperimentalTime
+@ExperimentalCoroutinesApi
+expect fun clientSocket(
+    coroutineScope: CoroutineScope,
+    blocking: Boolean,
+    readTimeout: Duration,
+    writeTimeout: Duration
+): ClientToServerSocket<*>

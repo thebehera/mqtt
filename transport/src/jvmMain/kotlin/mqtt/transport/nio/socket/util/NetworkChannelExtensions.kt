@@ -1,12 +1,24 @@
 package mqtt.transport.nio.socket.util
 
+import java.net.SocketOption
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
 import java.nio.channels.SocketChannel
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
+
+
+suspend fun <T> NetworkChannel.asyncSetOption(option: SocketOption<T>, value: T) =
+    suspendCoroutine<NetworkChannel> {
+        try {
+            it.resume(setOption(option, value))
+        } catch (e: Throwable) {
+            it.resumeWithException(e)
+        }
+    }
 
 @ExperimentalTime
 suspend fun NetworkChannel.aClose() {

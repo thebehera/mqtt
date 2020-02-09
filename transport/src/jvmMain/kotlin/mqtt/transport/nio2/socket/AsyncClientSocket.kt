@@ -5,8 +5,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.time.currentTimestampMs
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientToServerSocket
+import mqtt.transport.nio.socket.util.asyncSetOption
 import mqtt.transport.nio2.util.aConnect
-import mqtt.transport.nio2.util.asyncSetOption
 import mqtt.transport.nio2.util.asyncSocket
 import mqtt.transport.util.asInetAddress
 import java.net.InetSocketAddress
@@ -34,6 +34,7 @@ class AsyncClientSocket(
             }
 //            println("${currentTimestampMs()} $tag client took ${socketAddress.duration} to resolve")
             val asyncSocket = measureTimedValue { asyncSocket() }
+            this.socket = asyncSocket.value
             if (asyncSocket.duration > minTimeBeforeLogging) {
                 println("${currentTimestampMs()} $tag client took ${asyncSocket.duration} to get async socket")
             }
@@ -57,12 +58,11 @@ class AsyncClientSocket(
                 println("${currentTimestampMs()} $tag client ${(asyncSocket.value.remoteAddress as? InetSocketAddress)?.port} took $connectTime to connect  ${asyncSocket.value}")
             }
 //            println("${currentTimestampMs()} connected, start write channel $socketAddress $asyncSocket")
-            val writeChannelStarttime = measureTime { startWriteChannel(asyncSocket.value) }
+            val writeChannelStarttime = measureTime { startWriteChannel() }
             if (writeChannelStarttime > minTimeBeforeLogging) {
                 println("${currentTimestampMs()} $tag client took $writeChannelStarttime to startt write channel")
             }
 //        println("${currentTimestampMs()} write channel started $socketAddress $asyncSocket")
-            this.socket = asyncSocket.value
         }
     }
 

@@ -17,6 +17,6 @@ class AsyncServerToClientSocket(
 ) : AsyncBaseClientSocket(scope, pool, readTimeout, writeTimeout) {
     init {
         this.socket = asyncSocket
-        startWriteChannel(asyncSocket)
+        startWriteChannel()
     }
 }
