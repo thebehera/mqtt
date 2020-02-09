@@ -17,7 +17,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCoroutine<AsynchronousSocketChannel> { cont ->
     val start = currentTimestampMs()
-    println("$start      server wait for accept")
+//    println("$start      server wait for accept")
     accept(
         cont,
         object : CompletionHandler<AsynchronousSocketChannel, CancellableContinuation<AsynchronousSocketChannel>> {
@@ -26,12 +26,12 @@ suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCorout
                 attachment: CancellableContinuation<AsynchronousSocketChannel>
             ) {
                 val deltaTime = currentTimestampMs() - start
-                println("${currentTimestampMs()}      server $deltaTime ms to accept $result")
+//                println("${currentTimestampMs()}      server $deltaTime ms to accept $result")
                 cont.resume(result)
             }
 
             override fun failed(exc: Throwable, attachment: CancellableContinuation<AsynchronousSocketChannel>) {
-                println("accept failed with $exc after ${currentTimestampMs() - start}ms $this")
+//                println("accept failed with $exc after ${currentTimestampMs() - start}ms $this")
                 // just return if already cancelled and got an expected exception for that case
                 if (exc is AsynchronousCloseException && cont.isCancelled) return
                 cont.resumeWithException(exc)

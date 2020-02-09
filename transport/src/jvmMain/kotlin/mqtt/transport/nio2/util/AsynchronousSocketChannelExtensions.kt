@@ -193,23 +193,23 @@ internal fun AsynchronousSocketChannel.blockingClose() {
     val time = measureTime {
         try {
             shutdownInput()
-            println("${currentTimestampMs()} shutdown input")
+//            println("${currentTimestampMs()} shutdown input")
         } catch (ex: Throwable) {
         }
         try {
             shutdownOutput()
-            println("${currentTimestampMs()} shutdown output")
+//            println("${currentTimestampMs()} shutdown output")
         } catch (ex: Throwable) {
         }
         try {
             close()
-            println("${currentTimestampMs()} closed ${!isOpen}")
+//            println("${currentTimestampMs()} closed ${!isOpen}")
         } catch (ex: Throwable) {
             // Specification says that it is Ok to call it any time, but reality is different,
             // so we have just to ignore exception
         }
     }
-    if (time > minTimeBeforeLogging) {
-        println("${currentTimestampMs()} took $time to close $text $this")
-    }
+//    if (time > minTimeBeforeLogging) {
+//        println("${currentTimestampMs()} took $time to close $text $this")
+//    }
 }

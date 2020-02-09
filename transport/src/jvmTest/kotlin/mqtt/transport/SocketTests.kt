@@ -30,7 +30,7 @@ class SocketTests {
         var serverClientSocket: ClientSocket<*>? = null
         launch {
             server.listen().collect {
-                println("${currentTimestampMs()}      collected ${it.localPort()}:${it.remotePort()}")
+//                println("${currentTimestampMs()}      collected ${it.localPort()}:${it.remotePort()}")
                 ++count
                 firstReceiveLock.unlock()
                 serverClientSocket = it
@@ -42,7 +42,7 @@ class SocketTests {
             server.close()
         }
         repeat(clientCount.toInt()) {
-            println("\n${currentTimestampMs()} $it async client")
+//            println("\n${currentTimestampMs()} $it async client")
             val client = asyncClientSocket(this, 10.milliseconds, 10.milliseconds) as AsyncClientSocket
             client.tag = it.toString()
             val time = measureTime {
@@ -54,7 +54,7 @@ class SocketTests {
             assertTrue(client.isOpen())
             println("${currentTimestampMs()} $it client($clientPort) opened in $time, closing")
             client.close()
-            println("${currentTimestampMs()} $it closed client\n")
+//            println("${currentTimestampMs()} $it closed client\n")
             val serverClient = serverClientSocket
             serverClient?.close()
             serverClientSocket = null

@@ -77,7 +77,6 @@ abstract class AsyncBaseClientSocket(
 
     override suspend fun close() {
         writeChannel.close()
-        println("base close")
         socket?.aClose()
         socket = null
     }

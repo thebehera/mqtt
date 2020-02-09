@@ -33,7 +33,7 @@ class AsyncClientSocket(
             val socketAddress = measureTimedValue {
                 InetSocketAddress(hostname?.asInetAddress(), port.toInt())
             }
-            println("${currentTimestampMs()} $tag client took ${socketAddress.duration} to resolve")
+//            println("${currentTimestampMs()} $tag client took ${socketAddress.duration} to resolve")
             val asyncSocket = measureTimedValue { asyncSocket(group) }
             if (asyncSocket.duration > minTimeBeforeLogging) {
                 println("${currentTimestampMs()} $tag client took ${asyncSocket.duration} to get async socket")
@@ -47,10 +47,10 @@ class AsyncClientSocket(
             }
 
 
-            for (option in asyncSocket.value.supportedOptions()) {
-                println("client socket option $option = ${asyncSocket.value.getOption(option)}")
-            }
-            println("${currentTimestampMs()} $tag client configured($configTime) ${asyncSocket.value}")
+//            for (option in asyncSocket.value.supportedOptions()) {
+//                println("client socket option $option = ${asyncSocket.value.getOption(option)}")
+//            }
+//            println("${currentTimestampMs()} $tag client configured($configTime) ${asyncSocket.value}")
             val connectTime = measureTime {
                 asyncSocket.value.aConnect(socketAddress.value, tag)
             }
