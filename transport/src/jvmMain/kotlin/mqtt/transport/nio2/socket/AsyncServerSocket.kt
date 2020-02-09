@@ -66,7 +66,7 @@ class AsyncServerSocket(
         }
         val serverLocal = openAsyncServerSocketChannel(group)
 
-        serverLocal.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, true)
+        serverLocal.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, false)
         serverLocal.asyncSetOption(StandardSocketOptions.SO_RCVBUF, 100)
         for (option in serverLocal.supportedOptions()) {
             println("server socket option $option = ${serverLocal.getOption(option)}")

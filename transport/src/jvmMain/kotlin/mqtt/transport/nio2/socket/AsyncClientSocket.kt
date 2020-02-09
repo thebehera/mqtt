@@ -40,7 +40,7 @@ class AsyncClientSocket(
             }
             val configTime = measureTime {
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.TCP_NODELAY, true)
-                asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, true)
+                asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, false)
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_KEEPALIVE, true)
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_RCVBUF, 100)
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_SNDBUF, 100)
