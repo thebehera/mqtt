@@ -23,7 +23,8 @@ interface ClientSocket<Buffer> : SuspendCloseable {
     var writeTimeout: Duration
     val incoming: Flow<Buffer>
     fun isOpen(): Boolean
-    fun port(): UShort?
+    fun localPort(): UShort?
+    fun remotePort(): UShort?
     suspend fun send(buffer: Buffer)
 }
 

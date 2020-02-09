@@ -6,51 +6,63 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import mqtt.time.currentTimestampMs
+import mqtt.transport.nio2.socket.AsyncClientSocket
 import kotlin.test.Test
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 import kotlin.time.milliseconds
 
-const val clientCount = 1024L
+const val clientCount = 70_000L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class SocketTests {
 
-
-    @Test(timeout = 10_000)
+    @Test
     fun test() = runBlocking {
         var count = 0
-        val clientsMap = HashMap<UShort, SuspendCloseable>()
         val server = asyncServerSocket(this, 10.milliseconds, 10.milliseconds)
         server.bind()
+        val firstReceiveLock = Mutex(true)
         val mutex = Mutex(true)
+        var serverClientSocket: ClientSocket<*>? = null
         launch {
             server.listen().collect {
+                println("${currentTimestampMs()}      collected ${it.localPort()}:${it.remotePort()}")
                 ++count
-                println("$count")
+                firstReceiveLock.unlock()
+                serverClientSocket = it
                 if (count >= clientCount) {
                     mutex.unlock()
                     return@collect
                 }
-                it.close()
             }
             server.close()
         }
         repeat(clientCount.toInt()) {
-            val client = asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
-            client.open(port = server.port()!!)
-            val clientPort = client.port()
-            if (clientPort != null) {
-                clientsMap[clientPort] = client
+            println("\n${currentTimestampMs()} $it async client")
+            val client = asyncClientSocket(this, 10.milliseconds, 10.milliseconds) as AsyncClientSocket
+            client.tag = it.toString()
+            val time = measureTime {
+                client.open(port = server.port()!!)
             }
+            firstReceiveLock.lock()
+            val clientPort = client.localPort()
+
+            assertTrue(client.isOpen())
+            println("${currentTimestampMs()} $it client($clientPort) opened in $time, closing")
             client.close()
+            println("${currentTimestampMs()} $it closed client\n")
+            val serverClient = serverClientSocket
+            serverClient?.close()
+            serverClientSocket = null
         }
 
         mutex.lock()
-        clientsMap.values.forEach { it.close() }
         server.close()
-        println("${currentTimestampMs()} server close $clientCount clients tested")
+        println("${currentTimestampMs()}      server close $clientCount clients tested")
         assert(clientCount == count.toLong())
     }
 }

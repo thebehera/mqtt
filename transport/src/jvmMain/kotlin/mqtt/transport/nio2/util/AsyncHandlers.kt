@@ -1,20 +1,29 @@
 package mqtt.transport.nio2.util
 
 import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import mqtt.time.currentTimestampMs
+import mqtt.transport.nio2.socket.group
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.CompletionHandler
+import kotlin.coroutines.Continuation
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-internal object AsyncVoidIOHandler :
-    CompletionHandler<Void?, CancellableContinuation<Unit>> {
-    override fun completed(result: Void?, cont: CancellableContinuation<Unit>) {
+internal class AsyncVoidIOHandler(val cb: () -> Unit) :
+    CompletionHandler<Void?, Continuation<Unit>> {
+    override fun completed(result: Void?, cont: Continuation<Unit>) {
+        println("${currentTimestampMs()}      client connected $this ${group.provider()}")
+        cb()
         cont.resume(Unit)
     }
 
-    override fun failed(ex: Throwable, cont: CancellableContinuation<Unit>) {
+    override fun failed(ex: Throwable, cont: Continuation<Unit>) {
+        println("${currentTimestampMs()}      client failed $ex $this ${group.provider()}")
         // just return if already cancelled and got an expected exception for that case
-        if (ex is AsynchronousCloseException && cont.isCancelled) return
+        if (cont is CancellableContinuation<Unit>) {
+            if (ex is AsynchronousCloseException && cont.isCancelled) return
+        }
         cont.resumeWithException(ex)
     }
 }
@@ -31,6 +40,25 @@ internal object AsyncIOHandlerAny :
         cont.resumeWithException(ex)
     }
 }
+
+fun asyncIOIntHandler(): CompletionHandler<Int, CancellableContinuation<Int>> =
+    object : CompletionHandler<Int, CancellableContinuation<Int>> {
+        override fun completed(result: Int, attachment: CancellableContinuation<Int>) {
+            if (result == -1) {
+                attachment.resumeWithException(ClosedReceiveChannelException("server returned -1 bytes"))
+                return
+            }
+            attachment.resume(result)
+        }
+
+        override fun failed(ex: Throwable, cont: CancellableContinuation<Int>) {
+            println("read failure $ex")
+            // just return if already cancelled and got an expected exception for that case
+            if (ex is AsynchronousCloseException && cont.isCancelled) return
+            cont.resumeWithException(ex)
+        }
+
+    }
 
 @Suppress("UNCHECKED_CAST")
 fun <T> asyncIOHandler(): CompletionHandler<T, CancellableContinuation<T>> =

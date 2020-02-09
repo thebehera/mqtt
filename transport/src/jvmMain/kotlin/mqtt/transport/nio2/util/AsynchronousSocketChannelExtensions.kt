@@ -5,10 +5,13 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.core.readByteBuffer
 import mqtt.time.currentTimestampMs
+import mqtt.transport.nio2.socket.group
+import mqtt.transport.nio2.socket.minTimeBeforeLogging
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
 import java.net.InetSocketAddress
 import java.net.SocketAddress
+import java.net.SocketOption
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousSocketChannel
@@ -19,7 +22,6 @@ import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
-import kotlin.time.milliseconds
 
 
 suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCoroutine<AsynchronousSocketChannel> {
@@ -30,22 +32,34 @@ suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCorout
     }
 }
 
+suspend fun <T> AsynchronousSocketChannel.asyncSetOption(option: SocketOption<T>, value: T) =
+    suspendCoroutine<AsynchronousSocketChannel> {
+        try {
+            it.resume(setOption(option, value))
+        } catch (e: Throwable) {
+            it.resumeWithException(e)
+        }
+    }
+
 /**
  * Performs [AsynchronousSocketChannel.connect] without blocking a thread and resumes when asynchronous operation completes.
  * This suspending function is cancellable.
  * If the [Job] of the current coroutine is cancelled or completed while this suspending function is waiting, this function
  * *closes the underlying channel* and immediately resumes with [CancellationException].
  */
-
 @ExperimentalTime
 suspend fun AsynchronousSocketChannel.aConnect(
-    socketAddress: SocketAddress
-) = suspendCancellableCoroutine<Unit> { cont ->
-    closeOnCancel(cont)
-    val time = measureTime { connect(socketAddress, cont, AsyncVoidIOHandler) }
-    if (time > 1.milliseconds) {
-        println("${currentTimestampMs()} took $time to connect to socket")
-    }
+    socketAddress: SocketAddress,
+    tag: String? = null
+) = suspendCoroutine<Unit> { cont ->
+    val time = currentTimestampMs()
+    println("$time $tag client connecting $this ${group.provider()}")
+    connect(socketAddress, cont, AsyncVoidIOHandler {
+        if (tag != null) {
+            val now = currentTimestampMs()
+            println("$now $tag client connected(${now - time}ms) $this  ${group.provider()}")
+        }
+    })
 }
 
 /**
@@ -62,7 +76,7 @@ suspend fun AsynchronousSocketChannel.aRead(
 ) = suspendCancellableCoroutine<Int> { cont ->
     read(
         buf, duration.toLongMilliseconds(), TimeUnit.MILLISECONDS, cont,
-        asyncIOHandler()
+        asyncIOIntHandler()
     )
     closeOnCancel(cont)
 }
@@ -161,9 +175,13 @@ suspend fun AsynchronousSocketChannel.aClose() {
 }
 
 
-fun AsynchronousSocketChannel.assignedPort(): UShort? {
+fun AsynchronousSocketChannel.assignedPort(remote: Boolean = true): UShort? {
     return try {
-        (remoteAddress as? InetSocketAddress)?.port?.toUShort()
+        if (remote) {
+            (remoteAddress as? InetSocketAddress)?.port?.toUShort()
+        } else {
+            (localAddress as? InetSocketAddress)?.port?.toUShort()
+        }
     } catch (e: Exception) {
         null
     }
@@ -175,20 +193,23 @@ internal fun AsynchronousSocketChannel.blockingClose() {
     val time = measureTime {
         try {
             shutdownInput()
+            println("${currentTimestampMs()} shutdown input")
         } catch (ex: Throwable) {
         }
         try {
             shutdownOutput()
+            println("${currentTimestampMs()} shutdown output")
         } catch (ex: Throwable) {
         }
         try {
             close()
+            println("${currentTimestampMs()} closed ${!isOpen}")
         } catch (ex: Throwable) {
             // Specification says that it is Ok to call it any time, but reality is different,
             // so we have just to ignore exception
         }
     }
-    if (time > 1.milliseconds) {
+    if (time > minTimeBeforeLogging) {
         println("${currentTimestampMs()} took $time to close $text $this")
     }
 }
