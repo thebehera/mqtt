@@ -29,7 +29,7 @@ abstract class AsyncBaseClientSocket(
     protected var socket: AsynchronousSocketChannel? = null
     private val writeChannel = Channel<ByteBuffer>()
     private val isClosing = AtomicBoolean(false)
-
+    override var tag: Any? = null
     override fun isOpen() = try {
         (socket?.isOpen ?: false) && !isClosing.get()
     } catch (e: Throwable) {

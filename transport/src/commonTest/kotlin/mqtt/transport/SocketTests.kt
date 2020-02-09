@@ -8,6 +8,7 @@ import kotlinx.coroutines.sync.Mutex
 import mqtt.time.currentTimestampMs
 import mqtt.transport.nio2.socket.AsyncClientSocket
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -21,7 +22,7 @@ const val clientCount = 7_000L
 class SocketTests {
 
     @Test
-    fun test() = runBlocking {
+    fun test() = block {
         var count = 0
         val server = asyncServerSocket(this, 10.milliseconds, 10.milliseconds)
         server.bind()
@@ -30,7 +31,7 @@ class SocketTests {
         var serverClientSocket: ClientSocket<*>? = null
         launch {
             server.listen().collect {
-//                println("${currentTimestampMs()}      collected ${it.localPort()}:${it.remotePort()}")
+                //                println("${currentTimestampMs()}      collected ${it.localPort()}:${it.remotePort()}")
                 ++count
                 firstReceiveLock.unlock()
                 serverClientSocket = it
@@ -43,7 +44,7 @@ class SocketTests {
         }
         repeat(clientCount.toInt()) {
 //            println("\n${currentTimestampMs()} $it async client")
-            val client = asyncClientSocket(this, 10.milliseconds, 10.milliseconds) as AsyncClientSocket
+            val client = asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
             client.tag = it.toString()
             val time = measureTime {
                 client.open(port = server.port()!!)
@@ -63,6 +64,6 @@ class SocketTests {
         mutex.lock()
         server.close()
         println("${currentTimestampMs()}      server close $clientCount clients tested")
-        assert(clientCount == count.toLong())
+        assertEquals(clientCount, count.toLong())
     }
 }

@@ -26,6 +26,7 @@ interface ClientSocket<Buffer> : SuspendCloseable {
     fun localPort(): UShort?
     fun remotePort(): UShort?
     suspend fun send(buffer: Buffer)
+    var tag: Any?
 }
 
 @ExperimentalTime

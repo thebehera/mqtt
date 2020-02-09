@@ -48,7 +48,7 @@ suspend fun <T> AsynchronousSocketChannel.asyncSetOption(option: SocketOption<T>
 @ExperimentalTime
 suspend fun AsynchronousSocketChannel.aConnect(
     socketAddress: SocketAddress,
-    tag: String? = null
+    tag: Any? = null
 ) = suspendCoroutine<Unit> { cont ->
     val time = currentTimestampMs()
     println("$time $tag client connecting $this")

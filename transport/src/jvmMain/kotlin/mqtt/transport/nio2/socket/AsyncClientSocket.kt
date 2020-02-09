@@ -26,7 +26,7 @@ class AsyncClientSocket(
     readTimeout: Duration,
     writeTimeout: Duration
 ) : AsyncBaseClientSocket(coroutineScope, pool, readTimeout, writeTimeout), ClientToServerSocket<ByteBuffer> {
-    var tag: String? = null
+    override var tag: Any? = null
 
     override suspend fun open(hostname: String?, port: UShort) {
         val totalOpenTime = measureTime {
