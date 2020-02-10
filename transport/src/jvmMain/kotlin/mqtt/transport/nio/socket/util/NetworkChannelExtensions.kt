@@ -1,5 +1,6 @@
 package mqtt.transport.nio.socket.util
 
+import mqtt.time.currentTimestampMs
 import java.net.SocketOption
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
@@ -23,6 +24,7 @@ suspend fun <T> NetworkChannel.asyncSetOption(option: SocketOption<T>, value: T)
 @ExperimentalTime
 suspend fun NetworkChannel.aClose() {
     suspendCoroutine<Unit> { cont ->
+        println("network channel aclose")
         blockingClose()
         cont.resume(Unit)
     }
@@ -33,12 +35,14 @@ suspend fun NetworkChannel.aClose() {
 internal fun NetworkChannel.blockingClose() {
     val text = toString()
     val time = measureTime {
+        println("${currentTimestampMs()} closing $this")
         try {
             if (this is SocketChannel) {
                 shutdownInput()
             } else if (this is AsynchronousSocketChannel) {
                 shutdownInput()
             }
+            println("${currentTimestampMs()} shutdown input")
         } catch (ex: Throwable) {
         }
         try {
@@ -47,12 +51,12 @@ internal fun NetworkChannel.blockingClose() {
             } else if (this is AsynchronousSocketChannel) {
                 shutdownOutput()
             }
-//            println("${currentTimestampMs()} shutdown output")
+            println("${currentTimestampMs()} shutdown output")
         } catch (ex: Throwable) {
         }
         try {
             close()
-//            println("${currentTimestampMs()} closed ${!isOpen}")
+            println("${currentTimestampMs()} closed ${!isOpen}")
         } catch (ex: Throwable) {
             // Specification says that it is Ok to call it any time, but reality is different,
             // so we have just to ignore exception

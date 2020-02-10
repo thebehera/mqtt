@@ -12,7 +12,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
 import kotlin.time.milliseconds
 
-const val clientCount = 2_000L
+const val clientCount = 4000L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -21,7 +21,16 @@ class SocketTests {
     @Test
     fun nio2ConnectDisconnectStress() = block {
         stressTest({
-            asyncServerSocket(this, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds)
+        }) {
+            asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
+        }
+    }
+
+    @Test
+    fun nio2ConnectDisconnectStress2() = block {
+        stressTest({
+            asyncServerSocket(this, 2, 10.milliseconds, 10.milliseconds)
         }) {
             asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
         }
@@ -30,7 +39,7 @@ class SocketTests {
     @Test
     fun nioNonBlockingConnectDisconnectStress() = block {
         stressTest({
-            asyncServerSocket(this, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds)
         }) {
             clientSocket(this, false, 10.milliseconds, 10.milliseconds)
         }
@@ -39,7 +48,7 @@ class SocketTests {
     @Test
     fun nioBlockingConnectDisconnectStress() = block {
         stressTest({
-            asyncServerSocket(this, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds)
         }) {
             clientSocket(this, true, 10.milliseconds, 10.milliseconds)
         }
@@ -47,6 +56,7 @@ class SocketTests {
 
     fun stressTest(getServerSocket: () -> ServerToClientSocket<*>, getClientSocket: () -> ClientToServerSocket<*>) =
         block {
+            println()
             var count = 0
             val server = getServerSocket()
             server.bind()
@@ -55,13 +65,17 @@ class SocketTests {
             var serverClientSocket: ClientSocket<*>? = null
             launch {
                 server.listen().collect {
-                    println("${currentTimestampMs()}      collected ${it.localPort()}:${it.remotePort()}")
-                    firstReceiveLock.unlock()
+
+                    println("${currentTimestampMs()}      collected $it ${it.localPort()}:${it.remotePort()}")
                     serverClientSocket = it
+                    println("unlock $it")
+                    firstReceiveLock.unlock()
+                    println("${currentTimestampMs()}      $it")
                     if (++count >= clientCount) {
                         mutex.unlock()
                         return@collect
                     }
+                    it.close()
                 }
             }
             repeat(clientCount.toInt()) {
@@ -72,15 +86,15 @@ class SocketTests {
                     client.open(port = server.port()!!)
                 }
                 firstReceiveLock.lock()
+                println("lock $serverClientSocket")
                 val clientPort = client.localPort()
 
                 assertTrue(client.isOpen())
                 println("${currentTimestampMs()} $it client($clientPort) opened in $time, closing")
                 client.close()
                 println("${currentTimestampMs()} $it closed client\n")
-                val serverClient = serverClientSocket
-                serverClient?.close()
-                serverClientSocket = null
+                println("server client close $serverClientSocket")
+                serverClientSocket?.close()
             }
 
             mutex.lock()

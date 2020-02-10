@@ -17,7 +17,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCoroutine<AsynchronousSocketChannel> { cont ->
     val start = currentTimestampMs()
-//    println("$start      server wait for accept")
+    println("$start      server wait for accept")
     accept(
         cont,
         object : CompletionHandler<AsynchronousSocketChannel, CancellableContinuation<AsynchronousSocketChannel>> {
@@ -26,7 +26,7 @@ suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCorout
                 attachment: CancellableContinuation<AsynchronousSocketChannel>
             ) {
                 val deltaTime = currentTimestampMs() - start
-//                println("${currentTimestampMs()}      server $deltaTime ms to accept $result")
+                println("${currentTimestampMs()}      server $deltaTime ms to accept $result")
                 cont.resume(result)
             }
 
@@ -53,6 +53,7 @@ suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress?)
     suspendCancellableCoroutine<AsynchronousServerSocketChannel> { cont ->
         try {
             closeOnCancel(cont)
+            println("bind $socketAddress")
             cont.resume(bind(socketAddress))
         } catch (e: Throwable) {
             cont.cancel(e)

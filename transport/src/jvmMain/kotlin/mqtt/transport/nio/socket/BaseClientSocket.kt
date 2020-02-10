@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import mqtt.transport.BufferPool
 import mqtt.transport.nio.socket.util.aClose
 import mqtt.transport.nio.socket.util.read
-import mqtt.transport.nio.socket.util.suspendUntilReady
 import mqtt.transport.nio.socket.util.write
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -22,15 +21,6 @@ abstract class BaseClientSocket(
     override var writeTimeout: Duration
 ) : ByteBufferClientSocket<SocketChannel>(coroutineScope, pool, readTimeout, writeTimeout) {
     val selector by lazy { Selector.open()!! }
-
-    suspend fun registerSelector(op: Int) {
-        val socket = socket
-            ?: throw IllegalStateException("cannot register selectors without a socket assigned")
-        if (socket.isBlocking) {
-            return
-        }
-        socket.suspendUntilReady(scope, selector, op)
-    }
 
     override suspend fun aWrite(buffer: ByteBuffer) = socket!!.write(scope, buffer, selector, writeTimeout)
 

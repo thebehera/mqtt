@@ -35,9 +35,7 @@ class AsyncClientSocket(
 //            println("${currentTimestampMs()} $tag client took ${socketAddress.duration} to resolve")
             val asyncSocket = measureTimedValue { asyncSocket() }
             this.socket = asyncSocket.value
-            if (asyncSocket.duration > minTimeBeforeLogging) {
-                println("${currentTimestampMs()} $tag client took ${asyncSocket.duration} to get async socket")
-            }
+            println("${currentTimestampMs()} $tag client took ${this.socket} ${asyncSocket.duration} to get async socket")
             val configTime = measureTime {
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.TCP_NODELAY, true)
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, false)

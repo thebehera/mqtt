@@ -41,8 +41,8 @@ class NioClientSocket(
             socketChannel.aConfigureBlocking(blocking)
 
 
-            println("${currentTimestampMs()} $tag client took ${socketAddress.duration} to resolve ${socketAddress.value}")
             this.socket = socketChannelTV.value
+            println("${currentTimestampMs()} $tag client took ${this.socket} ${socketAddress.duration} to resolve ${socketAddress.value}")
             if (socketChannelTV.duration > minTimeBeforeLogging) {
                 println("${currentTimestampMs()} $tag client took ${socketChannelTV.duration} to get async socket")
             }

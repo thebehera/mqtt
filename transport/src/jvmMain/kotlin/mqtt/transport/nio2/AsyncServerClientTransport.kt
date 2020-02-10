@@ -23,7 +23,7 @@ internal class AsyncServerClientTransport(
     maxBufferSize,
     connectionRequest.keepAliveTimeoutSeconds.toLong().seconds
 ) {
-    internal fun openChannels() {
+    init {
         startReadChannel()
         startWriteChannel()
         disconnectIfKeepAliveExpires()

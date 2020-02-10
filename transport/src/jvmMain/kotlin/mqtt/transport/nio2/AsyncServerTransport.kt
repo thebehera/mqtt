@@ -55,7 +55,6 @@ internal class AsyncServerTransport(
                                     maxBufferSize,
                                     connectionRequest
                                 )
-                            transport.openChannels()
                             connections.add(transport)
                             send(transport)
                         } else {

@@ -1,4 +1,4 @@
-package mqtt.transport.nio2.socket
+package mqtt.transport.nio.socket
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flow
@@ -6,17 +6,12 @@ import mqtt.time.currentTimestampMs
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
 import mqtt.transport.ServerToClientSocket
-import mqtt.transport.nio.socket.BaseServerSocket
-import mqtt.transport.nio2.util.aAccept
-import mqtt.transport.nio2.util.aBind
-import mqtt.transport.nio2.util.asyncSetOption
-import mqtt.transport.nio2.util.openAsyncServerSocketChannel
+import mqtt.transport.nio.socket.util.asyncSetOption
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.net.StandardSocketOptions
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousCloseException
-import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
 import java.util.*
@@ -24,45 +19,18 @@ import kotlin.coroutines.resume
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
-
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @ExperimentalTime
-class AsyncServerSocket2(
-    parentScope: CoroutineScope,
-    pool: BufferPool<ByteBuffer>,
-    readTimeout: Duration,
-    writeTimeout: Duration
-) : BaseServerSocket<AsynchronousServerSocketChannel>(parentScope, pool, readTimeout, writeTimeout) {
-    override suspend fun accept(channel: AsynchronousServerSocketChannel) = channel.aAccept()
-
-    override suspend fun bind(channel: AsynchronousServerSocketChannel, socketAddress: SocketAddress?) =
-        channel.aBind(socketAddress)
-
-    override suspend fun serverNetworkChannel() = openAsyncServerSocketChannel()
-
-    override fun clientToServer(
-        scope: CoroutineScope,
-        networkChannel: NetworkChannel,
-        pool: BufferPool<ByteBuffer>,
-        readTimeout: Duration,
-        writeTimeout: Duration
-    ) = AsyncServerToClientSocket(scope, networkChannel as AsynchronousSocketChannel, pool, readTimeout, writeTimeout)
-
-}
-
-@ExperimentalUnsignedTypes
-@ExperimentalCoroutinesApi
-@ExperimentalTime
-class AsyncServerSocket(
+abstract class BaseServerSocket<S : NetworkChannel>(
     parentScope: CoroutineScope,
     val pool: BufferPool<ByteBuffer>,
     val readTimeout: Duration,
     val writeTimeout: Duration
 ) : ServerToClientSocket<ByteBuffer> {
     override val scope = parentScope + Job()
-    private var server: AsynchronousServerSocketChannel? = null
-    val connections = TreeMap<String, AsyncServerToClientSocket>()
+    private var server: S? = null
+    val connections = TreeMap<String, ByteBufferClientSocket<AsynchronousSocketChannel>>()
 
     override fun port() = (server?.localAddress as? InetSocketAddress)?.port?.toUShort()
 
@@ -78,18 +46,28 @@ class AsyncServerSocket(
         } else {
             null
         }
-        val serverLocal = openAsyncServerSocketChannel()
+        val serverLocal = serverNetworkChannel()
         serverLocal.asyncSetOption(StandardSocketOptions.SO_REUSEADDR, false)
-        server = serverLocal.aBind(socketAddress)
+        server = bind(serverLocal, socketAddress)
     }
+
+    abstract suspend fun accept(channel: S): NetworkChannel?
+
+    abstract suspend fun bind(channel: S, socketAddress: SocketAddress?): S?
+    abstract suspend fun serverNetworkChannel(): S
+
+    abstract fun clientToServer(
+        scope: CoroutineScope, networkChannel: NetworkChannel,
+        pool: BufferPool<ByteBuffer>, readTimeout: Duration, writeTimeout: Duration
+    ): ByteBufferClientSocket<AsynchronousSocketChannel>
 
     override suspend fun listen() = flow<ClientSocket<ByteBuffer>> {
         try {
             while (isOpen()) {
-                val asyncSocketChannel = server?.aAccept()
+                val asyncSocketChannel = accept(server!!)
                 println("${currentTimestampMs()}      server accepted $asyncSocketChannel}")
                 asyncSocketChannel ?: continue
-                val client = AsyncServerToClientSocket(scope, asyncSocketChannel, pool, readTimeout, writeTimeout)
+                val client = clientToServer(scope, asyncSocketChannel, pool, readTimeout, writeTimeout)
                 connections[asyncSocketChannel.localAddress.toString()] = client
                 emit(client)
             }
@@ -97,7 +75,7 @@ class AsyncServerSocket(
             // we're done
         }
         println("${currentTimestampMs()} done listening")
-        this@AsyncServerSocket.close()
+        this@BaseServerSocket.close()
     }
 
     override suspend fun close() {
