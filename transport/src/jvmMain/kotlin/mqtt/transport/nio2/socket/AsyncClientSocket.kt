@@ -45,24 +45,16 @@ class AsyncClientSocket(
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_RCVBUF, 100)
                 asyncSocket.value.asyncSetOption(StandardSocketOptions.SO_SNDBUF, 100)
             }
-
-
-//            for (option in asyncSocket.value.supportedOptions()) {
-//                println("client socket option $option = ${asyncSocket.value.getOption(option)}")
-//            }
-//            println("${currentTimestampMs()} $tag client configured($configTime) ${asyncSocket.value}")
             val connectTime = measureTime {
                 asyncSocket.value.aConnect(socketAddress.value, tag)
             }
             if (connectTime > minTimeBeforeLogging) {
                 println("${currentTimestampMs()} $tag client ${(asyncSocket.value.remoteAddress as? InetSocketAddress)?.port} took $connectTime to connect  ${asyncSocket.value}")
             }
-//            println("${currentTimestampMs()} connected, start write channel $socketAddress $asyncSocket")
             val writeChannelStarttime = measureTime { startWriteChannel() }
             if (writeChannelStarttime > minTimeBeforeLogging) {
                 println("${currentTimestampMs()} $tag client took $writeChannelStarttime to startt write channel")
             }
-//        println("${currentTimestampMs()} write channel started $socketAddress $asyncSocket")
         }
     }
 

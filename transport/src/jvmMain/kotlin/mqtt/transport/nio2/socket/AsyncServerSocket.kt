@@ -58,18 +58,17 @@ class AsyncServerSocket(
         server = serverLocal.aBind(socketAddress)
     }
 
-    override suspend fun listen() =
-        flow<ClientSocket<ByteBuffer>> {
-            try {
-                while (isOpen()) {
+    override suspend fun listen() = flow<ClientSocket<ByteBuffer>> {
+        try {
+            while (isOpen()) {
 //                    println("${currentTimestampMs()}      loop start ${queue.size} $server")
-                    val asyncSocketChannel = server?.aAccept()
+                val asyncSocketChannel = server?.aAccept()
 
-                    println("${currentTimestampMs()}      server accepted $asyncSocketChannel}")
-                    asyncSocketChannel ?: continue
+                println("${currentTimestampMs()}      server accepted $asyncSocketChannel}")
+                asyncSocketChannel ?: continue
 
-                    val client = AsyncServerToClientSocket(
-                        scope,
+                val client = AsyncServerToClientSocket(
+                    scope,
                         asyncSocketChannel,
                         pool,
                         readTimeout,
