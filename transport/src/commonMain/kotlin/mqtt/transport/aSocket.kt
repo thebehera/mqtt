@@ -6,42 +6,38 @@ import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
-interface BufferPool<Buffer> {
-    fun borrow(): Buffer
-}
-
 interface SuspendCloseable {
     suspend fun close()
 }
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-interface ClientSocket<Buffer> : SuspendCloseable {
+interface ClientSocket : SuspendCloseable {
     val scope: CoroutineScope
-    val pool: BufferPool<Buffer>
+    val pool: BufferPool
     var readTimeout: Duration // can be changed during the course of the connection
     var writeTimeout: Duration
-    val incoming: Flow<Buffer>
+    val incoming: Flow<IncomingMessage>
     fun isOpen(): Boolean
     fun localPort(): UShort?
     fun remotePort(): UShort?
-    suspend fun send(buffer: Buffer)
+    suspend fun send(buffer: PlatformBuffer)
     var tag: Any?
 }
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-interface ClientToServerSocket<Buffer> : ClientSocket<Buffer> {
+interface ClientToServerSocket : ClientSocket {
     suspend fun open(hostname: String? = null, port: UShort)
 }
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-interface ServerToClientSocket<Buffer> : SuspendCloseable {
+interface ServerToClientSocket : SuspendCloseable {
     val scope: CoroutineScope
     fun port(): UShort?
     suspend fun bind(port: UShort? = null, host: String? = null)
-    suspend fun listen(): Flow<ClientSocket<Buffer>>
+    suspend fun listen(): Flow<ClientSocket>
 }
 
 
@@ -51,8 +47,9 @@ interface ServerToClientSocket<Buffer> : SuspendCloseable {
 expect fun asyncClientSocket(
     coroutineScope: CoroutineScope,
     readTimeout: Duration,
-    writeTimeout: Duration
-): ClientToServerSocket<*>
+    writeTimeout: Duration,
+    bufferPool: BufferPool
+): ClientToServerSocket
 
 
 @ExperimentalCoroutinesApi
@@ -62,8 +59,9 @@ expect fun asyncServerSocket(
     coroutineScope: CoroutineScope,
     version: Int,
     readTimeout: Duration,
-    writeTimeout: Duration
-): ServerToClientSocket<*>
+    writeTimeout: Duration,
+    bufferPool: BufferPool
+): ServerToClientSocket
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
@@ -72,5 +70,6 @@ expect fun clientSocket(
     coroutineScope: CoroutineScope,
     blocking: Boolean,
     readTimeout: Duration,
-    writeTimeout: Duration
-): ClientToServerSocket<*>
+    writeTimeout: Duration,
+    bufferPool: BufferPool
+): ClientToServerSocket

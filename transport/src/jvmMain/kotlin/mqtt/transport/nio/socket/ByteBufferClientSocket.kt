@@ -7,6 +7,9 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
+import mqtt.transport.IncomingMessage
+import mqtt.transport.PlatformBuffer
+import mqtt.transport.nio.JvmBuffer
 import mqtt.transport.nio.socket.util.aClose
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -19,10 +22,10 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 abstract class ByteBufferClientSocket<T : NetworkChannel>(
     coroutineScope: CoroutineScope,
-    override val pool: BufferPool<ByteBuffer>,
+    override val pool: BufferPool,
     override var readTimeout: Duration,
     override var writeTimeout: Duration
-) : ClientSocket<ByteBuffer> {
+) : ClientSocket {
 
     override val scope: CoroutineScope = coroutineScope + Job()
     private val writeChannel = Channel<ByteBuffer>()
@@ -35,9 +38,13 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
         try {
             setupIncomingBuffer()
             while (isOpen()) {
-                val buffer = pool.borrow()
-                aRead(buffer)
-                emit(buffer)
+                val buffer = pool.borrow(6u) as JvmBuffer
+                val bytesRead = aRead(buffer.byteBuffer)
+                val byte1 = buffer.readByte()
+                val remainingLength = buffer.readVariableByteInteger()
+                val remainingBuffer = pool.borrow(remainingLength)
+                aRead((remainingBuffer as JvmBuffer).byteBuffer)
+                emit(IncomingMessage(bytesRead, byte1, remainingLength, remainingBuffer))
             }
         } finally {
             close()
@@ -68,7 +75,7 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
 
     override fun localPort(): UShort? = (socket?.localAddress as? InetSocketAddress)?.port?.toUShort()
 
-    override suspend fun send(buffer: ByteBuffer) = writeChannel.send(buffer)
+    override suspend fun send(buffer: PlatformBuffer) = writeChannel.send((buffer as JvmBuffer).byteBuffer)
 
 
     override suspend fun close() {

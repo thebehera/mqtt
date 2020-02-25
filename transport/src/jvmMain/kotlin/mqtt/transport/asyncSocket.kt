@@ -6,7 +6,6 @@ import mqtt.transport.nio.socket.NioClientSocket
 import mqtt.transport.nio2.socket.AsyncClientSocket
 import mqtt.transport.nio2.socket.AsyncServerSocket
 import mqtt.transport.nio2.socket.AsyncServerSocket2
-import java.nio.ByteBuffer
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -16,11 +15,12 @@ import kotlin.time.ExperimentalTime
 actual fun asyncClientSocket(
     coroutineScope: CoroutineScope,
     readTimeout: Duration,
-    writeTimeout: Duration
-): ClientToServerSocket<*> {
+    writeTimeout: Duration,
+    bufferPool: BufferPool
+): ClientToServerSocket {
     return AsyncClientSocket(
         coroutineScope,
-        ByteBufferPool,
+        bufferPool,
         readTimeout,
         writeTimeout
     )
@@ -33,21 +33,16 @@ actual fun clientSocket(
     coroutineScope: CoroutineScope,
     blocking: Boolean,
     readTimeout: Duration,
-    writeTimeout: Duration
-): ClientToServerSocket<*> {
+    writeTimeout: Duration,
+    bufferPool: BufferPool
+): ClientToServerSocket {
     return NioClientSocket(
         coroutineScope,
-        ByteBufferPool,
+        bufferPool,
         blocking,
         readTimeout,
         writeTimeout
     )
-}
-
-object ByteBufferPool : BufferPool<ByteBuffer> {
-    override fun borrow(): ByteBuffer {
-        return ByteBuffer.allocateDirect(8096)
-    }
 }
 
 @ExperimentalCoroutinesApi
@@ -57,19 +52,20 @@ actual fun asyncServerSocket(
     coroutineScope: CoroutineScope,
     version: Int,
     readTimeout: Duration,
-    writeTimeout: Duration
-): ServerToClientSocket<*> {
+    writeTimeout: Duration,
+    bufferPool: BufferPool
+): ServerToClientSocket {
     return if (version == 2) {
         AsyncServerSocket2(
             coroutineScope,
-            ByteBufferPool,
+            bufferPool,
             readTimeout,
             writeTimeout
         )
     } else {
         AsyncServerSocket(
             coroutineScope,
-            ByteBufferPool,
+            bufferPool,
             readTimeout,
             writeTimeout
         )

@@ -15,7 +15,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 abstract class AsyncBaseClientSocket(
     coroutineScope: CoroutineScope,
-    override val pool: BufferPool<ByteBuffer>,
+    override val pool: BufferPool,
     override var readTimeout: Duration,
     override var writeTimeout: Duration
 ) : ByteBufferClientSocket<AsynchronousSocketChannel>(coroutineScope, pool, readTimeout, writeTimeout) {

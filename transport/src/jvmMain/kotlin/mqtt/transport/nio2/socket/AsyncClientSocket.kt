@@ -11,7 +11,6 @@ import mqtt.transport.nio2.util.asyncSocket
 import mqtt.transport.util.asInetAddress
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
-import java.nio.ByteBuffer
 import kotlin.time.*
 
 @ExperimentalTime
@@ -22,10 +21,10 @@ val minTimeBeforeLogging = 20.milliseconds
 @ExperimentalTime
 class AsyncClientSocket(
     coroutineScope: CoroutineScope,
-    pool: BufferPool<ByteBuffer>,
+    pool: BufferPool,
     readTimeout: Duration,
     writeTimeout: Duration
-) : AsyncBaseClientSocket(coroutineScope, pool, readTimeout, writeTimeout), ClientToServerSocket<ByteBuffer> {
+) : AsyncBaseClientSocket(coroutineScope, pool, readTimeout, writeTimeout), ClientToServerSocket {
 
     override suspend fun open(hostname: String?, port: UShort) {
         val totalOpenTime = measureTime {

@@ -13,7 +13,6 @@ import mqtt.transport.nio2.socket.minTimeBeforeLogging
 import mqtt.transport.util.asInetAddress
 import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
-import java.nio.ByteBuffer
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTime
@@ -24,11 +23,11 @@ import kotlin.time.measureTimedValue
 @ExperimentalTime
 class NioClientSocket(
     coroutineScope: CoroutineScope,
-    pool: BufferPool<ByteBuffer>,
+    pool: BufferPool,
     val blocking: Boolean = true,
     readTimeout: Duration,
     writeTimeout: Duration
-) : BaseClientSocket(coroutineScope, pool, readTimeout, writeTimeout), ClientToServerSocket<ByteBuffer> {
+) : BaseClientSocket(coroutineScope, pool, readTimeout, writeTimeout), ClientToServerSocket {
 
 
     override suspend fun open(hostname: String?, port: UShort) {

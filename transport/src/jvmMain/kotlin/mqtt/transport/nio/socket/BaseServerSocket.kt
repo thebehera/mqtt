@@ -10,7 +10,6 @@ import mqtt.transport.nio.socket.util.asyncSetOption
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.net.StandardSocketOptions
-import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
@@ -24,10 +23,10 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 abstract class BaseServerSocket<S : NetworkChannel>(
     parentScope: CoroutineScope,
-    val pool: BufferPool<ByteBuffer>,
+    val pool: BufferPool,
     val readTimeout: Duration,
     val writeTimeout: Duration
-) : ServerToClientSocket<ByteBuffer> {
+) : ServerToClientSocket {
     override val scope = parentScope + Job()
     private var server: S? = null
     val connections = TreeMap<String, ByteBufferClientSocket<AsynchronousSocketChannel>>()
@@ -58,10 +57,10 @@ abstract class BaseServerSocket<S : NetworkChannel>(
 
     abstract fun clientToServer(
         scope: CoroutineScope, networkChannel: NetworkChannel,
-        pool: BufferPool<ByteBuffer>, readTimeout: Duration, writeTimeout: Duration
+        pool: BufferPool, readTimeout: Duration, writeTimeout: Duration
     ): ByteBufferClientSocket<AsynchronousSocketChannel>
 
-    override suspend fun listen() = flow<ClientSocket<ByteBuffer>> {
+    override suspend fun listen() = flow<ClientSocket> {
         try {
             while (isOpen()) {
                 val asyncSocketChannel = accept(server!!)

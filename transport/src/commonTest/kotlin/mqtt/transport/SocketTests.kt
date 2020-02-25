@@ -18,43 +18,48 @@ const val clientCount = 4000L
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class SocketTests {
+
+    val pool = BufferPool(limits = object : BufferMemoryLimit {
+        override fun isTooLargeForMemory(size: UInt) = size > 1_000_000u
+    })
+
     @Test
     fun nio2ConnectDisconnectStress() = block {
         stressTest({
-            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool)
         }) {
-            asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
+            asyncClientSocket(this, 10.milliseconds, 10.milliseconds, pool)
         }
     }
 
     @Test
     fun nio2ConnectDisconnectStress2() = block {
         stressTest({
-            asyncServerSocket(this, 2, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 2, 10.milliseconds, 10.milliseconds, pool)
         }) {
-            asyncClientSocket(this, 10.milliseconds, 10.milliseconds)
+            asyncClientSocket(this, 10.milliseconds, 10.milliseconds, pool)
         }
     }
 
     @Test
     fun nioNonBlockingConnectDisconnectStress() = block {
         stressTest({
-            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool)
         }) {
-            clientSocket(this, false, 10.milliseconds, 10.milliseconds)
+            clientSocket(this, false, 10.milliseconds, 10.milliseconds, pool)
         }
     }
 
     @Test
     fun nioBlockingConnectDisconnectStress() = block {
         stressTest({
-            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds)
+            asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool)
         }) {
-            clientSocket(this, true, 10.milliseconds, 10.milliseconds)
+            clientSocket(this, true, 10.milliseconds, 10.milliseconds, pool)
         }
     }
 
-    fun stressTest(getServerSocket: () -> ServerToClientSocket<*>, getClientSocket: () -> ClientToServerSocket<*>) =
+    fun stressTest(getServerSocket: () -> ServerToClientSocket, getClientSocket: () -> ClientToServerSocket) =
         block {
             println()
             var count = 0
@@ -62,7 +67,7 @@ class SocketTests {
             server.bind()
             val firstReceiveLock = Mutex(true)
             val mutex = Mutex(true)
-            var serverClientSocket: ClientSocket<*>? = null
+            var serverClientSocket: ClientSocket? = null
             launch {
                 server.listen().collect {
 
