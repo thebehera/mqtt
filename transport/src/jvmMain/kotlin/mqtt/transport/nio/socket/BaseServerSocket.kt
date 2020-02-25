@@ -22,12 +22,11 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 abstract class BaseServerSocket<S : NetworkChannel>(
-    parentScope: CoroutineScope,
+    override val scope: CoroutineScope,
     val pool: BufferPool,
     val readTimeout: Duration,
     val writeTimeout: Duration
 ) : ServerToClientSocket {
-    override val scope = parentScope + Job()
     private var server: S? = null
     val connections = TreeMap<String, ByteBufferClientSocket<AsynchronousSocketChannel>>()
 
