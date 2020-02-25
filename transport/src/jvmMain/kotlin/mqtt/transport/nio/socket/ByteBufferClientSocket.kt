@@ -42,6 +42,7 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
                 val bytesRead = aRead(buffer.byteBuffer)
                 val byte1 = buffer.readByte()
                 val remainingLength = buffer.readVariableByteInteger()
+                pool.recycle(buffer)
                 val remainingBuffer = pool.borrow(remainingLength)
                 aRead((remainingBuffer as JvmBuffer).byteBuffer)
                 emit(IncomingMessage(bytesRead, byte1, remainingLength, remainingBuffer))
@@ -52,7 +53,7 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
     }
 
     override fun isOpen() = try {
-        (socket?.isOpen ?: false) && !isClosing.get()
+        (socket?.isOpen ?: false) && !isClosing.get() && scope.isActive
     } catch (e: Throwable) {
         false
     }
