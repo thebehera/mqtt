@@ -28,7 +28,7 @@ expect fun allocateNewBuffer(size: UInt, limits: BufferMemoryLimit): PlatformBuf
 data class BufferPool(val limits: BufferMemoryLimit) {
     val inMemoryPool = LinkedHashSet<PlatformBuffer>()
 
-    fun borrow(size: UInt) = if (limits.isTooLargeForMemory(size)) {
+    fun borrow(size: UInt = limits.defaultBufferSize) = if (limits.isTooLargeForMemory(size)) {
         allocateNewBuffer(size, limits)
     } else {
         inMemoryPool.firstOrNull { it.limit().toUInt() >= size } ?: allocateNewBuffer(

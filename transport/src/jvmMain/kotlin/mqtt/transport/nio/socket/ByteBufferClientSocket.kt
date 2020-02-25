@@ -38,7 +38,7 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
         try {
             setupIncomingBuffer()
             while (isOpen()) {
-                val buffer = pool.borrow(6u) as JvmBuffer
+                val buffer = pool.borrow() as JvmBuffer
                 val bytesRead = aRead(buffer.byteBuffer)
                 val byte1 = buffer.readByte()
                 val remainingLength = buffer.readVariableByteInteger()
