@@ -38,6 +38,10 @@ interface ServerToClientSocket : SuspendCloseable {
     fun port(): UShort?
     suspend fun bind(port: UShort? = null, host: String? = null)
     suspend fun listen(): Flow<ClientSocket>
+    val connections: Map<UShort, ClientSocket>
+    fun getStats(): List<String>
+
+    suspend fun closeClient(port: UShort)
 }
 
 

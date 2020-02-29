@@ -2,7 +2,6 @@ package mqtt.transport.nio.socket
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flow
-import mqtt.time.currentTimestampMs
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
 import mqtt.transport.ServerToClientSocket
@@ -28,7 +27,7 @@ abstract class BaseServerSocket<S : NetworkChannel>(
     val writeTimeout: Duration
 ) : ServerToClientSocket {
     private var server: S? = null
-    val connections = TreeMap<String, ByteBufferClientSocket<AsynchronousSocketChannel>>()
+    override val connections = TreeMap<UShort, ClientSocket>()
 
     override fun port() = (server?.localAddress as? InetSocketAddress)?.port?.toUShort()
 
@@ -63,34 +62,35 @@ abstract class BaseServerSocket<S : NetworkChannel>(
         try {
             while (isOpen()) {
                 val asyncSocketChannel = accept(server!!)
-                println("${currentTimestampMs()}      server accepted $asyncSocketChannel}")
                 asyncSocketChannel ?: continue
                 val client = clientToServer(scope, asyncSocketChannel, pool, readTimeout, writeTimeout)
-                connections[asyncSocketChannel.localAddress.toString()] = client
+                connections[client.remotePort()!!] = client
                 emit(client)
             }
         } catch (e: AsynchronousCloseException) {
             // we're done
         }
-        println("${currentTimestampMs()} done listening")
         this@BaseServerSocket.close()
     }
+
+    override suspend fun closeClient(port: UShort) {
+        connections.remove(port)?.close()
+    }
+
+    override fun getStats() = readStats(port()!!, "CLOSE_WAIT")
 
     override suspend fun close() {
         if (server?.isOpen != true && connections.isNotEmpty()) {
             return
         }
-        println("${currentTimestampMs()} closing ${connections.size} connections")
         connections.values.map {
             scope.launch {
                 if (isActive) {
-                    println("${currentTimestampMs()} closing client socket $it")
                     it.close()
                 }
             }
         }.joinAll()
         connections.clear()
-        println("${currentTimestampMs()} closing server client socket")
         suspendCancellableCoroutine<Unit> {
             try {
                 server?.close()
@@ -100,6 +100,21 @@ abstract class BaseServerSocket<S : NetworkChannel>(
                 it.resume(Unit)
             }
         }
-        println("${currentTimestampMs()} server closed")
+    }
+}
+
+
+fun readStats(port: UShort, contains: String): List<String> {
+    val process = ProcessBuilder()
+        .command("lsof", "-iTCP:${port}", "-sTCP:$contains", "-l", "-n")
+        .redirectErrorStream(true)
+        .start()
+    try {
+        process.inputStream.use { stream ->
+            return String(stream.readBytes()).split(System.lineSeparator()).filter { it.isNotBlank() }
+                .filter { it.contains(contains) }
+        }
+    } finally {
+        process.destroy()
     }
 }

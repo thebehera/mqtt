@@ -2,11 +2,11 @@ package mqtt.transport.nio2.socket
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.flow
-import mqtt.time.currentTimestampMs
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
 import mqtt.transport.ServerToClientSocket
 import mqtt.transport.nio.socket.BaseServerSocket
+import mqtt.transport.nio.socket.readStats
 import mqtt.transport.nio2.util.aAccept
 import mqtt.transport.nio2.util.aBind
 import mqtt.transport.nio2.util.asyncSetOption
@@ -61,7 +61,7 @@ class AsyncServerSocket(
 ) : ServerToClientSocket {
     override val scope = parentScope + Job()
     private var server: AsynchronousServerSocketChannel? = null
-    val connections = TreeMap<String, AsyncServerToClientSocket>()
+    override val connections = TreeMap<UShort, AsyncServerToClientSocket>()
 
     override fun port() = (server?.localAddress as? InetSocketAddress)?.port?.toUShort()
 
@@ -86,34 +86,37 @@ class AsyncServerSocket(
         try {
             while (isOpen()) {
                 val asyncSocketChannel = server?.aAccept()
-                println("${currentTimestampMs()}      server accepted $asyncSocketChannel}")
                 asyncSocketChannel ?: continue
                 val client = AsyncServerToClientSocket(scope, asyncSocketChannel, pool, readTimeout, writeTimeout)
-                connections[asyncSocketChannel.localAddress.toString()] = client
+                connections[(asyncSocketChannel.remoteAddress as InetSocketAddress).port.toUShort()] = client
                 emit(client)
             }
         } catch (e: AsynchronousCloseException) {
             // we're done
         }
-        println("${currentTimestampMs()} done listening")
         this@AsyncServerSocket.close()
     }
+
+
+    override suspend fun closeClient(port: UShort) {
+        val connection = connections.remove(port)
+        connection?.close()
+    }
+
+    override fun getStats() = readStats(port()!!, "CLOSE_WAIT")
 
     override suspend fun close() {
         if (server?.isOpen != true && connections.isNotEmpty()) {
             return
         }
-        println("${currentTimestampMs()} closing ${connections.size} connections")
         connections.values.map {
             scope.launch {
                 if (isActive) {
-                    println("${currentTimestampMs()} closing client socket $it")
                     it.close()
                 }
             }
         }.joinAll()
         connections.clear()
-        println("${currentTimestampMs()} closing server client socket")
         suspendCancellableCoroutine<Unit> {
             try {
                 server?.close()
@@ -123,6 +126,5 @@ class AsyncServerSocket(
                 it.resume(Unit)
             }
         }
-        println("${currentTimestampMs()} server closed")
     }
 }

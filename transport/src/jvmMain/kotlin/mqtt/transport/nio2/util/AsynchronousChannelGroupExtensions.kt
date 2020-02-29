@@ -11,7 +11,6 @@ suspend fun openAsyncServerSocketChannel(group: AsynchronousChannelGroup? = null
     suspendCancellableCoroutine { continuation ->
         try {
             continuation.resume(AsynchronousServerSocketChannel.open(group))
-            println("opened server socket channel")
         } catch (e: Exception) {
             continuation.resumeWithException(e)
         }

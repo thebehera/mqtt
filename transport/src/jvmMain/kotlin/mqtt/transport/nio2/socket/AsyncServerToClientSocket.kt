@@ -9,7 +9,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 class AsyncServerToClientSocket(
-    scope: CoroutineScope, val asyncSocket: AsynchronousSocketChannel,
+    scope: CoroutineScope, asyncSocket: AsynchronousSocketChannel,
     pool: BufferPool,
     readTimeout: Duration,
     writeTimeout: Duration

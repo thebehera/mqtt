@@ -78,13 +78,10 @@ abstract class ByteBufferClientSocket<T : NetworkChannel>(
 
     override suspend fun send(buffer: PlatformBuffer) = writeChannel.send((buffer as JvmBuffer).byteBuffer)
 
-
     override suspend fun close() {
         isClosing.set(true)
         writeChannel.close()
-        println("socket close $socket")
         socket?.aClose()
-        println("null socket")
         socket = null
     }
 }

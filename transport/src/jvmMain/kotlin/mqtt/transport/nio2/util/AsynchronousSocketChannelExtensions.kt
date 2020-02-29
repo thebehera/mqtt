@@ -4,7 +4,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.io.core.readByteBuffer
-import mqtt.time.currentTimestampMs
 import mqtt.transport.nio.socket.util.blockingClose
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IConnectionRequest
@@ -41,14 +40,7 @@ suspend fun AsynchronousSocketChannel.aConnect(
     socketAddress: SocketAddress,
     tag: Any? = null
 ) = suspendCoroutine<Unit> { cont ->
-    val time = currentTimestampMs()
-    println("$time $tag client connecting $this")
-    connect(socketAddress, cont, AsyncVoidIOHandler {
-        if (tag != null) {
-            val now = currentTimestampMs()
-            println("$now $tag client connected(${now - time}ms) $this")
-        }
-    })
+    connect(socketAddress, cont, AsyncVoidIOHandler())
 }
 
 /**
@@ -158,7 +150,6 @@ suspend fun AsynchronousSocketChannel.aWrite(
 @ExperimentalTime
 suspend fun AsynchronousSocketChannel.aClose() {
     suspendCoroutine<Unit> { cont ->
-        println("async socket channel aclose")
         blockingClose()
         cont.resume(Unit)
     }

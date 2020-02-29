@@ -20,7 +20,7 @@ abstract class BaseClientSocket(
     override var readTimeout: Duration,
     override var writeTimeout: Duration
 ) : ByteBufferClientSocket<SocketChannel>(coroutineScope, pool, readTimeout, writeTimeout) {
-    val selector by lazy { Selector.open()!! }
+    val selector = Selector.open()!!
 
     override suspend fun aWrite(buffer: ByteBuffer) = socket!!.write(scope, buffer, selector, writeTimeout)
 

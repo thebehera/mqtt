@@ -78,17 +78,14 @@ suspend fun Selector.select(scope: CoroutineScope, attachment: Any, timeout: Dur
 
 suspend fun SocketChannel.aConnect(remote: SocketAddress) = if (isBlocking) {
     withContext(Dispatchers.IO) {
-        println("blocking suspend connect")
         suspendConnect(remote)
     }
 } else {
-    println("async suspend connect")
     suspendConnect(remote)
 }
 
 private suspend fun SocketChannel.suspendConnect(remote: SocketAddress) = suspendCancellableCoroutine<Boolean> {
     try {
-        println("connect $remote")
         it.resume(connect(remote))
     } catch (e: Throwable) {
         it.resumeWithException(e)
@@ -102,13 +99,10 @@ suspend fun SocketChannel.connect(
     selector: Selector? = null,
     timeout: Duration? = null
 ): Boolean {
-    println("${currentTimestampMs()} remote $remote")
     val connected = aConnect(remote)
-    println("${currentTimestampMs()} remote $connected")
     if (selector != null && !isBlocking) {
         suspendUntilReady(scope, selector, SelectionKey.OP_CONNECT, timeout)
     }
-    println("suspend done")
     if (connected || aFinishConnecting()) {
         return true
     }
@@ -117,7 +111,6 @@ suspend fun SocketChannel.connect(
 
 suspend fun SocketChannel.aFinishConnecting() = suspendCancellableCoroutine<Boolean> {
     try {
-        println("a finish connecting")
         it.resume(finishConnect())
     } catch (e: Throwable) {
         it.resumeWithException(e)

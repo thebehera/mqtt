@@ -2,7 +2,6 @@ package mqtt.transport.nio2.util
 
 import kotlinx.coroutines.CancellableContinuation
 import kotlinx.coroutines.suspendCancellableCoroutine
-import mqtt.time.currentTimestampMs
 import java.net.SocketAddress
 import java.net.SocketOption
 import java.nio.channels.AsynchronousCloseException
@@ -16,30 +15,24 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 suspend fun AsynchronousServerSocketChannel.aAccept() = suspendCancellableCoroutine<AsynchronousSocketChannel> { cont ->
-    val start = currentTimestampMs()
-    println("$start      server wait for accept")
-    accept(
-        cont,
-        object : CompletionHandler<AsynchronousSocketChannel, CancellableContinuation<AsynchronousSocketChannel>> {
-            override fun completed(
-                result: AsynchronousSocketChannel,
-                attachment: CancellableContinuation<AsynchronousSocketChannel>
-            ) {
-                val deltaTime = currentTimestampMs() - start
-                println("${currentTimestampMs()}      server $deltaTime ms to accept $result")
-                cont.resume(result)
-            }
+    accept(cont, AcceptCompletionHandler(cont))
+}
 
-            override fun failed(exc: Throwable, attachment: CancellableContinuation<AsynchronousSocketChannel>) {
-//                println("accept failed with $exc after ${currentTimestampMs() - start}ms $this")
-                // just return if already cancelled and got an expected exception for that case
-                if (exc is AsynchronousCloseException && cont.isCancelled) return
-                cont.resumeWithException(exc)
-            }
+data class AcceptCompletionHandler(val continuation: CancellableContinuation<AsynchronousSocketChannel>) :
+    CompletionHandler<AsynchronousSocketChannel, CancellableContinuation<AsynchronousSocketChannel>> {
+    override fun completed(
+        result: AsynchronousSocketChannel,
+        attachment: CancellableContinuation<AsynchronousSocketChannel>
+    ) = continuation.resume(result)
 
-        })
+    override fun failed(exc: Throwable, attachment: CancellableContinuation<AsynchronousSocketChannel>) {
+        // just return if already cancelled and got an expected exception for that case
+        if (exc is AsynchronousCloseException && continuation.isCancelled) return
+        continuation.resumeWithException(exc)
+    }
 
 }
+
 
 /**
  * Performs [AsynchronousServerSocketChannel.bind] without blocking a thread and resumes when asynchronous operation completes.
@@ -53,7 +46,6 @@ suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress?)
     suspendCancellableCoroutine<AsynchronousServerSocketChannel> { cont ->
         try {
             closeOnCancel(cont)
-            println("bind $socketAddress")
             cont.resume(bind(socketAddress))
         } catch (e: Throwable) {
             cont.cancel(e)

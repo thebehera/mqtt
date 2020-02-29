@@ -1,6 +1,5 @@
 package mqtt.transport.nio.socket.util
 
-import mqtt.time.currentTimestampMs
 import java.net.SocketOption
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
@@ -9,7 +8,6 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 
 
 suspend fun <T> NetworkChannel.asyncSetOption(option: SocketOption<T>, value: T) =
@@ -24,7 +22,6 @@ suspend fun <T> NetworkChannel.asyncSetOption(option: SocketOption<T>, value: T)
 @ExperimentalTime
 suspend fun NetworkChannel.aClose() {
     suspendCoroutine<Unit> { cont ->
-        println("network channel aclose")
         blockingClose()
         cont.resume(Unit)
     }
@@ -33,36 +30,26 @@ suspend fun NetworkChannel.aClose() {
 
 @ExperimentalTime
 internal fun NetworkChannel.blockingClose() {
-    val text = toString()
-    val time = measureTime {
-        println("${currentTimestampMs()} closing $this")
-        try {
-            if (this is SocketChannel) {
-                shutdownInput()
-            } else if (this is AsynchronousSocketChannel) {
-                shutdownInput()
-            }
-            println("${currentTimestampMs()} shutdown input")
-        } catch (ex: Throwable) {
+    try {
+        if (this is SocketChannel) {
+            shutdownInput()
+        } else if (this is AsynchronousSocketChannel) {
+            shutdownInput()
         }
-        try {
-            if (this is SocketChannel) {
-                shutdownOutput()
-            } else if (this is AsynchronousSocketChannel) {
-                shutdownOutput()
-            }
-            println("${currentTimestampMs()} shutdown output")
-        } catch (ex: Throwable) {
-        }
-        try {
-            close()
-            println("${currentTimestampMs()} closed ${!isOpen}")
-        } catch (ex: Throwable) {
-            // Specification says that it is Ok to call it any time, but reality is different,
-            // so we have just to ignore exception
-        }
+    } catch (ex: Throwable) {
     }
-//    if (time > minTimeBeforeLogging) {
-//        println("${currentTimestampMs()} took $time to close $text $this")
-//    }
+    try {
+        if (this is SocketChannel) {
+            shutdownOutput()
+        } else if (this is AsynchronousSocketChannel) {
+            shutdownOutput()
+        }
+    } catch (ex: Throwable) {
+    }
+    try {
+        close()
+    } catch (ex: Throwable) {
+        // Specification says that it is Ok to call it any time, but reality is different,
+        // so we have just to ignore exception
+    }
 }

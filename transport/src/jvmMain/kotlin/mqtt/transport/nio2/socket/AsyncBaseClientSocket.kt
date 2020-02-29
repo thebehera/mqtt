@@ -22,5 +22,4 @@ abstract class AsyncBaseClientSocket(
     override suspend fun aWrite(buffer: ByteBuffer): Int = socket!!.aWrite(buffer, writeTimeout)
     override suspend fun aRead(buffer: ByteBuffer) = socket!!.aRead(buffer, readTimeout)
     override fun remotePort() = socket?.assignedPort(remote = true)
-
 }
