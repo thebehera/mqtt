@@ -5,7 +5,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.transport.nio.socket.NioClientSocket
 import mqtt.transport.nio2.socket.AsyncClientSocket
 import mqtt.transport.nio2.socket.AsyncServerSocket
-import mqtt.transport.nio2.socket.AsyncServerSocket2
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -50,24 +49,14 @@ actual fun clientSocket(
 @ExperimentalTime
 actual fun asyncServerSocket(
     coroutineScope: CoroutineScope,
-    version: Int,
     readTimeout: Duration,
     writeTimeout: Duration,
     bufferPool: BufferPool
 ): ServerToClientSocket {
-    return if (version == 2) {
-        AsyncServerSocket2(
-            coroutineScope,
-            bufferPool,
-            readTimeout,
-            writeTimeout
-        )
-    } else {
-        AsyncServerSocket(
-            coroutineScope,
-            bufferPool,
-            readTimeout,
-            writeTimeout
-        )
-    }
+    return AsyncServerSocket(
+        coroutineScope,
+        bufferPool,
+        readTimeout,
+        writeTimeout
+    )
 }

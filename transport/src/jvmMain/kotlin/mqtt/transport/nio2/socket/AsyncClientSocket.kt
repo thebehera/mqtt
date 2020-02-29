@@ -12,10 +12,6 @@ import java.net.InetSocketAddress
 import java.net.StandardSocketOptions
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.milliseconds
-
-@ExperimentalTime
-val minTimeBeforeLogging = 20.milliseconds
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi

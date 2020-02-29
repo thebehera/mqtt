@@ -61,7 +61,6 @@ expect fun asyncClientSocket(
 @ExperimentalTime
 expect fun asyncServerSocket(
     coroutineScope: CoroutineScope,
-    version: Int,
     readTimeout: Duration,
     writeTimeout: Duration,
     bufferPool: BufferPool

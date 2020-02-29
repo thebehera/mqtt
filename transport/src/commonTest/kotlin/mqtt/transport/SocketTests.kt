@@ -24,7 +24,7 @@ class SocketTests {
 
     @Test
     fun nio2ConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool) }
+        val serverSocket = { asyncServerSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val clientSocket = { asyncClientSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
@@ -32,23 +32,7 @@ class SocketTests {
 
     @Test
     fun nio2ConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool) }
-        val clientSocket = { asyncClientSocket(this, 10.milliseconds, 10.milliseconds, pool) }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
-    }
-
-    @Test
-    fun nio2ConnectDisconnectStress2() = block {
-        val serverSocket = { asyncServerSocket(this, 2, 10.milliseconds, 10.milliseconds, pool) }
-        val clientSocket = { asyncClientSocket(this, 10.milliseconds, 10.milliseconds, pool) }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
-    }
-
-    @Test
-    fun nio2ConnectDisconnectStress2OpenConnections() = block {
-        val serverSocket = { asyncServerSocket(this, 2, 10.milliseconds, 10.milliseconds, pool) }
+        val serverSocket = { asyncServerSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val clientSocket = { asyncClientSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
@@ -56,7 +40,7 @@ class SocketTests {
 
     @Test
     fun nioNonBlockingConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool) }
+        val serverSocket = { asyncServerSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val clientSocket = { clientSocket(this, false, 10.milliseconds, 10.milliseconds, pool) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
@@ -64,7 +48,7 @@ class SocketTests {
 
     @Test
     fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool) }
+        val serverSocket = { asyncServerSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val clientSocket = { clientSocket(this, false, 10.milliseconds, 10.milliseconds, pool) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
@@ -72,7 +56,7 @@ class SocketTests {
 
     @Test
     fun nioBlockingConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool) }
+        val serverSocket = { asyncServerSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val clientSocket = { clientSocket(this, true, 10.milliseconds, 10.milliseconds, pool) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
@@ -80,7 +64,7 @@ class SocketTests {
 
     @Test
     fun nioBlockingConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket(this, 1, 10.milliseconds, 10.milliseconds, pool) }
+        val serverSocket = { asyncServerSocket(this, 10.milliseconds, 10.milliseconds, pool) }
         val clientSocket = { clientSocket(this, true, 10.milliseconds, 10.milliseconds, pool) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
