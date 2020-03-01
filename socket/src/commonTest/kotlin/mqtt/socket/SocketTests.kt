@@ -11,7 +11,7 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
-const val clientCount = 15L
+const val clientCount = 100L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -22,12 +22,13 @@ class SocketTests {
     private val writeTimeout = 10.milliseconds
     private val readTimeout = writeTimeout
     val validateCloseWait = true
+    val validateCloseWaitAgressive = false
 
     @Test
     fun nio2ConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
-        connectClientReadWriteDisconnect(serverSocket, clientSocket, validateCloseWait)
+        connectClientReadWriteDisconnect(serverSocket, clientSocket)
     }
 
     @Test
@@ -35,7 +36,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+        stressTest(serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
@@ -43,14 +44,14 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
     fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
-        connectClientReadWriteDisconnect(serverSocket, clientSocket, validateCloseWait)
+        connectClientReadWriteDisconnect(serverSocket, clientSocket)
     }
 
     @Test
@@ -58,7 +59,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+        stressTest(serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
@@ -66,14 +67,14 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
     fun nioBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
-        connectClientReadWriteDisconnect(serverSocket, clientSocket, validateCloseWait)
+        connectClientReadWriteDisconnect(serverSocket, clientSocket)
     }
 
     @Test
@@ -81,7 +82,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+        stressTest(serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
@@ -89,7 +90,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket)
     }
 
     private suspend fun launchServer(
@@ -131,8 +132,7 @@ class SocketTests {
     }
 
     private fun connectClientReadWriteDisconnect(
-        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
-        validateCloseWait: Boolean
+        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
     ) = block {
         val expectedClientToServer = 4.toUShort()
         val expectedServerToClient = UInt.MAX_VALUE
@@ -166,15 +166,10 @@ class SocketTests {
             assertEquals(4, clientToServerSocket.read(clientReadBuffer, readTimeout))
             clientReadBuffer.flip()
             assertEquals(expectedServerToClient, clientReadBuffer.readUnsignedInt())
+
         }
         val serverToClientSocket = serverSocket.accept()
         assertTrue(serverToClientSocket.isOpen())
-        launch {
-            val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
-            serverWriteBuffer.write(expectedServerToClient)
-            serverWriteBuffer.flip()
-            serverToClientSocket.write(serverWriteBuffer, writeTimeout)
-        }
         val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         assertEquals(0, serverReadBuffer.position())
         assertEquals(10, serverReadBuffer.limit())
@@ -187,9 +182,16 @@ class SocketTests {
         assertEquals(expectedClientToServer, serverReadBuffer.readUnsignedShort())
         assertEquals(2, serverReadBuffer.position())
         assertEquals(2, serverReadBuffer.limit())
+
+        val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
+        serverWriteBuffer.write(expectedServerToClient)
+        serverWriteBuffer.flip()
+        serverToClientSocket.write(serverWriteBuffer, writeTimeout)
+
         assertTrue(serverToClientSocket.isOpen())
         serverToClientSocket.close()
         assertFalse(serverToClientSocket.isOpen())
+
         assertTrue(clientToServerSocket.isOpen())
         clientToServerSocket.close()
         assertFalse(clientToServerSocket.isOpen())
@@ -197,7 +199,7 @@ class SocketTests {
         serverSocket.close()
         assertFalse(serverSocket.isOpen())
         assertEquals(1, clientCount, "Didn't execute client to server socket code")
-        if (validateCloseWait) {
+        if (validateCloseWait || validateCloseWaitAgressive) {
             val stats = readStats(port, "CLOSE_WAIT")
             if (stats.isNotEmpty()) {
                 println("stats (${stats.count()}): $stats")
@@ -209,8 +211,7 @@ class SocketTests {
     @InternalCoroutinesApi
     private suspend fun stressTest(
         serverL: ServerLaunched?,
-        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
-        validateCloseWait: Boolean = false
+        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
     ) =
         block {
             val serverLaunched = serverL ?: launchServer(this, getServerSocket)
@@ -230,16 +231,15 @@ class SocketTests {
                     println("Failed to validate client #$it")
                     throw e
                 } finally {
-                    if (validateCloseWait) {
-                        val stats = serverLaunched.server.getStats()
-                        if (stats.isNotEmpty()) {
-                            println("stats (${stats.count()}): $stats")
-                        }
-                        assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
+                    if (validateCloseWaitAgressive) {
+                        checkPort(serverLaunched.server)
                     }
                 }
             }
             serverLaunched.mutex.lock()
+            if (validateCloseWait) {
+                checkPort(serverLaunched.server)
+            }
             serverLaunched.serverSocket.close()
             assertEquals(clientCount, serverLaunched.count.toLong())
         }
@@ -247,8 +247,7 @@ class SocketTests {
 
     private suspend fun stressTestOpenConnections(
         serverL: ServerLaunched?,
-        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
-        validateCloseWait: Boolean = false
+        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
     ) =
         block {
             val serverLaunched = serverL ?: launchServer(this, getServerSocket)
@@ -267,18 +266,25 @@ class SocketTests {
                 assertTrue(it.isOpen())
                 it.close()
                 serverLaunched.server.closeClient(port)
-                if (validateCloseWait) {
-                    val stats = serverLaunched.server.getStats()
-                    if (stats.isNotEmpty()) {
-                        println("stats (${stats.count()}): $stats")
-                    }
-                    assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
+                if (validateCloseWaitAgressive) {
+                    checkPort(serverLaunched.server)
                 }
             }
             assertEquals(0, serverLaunched.server.connections.count().toLong())
             serverLaunched.mutex.lock()
+            if (validateCloseWait) {
+                checkPort(serverLaunched.server)
+            }
             serverLaunched.serverSocket.close()
             assertEquals(clientCount, serverLaunched.count.toLong())
         }
+
+    private fun checkPort(server: Server) {
+        val stats = readStats(server.serverSocket.port()!!, "CLOSE_WAIT")
+        if (stats.isNotEmpty()) {
+            println("stats (${stats.count()}): $stats")
+        }
+        assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
+    }
 
 }
