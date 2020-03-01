@@ -19,7 +19,7 @@ const val clientCount = 100L
 @InternalCoroutinesApi
 class SocketTests {
     private val connectTimeout = 30.seconds
-    private val writeTimeout = 10.milliseconds
+    private val writeTimeout = 100.milliseconds
     private val readTimeout = writeTimeout
     val validateCloseWait = true
     val validateCloseWaitAgressive = false
