@@ -54,8 +54,7 @@ abstract class BaseServerSocket<S : NetworkChannel>(val pool: BufferPool) : Serv
     override suspend fun listen() = flow<ClientSocket> {
         try {
             while (isOpen()) {
-                val asyncSocketChannel = accept(server!!)
-                asyncSocketChannel ?: continue
+                val asyncSocketChannel = accept(server!!) ?: continue
                 val client = clientToServer(asyncSocketChannel)
                 connections[client.remotePort()!!] = client
                 emit(client)
