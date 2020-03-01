@@ -1,6 +1,5 @@
 package mqtt.transport
 
-import mqtt.transport.nio.socket.JvmServer
 import mqtt.transport.nio.socket.NioClientSocket
 import mqtt.transport.nio2.socket.AsyncClientSocket
 import mqtt.transport.nio2.socket.AsyncServerSocket
@@ -18,8 +17,3 @@ actual fun clientSocket(blocking: Boolean): ClientToServerSocket =
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 actual fun asyncServerSocket(): ServerSocket = AsyncServerSocket()
-
-
-@ExperimentalUnsignedTypes
-@ExperimentalTime
-actual fun server(serverSocket: ServerSocket): Server = JvmServer(serverSocket)
