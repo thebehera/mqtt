@@ -12,11 +12,9 @@ interface SuspendCloseable {
 @ExperimentalTime
 @ExperimentalUnsignedTypes
 interface ClientSocket : SuspendCloseable {
-    val pool: BufferPool
     fun isOpen(): Boolean
     fun localPort(): UShort?
     fun remotePort(): UShort?
-    var tag: Any?
 }
 
 @ExperimentalTime
@@ -33,38 +31,48 @@ interface ClientToServerSocket : ClientSocket {
 @ExperimentalTime
 @ExperimentalUnsignedTypes
 interface ServerSocket : SuspendCloseable {
-    fun port(): UShort?
-    suspend fun bind(port: UShort? = null, host: String? = null, socketOptions: SocketOptions? = null): SocketOptions
-    suspend fun listen(): Flow<ClientSocket>
-    val connections: Map<UShort, ClientSocket>
-    fun getStats(): List<String>
+    suspend fun bind(
+        port: UShort? = null,
+        host: String? = null,
+        socketOptions: SocketOptions? = null,
+        backlog: UInt = 0.toUInt()
+    ): SocketOptions
 
+    suspend fun accept(): ClientSocket
+    fun port(): UShort?
+
+    // Should move this to the "Server" Interface
+    suspend fun listen(): Flow<ClientSocket>
+
+    val connections: Map<UShort, ClientSocket>
     suspend fun closeClient(port: UShort)
+    fun getStats(): List<String> // only for debugging
+}
+
+@ExperimentalTime
+interface Server {
+    val connections: Map<UShort, ClientSocket>
+    suspend fun listen(): Flow<ClientSocket>
+    suspend fun closeClient(port: UShort)
+    fun getStats(): List<String>
 }
 
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-expect fun asyncClientSocket(
-    bufferPool: BufferPool
-): ClientToServerSocket
+expect fun asyncClientSocket(): ClientToServerSocket
 
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-expect fun asyncServerSocket(
-    bufferPool: BufferPool
-): ServerSocket
+expect fun asyncServerSocket(): ServerSocket
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 @ExperimentalCoroutinesApi
-expect fun clientSocket(
-    blocking: Boolean,
-    bufferPool: BufferPool
-): ClientToServerSocket
+expect fun clientSocket(blocking: Boolean): ClientToServerSocket
 
 
 data class SocketOptions(

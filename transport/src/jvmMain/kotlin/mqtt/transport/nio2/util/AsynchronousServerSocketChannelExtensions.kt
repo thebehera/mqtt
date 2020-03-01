@@ -42,11 +42,11 @@ data class AcceptCompletionHandler(val continuation: CancellableContinuation<Asy
  */
 
 @ExperimentalTime
-suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress?) =
+suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress? = null, backlog: UInt = 0.toUInt()) =
     suspendCancellableCoroutine<AsynchronousServerSocketChannel> { cont ->
         try {
             closeOnCancel(cont)
-            cont.resume(bind(socketAddress))
+            cont.resume(bind(socketAddress, backlog.toInt()))
         } catch (e: Throwable) {
             cont.cancel(e)
         }

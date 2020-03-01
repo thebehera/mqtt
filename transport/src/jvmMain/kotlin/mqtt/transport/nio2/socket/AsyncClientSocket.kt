@@ -1,7 +1,6 @@
 package mqtt.transport.nio2.socket
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import mqtt.transport.BufferPool
 import mqtt.transport.ClientToServerSocket
 import mqtt.transport.SocketOptions
 import mqtt.transport.nio.socket.util.asyncSetOptions
@@ -15,7 +14,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @ExperimentalTime
-class AsyncClientSocket(pool: BufferPool) : AsyncBaseClientSocket(pool), ClientToServerSocket {
+class AsyncClientSocket : AsyncBaseClientSocket(), ClientToServerSocket {
 
     override suspend fun open(
         timeout: Duration,
@@ -27,7 +26,7 @@ class AsyncClientSocket(pool: BufferPool) : AsyncBaseClientSocket(pool), ClientT
         val asyncSocket = asyncSocket()
         this.socket = asyncSocket
         val options = asyncSocket.asyncSetOptions(socketOptions)
-        asyncSocket.aConnect(socketAddress, tag)
+        asyncSocket.aConnect(socketAddress)
         return options
     }
 

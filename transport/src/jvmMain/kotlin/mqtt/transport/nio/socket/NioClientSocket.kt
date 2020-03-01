@@ -2,7 +2,6 @@ package mqtt.transport.nio.socket
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.time.currentTimestampMs
-import mqtt.transport.BufferPool
 import mqtt.transport.ClientToServerSocket
 import mqtt.transport.SocketOptions
 import mqtt.transport.nio.socket.util.aConfigureBlocking
@@ -18,9 +17,8 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class NioClientSocket(
-    pool: BufferPool,
     blocking: Boolean = true
-) : BaseClientSocket(pool, blocking), ClientToServerSocket {
+) : BaseClientSocket(blocking), ClientToServerSocket {
 
     override suspend fun open(
         timeout: Duration,
@@ -33,7 +31,7 @@ class NioClientSocket(
         socketChannel.aConfigureBlocking(blocking)
         this.socket = socketChannel
         if (!socketChannel.connect(socketAddress, selector, timeout)) {
-            println("\"${currentTimestampMs()} $tag  FAILED TO CONNECT CLIENT client ${(socketChannel.remoteAddress as? InetSocketAddress)?.port} $socketChannel")
+            println("\"${currentTimestampMs()} FAILED TO CONNECT CLIENT client ${(socketChannel.remoteAddress as? InetSocketAddress)?.port} $socketChannel")
         }
         return socketChannel.asyncSetOptions(socketOptions)
     }

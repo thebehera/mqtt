@@ -9,7 +9,7 @@ import kotlin.test.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
-const val clientCount = 1000L
+const val clientCount = 100L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -17,54 +17,51 @@ const val clientCount = 1000L
 class SocketTests {
     private val connectTimeout = 30.seconds
     val validateCloseWait = true
-    val pool = BufferPool(limits = object : BufferMemoryLimit {
-        override fun isTooLargeForMemory(size: UInt) = size > 1_000_000u
-    })
 
     @Test
     fun nio2ConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket(pool) }
-        val clientSocket = { asyncClientSocket(pool) }
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
         stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
     fun nio2ConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket(pool) }
-        val clientSocket = { asyncClientSocket(pool) }
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
     fun nioNonBlockingConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket(pool) }
-        val clientSocket = { clientSocket(false, pool) }
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
     fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket(pool) }
-        val clientSocket = { clientSocket(false, pool) }
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
     fun nioBlockingConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket(pool) }
-        val clientSocket = { clientSocket(true, pool) }
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTest(serverLaunched, serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
     fun nioBlockingConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket(pool) }
-        val clientSocket = { clientSocket(true, pool) }
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
     }
@@ -112,7 +109,6 @@ class SocketTests {
                 try {
                     val client = getClientSocket()
                     serverLaunched.serverClientSocket = client
-                    client.tag = it.toString()
                     client.open(connectTimeout, serverLaunched.server.port()!!)
                     serverLaunched.firstMessageReceivedLock.lock()
                     assertTrue(client.isOpen())
@@ -150,7 +146,6 @@ class SocketTests {
             repeat(clientCount.toInt()) {
                 val client = getClientSocket()
                 serverLaunched.serverClientSocket = client
-                client.tag = it.toString()
                 client.open(connectTimeout, serverLaunched.server.port()!!)
                 serverLaunched.firstMessageReceivedLock.lock()
                 clients += client

@@ -9,15 +9,15 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-actual fun asyncClientSocket(bufferPool: BufferPool): ClientToServerSocket = AsyncClientSocket(bufferPool)
+actual fun asyncClientSocket(): ClientToServerSocket = AsyncClientSocket()
 
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-actual fun clientSocket(blocking: Boolean, bufferPool: BufferPool): ClientToServerSocket =
-    NioClientSocket(bufferPool, blocking)
+actual fun clientSocket(blocking: Boolean): ClientToServerSocket =
+    NioClientSocket(blocking)
 
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-actual fun asyncServerSocket(bufferPool: BufferPool): ServerSocket = AsyncServerSocket(bufferPool)
+actual fun asyncServerSocket(): ServerSocket = AsyncServerSocket()

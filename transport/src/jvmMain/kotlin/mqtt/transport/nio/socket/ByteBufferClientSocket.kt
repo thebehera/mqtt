@@ -1,6 +1,5 @@
 package mqtt.transport.nio.socket
 
-import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
 import mqtt.transport.nio.socket.util.aClose
 import java.net.InetSocketAddress
@@ -10,10 +9,9 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-abstract class ByteBufferClientSocket<T : NetworkChannel>(override val pool: BufferPool) : ClientSocket {
+abstract class ByteBufferClientSocket<T : NetworkChannel> : ClientSocket {
     protected var socket: T? = null
     private val isClosing = AtomicBoolean(false)
-    override var tag: Any? = null
 
     override fun isOpen() = try {
         (socket?.isOpen ?: false) && !isClosing.get()
