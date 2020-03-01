@@ -25,10 +25,10 @@ class SocketTests {
     val validateCloseWait = true
 
     @Test
-    fun nio2ConnectClientWriteServerReadDisconnect() = block {
+    fun nio2ConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
-        connectClientWriteServerReadDisconnect(serverSocket, clientSocket, validateCloseWait)
+        connectClientReadWriteDisconnect(serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
@@ -48,10 +48,10 @@ class SocketTests {
     }
 
     @Test
-    fun nioNonBlockingConnectClientWriteServerReadDisconnect() = block {
+    fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
-        connectClientWriteServerReadDisconnect(serverSocket, clientSocket, validateCloseWait)
+        connectClientReadWriteDisconnect(serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
@@ -71,10 +71,10 @@ class SocketTests {
     }
 
     @Test
-    fun nioBlockingConnectClientWriteServerReadDisconnect() = block {
+    fun nioBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
-        connectClientWriteServerReadDisconnect(serverSocket, clientSocket, validateCloseWait)
+        connectClientReadWriteDisconnect(serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
@@ -131,20 +131,22 @@ class SocketTests {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
-    fun connectClientWriteServerReadDisconnect(
+    fun connectClientReadWriteDisconnect(
         getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
         validateCloseWait: Boolean
     ) = block {
-        val expected = 4.toUShort()
+        val expectedClientToServer = 4.toUShort()
+        val expectedServerToClient = UInt.MAX_VALUE
         val clientWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         assertEquals(0, clientWriteBuffer.position())
         assertEquals(10, clientWriteBuffer.limit())
-        clientWriteBuffer.write(expected)
+        clientWriteBuffer.write(expectedClientToServer)
         assertEquals(2, clientWriteBuffer.position())
         assertEquals(10, clientWriteBuffer.limit())
         clientWriteBuffer.flip()
         assertEquals(0, clientWriteBuffer.position())
         assertEquals(2, clientWriteBuffer.limit())
+        val clientReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val serverSocket = getServerSocket()
         assertFalse(serverSocket.isOpen())
         serverSocket.bind()
@@ -162,12 +164,18 @@ class SocketTests {
             assertEquals(2, clientToServerSocket.write(clientWriteBuffer, writeTimeout))
             assertEquals(2, clientWriteBuffer.position())
             assertEquals(2, clientWriteBuffer.limit())
-            assertTrue(clientToServerSocket.isOpen())
-            clientToServerSocket.close()
-            assertFalse(clientToServerSocket.isOpen())
+            assertEquals(4, clientToServerSocket.read(clientReadBuffer, readTimeout))
+            clientReadBuffer.flip()
+            assertEquals(expectedServerToClient, clientReadBuffer.readUnsignedInt())
         }
         val serverToClientSocket = serverSocket.accept()
         assertTrue(serverToClientSocket.isOpen())
+        launch {
+            val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
+            serverWriteBuffer.write(expectedServerToClient)
+            serverWriteBuffer.flip()
+            serverToClientSocket.write(serverWriteBuffer, writeTimeout)
+        }
         val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         assertEquals(0, serverReadBuffer.position())
         assertEquals(10, serverReadBuffer.limit())
@@ -177,12 +185,15 @@ class SocketTests {
         serverReadBuffer.flip()
         assertEquals(0, serverReadBuffer.position())
         assertEquals(2, serverReadBuffer.limit())
-        assertEquals(expected, serverReadBuffer.readUnsignedShort())
+        assertEquals(expectedClientToServer, serverReadBuffer.readUnsignedShort())
         assertEquals(2, serverReadBuffer.position())
         assertEquals(2, serverReadBuffer.limit())
         assertTrue(serverToClientSocket.isOpen())
         serverToClientSocket.close()
         assertFalse(serverToClientSocket.isOpen())
+        assertTrue(clientToServerSocket.isOpen())
+        clientToServerSocket.close()
+        assertFalse(clientToServerSocket.isOpen())
         assertTrue(serverSocket.isOpen())
         serverSocket.close()
         assertFalse(serverSocket.isOpen())
