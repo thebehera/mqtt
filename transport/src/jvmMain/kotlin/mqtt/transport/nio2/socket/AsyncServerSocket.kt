@@ -1,6 +1,5 @@
 package mqtt.transport.nio2.socket
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.transport.nio.socket.BaseServerSocket
 import mqtt.transport.nio2.util.aAccept
 import mqtt.transport.nio2.util.aBind
@@ -11,7 +10,6 @@ import kotlin.time.ExperimentalTime
 
 
 @ExperimentalUnsignedTypes
-@ExperimentalCoroutinesApi
 @ExperimentalTime
 class AsyncServerSocket : BaseServerSocket<AsynchronousServerSocketChannel>() {
     override suspend fun accept() = AsyncServerToClientSocket(server!!.aAccept())

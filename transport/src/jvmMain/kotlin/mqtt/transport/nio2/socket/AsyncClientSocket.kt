@@ -1,6 +1,5 @@
 package mqtt.transport.nio2.socket
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.transport.ClientToServerSocket
 import mqtt.transport.SocketOptions
 import mqtt.transport.nio.socket.util.asyncSetOptions
@@ -12,7 +11,6 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
-@ExperimentalCoroutinesApi
 @ExperimentalTime
 class AsyncClientSocket : AsyncBaseClientSocket(), ClientToServerSocket {
 

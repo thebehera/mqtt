@@ -1,6 +1,5 @@
 package mqtt.transport
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -39,14 +38,8 @@ interface ServerSocket : SuspendCloseable {
     ): SocketOptions
 
     suspend fun accept(): ClientSocket
+    fun isOpen(): Boolean
     fun port(): UShort?
-
-    // Should move this to the "Server" Interface
-    suspend fun listen(): Flow<ClientSocket>
-
-    val connections: Map<UShort, ClientSocket>
-    suspend fun closeClient(port: UShort)
-    fun getStats(): List<String> // only for debugging
 }
 
 @ExperimentalTime
@@ -58,21 +51,22 @@ interface Server {
 }
 
 
-@ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 expect fun asyncClientSocket(): ClientToServerSocket
 
 
-@ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 expect fun asyncServerSocket(): ServerSocket
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-@ExperimentalCoroutinesApi
 expect fun clientSocket(blocking: Boolean): ClientToServerSocket
+
+@ExperimentalUnsignedTypes
+@ExperimentalTime
+expect fun server(serverSocket: ServerSocket): Server
 
 
 data class SocketOptions(

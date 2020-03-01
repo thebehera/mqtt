@@ -1,30 +1,27 @@
 package mqtt.transport.nio.socket
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.suspendCancellableCoroutine
 import mqtt.transport.ClientSocket
+import mqtt.transport.Server
 import mqtt.transport.ServerSocket
 import mqtt.transport.SocketOptions
+import mqtt.transport.nio.socket.util.aClose
 import mqtt.transport.nio.socket.util.asyncSetOptions
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.channels.ClosedChannelException
 import java.nio.channels.NetworkChannel
 import java.util.*
-import kotlin.coroutines.resume
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
-@ExperimentalCoroutinesApi
 @ExperimentalTime
 abstract class BaseServerSocket<S : NetworkChannel> : ServerSocket {
     protected var server: S? = null
-    override val connections = TreeMap<UShort, ClientSocket>()
 
     override fun port() = (server?.localAddress as? InetSocketAddress)?.port?.toUShort()
 
-    fun isOpen() = try {
+    override fun isOpen() = try {
         port() != null && server?.isOpen ?: false
     } catch (e: Throwable) {
         false
@@ -50,43 +47,43 @@ abstract class BaseServerSocket<S : NetworkChannel> : ServerSocket {
     abstract suspend fun bind(channel: S, socketAddress: SocketAddress?, backlog: UInt): S?
     abstract suspend fun serverNetworkChannel(): S
 
+    override suspend fun close() {
+        server?.aClose()
+    }
+}
+
+
+@ExperimentalTime
+@ExperimentalUnsignedTypes
+class JvmServer(val serverSocket: ServerSocket) : Server {
+    override val connections = TreeMap<UShort, ClientSocket>()
     override suspend fun listen() = flow {
         try {
-            while (isOpen()) {
-                val client = accept()
+            while (serverSocket.isOpen()) {
+                val client = serverSocket.accept()
                 connections[client.remotePort()!!] = client
                 emit(client)
             }
         } catch (e: ClosedChannelException) {
             // we're done
         }
-        this@BaseServerSocket.close()
+        serverSocket.close()
     }
 
     override suspend fun closeClient(port: UShort) {
         connections.remove(port)?.close()
     }
 
-    override fun getStats() = readStats(port()!!, "CLOSE_WAIT")
-
-    override suspend fun close() {
-        if (server?.isOpen != true && connections.isNotEmpty()) {
+    suspend fun close() {
+        if (!serverSocket.isOpen() && connections.isNotEmpty()) {
             return
         }
         connections.values.forEach { it.close() }
         connections.clear()
-        suspendCancellableCoroutine<Unit> {
-            try {
-                server?.close()
-            } catch (e: Throwable) {
-
-            } finally {
-                it.resume(Unit)
-            }
-        }
     }
-}
 
+    override fun getStats() = readStats(serverSocket.port()!!, "CLOSE_WAIT")
+}
 
 fun readStats(port: UShort, contains: String): List<String> {
     val process = ProcessBuilder()

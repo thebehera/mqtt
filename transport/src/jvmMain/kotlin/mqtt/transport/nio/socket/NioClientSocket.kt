@@ -1,6 +1,5 @@
 package mqtt.transport.nio.socket
 
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.time.currentTimestampMs
 import mqtt.transport.ClientToServerSocket
 import mqtt.transport.SocketOptions
@@ -14,7 +13,6 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
-@ExperimentalCoroutinesApi
 @ExperimentalTime
 class NioClientSocket(
     blocking: Boolean = true

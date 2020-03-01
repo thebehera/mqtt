@@ -2,6 +2,7 @@ package mqtt.transport
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -14,6 +15,7 @@ const val clientCount = 100L
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @ExperimentalTime
+@InternalCoroutinesApi
 class SocketTests {
     private val connectTimeout = 30.seconds
     val validateCloseWait = true
@@ -70,12 +72,13 @@ class SocketTests {
         scope: CoroutineScope,
         getServerSocket: () -> ServerSocket
     ): ServerLaunched {
-        val server = getServerSocket()
+        val serverSocket = getServerSocket()
         val firstReceiveLock = Mutex(true)
         val mutex = Mutex(true)
         var serverClientSocket: ClientSocket? = null
-        val launched = ServerLaunched(firstReceiveLock, server, serverClientSocket, mutex)
-        server.bind()
+        serverSocket.bind()
+        val server = server(serverSocket)
+        val launched = ServerLaunched(firstReceiveLock, server, serverSocket, serverClientSocket, mutex)
         scope.launch {
             server.listen().collect {
                 serverClientSocket = it
@@ -92,12 +95,14 @@ class SocketTests {
 
     data class ServerLaunched(
         val firstMessageReceivedLock: Mutex,
-        val server: ServerSocket,
+        val server: Server,
+        val serverSocket: ServerSocket,
         var serverClientSocket: ClientSocket?,
         val mutex: Mutex,
         var count: Int = 0
     )
 
+    @InternalCoroutinesApi
     private suspend fun stressTest(
         serverL: ServerLaunched?,
         getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
@@ -109,7 +114,7 @@ class SocketTests {
                 try {
                     val client = getClientSocket()
                     serverLaunched.serverClientSocket = client
-                    client.open(connectTimeout, serverLaunched.server.port()!!)
+                    client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
                     serverLaunched.firstMessageReceivedLock.lock()
                     assertTrue(client.isOpen())
                     val clientPort = client.localPort()!!
@@ -120,17 +125,18 @@ class SocketTests {
                 } catch (e: Throwable) {
                     println("Failed to validate client #$it")
                     throw e
+                } finally {
+                    if (validateCloseWait) {
+                        val stats = serverLaunched.server.getStats()
+                        if (stats.isNotEmpty()) {
+                            println("stats (${stats.count()}): $stats")
+                        }
+                        assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
+                    }
                 }
-            }
-            if (validateCloseWait) {
-                val stats = serverLaunched.server.getStats()
-                if (stats.isNotEmpty()) {
-                    println("stats (${stats.count()}): $stats")
-                }
-                assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
             }
             serverLaunched.mutex.lock()
-            serverLaunched.server.close()
+            serverLaunched.serverSocket.close()
             assertEquals(clientCount, serverLaunched.count.toLong())
         }
 
@@ -146,7 +152,7 @@ class SocketTests {
             repeat(clientCount.toInt()) {
                 val client = getClientSocket()
                 serverLaunched.serverClientSocket = client
-                client.open(connectTimeout, serverLaunched.server.port()!!)
+                client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
                 serverLaunched.firstMessageReceivedLock.lock()
                 clients += client
             }
@@ -157,17 +163,17 @@ class SocketTests {
                 assertTrue(it.isOpen())
                 it.close()
                 serverLaunched.server.closeClient(port)
-            }
-            if (validateCloseWait) {
-                val stats = serverLaunched.server.getStats()
-                if (stats.isNotEmpty()) {
-                    println("stats (${stats.count()}): $stats")
+                if (validateCloseWait) {
+                    val stats = serverLaunched.server.getStats()
+                    if (stats.isNotEmpty()) {
+                        println("stats (${stats.count()}): $stats")
+                    }
+                    assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
                 }
-                assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
             }
             assertEquals(0, serverLaunched.server.connections.count().toLong())
             serverLaunched.mutex.lock()
-            serverLaunched.server.close()
+            serverLaunched.serverSocket.close()
             assertEquals(clientCount, serverLaunched.count.toLong())
         }
 
