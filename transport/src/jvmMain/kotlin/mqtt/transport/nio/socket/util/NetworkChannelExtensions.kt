@@ -1,6 +1,10 @@
 package mqtt.transport.nio.socket.util
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import mqtt.transport.SocketOptions
 import java.net.SocketOption
+import java.net.StandardSocketOptions
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
 import java.nio.channels.SocketChannel
@@ -18,6 +22,41 @@ suspend fun <T> NetworkChannel.asyncSetOption(option: SocketOption<T>, value: T)
             it.resumeWithException(e)
         }
     }
+
+suspend fun NetworkChannel.asyncSetOptions(options: SocketOptions?): SocketOptions {
+    return withContext(Dispatchers.IO) {
+        if (options != null) {
+            if (options.tcpNoDelay != null && supportedOptions().contains(StandardSocketOptions.TCP_NODELAY)) {
+                setOption(StandardSocketOptions.TCP_NODELAY, options.tcpNoDelay)
+            }
+            if (options.reuseAddress != null && supportedOptions().contains(StandardSocketOptions.SO_REUSEADDR)) {
+                setOption(StandardSocketOptions.SO_REUSEADDR, options.reuseAddress)
+            }
+            if (options.keepAlive != null && supportedOptions().contains(StandardSocketOptions.SO_KEEPALIVE)) {
+                setOption(StandardSocketOptions.SO_KEEPALIVE, options.keepAlive)
+            }
+            if (options.receiveBuffer != null && supportedOptions().contains(StandardSocketOptions.SO_RCVBUF)) {
+                setOption(StandardSocketOptions.SO_RCVBUF, options.receiveBuffer.toInt())
+            }
+            if (options.sendBuffer != null && supportedOptions().contains(StandardSocketOptions.SO_SNDBUF)) {
+                setOption(StandardSocketOptions.SO_SNDBUF, options.sendBuffer.toInt())
+            }
+        }
+        SocketOptions(
+            tryGettingOption(StandardSocketOptions.TCP_NODELAY),
+            tryGettingOption(StandardSocketOptions.SO_REUSEADDR),
+            tryGettingOption(StandardSocketOptions.SO_KEEPALIVE),
+            tryGettingOption(StandardSocketOptions.SO_RCVBUF)?.toUInt(),
+            tryGettingOption(StandardSocketOptions.SO_SNDBUF)?.toUInt()
+        )
+    }
+}
+
+fun <T> NetworkChannel.tryGettingOption(option: SocketOption<T>) = if (supportedOptions().contains(option)) {
+    getOption(option)
+} else {
+    null
+}
 
 @ExperimentalTime
 suspend fun NetworkChannel.aClose() {

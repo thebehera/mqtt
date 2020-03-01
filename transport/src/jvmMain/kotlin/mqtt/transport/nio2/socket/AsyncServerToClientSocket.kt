@@ -1,21 +1,16 @@
 package mqtt.transport.nio2.socket
 
-import kotlinx.coroutines.CoroutineScope
 import mqtt.transport.BufferPool
 import java.nio.channels.AsynchronousSocketChannel
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 class AsyncServerToClientSocket(
-    scope: CoroutineScope, asyncSocket: AsynchronousSocketChannel,
-    pool: BufferPool,
-    readTimeout: Duration,
-    writeTimeout: Duration
-) : AsyncBaseClientSocket(scope, pool, readTimeout, writeTimeout) {
+    asyncSocket: AsynchronousSocketChannel,
+    pool: BufferPool
+) : AsyncBaseClientSocket(pool) {
     init {
         this.socket = asyncSocket
-        startWriteChannel()
     }
 }

@@ -1,11 +1,12 @@
 package mqtt.transport.nio.socket
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import mqtt.time.currentTimestampMs
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientToServerSocket
+import mqtt.transport.SocketOptions
 import mqtt.transport.nio.socket.util.aConfigureBlocking
+import mqtt.transport.nio.socket.util.asyncSetOptions
 import mqtt.transport.nio.socket.util.connect
 import mqtt.transport.nio.socket.util.openSocketChannel
 import mqtt.transport.util.asInetAddress
@@ -17,22 +18,24 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 @ExperimentalTime
 class NioClientSocket(
-    coroutineScope: CoroutineScope,
     pool: BufferPool,
-    val blocking: Boolean = true,
-    readTimeout: Duration,
-    writeTimeout: Duration
-) : BaseClientSocket(coroutineScope, pool, readTimeout, writeTimeout), ClientToServerSocket {
+    blocking: Boolean = true
+) : BaseClientSocket(pool, blocking), ClientToServerSocket {
 
-    override suspend fun open(hostname: String?, port: UShort) {
+    override suspend fun open(
+        timeout: Duration,
+        port: UShort,
+        hostname: String?,
+        socketOptions: SocketOptions?
+    ): SocketOptions {
         val socketAddress = InetSocketAddress(hostname?.asInetAddress(), port.toInt())
         val socketChannel = openSocketChannel()
         socketChannel.aConfigureBlocking(blocking)
         this.socket = socketChannel
-        if (!socketChannel.connect(scope, socketAddress, selector, readTimeout)) {
+        if (!socketChannel.connect(socketAddress, selector, timeout)) {
             println("\"${currentTimestampMs()} $tag  FAILED TO CONNECT CLIENT client ${(socketChannel.remoteAddress as? InetSocketAddress)?.port} $socketChannel")
         }
-        startWriteChannel()
+        return socketChannel.asyncSetOptions(socketOptions)
     }
 }
 

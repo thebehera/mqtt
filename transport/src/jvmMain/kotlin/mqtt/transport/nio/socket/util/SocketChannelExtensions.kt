@@ -13,6 +13,8 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.MonoClock
+import kotlin.time.milliseconds
 
 
 suspend fun openSocketChannel(remote: SocketAddress? = null) = suspendCoroutine<SocketChannel> {
@@ -36,43 +38,39 @@ data class WrappedContinuation<T>(val continuation: CancellableContinuation<T>, 
 }
 
 @ExperimentalTime
-suspend fun SocketChannel.suspendUntilReady(
-    scope: CoroutineScope,
-    selector: Selector,
-    ops: Int,
-    timeout: Duration? = null
-) {
+suspend fun SocketChannel.suspendUntilReady(selector: Selector, ops: Int, timeout: Duration) {
     val random = random()
     suspendCancellableCoroutine<Double> {
-        register(selector, ops, WrappedContinuation(it, random))
-        scope.launch {
-            selector.select(scope, random, timeout)
+        val key = register(selector, ops, WrappedContinuation(it, random))
+        runBlocking {
+            selector.select(key, random, timeout)
         }
     }
 }
 
 @ExperimentalTime
-suspend fun Selector.select(scope: CoroutineScope, attachment: Any, timeout: Duration?) {
-    while (aSelect(timeout) == 0) {
-        if (!(scope.isActive && isOpen)) {
-            return
-        }
-        continue
+suspend fun Selector.select(selectionKey: SelectionKey, attachment: Any, timeout: Duration) {
+    val startTime = MonoClock.markNow()
+    val selectedCount = aSelect(timeout)
+    if (selectedCount == 0) {
+        throw CancellationException("Selector timed out after waiting $timeout for ${selectionKey.isConnectable}")
     }
-    val selectedKeys = selectedKeys().iterator()
-    while (selectedKeys.hasNext()) {
-        val key = selectedKeys.next() as SelectionKey
-        val keyAttachment = key.attachment() as? WrappedContinuation<*> ?: continue
-        if (keyAttachment.attachment == attachment) {
-            if (key.isValid) {
-                keyAttachment.resume()
-            } else {
-                keyAttachment.cancel()
+    while (isOpen && timeout - startTime.elapsedNow() > 0.milliseconds) {
+        if (selectedKeys().remove(selectionKey)) {
+            val cont = selectionKey.attachment() as WrappedContinuation<*>
+            if (cont.attachment != attachment) {
+                throw IllegalStateException("Continuation attachment was mutated!")
             }
-            selectedKeys.remove()
+            if (selectionKey.isValid) {
+                cont.resume()
+            } else {
+                cont.cancel()
+            }
             return
         }
     }
+
+    throw CancellationException("Failed to find selector in time")
 }
 
 
@@ -94,14 +92,13 @@ private suspend fun SocketChannel.suspendConnect(remote: SocketAddress) = suspen
 
 @ExperimentalTime
 suspend fun SocketChannel.connect(
-    scope: CoroutineScope,
     remote: SocketAddress,
     selector: Selector? = null,
-    timeout: Duration? = null
+    timeout: Duration
 ): Boolean {
     val connected = aConnect(remote)
     if (selector != null && !isBlocking) {
-        suspendUntilReady(scope, selector, SelectionKey.OP_CONNECT, timeout)
+        suspendUntilReady(selector, SelectionKey.OP_CONNECT, timeout)
     }
     if (connected || aFinishConnecting()) {
         return true
@@ -129,45 +126,42 @@ suspend fun SelectableChannel.aConfigureBlocking(block: Boolean) = suspendCancel
 private suspend fun SocketChannel.suspendNonBlockingSelector(
     selector: Selector?,
     op: Int,
-    scope: CoroutineScope,
-    timeout: Duration?
+    timeout: Duration
 ) {
     if (isBlocking) {
         return
     }
     val selectorNonNull =
         selector ?: throw IllegalArgumentException("Selector must be provided if it is a non-blocking channel")
-    suspendUntilReady(scope, selectorNonNull, op, timeout)
+    suspendUntilReady(selectorNonNull, op, timeout)
 }
 
 @ExperimentalTime
 suspend fun SocketChannel.read(
-    scope: CoroutineScope,
     buffer: ByteBuffer,
     selector: Selector?,
-    timeout: Duration?
+    timeout: Duration
 ): Int {
     return if (isBlocking) {
         withContext(Dispatchers.IO) {
             return@withContext suspendRead(buffer)
         }
     } else {
-        suspendNonBlockingSelector(selector, SelectionKey.OP_READ, scope, timeout)
+        suspendNonBlockingSelector(selector, SelectionKey.OP_READ, timeout)
         suspendRead(buffer)
     }
 }
 
 @ExperimentalTime
 suspend fun SocketChannel.write(
-    scope: CoroutineScope,
     buffer: ByteBuffer,
     selector: Selector?,
-    timeout: Duration?
+    timeout: Duration
 ): Int {
     return if (isBlocking) {
         suspendWrite(buffer)
     } else {
-        suspendNonBlockingSelector(selector, SelectionKey.OP_WRITE, scope, timeout)
+        suspendNonBlockingSelector(selector, SelectionKey.OP_WRITE, timeout)
         suspendWrite(buffer)
     }
 }

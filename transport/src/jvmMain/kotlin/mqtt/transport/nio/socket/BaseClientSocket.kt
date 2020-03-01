@@ -1,35 +1,22 @@
 package mqtt.transport.nio.socket
 
-import kotlinx.coroutines.CoroutineScope
 import mqtt.transport.BufferPool
 import mqtt.transport.nio.socket.util.aClose
-import mqtt.transport.nio.socket.util.read
-import mqtt.transport.nio.socket.util.write
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 import java.nio.channels.Selector
 import java.nio.channels.SocketChannel
-import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-abstract class BaseClientSocket(
-    coroutineScope: CoroutineScope,
-    override val pool: BufferPool,
-    override var readTimeout: Duration,
-    override var writeTimeout: Duration
-) : ByteBufferClientSocket<SocketChannel>(coroutineScope, pool, readTimeout, writeTimeout) {
-    val selector = Selector.open()!!
-
-    override suspend fun aWrite(buffer: ByteBuffer) = socket!!.write(scope, buffer, selector, writeTimeout)
-
-    override suspend fun aRead(buffer: ByteBuffer) = socket!!.read(scope, buffer, selector, readTimeout)
+abstract class BaseClientSocket(pool: BufferPool, protected val blocking: Boolean = false) :
+    ByteBufferClientSocket<SocketChannel>(pool) {
+    val selector = if (!blocking) Selector.open()!! else null
 
     override fun remotePort() = (socket?.remoteAddress as? InetSocketAddress)?.port?.toUShort()
 
     override suspend fun close() {
-        selector.aClose()
+        selector?.aClose()
         super.close()
     }
 

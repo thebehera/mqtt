@@ -12,16 +12,12 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-suspend fun Selector.aSelect(timeout: Duration? = null): Int {
+suspend fun Selector.aSelect(timeout: Duration): Int {
     val selector = this
     return withContext(Dispatchers.IO) {
         suspendCancellableCoroutine<Int> {
             try {
-                if (timeout != null) {
-                    it.resume(select(timeout.toLongMilliseconds()))
-                } else {
-                    it.resume(select())
-                }
+                it.resume(select(timeout.toLongMilliseconds()))
             } catch (e: Throwable) {
                 if (e is AsynchronousCloseException && it.isCancelled) {
                     selector.close()
