@@ -1,5 +1,6 @@
 package mqtt.socket.nio
 
+import mqtt.socket.JvmBuffer
 import mqtt.socket.PlatformBuffer
 import mqtt.socket.nio.util.aClose
 import mqtt.socket.nio.util.read

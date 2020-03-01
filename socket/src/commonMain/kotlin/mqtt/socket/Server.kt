@@ -34,4 +34,3 @@ class Server(val serverSocket: ServerSocket) {
 
     fun getStats() = readStats(serverSocket.port()!!, "CLOSE_WAIT")
 }
-

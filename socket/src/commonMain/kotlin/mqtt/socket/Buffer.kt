@@ -3,7 +3,6 @@ package mqtt.socket
 import mqtt.wire.data.ReadBuffer
 import mqtt.wire.data.WriteBuffer
 
-
 enum class BufferType {
     InMemory,
     Disk
