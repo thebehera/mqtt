@@ -17,7 +17,6 @@ import kotlin.time.ExperimentalTime
 class NioClientSocket(
     blocking: Boolean = true
 ) : BaseClientSocket(blocking), ClientToServerSocket {
-
     override suspend fun open(
         timeout: Duration,
         port: UShort,

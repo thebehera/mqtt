@@ -1,16 +1,14 @@
 package mqtt.transport
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import mqtt.transport.nio.socket.readStats
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
-const val clientCount = 100L
+const val clientCount = 10L
 
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
@@ -19,6 +17,13 @@ const val clientCount = 100L
 class SocketTests {
     private val connectTimeout = 30.seconds
     val validateCloseWait = true
+
+    @Test
+    fun nio2ConnectDisconnect() = block {
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { asyncClientSocket() }
+        connectDisconnect(serverSocket, clientSocket, validateCloseWait)
+    }
 
     @Test
     fun nio2ConnectDisconnectStress() = block {
@@ -37,6 +42,13 @@ class SocketTests {
     }
 
     @Test
+    fun nioNonBlockingConnectDisconnect() = block {
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { clientSocket(false) }
+        connectDisconnect(serverSocket, clientSocket, validateCloseWait)
+    }
+
+    @Test
     fun nioNonBlockingConnectDisconnectStress() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
@@ -50,6 +62,13 @@ class SocketTests {
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
         stressTestOpenConnections(serverLaunched, serverSocket, clientSocket, validateCloseWait)
+    }
+
+    @Test
+    fun nioBlockingConnectDisconnect() = block {
+        val serverSocket = { asyncServerSocket() }
+        val clientSocket = { clientSocket(true) }
+        connectDisconnect(serverSocket, clientSocket, validateCloseWait)
     }
 
     @Test
@@ -101,6 +120,48 @@ class SocketTests {
         val mutex: Mutex,
         var count: Int = 0
     )
+
+
+    fun connectDisconnect(
+        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
+        validateCloseWait: Boolean
+    ) = block {
+        val serverSocket = getServerSocket()
+        assertFalse(serverSocket.isOpen())
+        serverSocket.bind()
+        assertTrue(serverSocket.isOpen())
+        val port = serverSocket.port()!!
+        val clientToServerSocket = getClientSocket()
+        assertFalse(clientToServerSocket.isOpen())
+        val mutex = Mutex(true)
+        var clientCount = 0
+        launch {
+            clientToServerSocket.open(connectTimeout, port)
+            clientCount++
+            assertTrue(clientToServerSocket.isOpen())
+            clientToServerSocket.close()
+            assertFalse(clientToServerSocket.isOpen())
+            mutex.unlock()
+        }
+        val serverToClientSocket = serverSocket.accept()
+        assertTrue(serverToClientSocket.isOpen())
+        serverToClientSocket.close()
+        assertFalse(serverToClientSocket.isOpen())
+        assertTrue(serverSocket.isOpen())
+        serverSocket.close()
+        assertFalse(serverSocket.isOpen())
+        withTimeout(connectTimeout.toLongMilliseconds()) {
+            mutex.lock()
+        }
+        assertEquals(1, clientCount, "Didn't execute client to server socket code")
+        if (validateCloseWait) {
+            val stats = readStats(port, "CLOSE_WAIT")
+            if (stats.isNotEmpty()) {
+                println("stats (${stats.count()}): $stats")
+            }
+            assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
+        }
+    }
 
     @InternalCoroutinesApi
     private suspend fun stressTest(

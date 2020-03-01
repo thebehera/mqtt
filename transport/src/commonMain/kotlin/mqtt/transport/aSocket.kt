@@ -13,6 +13,8 @@ interface ClientSocket : SuspendCloseable {
     fun isOpen(): Boolean
     fun localPort(): UShort?
     fun remotePort(): UShort?
+    suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int
+    suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int
 }
 
 @ExperimentalTime
