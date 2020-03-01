@@ -28,7 +28,7 @@ class SocketTests {
     fun nio2ConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
-        connectClientReadWriteDisconnect(serverSocket, clientSocket)
+        connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @Test
@@ -36,7 +36,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket)
+        stressTest(this, serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
@@ -44,14 +44,14 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket)
+        stressTestOpenConnections(this, serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
     fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
-        connectClientReadWriteDisconnect(serverSocket, clientSocket)
+        connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @Test
@@ -59,7 +59,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket)
+        stressTest(this, serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
@@ -67,14 +67,14 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket)
+        stressTestOpenConnections(this, serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
     fun nioBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
-        connectClientReadWriteDisconnect(serverSocket, clientSocket)
+        connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @Test
@@ -82,7 +82,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTest(serverLaunched, serverSocket, clientSocket)
+        stressTest(this, serverLaunched, serverSocket, clientSocket)
     }
 
     @Test
@@ -90,7 +90,7 @@ class SocketTests {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(serverLaunched, serverSocket, clientSocket)
+        stressTestOpenConnections(this, serverLaunched, serverSocket, clientSocket)
     }
 
     private suspend fun launchServer(
@@ -131,9 +131,10 @@ class SocketTests {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
-    private fun connectClientReadWriteDisconnect(
+    private suspend fun connectClientReadWriteDisconnect(
+        scope: CoroutineScope,
         getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
-    ) = block {
+    ) {
         val expectedClientToServer = 4.toUShort()
         val expectedServerToClient = UInt.MAX_VALUE
         val clientWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
@@ -154,7 +155,7 @@ class SocketTests {
         val clientToServerSocket = getClientSocket()
         assertFalse(clientToServerSocket.isOpen())
         var clientCount = 0
-        launch {
+        scope.launch {
             clientToServerSocket.open(connectTimeout, port)
             assertEquals(1, ++clientCount)
             assertTrue(clientToServerSocket.isOpen())
@@ -210,21 +211,21 @@ class SocketTests {
 
     @InternalCoroutinesApi
     private suspend fun stressTest(
+        scope: CoroutineScope,
         serverL: ServerLaunched?,
         getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
-    ) =
-        block {
-            val serverLaunched = serverL ?: launchServer(this, getServerSocket)
-            repeat(clientCount.toInt()) {
-                try {
-                    val client = getClientSocket()
-                    serverLaunched.serverClientSocket = client
-                    client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
-                    serverLaunched.firstMessageReceivedLock.lock()
-                    assertTrue(client.isOpen())
-                    val clientPort = client.localPort()!!
-                    assertNotNull(serverLaunched.server.connections[clientPort])
-                    client.close()
+    ) {
+        val serverLaunched = serverL ?: launchServer(scope, getServerSocket)
+        repeat(clientCount.toInt()) {
+            try {
+                val client = getClientSocket()
+                serverLaunched.serverClientSocket = client
+                client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
+                serverLaunched.firstMessageReceivedLock.lock()
+                assertTrue(client.isOpen())
+                val clientPort = client.localPort()!!
+                assertNotNull(serverLaunched.server.connections[clientPort])
+                client.close()
                     serverLaunched.server.closeClient(clientPort)
                     assertNull(serverLaunched.server.connections[clientPort])
                 } catch (e: Throwable) {
@@ -246,21 +247,21 @@ class SocketTests {
 
 
     private suspend fun stressTestOpenConnections(
+        scope: CoroutineScope,
         serverL: ServerLaunched?,
         getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
-    ) =
-        block {
-            val serverLaunched = serverL ?: launchServer(this, getServerSocket)
-            val clients = ArrayList<ClientSocket>(clientCount.toInt())
-            repeat(clientCount.toInt()) {
-                val client = getClientSocket()
-                serverLaunched.serverClientSocket = client
-                client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
-                serverLaunched.firstMessageReceivedLock.lock()
-                clients += client
-            }
-            assertEquals(clientCount, clients.count().toLong())
-            assertEquals(clientCount, serverLaunched.server.connections.count().toLong())
+    ) {
+        val serverLaunched = serverL ?: launchServer(scope, getServerSocket)
+        val clients = ArrayList<ClientSocket>(clientCount.toInt())
+        repeat(clientCount.toInt()) {
+            val client = getClientSocket()
+            serverLaunched.serverClientSocket = client
+            client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
+            serverLaunched.firstMessageReceivedLock.lock()
+            clients += client
+        }
+        assertEquals(clientCount, clients.count().toLong())
+        assertEquals(clientCount, serverLaunched.server.connections.count().toLong())
             clients.forEach {
                 val port = it.localPort()!!
                 assertTrue(it.isOpen())
