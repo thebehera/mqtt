@@ -41,7 +41,7 @@ fun asyncIOIntHandler(): CompletionHandler<Int, CancellableContinuation<Int>> =
     object : CompletionHandler<Int, CancellableContinuation<Int>> {
         override fun completed(result: Int, attachment: CancellableContinuation<Int>) {
             if (result == -1) {
-                attachment.resumeWithException(ClosedReceiveChannelException("server returned -1 bytes"))
+                attachment.resumeWithException(ClosedReceiveChannelException("remote returned -1 bytes"))
                 return
             }
             attachment.resume(result)

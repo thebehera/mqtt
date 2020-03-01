@@ -52,6 +52,10 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         byteBuffer.limit(newLimit)
     }
 
+    override fun flip() {
+        byteBuffer.flip()
+    }
+
     override fun put(buffer: PlatformBuffer) {
         byteBuffer.put((buffer as JvmBuffer).byteBuffer)
     }

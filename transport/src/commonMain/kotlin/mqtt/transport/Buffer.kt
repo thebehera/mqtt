@@ -14,6 +14,7 @@ interface PlatformBuffer : ReadBuffer, WriteBuffer, SuspendCloseable {
     fun clear()
     fun limit(newLimit: Int)
     fun put(buffer: PlatformBuffer)
+    fun flip()
 }
 
 interface BufferMemoryLimit {

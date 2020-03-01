@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.Mutex
 import mqtt.transport.nio.socket.readStats
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
+import kotlin.time.milliseconds
 import kotlin.time.seconds
 
 const val clientCount = 10L
@@ -16,6 +17,8 @@ const val clientCount = 10L
 @InternalCoroutinesApi
 class SocketTests {
     private val connectTimeout = 30.seconds
+    private val writeTimeout = 10.milliseconds
+    private val readTimeout = writeTimeout
     val validateCloseWait = true
 
     @Test
@@ -121,11 +124,24 @@ class SocketTests {
         var count: Int = 0
     )
 
+    val limits = object : BufferMemoryLimit {
+        override fun isTooLargeForMemory(size: UInt) = size > 1_000u
+    }
 
     fun connectDisconnect(
         getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
         validateCloseWait: Boolean
     ) = block {
+        val expected = 4.toUShort()
+        val buffer = allocateNewBuffer(10.toUInt(), limits)
+        assertEquals(0, buffer.position())
+        assertEquals(10, buffer.limit())
+        buffer.write(expected)
+        assertEquals(2, buffer.position())
+        assertEquals(10, buffer.limit())
+        buffer.flip()
+        assertEquals(0, buffer.position())
+        assertEquals(2, buffer.limit())
         val serverSocket = getServerSocket()
         assertFalse(serverSocket.isOpen())
         serverSocket.bind()
@@ -133,24 +149,54 @@ class SocketTests {
         val port = serverSocket.port()!!
         val clientToServerSocket = getClientSocket()
         assertFalse(clientToServerSocket.isOpen())
+        val readLock = Mutex(true)
         val mutex = Mutex(true)
+        val serverWriteMutex = Mutex(true)
         var clientCount = 0
         launch {
             clientToServerSocket.open(connectTimeout, port)
-            clientCount++
+            assertEquals(1, ++clientCount)
+            assertTrue(clientToServerSocket.isOpen())
+            readLock.unlock()
+            assertEquals(0, buffer.position())
+            assertEquals(2, buffer.limit())
+            assertEquals(2, clientToServerSocket.write(buffer, writeTimeout))
+            assertEquals(2, buffer.position())
+            assertEquals(2, buffer.limit())
+            serverWriteMutex.lock()
             assertTrue(clientToServerSocket.isOpen())
             clientToServerSocket.close()
             assertFalse(clientToServerSocket.isOpen())
             mutex.unlock()
         }
-        val serverToClientSocket = serverSocket.accept()
-        assertTrue(serverToClientSocket.isOpen())
-        serverToClientSocket.close()
-        assertFalse(serverToClientSocket.isOpen())
-        assertTrue(serverSocket.isOpen())
-        serverSocket.close()
-        assertFalse(serverSocket.isOpen())
+        val serverReadMutex = Mutex(true)
+        launch {
+            val serverToClientSocket = serverSocket.accept()
+            assertTrue(serverToClientSocket.isOpen())
+            val readBuffer = allocateNewBuffer(10.toUInt(), limits)
+            assertEquals(0, readBuffer.position())
+            assertEquals(10, readBuffer.limit())
+            readLock.lock()
+            assertEquals(2, serverToClientSocket.read(readBuffer, readTimeout))
+            serverReadMutex.unlock()
+            assertEquals(2, readBuffer.position())
+            assertEquals(10, readBuffer.limit())
+            readBuffer.flip()
+            assertEquals(0, readBuffer.position())
+            assertEquals(2, readBuffer.limit())
+            assertEquals(expected, readBuffer.readUnsignedShort())
+            serverWriteMutex.unlock()
+            assertEquals(2, readBuffer.position())
+            assertEquals(2, readBuffer.limit())
+            assertTrue(serverToClientSocket.isOpen())
+            serverToClientSocket.close()
+            assertFalse(serverToClientSocket.isOpen())
+            assertTrue(serverSocket.isOpen())
+            serverSocket.close()
+            assertFalse(serverSocket.isOpen())
+        }
         withTimeout(connectTimeout.toLongMilliseconds()) {
+            serverReadMutex.lock()
             mutex.lock()
         }
         assertEquals(1, clientCount, "Didn't execute client to server socket code")
