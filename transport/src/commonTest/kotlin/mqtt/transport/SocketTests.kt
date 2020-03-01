@@ -1,7 +1,10 @@
 package mqtt.transport
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.transport.nio.socket.readStats
 import kotlin.test.*
@@ -149,56 +152,40 @@ class SocketTests {
         val port = serverSocket.port()!!
         val clientToServerSocket = getClientSocket()
         assertFalse(clientToServerSocket.isOpen())
-        val readLock = Mutex(true)
-        val mutex = Mutex(true)
-        val serverWriteMutex = Mutex(true)
         var clientCount = 0
         launch {
             clientToServerSocket.open(connectTimeout, port)
             assertEquals(1, ++clientCount)
             assertTrue(clientToServerSocket.isOpen())
-            readLock.unlock()
             assertEquals(0, buffer.position())
             assertEquals(2, buffer.limit())
             assertEquals(2, clientToServerSocket.write(buffer, writeTimeout))
             assertEquals(2, buffer.position())
             assertEquals(2, buffer.limit())
-            serverWriteMutex.lock()
             assertTrue(clientToServerSocket.isOpen())
             clientToServerSocket.close()
             assertFalse(clientToServerSocket.isOpen())
-            mutex.unlock()
         }
-        val serverReadMutex = Mutex(true)
-        launch {
-            val serverToClientSocket = serverSocket.accept()
-            assertTrue(serverToClientSocket.isOpen())
-            val readBuffer = allocateNewBuffer(10.toUInt(), limits)
-            assertEquals(0, readBuffer.position())
-            assertEquals(10, readBuffer.limit())
-            readLock.lock()
-            assertEquals(2, serverToClientSocket.read(readBuffer, readTimeout))
-            serverReadMutex.unlock()
-            assertEquals(2, readBuffer.position())
-            assertEquals(10, readBuffer.limit())
-            readBuffer.flip()
-            assertEquals(0, readBuffer.position())
-            assertEquals(2, readBuffer.limit())
-            assertEquals(expected, readBuffer.readUnsignedShort())
-            serverWriteMutex.unlock()
-            assertEquals(2, readBuffer.position())
-            assertEquals(2, readBuffer.limit())
-            assertTrue(serverToClientSocket.isOpen())
-            serverToClientSocket.close()
-            assertFalse(serverToClientSocket.isOpen())
-            assertTrue(serverSocket.isOpen())
-            serverSocket.close()
-            assertFalse(serverSocket.isOpen())
-        }
-        withTimeout(connectTimeout.toLongMilliseconds()) {
-            serverReadMutex.lock()
-            mutex.lock()
-        }
+        val serverToClientSocket = serverSocket.accept()
+        assertTrue(serverToClientSocket.isOpen())
+        val readBuffer = allocateNewBuffer(10.toUInt(), limits)
+        assertEquals(0, readBuffer.position())
+        assertEquals(10, readBuffer.limit())
+        assertEquals(2, serverToClientSocket.read(readBuffer, readTimeout))
+        assertEquals(2, readBuffer.position())
+        assertEquals(10, readBuffer.limit())
+        readBuffer.flip()
+        assertEquals(0, readBuffer.position())
+        assertEquals(2, readBuffer.limit())
+        assertEquals(expected, readBuffer.readUnsignedShort())
+        assertEquals(2, readBuffer.position())
+        assertEquals(2, readBuffer.limit())
+        assertTrue(serverToClientSocket.isOpen())
+        serverToClientSocket.close()
+        assertFalse(serverToClientSocket.isOpen())
+        assertTrue(serverSocket.isOpen())
+        serverSocket.close()
+        assertFalse(serverSocket.isOpen())
         assertEquals(1, clientCount, "Didn't execute client to server socket code")
         if (validateCloseWait) {
             val stats = readStats(port, "CLOSE_WAIT")
