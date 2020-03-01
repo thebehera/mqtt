@@ -155,6 +155,7 @@ class SocketTests {
         val clientToServerSocket = getClientSocket()
         assertFalse(clientToServerSocket.isOpen())
         var clientCount = 0
+        val clientDoneMutex = Mutex(true)
         scope.launch {
             clientToServerSocket.open(connectTimeout, port)
             assertEquals(1, ++clientCount)
@@ -167,7 +168,7 @@ class SocketTests {
             assertEquals(4, clientToServerSocket.read(clientReadBuffer, readTimeout))
             clientReadBuffer.flip()
             assertEquals(expectedServerToClient, clientReadBuffer.readUnsignedInt())
-
+            clientDoneMutex.unlock()
         }
         val serverToClientSocket = serverSocket.accept()
         assertTrue(serverToClientSocket.isOpen())
@@ -188,7 +189,7 @@ class SocketTests {
         serverWriteBuffer.write(expectedServerToClient)
         serverWriteBuffer.flip()
         serverToClientSocket.write(serverWriteBuffer, writeTimeout)
-
+        clientDoneMutex.lock()
         assertTrue(serverToClientSocket.isOpen())
         serverToClientSocket.close()
         assertFalse(serverToClientSocket.isOpen())
