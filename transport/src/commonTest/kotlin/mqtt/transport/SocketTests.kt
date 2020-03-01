@@ -77,7 +77,7 @@ class SocketTests {
         val mutex = Mutex(true)
         var serverClientSocket: ClientSocket? = null
         serverSocket.bind()
-        val server = SocketServer(serverSocket)
+        val server = Server(serverSocket)
         val launched = ServerLaunched(firstReceiveLock, server, serverSocket, serverClientSocket, mutex)
         scope.launch {
             server.listen().collect {

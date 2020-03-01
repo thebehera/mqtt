@@ -1,7 +1,6 @@
 package mqtt.transport
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import mqtt.connection.ServerControlPacketTransport
 import mqtt.transport.nio.socket.readStats
@@ -16,19 +15,10 @@ expect fun aServer(
 
 
 @ExperimentalTime
-interface Server {
-    val connections: Map<UShort, ClientSocket>
-    suspend fun listen(): Flow<ClientSocket>
-    suspend fun closeClient(port: UShort)
-    fun getStats(): List<String>
-}
-
-
-@ExperimentalTime
 @ExperimentalUnsignedTypes
-class SocketServer(val serverSocket: ServerSocket) : Server {
-    override val connections = HashMap<UShort, ClientSocket>()
-    override suspend fun listen() = flow {
+class Server(val serverSocket: ServerSocket) {
+    val connections = HashMap<UShort, ClientSocket>()
+    suspend fun listen() = flow {
         try {
             while (serverSocket.isOpen()) {
                 val client = serverSocket.accept()
@@ -41,7 +31,7 @@ class SocketServer(val serverSocket: ServerSocket) : Server {
         serverSocket.close()
     }
 
-    override suspend fun closeClient(port: UShort) {
+    suspend fun closeClient(port: UShort) {
         connections.remove(port)?.close()
     }
 
@@ -53,6 +43,6 @@ class SocketServer(val serverSocket: ServerSocket) : Server {
         connections.clear()
     }
 
-    override fun getStats() = readStats(serverSocket.port()!!, "CLOSE_WAIT")
+    fun getStats() = readStats(serverSocket.port()!!, "CLOSE_WAIT")
 }
 
