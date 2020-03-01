@@ -71,7 +71,7 @@ class SocketTests {
 
     private suspend fun launchServer(
         scope: CoroutineScope,
-        getServerSocket: () -> ServerToClientSocket
+        getServerSocket: () -> ServerSocket
     ): ServerLaunched {
         val server = getServerSocket()
         val firstReceiveLock = Mutex(true)
@@ -95,7 +95,7 @@ class SocketTests {
 
     data class ServerLaunched(
         val firstMessageReceivedLock: Mutex,
-        val server: ServerToClientSocket,
+        val server: ServerSocket,
         var serverClientSocket: ClientSocket?,
         val mutex: Mutex,
         var count: Int = 0
@@ -103,7 +103,7 @@ class SocketTests {
 
     private suspend fun stressTest(
         serverL: ServerLaunched?,
-        getServerSocket: () -> ServerToClientSocket, getClientSocket: () -> ClientToServerSocket,
+        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
         validateCloseWait: Boolean = false
     ) =
         block {
@@ -141,7 +141,7 @@ class SocketTests {
 
     private suspend fun stressTestOpenConnections(
         serverL: ServerLaunched?,
-        getServerSocket: () -> ServerToClientSocket, getClientSocket: () -> ClientToServerSocket,
+        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket,
         validateCloseWait: Boolean = false
     ) =
         block {

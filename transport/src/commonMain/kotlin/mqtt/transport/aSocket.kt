@@ -32,7 +32,7 @@ interface ClientToServerSocket : ClientSocket {
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-interface ServerToClientSocket : SuspendCloseable {
+interface ServerSocket : SuspendCloseable {
     fun port(): UShort?
     suspend fun bind(port: UShort? = null, host: String? = null, socketOptions: SocketOptions? = null): SocketOptions
     suspend fun listen(): Flow<ClientSocket>
@@ -56,7 +56,7 @@ expect fun asyncClientSocket(
 @ExperimentalTime
 expect fun asyncServerSocket(
     bufferPool: BufferPool
-): ServerToClientSocket
+): ServerSocket
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime

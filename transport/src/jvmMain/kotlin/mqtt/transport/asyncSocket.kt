@@ -20,4 +20,4 @@ actual fun clientSocket(blocking: Boolean, bufferPool: BufferPool): ClientToServ
 @ExperimentalCoroutinesApi
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-actual fun asyncServerSocket(bufferPool: BufferPool): ServerToClientSocket = AsyncServerSocket(bufferPool)
+actual fun asyncServerSocket(bufferPool: BufferPool): ServerSocket = AsyncServerSocket(bufferPool)

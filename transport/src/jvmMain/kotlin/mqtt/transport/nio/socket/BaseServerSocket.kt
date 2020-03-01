@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.suspendCancellableCoroutine
 import mqtt.transport.BufferPool
 import mqtt.transport.ClientSocket
-import mqtt.transport.ServerToClientSocket
+import mqtt.transport.ServerSocket
 import mqtt.transport.SocketOptions
 import mqtt.transport.nio.socket.util.asyncSetOptions
 import java.net.InetSocketAddress
@@ -20,7 +20,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalUnsignedTypes
 @ExperimentalCoroutinesApi
 @ExperimentalTime
-abstract class BaseServerSocket<S : NetworkChannel>(val pool: BufferPool) : ServerToClientSocket {
+abstract class BaseServerSocket<S : NetworkChannel>(val pool: BufferPool) : ServerSocket {
     private var server: S? = null
     override val connections = TreeMap<UShort, ClientSocket>()
 
