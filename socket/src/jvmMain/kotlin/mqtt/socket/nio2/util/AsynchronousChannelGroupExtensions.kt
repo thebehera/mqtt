@@ -15,13 +15,3 @@ suspend fun openAsyncServerSocketChannel(group: AsynchronousChannelGroup? = null
             continuation.resumeWithException(e)
         }
     }
-
-
-suspend fun AsynchronousChannelGroup?.open(): AsynchronousSocketChannel =
-    suspendCancellableCoroutine {
-        try {
-            it.resume(AsynchronousSocketChannel.open(this))
-        } catch (e: Throwable) {
-            it.resumeWithException(e)
-        }
-    }
