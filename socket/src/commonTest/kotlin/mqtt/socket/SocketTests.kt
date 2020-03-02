@@ -6,6 +6,8 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import mqtt.buffer.BufferMemoryLimit
+import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds

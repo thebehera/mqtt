@@ -1,6 +1,5 @@
-package mqtt.socket
+package mqtt.buffer
 
-import mqtt.wire.data.WriteBuffer
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.CharBuffer

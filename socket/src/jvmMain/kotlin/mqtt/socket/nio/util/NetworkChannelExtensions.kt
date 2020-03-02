@@ -13,16 +13,6 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
 
-
-suspend fun <T> NetworkChannel.asyncSetOption(option: SocketOption<T>, value: T) =
-    suspendCoroutine<NetworkChannel> {
-        try {
-            it.resume(setOption(option, value))
-        } catch (e: Throwable) {
-            it.resumeWithException(e)
-        }
-    }
-
 suspend fun NetworkChannel.asyncSetOptions(options: SocketOptions?): SocketOptions {
     return withContext(Dispatchers.IO) {
         if (options != null) {

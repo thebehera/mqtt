@@ -1,4 +1,4 @@
-package mqtt.socket
+package mqtt.buffer
 
 import java.io.RandomAccessFile
 import java.nio.ByteBuffer

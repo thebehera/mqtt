@@ -51,13 +51,3 @@ suspend fun AsynchronousServerSocketChannel.aBind(socketAddress: SocketAddress? 
             cont.cancel(e)
         }
     }
-
-
-suspend fun <T> AsynchronousServerSocketChannel.asyncSetOption(option: SocketOption<T>, value: T) =
-    suspendCoroutine<AsynchronousServerSocketChannel> {
-        try {
-            it.resume(setOption(option, value))
-        } catch (e: Throwable) {
-            it.resumeWithException(e)
-        }
-    }
