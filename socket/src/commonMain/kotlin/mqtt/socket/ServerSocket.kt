@@ -1,5 +1,6 @@
 package mqtt.socket
 
+import mqtt.buffer.SuspendCloseable
 import kotlin.time.ExperimentalTime
 
 
