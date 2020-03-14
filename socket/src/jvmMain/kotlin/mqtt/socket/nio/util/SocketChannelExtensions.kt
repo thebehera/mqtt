@@ -175,6 +175,7 @@ fun NetworkChannel.closeOnCancel(cont: CancellableContinuation<*>) {
 private suspend fun SocketChannel.suspendRead(buffer: ByteBuffer) = suspendCancellableCoroutine<Int> {
     try {
         val read = read(buffer)
+        buffer.flip()
         it.resume(read)
     } catch (ex: Throwable) {
         if (ex is AsynchronousCloseException && it.isCancelled) return@suspendCancellableCoroutine
@@ -185,6 +186,7 @@ private suspend fun SocketChannel.suspendRead(buffer: ByteBuffer) = suspendCance
 @ExperimentalTime
 private suspend fun SocketChannel.suspendWrite(buffer: ByteBuffer) = suspendCancellableCoroutine<Int> {
     try {
+        buffer.flip()
         val wrote = write(buffer)
         it.resume(wrote)
     } catch (ex: Throwable) {
