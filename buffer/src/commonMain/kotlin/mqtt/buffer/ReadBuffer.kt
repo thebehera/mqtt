@@ -4,8 +4,9 @@ import kotlin.experimental.and
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
+    fun resetForRead()
     fun readByte(): Byte
-    fun readByteArray(): ByteArray
+    fun readByteArray(size: UInt): ByteArray
     fun readUnsignedByte(): UByte
     fun readUnsignedShort(): UShort
     fun readUnsignedInt(): UInt

@@ -4,7 +4,7 @@ import kotlinx.io.charsets.Charsets
 import kotlinx.io.charsets.encode
 import kotlinx.io.core.*
 
-data class NativeBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : PlatformBuffer {
+data class JsBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : PlatformBuffer {
     override val type = BufferType.InMemory
 
     override fun resetForRead() = buffer.resetForRead()
@@ -20,12 +20,12 @@ data class NativeBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : Platfor
 
     override fun readUnsignedInt() = buffer.readUInt()
 
-    override fun readMqttUtf8StringNotValidated(): kotlin.CharSequence {
+    override fun readMqttUtf8StringNotValidated(): CharSequence {
         val length = readUnsignedShort().toInt()
         return buffer.readText(max = length)
     }
 
-    override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as NativeBuffer).buffer)
+    override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as JsBuffer).buffer)
 
     override fun write(byte: Byte): WriteBuffer {
         buffer.writeByte(byte)
@@ -71,5 +71,5 @@ actual fun allocateNewBuffer(
     size: UInt,
     limits: BufferMemoryLimit
 ): PlatformBuffer {
-    return NativeBuffer()
+    return JsBuffer()
 }
