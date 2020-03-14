@@ -20,10 +20,6 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         BufferType.InMemory
     }
 
-    override fun clear() {
-        byteBuffer.clear()
-    }
-
     override fun readByte() = byteBuffer.get()
     override fun readByteArray() = byteBuffer.toArray()
 
@@ -42,9 +38,6 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         byteBuffer.limit(oldLimit + length)
         return decoded
     }
-
-    override fun limit() = byteBuffer.limit()
-
 
     override fun put(buffer: PlatformBuffer) {
         byteBuffer.put((buffer as JvmBuffer).byteBuffer)

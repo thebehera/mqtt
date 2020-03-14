@@ -11,8 +11,6 @@ interface ReadBuffer {
     fun readUnsignedInt(): UInt
     fun readMqttUtf8StringNotValidated(): CharSequence
 
-    fun limit(): Int
-
     fun readVariableByteInteger(): UInt {
         var digit: Byte
         var value = 0.toUInt()
