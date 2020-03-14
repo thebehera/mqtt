@@ -140,11 +140,7 @@ class SocketTests {
         val expectedClientToServer = 4.toUShort()
         val expectedServerToClient = UInt.MAX_VALUE
         val clientWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
-        assertEquals(0, clientWriteBuffer.position())
-        assertEquals(10, clientWriteBuffer.limit())
         clientWriteBuffer.write(expectedClientToServer)
-        assertEquals(2, clientWriteBuffer.position())
-        assertEquals(10, clientWriteBuffer.limit())
         val clientReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val serverSocket = getServerSocket()
         assertFalse(serverSocket.isOpen())

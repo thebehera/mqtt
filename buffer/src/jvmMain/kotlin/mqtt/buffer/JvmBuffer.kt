@@ -43,23 +43,11 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         return decoded
     }
 
-    override fun position() = byteBuffer.position()
     override fun limit() = byteBuffer.limit()
-    override fun limit(newLimit: Int) {
-        byteBuffer.limit(newLimit)
-    }
 
-    override fun flip() {
-        byteBuffer.flip()
-    }
 
     override fun put(buffer: PlatformBuffer) {
         byteBuffer.put((buffer as JvmBuffer).byteBuffer)
-    }
-
-    override fun remaining() = byteBuffer.remaining()
-    override fun setPosition(position: Int) {
-        byteBuffer.position(position)
     }
 
     override fun write(byte: Byte): WriteBuffer {
