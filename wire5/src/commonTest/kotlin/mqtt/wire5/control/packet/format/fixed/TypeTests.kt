@@ -6,7 +6,6 @@ import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.topic.Filter
-import mqtt.wire.data.topic.Name
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
 import kotlin.test.Test
@@ -29,7 +28,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBLISH() {
-        val variable = VariableHeader(Name("t"))
+        val variable = VariableHeader("t")
         assertEquals(3, PublishMessage(variable = variable).controlPacketValue, controlPacketSpectMatchError)
     }
 
@@ -93,7 +92,7 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBLISH() {
-        val variable = VariableHeader(Name("t"))
+        val variable = VariableHeader("t")
         assertEquals(BIDIRECTIONAL, PublishMessage(variable = variable).direction, controlPacketSpectMatchError)
     }
 

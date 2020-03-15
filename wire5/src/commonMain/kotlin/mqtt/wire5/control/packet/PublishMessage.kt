@@ -211,9 +211,6 @@ data class PublishMessage(
         val properties: Properties = Properties()
     ) : Parcelable {
 
-        constructor(topicName: Name, packetIdentifier: Int? = null, properties: Properties = Properties())
-                : this(topicName.topic, packetIdentifier, properties)
-
         init {
             if (properties.topicAlias == 0) {
                 throw ProtocolError(
