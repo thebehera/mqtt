@@ -15,7 +15,6 @@ class UnsubscribeRequestTests {
         val buffer = allocateNewBuffer(17u, limits)
         val unsub = UnsubscribeRequest(packetIdentifier, listOf(MqttUtf8String("yolo"), MqttUtf8String("yolo1")))
         unsub.serialize(buffer)
-        println(buffer)
         buffer.resetForRead()
         val result = ControlPacketV4.from(buffer) as UnsubscribeRequest
         assertEquals(result.topics.first().getValueOrThrow().toString(), "yolo")
