@@ -16,15 +16,15 @@ constructor(
         val topic = incomingPublish.topic
         val qos = incomingPublish.qualityOfService
         if (payload == null) {
-            callback.onMessageReceived(topic, qos, null)
+            callback.onMessageReceived(Name(topic), qos, null)
             return
         }
         if (serializer == null) {
             println("Failed to find serializer for payload $callback")
-            callback.onMessageReceived(topic, qos, null)
+            callback.onMessageReceived(Name(topic), qos, null)
             return
         }
         val message = serializer.deserialize(payload)
-        callback.onMessageReceived(topic, qos, message)
+        callback.onMessageReceived(Name(topic), qos, message)
     }
 }

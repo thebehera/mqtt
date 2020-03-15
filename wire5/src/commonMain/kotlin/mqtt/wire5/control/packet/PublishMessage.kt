@@ -36,11 +36,11 @@ data class PublishMessage(
 
 
     constructor(
-        topic: String, qos: QualityOfService,
+        topic: CharSequence, qos: QualityOfService,
         packetIdentifier: UShort,
         dup: Boolean = false,
         retain: Boolean = false
-    ) : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier = packetIdentifier.toInt()))
+    ) : this(FixedHeader(dup, qos, retain), VariableHeader(topic, packetIdentifier = packetIdentifier.toInt()))
 
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
@@ -206,7 +206,7 @@ data class PublishMessage(
      */
     @Parcelize
     data class VariableHeader(
-        val topicName: Name,
+        val topicName: CharSequence,
         val packetIdentifier: Int? = null,
         val properties: Properties = Properties()
     ) : Parcelable {
@@ -220,7 +220,7 @@ data class PublishMessage(
         }
 
         fun packet(sendDefaults: Boolean = false) = buildPacket {
-            writeMqttName(topicName)
+            writeMqttName(Name(topicName))
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier.toUShort())
             }
@@ -567,7 +567,7 @@ data class PublishMessage(
                 val topicName = buffer.readMqttUtf8String()
                 val packetIdentifier = if (isQos0) null else buffer.readUShort().toInt()
                 val props = Properties.from(buffer.readProperties())
-                return VariableHeader(Name(topicName.getValueOrThrow()), packetIdentifier, props)
+                return VariableHeader(topicName.value, packetIdentifier, props)
             }
         }
     }

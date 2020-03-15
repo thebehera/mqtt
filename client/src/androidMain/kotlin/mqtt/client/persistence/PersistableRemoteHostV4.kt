@@ -47,7 +47,7 @@ data class PersistableRemoteHostV4(
     )
 ) : IRemoteHost {
     override fun hashCode() = connectionIdentifier()
-    override fun toString() = uniqueIdentifier()
+    override fun toString() = uniqueIdentifier().toString()
 }
 
 

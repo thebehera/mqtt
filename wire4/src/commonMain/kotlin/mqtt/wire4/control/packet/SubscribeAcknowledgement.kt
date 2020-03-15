@@ -5,6 +5,8 @@ package mqtt.wire4.control.packet
 import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.format.ReasonCode
@@ -25,6 +27,13 @@ data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payl
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
+    override fun variableHeader(writeBuffer: WriteBuffer) {
+        writeBuffer.write(packetIdentifier.toUShort())
+    }
+
+    override fun payload(writeBuffer: WriteBuffer) {
+        payload.forEach { writeBuffer.write(it.byte.toUByte()) }
+    }
 
     companion object {
         fun from(buffer: ByteReadPacket): SubscribeAcknowledgement {
@@ -32,6 +41,22 @@ data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payl
             val returnCodes = mutableListOf<ReasonCode>()
             while (buffer.remaining > 0) {
                 val reasonCode = when (val reasonCodeByte = buffer.readUByte()) {
+                    GRANTED_QOS_0.byte -> GRANTED_QOS_0
+                    GRANTED_QOS_1.byte -> GRANTED_QOS_1
+                    GRANTED_QOS_2.byte -> GRANTED_QOS_2
+                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
+                    else -> throw MalformedPacketException("Invalid return code $reasonCodeByte")
+                }
+                returnCodes += reasonCode
+            }
+            return SubscribeAcknowledgement(packetIdentifier.toInt(), returnCodes)
+        }
+
+        fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeAcknowledgement {
+            val packetIdentifier = buffer.readUnsignedShort()
+            val returnCodes = mutableListOf<ReasonCode>()
+            while (returnCodes.size.toUInt() < remainingLength) {
+                val reasonCode = when (val reasonCodeByte = buffer.readUnsignedByte()) {
                     GRANTED_QOS_0.byte -> GRANTED_QOS_0
                     GRANTED_QOS_1.byte -> GRANTED_QOS_1
                     GRANTED_QOS_2.byte -> GRANTED_QOS_2

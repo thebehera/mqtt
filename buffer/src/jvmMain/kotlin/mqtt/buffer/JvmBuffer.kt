@@ -37,14 +37,14 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
 
     override fun readUnsignedInt() = byteBuffer.int.toUInt()
 
-    override fun readMqttUtf8StringNotValidated(): CharSequence {
+    override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
         val length = readUnsignedShort().toInt()
         val finalPosition = byteBuffer.position() + length
         val readBuffer = byteBuffer.asReadOnlyBuffer()
         readBuffer.limit(finalPosition)
         val decoded = Charsets.UTF_8.decode(readBuffer)
         byteBuffer.position(finalPosition)
-        return decoded
+        return Pair(length.toUInt(), decoded)
     }
 
     override fun put(buffer: PlatformBuffer) {

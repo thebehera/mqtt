@@ -38,13 +38,19 @@ interface IRemoteHost : Parcelable {
     val maxNumberOfRetries: Int //= Int.MAX_VALUE
 
     fun connectionIdentifier() = uniqueIdentifier().hashCode()
-    fun uniqueIdentifier(): String = Companion.uniqueIdentifier(
+    fun uniqueIdentifier(): CharSequence = Companion.uniqueIdentifier(
         request.protocolName, request.protocolVersion,
         request.clientIdentifier, name, port
     )
 
     companion object {
-        fun uniqueIdentifier(protocolName: String, protocolVersion: Int, clientId: String, name: String, port: Int) =
+        fun uniqueIdentifier(
+            protocolName: CharSequence,
+            protocolVersion: Int,
+            clientId: CharSequence,
+            name: CharSequence,
+            port: Int
+        ) =
             listOf(
                 protocolName,
                 protocolVersion,
@@ -54,10 +60,10 @@ interface IRemoteHost : Parcelable {
             ).joinToString(".")
 
         fun connectionIdentifier(
-            protocolName: String,
+            protocolName: CharSequence,
             protocolVersion: Int,
-            clientId: String,
-            name: String,
+            clientId: CharSequence,
+            name: CharSequence,
             port: Int
         ) = uniqueIdentifier(protocolName, protocolVersion, clientId, name, port).hashCode()
     }

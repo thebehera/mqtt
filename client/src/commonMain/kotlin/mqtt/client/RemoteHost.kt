@@ -43,7 +43,7 @@ data class RemoteHost(
     ) : ISecurityParameters
 
     override fun hashCode() = connectionIdentifier()
-    override fun toString() = uniqueIdentifier()
+    override fun toString() = uniqueIdentifier().toString()
     override fun equals(other: Any?): Boolean {
         if (other !is IRemoteHost) return false
         return connectionIdentifier() == other.connectionIdentifier()

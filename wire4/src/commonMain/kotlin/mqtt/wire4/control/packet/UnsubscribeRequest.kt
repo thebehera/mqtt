@@ -8,6 +8,8 @@ import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -28,6 +30,13 @@ data class UnsubscribeRequest(
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
+    override fun variableHeader(writeBuffer: WriteBuffer) {
+        writeBuffer.write(packetIdentifier.toUShort())
+    }
+
+    override fun payload(writeBuffer: WriteBuffer) {
+        topics.forEach { writeBuffer.writeUtf8String(it.value) }
+    }
 
     init {
         if (topics.isEmpty()) {
@@ -41,6 +50,18 @@ data class UnsubscribeRequest(
             val topics = mutableListOf<MqttUtf8String>()
             while (buffer.remaining > 0) {
                 topics += buffer.readMqttUtf8String()
+            }
+            return UnsubscribeRequest(packetIdentifier.toInt(), topics)
+        }
+
+        fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeRequest {
+            val packetIdentifier = buffer.readUnsignedShort()
+            val topics = mutableListOf<MqttUtf8String>()
+            var bytesRead = 0
+            while (bytesRead.toUInt() < remainingLength) {
+                val pair = buffer.readMqttUtf8StringNotValidatedSized()
+                bytesRead += 2 + pair.first.toInt()
+                topics += MqttUtf8String(pair.second)
             }
             return UnsubscribeRequest(packetIdentifier.toInt(), topics)
         }

@@ -6,6 +6,7 @@ import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.writeUByte
 import mqtt.Parcelable
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.VariableByteInteger
@@ -29,9 +30,19 @@ interface ControlPacket : Parcelable {
         }
     }
 
+    private fun fixedHeader(writeBuffer: WriteBuffer) {
+        val packetValueUInt = controlPacketValue.toUInt()
+        val packetValueShifted = packetValueUInt.shl(4)
+        val localFlagsByte = flags.toUByte().toInt()
+        val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
+        writeBuffer.write(byte1).writeVariableByteInteger(remainingLength())
+    }
+
     val variableHeaderPacket: ByteReadPacket? get() = null
+    fun variableHeader(writeBuffer: WriteBuffer) {}
     val payloadPacketSize: UInt get() = payloadPacket(false)?.remaining?.toUInt() ?: 0.toUInt()
     fun payloadPacket(sendDefaults: Boolean = false): ByteReadPacket? = null
+    fun payload(writeBuffer: WriteBuffer) {}
     private fun remainingLength(): UInt {
         val variableHeaderSize = variableHeaderPacket?.copy()?.remaining?.toUInt() ?: 0.toUInt()
         return variableHeaderSize + payloadPacketSize
@@ -62,6 +73,12 @@ interface ControlPacket : Parcelable {
             }
         }
         return p
+    }
+
+    fun serialize(writeBuffer: WriteBuffer) {
+        fixedHeader(writeBuffer)
+        variableHeader(writeBuffer)
+        payload(writeBuffer)
     }
 
     companion object {

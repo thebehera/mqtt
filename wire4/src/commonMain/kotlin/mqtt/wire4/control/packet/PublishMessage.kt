@@ -2,20 +2,21 @@
 
 package mqtt.wire4.control.packet
 
+import kotlinx.io.charsets.Charsets
+import kotlinx.io.charsets.encodeToByteArray
 import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
+import mqtt.wire.data.*
 
-import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
-import mqtt.wire.data.readMqttUtf8String
 import mqtt.wire.data.topic.Name
-import mqtt.wire.data.writeMqttName
 
 /**
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
@@ -72,10 +73,16 @@ data class PublishMessage(
 
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
+
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { writeFully(payload?.byteArray ?: ByteArray(0)) }
 
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
+    override fun payload(writeBuffer: WriteBuffer) {
+        val array = payload?.byteArray ?: return
+        writeBuffer.write(array)
+    }
 
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
@@ -88,7 +95,7 @@ data class PublishMessage(
     }
 
     @IgnoredOnParcel
-    override val topic: Name = Name(variable.topicName)
+    override val topic: CharSequence = variable.topicName
 
     @Parcelize
     data class FixedHeader(
@@ -208,28 +215,35 @@ data class PublishMessage(
         /**
              * The Topic Name identifies the information channel to which payload data is published.
              *
-             * The Topic Name MUST be present as the first field in the PUBLISH Packet Variable header. It MUST be a
-             * UTF-8 encoded string [MQTT-3.3.2-1] as defined in section 1.5.3.
-             *
-             * The Topic Name in the PUBLISH Packet MUST NOT contain wildcard characters [MQTT-3.3.2-2].
-             *
-             * The Topic Name in a PUBLISH Packet sent by a Server to a subscribing Client MUST match the
-             * Subscription’s Topic Filter according to the matching process defined in Section 4.7
-             * [MQTT-3.3.2-3]. However, since the Server is permitted to override the Topic Name, it might not be the
-             * same as the Topic Name in the original PUBLISH Packet.
-             */
-        val topicName: String,
+         * The Topic Name MUST be present as the first field in the PUBLISH Packet Variable header. It MUST be a
+         * UTF-8 encoded string [MQTT-3.3.2-1] as defined in section 1.5.3.
+         *
+         * The Topic Name in the PUBLISH Packet MUST NOT contain wildcard characters [MQTT-3.3.2-2].
+         *
+         * The Topic Name in a PUBLISH Packet sent by a Server to a subscribing Client MUST match the
+         * Subscription’s Topic Filter according to the matching process defined in Section 4.7
+         * [MQTT-3.3.2-3]. However, since the Server is permitted to override the Topic Name, it might not be the
+         * same as the Topic Name in the original PUBLISH Packet.
+         */
+        val topicName: CharSequence,
         /**
-             * The Packet Identifier field is only present in PUBLISH Packets where the QoS level is 1 or 2. Section
-             * 2.3.1 provides more information about Packet Identifiers.
-             */
-            val packetIdentifier: Int? = null
+         * The Packet Identifier field is only present in PUBLISH Packets where the QoS level is 1 or 2. Section
+         * 2.3.1 provides more information about Packet Identifiers.
+         */
+        val packetIdentifier: Int? = null
     ) : Parcelable {
 
         fun packet() = buildPacket {
             writeMqttName(Name(topicName))
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier.toUShort())
+            }
+        }
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.writeUtf8String(topicName)
+            if (packetIdentifier != null) {
+                writeBuffer.write(packetIdentifier.toUShort())
             }
         }
 
@@ -241,6 +255,15 @@ data class PublishMessage(
                 val packetIdentifier = if (isQos0) null else buffer.readUShort()
                 return VariableHeader(topicNameValidated.getCurrentPath(), packetIdentifier?.toInt())
             }
+
+
+            fun from(buffer: ReadBuffer, isQos0: Boolean): VariableHeader {
+                val topicName = MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                // Intention NullPointerException. This should fail the validation and immediately bail out
+                val topicNameValidated = Name(topicName.getValueOrThrow()).validateTopic()!!
+                val packetIdentifier = if (isQos0) null else buffer.readUnsignedShort()
+                return VariableHeader(topicNameValidated.getCurrentPath(), packetIdentifier?.toInt())
+            }
         }
     }
 
@@ -249,6 +272,22 @@ data class PublishMessage(
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             return PublishMessage(fixedHeader, variableHeader, ByteArrayWrapper(buffer.readBytes()))
+        }
+
+
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
+            val fixedHeader = FixedHeader.fromByte(byte1)
+            val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
+
+            var variableSize = 2 + Charsets.UTF_8.newEncoder().encodeToByteArray(variableHeader.topicName).size
+            if (variableHeader.packetIdentifier != null) {
+                variableSize += 2
+            }
+            return PublishMessage(
+                fixedHeader,
+                variableHeader,
+                ByteArrayWrapper(buffer.readByteArray(remainingLength - variableSize.toUInt()))
+            )
         }
     }
 

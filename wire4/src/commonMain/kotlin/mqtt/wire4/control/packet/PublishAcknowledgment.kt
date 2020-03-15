@@ -8,6 +8,7 @@ import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.control.packet.IPublishAcknowledgment
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
@@ -23,5 +24,6 @@ data class PublishAcknowledgment(override val packetIdentifier: Int)
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     companion object {
         fun from(buffer: ByteReadPacket) = PublishAcknowledgment(buffer.readUShort().toInt())
+        fun from(buffer: ReadBuffer) = PublishAcknowledgment(buffer.readUnsignedShort().toInt())
     }
 }

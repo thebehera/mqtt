@@ -51,8 +51,9 @@ data class ConnectionRequest(
         val payload: Payload = Payload())
     : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     @IgnoredOnParcel
-    override val clientIdentifier: String = payload.clientId.getValueOrThrow()
-    @IgnoredOnParcel override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
+    override val clientIdentifier: CharSequence = payload.clientId.getValueOrThrow()
+    @IgnoredOnParcel
+    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
     @IgnoredOnParcel override val variableHeaderPacket = variableHeader.packet()
     @IgnoredOnParcel override val cleanStart: Boolean = variableHeader.cleanStart
     @IgnoredOnParcel override val username = payload.userName?.getValueOrThrow()

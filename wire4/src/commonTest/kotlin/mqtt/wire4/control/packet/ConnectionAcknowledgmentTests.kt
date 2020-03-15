@@ -3,6 +3,8 @@
 package mqtt.wire4.control.packet
 
 import kotlinx.io.core.readBytes
+import mqtt.buffer.BufferMemoryLimit
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire4.control.packet.ConnectionAcknowledgment.VariableHeader
 import kotlin.test.Test
@@ -16,6 +18,20 @@ class ConnectionAcknowledgmentTests {
         val actual = ConnectionAcknowledgment()
         val bytes = actual.serialize()
         val expected = ControlPacketV4.from(bytes)
+        assertEquals(expected, actual)
+    }
+
+
+    @Test
+    fun serializeDeserializeDefaultBuffer() {
+        val buffer = allocateNewBuffer(20u, object : BufferMemoryLimit {
+            override fun isTooLargeForMemory(size: UInt): Boolean = false
+        })
+
+        val actual = ConnectionAcknowledgment()
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV4.from(buffer)
         assertEquals(expected, actual)
     }
 

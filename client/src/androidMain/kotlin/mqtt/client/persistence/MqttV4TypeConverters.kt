@@ -21,7 +21,7 @@ class MqttV4TypeConverters {
     fun toQos(qos: String): QualityOfService = QualityOfService.valueOf(qos)
 
     @TypeConverter
-    fun fromMqttUtf8String(mqttString: MqttUtf8String?): String? = mqttString?.value
+    fun fromMqttUtf8String(mqttString: MqttUtf8String?): String? = mqttString?.value?.toString()
 
     @TypeConverter
     fun toMqttUtf8String(mqttString: String?): MqttUtf8String? =

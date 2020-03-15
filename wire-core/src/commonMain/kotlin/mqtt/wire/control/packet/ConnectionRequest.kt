@@ -6,10 +6,10 @@ import mqtt.Parcelable
 
 interface IConnectionRequest : ControlPacket, Parcelable {
     val keepAliveTimeoutSeconds: UShort
-    val clientIdentifier: String
+    val clientIdentifier: CharSequence
     val cleanStart: Boolean
-    val username: String?
-    val protocolName: String
+    val username: CharSequence?
+    val protocolName: CharSequence
     val protocolVersion: Int
     fun copy(): IConnectionRequest
 }

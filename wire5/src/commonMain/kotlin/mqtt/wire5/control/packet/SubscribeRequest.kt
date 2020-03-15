@@ -36,7 +36,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
     constructor(
-        packetIdentifier: UShort, topic: String, qos: QualityOfService, props: Properties = Properties(),
+        packetIdentifier: UShort, topic: CharSequence, qos: QualityOfService, props: Properties = Properties(),
         noLocal: Boolean = false, retainAsPublished: Boolean = false,
         retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
     )
@@ -290,16 +290,24 @@ data class Subscription(val topicFilter: Filter,
             return Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling)
         }
 
-        fun from(topic: String,
-                 qos: QualityOfService,
-                 noLocal: Boolean = false,
-                 retainAsPublished: Boolean = false,
-                 retainHandlingList: RetainHandling =
-                     SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) =
-            from(listOf(topic), listOf(qos), listOf(noLocal), listOf(retainAsPublished), listOf(retainHandlingList)).first()
+        fun from(
+            topic: CharSequence,
+            qos: QualityOfService,
+            noLocal: Boolean = false,
+            retainAsPublished: Boolean = false,
+            retainHandlingList: RetainHandling =
+                SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+        ) =
+            from(
+                listOf(topic),
+                listOf(qos),
+                listOf(noLocal),
+                listOf(retainAsPublished),
+                listOf(retainHandlingList)
+            ).first()
 
         fun from(
-            topics: List<String>, qos: List<QualityOfService>,
+            topics: List<CharSequence>, qos: List<QualityOfService>,
             noLocalList: List<Boolean>? = null,
             retainAsPublishedList: List<Boolean>? = null,
             retainHandlingList: List<RetainHandling>? = null

@@ -41,6 +41,7 @@ kotlin {
         commonMain {
             dependencies {
                 implementation kotlin('stdlib-common')
+                implementation project(':buffer')
                 api project(':wire-core')
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }

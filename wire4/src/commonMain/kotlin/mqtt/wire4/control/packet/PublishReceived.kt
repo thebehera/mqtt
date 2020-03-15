@@ -8,6 +8,8 @@ import kotlinx.io.core.readUShort
 import kotlinx.io.core.writeUShort
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.control.packet.IPublishReceived
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
@@ -22,8 +24,14 @@ data class PublishReceived(override val packetIdentifier: Int)
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
 
+    override fun variableHeader(writeBuffer: WriteBuffer) {
+        writeBuffer.write(packetIdentifier.toUShort())
+    }
+
     override fun expectedResponse() = PublishRelease(packetIdentifier.toUShort().toInt())
+
     companion object {
         fun from(buffer: ByteReadPacket) = PublishReceived(buffer.readUShort().toInt())
+        fun from(buffer: ReadBuffer) = PublishReceived(buffer.readUnsignedShort().toInt())
     }
 }
