@@ -20,12 +20,16 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         BufferType.InMemory
     }
 
-    override fun clear() {
-        byteBuffer.clear()
+    override fun resetForRead() {
+        byteBuffer.flip()
+    }
+
+    override fun resetForWrite() {
+        byteBuffer.flip()
     }
 
     override fun readByte() = byteBuffer.get()
-    override fun readByteArray() = byteBuffer.toArray()
+    override fun readByteArray(size: UInt) = byteBuffer.toArray(size)
 
     override fun readUnsignedByte() = readByte().toUByte()
 
@@ -35,31 +39,16 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
 
     override fun readMqttUtf8StringNotValidated(): CharSequence {
         val length = readUnsignedShort().toInt()
-        val oldLimit = byteBuffer.limit()
-        val newLimit = byteBuffer.position() + length
-        byteBuffer.limit(newLimit)
-        val decoded = Charsets.UTF_8.decode(byteBuffer)
-        byteBuffer.limit(oldLimit + length)
+        val finalPosition = byteBuffer.position() + length
+        val readBuffer = byteBuffer.asReadOnlyBuffer()
+        readBuffer.limit(finalPosition)
+        val decoded = Charsets.UTF_8.decode(readBuffer)
+        byteBuffer.position(finalPosition)
         return decoded
-    }
-
-    override fun position() = byteBuffer.position()
-    override fun limit() = byteBuffer.limit()
-    override fun limit(newLimit: Int) {
-        byteBuffer.limit(newLimit)
-    }
-
-    override fun flip() {
-        byteBuffer.flip()
     }
 
     override fun put(buffer: PlatformBuffer) {
         byteBuffer.put((buffer as JvmBuffer).byteBuffer)
-    }
-
-    override fun remaining() = byteBuffer.remaining()
-    override fun setPosition(position: Int) {
-        byteBuffer.position(position)
     }
 
     override fun write(byte: Byte): WriteBuffer {
@@ -89,7 +78,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
 
     override fun writeUtf8String(charSequence: CharSequence): WriteBuffer {
         val buffer = CharBuffer.wrap(charSequence)
-        write(buffer.length.toUShort())
+        val size = mqttUtf8Size(charSequence).toUShort()
+        write(size)
         encoder.encode(buffer, byteBuffer, true)
         encoder.flush(byteBuffer)
         return this
@@ -106,12 +96,11 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         val input = CharBuffer.wrap(inputSequence)
         val output = ByteBuffer.allocate(10)
         val limit = input.limit()
-        var totalEncoded = Short.SIZE_BYTES
+        var totalEncoded = 0
         while (input.position() < limit) {
             output.clear()
             input.mark()
             input.limit((input.position() + 2).coerceAtLeast(input.capacity()))
-            input.limit(input.position())
             input.reset()
             encoder.encode(input, output, false)
             totalEncoded += output.position()
@@ -148,11 +137,13 @@ suspend fun RandomAccessFile.aClose() = suspendCoroutine<Unit> {
 }
 
 
-fun ByteBuffer.toArray(): ByteArray {
+fun ByteBuffer.toArray(size: UInt = remaining().toUInt()): ByteArray {
     return if (hasArray()) {
-        this.array()
+        val result = ByteArray(size.toInt())
+        System.arraycopy(this.array(), position(), result, 0, size.toInt())
+        result
     } else {
-        val byteArray = ByteArray(remaining())
+        val byteArray = ByteArray(size.toInt())
         get(byteArray)
         byteArray
     }

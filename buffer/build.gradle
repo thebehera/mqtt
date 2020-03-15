@@ -11,6 +11,24 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
     android()
+    ios("iOS")
+    js {
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                }
+            }
+        }
+        nodejs {
+            testTask {
+
+            }
+        }
+    }
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
     sourceSets {
         commonMain {
             dependencies {
@@ -40,6 +58,40 @@ kotlin {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
             }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+                implementation(npm("text-encoding", "0.7.0"))
+                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+            }
+        }
+        nativeMain {
+            dependsOn commonMain
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
+            }
+        }
+        iOSX64Main {
+            dependsOn nativeMain
+        }
+        iOSArm64Main {
+            dependsOn nativeMain
+        }
+        linuxMain {
+            dependsOn nativeMain
+        }
+        macosMain {
+            dependsOn nativeMain
+        }
+        windowsMain {
+            dependsOn nativeMain
         }
     }
 }

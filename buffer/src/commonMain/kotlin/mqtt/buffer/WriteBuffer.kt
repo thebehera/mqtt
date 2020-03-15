@@ -4,6 +4,7 @@ import kotlin.experimental.or
 
 @ExperimentalUnsignedTypes
 interface WriteBuffer {
+    fun resetForWrite()
     fun write(byte: Byte): WriteBuffer
     fun write(byte: ByteArray): WriteBuffer
     fun write(uByte: UByte): WriteBuffer

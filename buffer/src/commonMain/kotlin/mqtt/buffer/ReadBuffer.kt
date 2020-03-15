@@ -4,17 +4,13 @@ import kotlin.experimental.and
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
+    fun resetForRead()
     fun readByte(): Byte
-    fun readByteArray(): ByteArray
+    fun readByteArray(size: UInt): ByteArray
     fun readUnsignedByte(): UByte
     fun readUnsignedShort(): UShort
     fun readUnsignedInt(): UInt
     fun readMqttUtf8StringNotValidated(): CharSequence
-
-    fun position(): Int
-    fun limit(): Int
-    fun setPosition(position: Int)
-    fun remaining(): Int
 
     fun readVariableByteInteger(): UInt {
         var digit: Byte
