@@ -6,7 +6,7 @@ import kotlin.experimental.or
 interface WriteBuffer {
     fun resetForWrite()
     fun write(byte: Byte): WriteBuffer
-    fun write(byte: ByteArray): WriteBuffer
+    fun write(bytes: ByteArray): WriteBuffer
     fun write(uByte: UByte): WriteBuffer
     fun write(uShort: UShort): WriteBuffer
     fun write(uInt: UInt): WriteBuffer
