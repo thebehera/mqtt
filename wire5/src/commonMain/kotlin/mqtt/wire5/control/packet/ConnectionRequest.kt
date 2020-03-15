@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
@@ -776,13 +777,43 @@ data class ConnectionRequest(
                 val hasUsername = connectFlags.get(7)
                 if (reserved) {
                     throw MalformedPacketException(
-                        "Reserved flag in Connect Variable Header packet is set incorrectly to 1")
+                        "Reserved flag in Connect Variable Header packet is set incorrectly to 1"
+                    )
                 }
                 val keepAliveSeconds = buffer.readUShort().toInt()
+                val propertiesRaw = buffer.readPropertiesLegacy()
+                val properties = Properties.from(propertiesRaw)
+                return VariableHeader(
+                    protocolName, protocolVersion, hasUsername, hasPassword, willRetain, willQos,
+                    willFlag, cleanStart, keepAliveSeconds, properties
+                )
+            }
+
+            fun from(buffer: ReadBuffer): VariableHeader {
+                val protocolName = buffer.readMqttUtf8StringNotValidated()
+                val protocolVersion = buffer.readUnsignedByte().toShort()
+                val connectFlags = buffer.readUnsignedByte()
+                val reserved = connectFlags.get(0)
+                val cleanStart = connectFlags.get(1)
+                val willFlag = connectFlags.get(2)
+                val willQosBit1 = connectFlags.get(3)
+                val willQosBit2 = connectFlags.get(4)
+                val willQos = QualityOfService.fromBooleans(willQosBit2, willQosBit1)
+                val willRetain = connectFlags.get(5)
+                val hasPassword = connectFlags.get(6)
+                val hasUsername = connectFlags.get(7)
+                if (reserved) {
+                    throw MalformedPacketException(
+                        "Reserved flag in Connect Variable Header packet is set incorrectly to 1"
+                    )
+                }
+                val keepAliveSeconds = buffer.readUnsignedShort().toInt()
                 val propertiesRaw = buffer.readProperties()
                 val properties = Properties.from(propertiesRaw)
-                return VariableHeader(protocolName, protocolVersion, hasUsername, hasPassword, willRetain, willQos,
-                    willFlag, cleanStart, keepAliveSeconds, properties)
+                return VariableHeader(
+                    MqttUtf8String(protocolName), protocolVersion, hasUsername, hasPassword, willRetain, willQos,
+                    willFlag, cleanStart, keepAliveSeconds, properties
+                )
             }
         }
     }
@@ -1073,13 +1104,95 @@ data class ConnectionRequest(
                     var responseTopic: MqttUtf8String? = null
                     var correlationData: ByteArrayWrapper? = null
                     var userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    val properties = buffer.readPropertiesLegacy() ?: return WillProperties()
+                    properties.forEach {
+                        when (it) {
+                            is WillDelayInterval -> {
+                                if (willDelayIntervalSeconds != null) {
+                                    throw ProtocolError(
+                                        "Will Delay Interval added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477362"
+                                    )
+                                }
+                                willDelayIntervalSeconds = it.seconds
+                            }
+                            is PayloadFormatIndicator -> {
+                                if (payloadFormatIndicator != null) {
+                                    throw ProtocolError(
+                                        "Payload Format Indicator added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
+                                    )
+                                }
+                                payloadFormatIndicator = it.willMessageIsUtf8
+                            }
+                            is MessageExpiryInterval -> {
+                                if (messageExpiryIntervalSeconds != null) {
+                                    throw ProtocolError(
+                                        "Message Expiry Interval added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
+                                    )
+                                }
+                                messageExpiryIntervalSeconds = it.seconds.toLong()
+                            }
+                            is ContentType -> {
+                                if (contentType != null) {
+                                    throw ProtocolError(
+                                        "Content Type added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477365"
+                                    )
+                                }
+                                contentType = it.value
+                            }
+                            is ResponseTopic -> {
+                                if (responseTopic != null) {
+                                    throw ProtocolError(
+                                        "Response Topic added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477366"
+                                    )
+                                }
+                                responseTopic = it.value
+                            }
+                            is CorrelationData -> {
+                                if (correlationData != null) {
+                                    throw ProtocolError(
+                                        "Coorelation data added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477367"
+                                    )
+                                }
+                                correlationData = it.data
+                            }
+                            is UserProperty -> {
+                                val key = it.key
+                                val value = it.value
+                                userProperty.add(Pair(key, value))
+                            }
+                            else -> throw MalformedPacketException("Invalid property type found in MQTT payload $it")
+                        }
+                    }
+                    return WillProperties(
+                        willDelayIntervalSeconds ?: 0L,
+                        payloadFormatIndicator ?: false, messageExpiryIntervalSeconds,
+                        contentType, responseTopic, correlationData, userProperty
+                    )
+                }
+
+                fun from(buffer: ReadBuffer): WillProperties {
+                    var willDelayIntervalSeconds: Long? = null
+                    var payloadFormatIndicator: Boolean? = null
+                    var messageExpiryIntervalSeconds: Long? = null
+                    var contentType: MqttUtf8String? = null
+                    var responseTopic: MqttUtf8String? = null
+                    var correlationData: ByteArrayWrapper? = null
+                    var userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
                     val properties = buffer.readProperties() ?: return WillProperties()
                     properties.forEach {
                         when (it) {
                             is WillDelayInterval -> {
                                 if (willDelayIntervalSeconds != null) {
-                                    throw ProtocolError("Will Delay Interval added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477362")
+                                    throw ProtocolError(
+                                        "Will Delay Interval added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477362"
+                                    )
                                 }
                                 willDelayIntervalSeconds = it.seconds
                             }
@@ -1189,11 +1302,49 @@ data class ConnectionRequest(
                 }
                 return Payload(clientId, willProperties, willTopic, willPayload, username, password)
             }
+
+            fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload {
+                val clientId = MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                val willProperties = if (variableHeader.willFlag) {
+                    WillProperties.from(buffer)
+                } else {
+                    null
+                }
+                val willTopic = if (variableHeader.willFlag) {
+                    MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                } else {
+                    null
+                }
+                val willPayload = if (variableHeader.willFlag) {
+                    val size = buffer.readUnsignedShort()
+                    ByteArrayWrapper(buffer.readByteArray(size.toUInt()))
+                } else {
+                    null
+                }
+                val username = if (variableHeader.hasUserName) {
+                    MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                } else {
+                    null
+                }
+                val password = if (variableHeader.hasPassword) {
+                    MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                } else {
+                    null
+                }
+                return Payload(clientId, willProperties, willTopic, willPayload, username, password)
+            }
         }
     }
 
     companion object {
         fun from(buffer: ByteReadPacket): ConnectionRequest {
+            val variableHeader = VariableHeader.from(buffer)
+            val payload = Payload.from(buffer, variableHeader)
+            return ConnectionRequest(variableHeader, payload)
+        }
+
+
+        fun from(buffer: ReadBuffer): ConnectionRequest {
             val variableHeader = VariableHeader.from(buffer)
             val payload = Payload.from(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)

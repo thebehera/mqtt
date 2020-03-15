@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
@@ -15,10 +16,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.variable.property.Property
-import mqtt.wire5.control.packet.format.variable.property.ReasonString
-import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
  * 3.9 SUBACK – Subscribe acknowledgement
@@ -143,11 +141,24 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort()
                 val props = if (buffer.remaining > 1L) {
-                    Properties.from(buffer.readProperties())
+                    Properties.from(buffer.readPropertiesLegacy())
                 } else {
                     Properties()
                 }
                 return VariableHeader(packetIdentifier.toInt(), props)
+            }
+
+            fun from(buffer: ReadBuffer, remainingLength: UInt): Pair<UInt, VariableHeader> {
+                val packetIdentifier = buffer.readUnsignedShort()
+                var bytesRead = 1u
+                val props = if (remainingLength > 1u) {
+                    val sized = buffer.readPropertiesSized()
+                    bytesRead += sized.first
+                    Properties.from(sized.second)
+                } else {
+                    Properties()
+                }
+                return Pair(bytesRead, VariableHeader(packetIdentifier.toInt(), props))
             }
         }
     }
@@ -170,12 +181,42 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
                     SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
                     SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
                     WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
-                    else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte " +
-                            "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478")
+                    else -> throw MalformedPacketException(
+                        "Invalid reason code $reasonCodeByte " +
+                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478"
+                    )
                 }
                 codes += reasonCode
             }
             return SubscribeAcknowledgement(variableHeader, codes)
+        }
+
+        fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeAcknowledgement {
+            val variableHeader = VariableHeader.from(buffer, remainingLength)
+            val max = (remainingLength - variableHeader.first).toInt()
+            val codes = ArrayList<ReasonCode>(max)
+            while (codes.size < max) {
+                val reasonCode = when (val reasonCodeByte = buffer.readUnsignedByte()) {
+                    GRANTED_QOS_0.byte -> GRANTED_QOS_0
+                    GRANTED_QOS_1.byte -> GRANTED_QOS_1
+                    GRANTED_QOS_2.byte -> GRANTED_QOS_2
+                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
+                    IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
+                    NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
+                    TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
+                    PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
+                    QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
+                    SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
+                    SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
+                    WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
+                    else -> throw MalformedPacketException(
+                        "Invalid reason code $reasonCodeByte " +
+                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478"
+                    )
+                }
+                codes += reasonCode
+            }
+            return SubscribeAcknowledgement(variableHeader.second, codes)
         }
     }
 }

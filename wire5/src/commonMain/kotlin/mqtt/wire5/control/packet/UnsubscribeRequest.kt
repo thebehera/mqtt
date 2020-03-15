@@ -9,6 +9,7 @@ import kotlinx.io.core.writeUShort
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
@@ -19,7 +20,8 @@ import mqtt.wire.data.readMqttUtf8String
 import mqtt.wire.data.writeMqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
 /**
  * 3.10 UNSUBSCRIBE – Unsubscribe request
@@ -116,8 +118,15 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort().toInt()
-                val props = Properties.from(buffer.readProperties())
+                val props = Properties.from(buffer.readPropertiesLegacy())
                 return VariableHeader(packetIdentifier, props)
+            }
+
+            fun from(buffer: ReadBuffer): Pair<UInt, VariableHeader> {
+                val packetIdentifier = buffer.readUnsignedShort().toInt()
+                val sized = buffer.readPropertiesSized()
+                val props = Properties.from(sized.second)
+                return Pair(sized.first, VariableHeader(packetIdentifier, props))
             }
         }
     }
@@ -130,6 +139,18 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
                 topics += buffer.readMqttUtf8String()
             }
             return UnsubscribeRequest(header, topics)
+        }
+
+        fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeRequest {
+            val header = VariableHeader.from(buffer)
+            val topics = mutableSetOf<MqttUtf8String>()
+            var bytesRead = header.first
+            while (bytesRead < remainingLength) {
+                val result = buffer.readMqttUtf8StringNotValidatedSized()
+                bytesRead += result.first
+                topics += MqttUtf8String(result.second)
+            }
+            return UnsubscribeRequest(header.second, topics)
         }
     }
 }

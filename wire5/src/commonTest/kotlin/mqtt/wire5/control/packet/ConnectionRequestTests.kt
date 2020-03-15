@@ -529,7 +529,7 @@ class ConnectionRequestTests {
         byteReader.readByte() // 5 or 0b00000101
         byteReader.readByte() // connect flags
         byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
-        val properties = byteReader.readProperties()
+        val properties = byteReader.readPropertiesLegacy()
         assertNotNull(properties!!.first())
 //        assertEquals(properties.first().property, Property.SessionExpiryInterval)
     }

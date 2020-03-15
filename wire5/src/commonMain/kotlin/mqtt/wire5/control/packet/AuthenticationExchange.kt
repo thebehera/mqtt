@@ -9,6 +9,7 @@ import kotlinx.io.core.writeUByte
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -153,6 +154,13 @@ data class AuthenticationExchange(val variable: VariableHeader)
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val reasonCodeByte = buffer.readUByte()
                 val reasonCode = getReasonCode(reasonCodeByte)
+                val props = Properties.from(buffer.readPropertiesLegacy())
+                return VariableHeader(reasonCode, props)
+            }
+
+            fun from(buffer: ReadBuffer): VariableHeader {
+                val reasonCodeByte = buffer.readUnsignedByte()
+                val reasonCode = getReasonCode(reasonCodeByte)
                 val props = Properties.from(buffer.readProperties())
                 return VariableHeader(reasonCode, props)
             }
@@ -161,6 +169,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
 
     companion object {
         fun from(buffer: ByteReadPacket) = AuthenticationExchange(VariableHeader.from(buffer))
+        fun from(buffer: ReadBuffer) = AuthenticationExchange(VariableHeader.from(buffer))
 
     }
 }

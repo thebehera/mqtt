@@ -4,6 +4,7 @@ package mqtt.wire5.control.packet
 
 import kotlinx.io.core.ByteReadPacket
 import kotlinx.io.core.readUByte
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.data.decodeVariableByteInteger
@@ -35,6 +36,12 @@ abstract class ControlPacketV5(override val controlPacketValue: Byte,
             return packet
         }
 
+        fun from(buffer: ReadBuffer): ControlPacketV5 {
+            val byte1 = buffer.readUnsignedByte()
+            val remainingLength = buffer.readVariableByteInteger()
+            return from(buffer, byte1, remainingLength)
+        }
+
         fun from(buffer: ByteArray, byte1: UByte): ControlPacketV5 {
             return from(ByteReadPacket(buffer), byte1)
         }
@@ -55,6 +62,30 @@ abstract class ControlPacketV5(override val controlPacketValue: Byte,
                 9 -> SubscribeAcknowledgement.from(buffer)
                 10 -> UnsubscribeRequest.from(buffer)
                 11 -> UnsubscribeAcknowledgment.from(buffer)
+                12 -> PingRequest
+                13 -> PingResponse
+                14 -> DisconnectNotification.from(buffer)
+                15 -> AuthenticationExchange.from(buffer)
+                else -> throw MalformedPacketException("Invalid MQTT Control Packet Type: $packetValue Should be in range between 0 and 15 inclusive")
+            }
+        }
+
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): ControlPacketV5 {
+            val byte1AsUInt = byte1.toUInt()
+            val packetValue = byte1AsUInt.shr(4).toInt()
+            return when (packetValue) {
+                0 -> Reserved
+                1 -> ConnectionRequest.from(buffer)
+                2 -> ConnectionAcknowledgment.from(buffer, remainingLength)
+                3 -> PublishMessage.from(buffer, byte1, remainingLength)
+                4 -> PublishAcknowledgment.from(buffer, remainingLength)
+                5 -> PublishReceived.from(buffer, remainingLength)
+                6 -> PublishRelease.from(buffer, remainingLength)
+                7 -> PublishComplete.from(buffer, remainingLength)
+                8 -> SubscribeRequest.from(buffer, remainingLength)
+                9 -> SubscribeAcknowledgement.from(buffer, remainingLength)
+                10 -> UnsubscribeRequest.from(buffer, remainingLength)
+                11 -> UnsubscribeAcknowledgment.from(buffer, remainingLength)
                 12 -> PingRequest
                 13 -> PingResponse
                 14 -> DisconnectNotification.from(buffer)

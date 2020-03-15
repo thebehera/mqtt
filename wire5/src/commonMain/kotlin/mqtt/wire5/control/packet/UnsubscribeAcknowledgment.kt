@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -13,10 +14,7 @@ import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.variable.property.Property
-import mqtt.wire5.control.packet.format.variable.property.ReasonString
-import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.*
 
 @Parcelize
 data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS)) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
@@ -129,8 +127,15 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val packetIdentifier = buffer.readUShort()
-                val props = Properties.from(buffer.readProperties())
+                val props = Properties.from(buffer.readPropertiesLegacy())
                 return VariableHeader(packetIdentifier.toInt(), props)
+            }
+
+            fun from(buffer: ReadBuffer): Pair<UInt, VariableHeader> {
+                val packetIdentifier = buffer.readUnsignedShort()
+                val sized = buffer.readPropertiesSized()
+                val props = Properties.from(sized.second)
+                return Pair(sized.first + 2u, VariableHeader(packetIdentifier.toInt(), props))
             }
         }
     }
@@ -149,11 +154,35 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
                     NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
                     TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
                     PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
-                    else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte " +
-                            "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478")
+                    else -> throw MalformedPacketException(
+                        "Invalid reason code $reasonCodeByte " +
+                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478"
+                    )
                 }
             }
             return UnsubscribeAcknowledgment(variableHeader, list)
+        }
+
+        fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeAcknowledgment {
+            val variableHeader = VariableHeader.from(buffer)
+            val list = mutableListOf<ReasonCode>()
+            while (remainingLength - variableHeader.first > list.count().toUInt()) {
+                val reasonCodeByte = buffer.readUnsignedByte()
+                list += when (reasonCodeByte) {
+                    SUCCESS.byte -> SUCCESS
+                    NO_SUBSCRIPTIONS_EXISTED.byte -> NO_SUBSCRIPTIONS_EXISTED
+                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
+                    IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
+                    NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
+                    TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
+                    PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
+                    else -> throw MalformedPacketException(
+                        "Invalid reason code $reasonCodeByte " +
+                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478"
+                    )
+                }
+            }
+            return UnsubscribeAcknowledgment(variableHeader.second, list)
         }
     }
 }

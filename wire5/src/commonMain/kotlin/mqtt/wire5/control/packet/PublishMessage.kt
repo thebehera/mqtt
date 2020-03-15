@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
@@ -567,8 +568,24 @@ data class PublishMessage(
             fun from(buffer: ByteReadPacket, isQos0: Boolean): VariableHeader {
                 val topicName = buffer.readMqttUtf8String()
                 val packetIdentifier = if (isQos0) null else buffer.readUShort().toInt()
-                val props = Properties.from(buffer.readProperties())
+                val props = Properties.from(buffer.readPropertiesLegacy())
                 return VariableHeader(topicName.value, packetIdentifier, props)
+            }
+
+            fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
+                val result = buffer.readMqttUtf8StringNotValidatedSized()
+                var size = result.first
+                val topicName = MqttUtf8String(result.second)
+                val packetIdentifier = if (isQos0) {
+                    null
+                } else {
+                    size += 4u
+                    buffer.readUnsignedShort().toInt()
+                }
+                val propertiesSized = buffer.readPropertiesSized()
+                size += propertiesSized.first
+                val props = Properties.from(propertiesSized.second)
+                return Pair(size, VariableHeader(topicName.value, packetIdentifier, props))
             }
         }
     }
@@ -579,6 +596,13 @@ data class PublishMessage(
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             val payloadBytes = ByteArrayWrapper(buffer.readBytes())
             return PublishMessage(fixedHeader, variableHeader, payloadBytes)
+        }
+
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
+            val fixedHeader = FixedHeader.fromByte(byte1)
+            val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
+            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first))
+            return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
         }
     }
 

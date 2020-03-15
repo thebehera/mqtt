@@ -84,7 +84,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -122,7 +122,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -149,7 +149,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -193,7 +193,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -233,7 +233,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -261,7 +261,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -289,7 +289,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -317,7 +317,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -369,7 +369,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -404,7 +404,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -439,7 +439,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -466,7 +466,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -494,7 +494,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -522,7 +522,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -553,7 +553,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -572,7 +572,7 @@ class ConnectionAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            Properties.from(props.readProperties())
+            Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }

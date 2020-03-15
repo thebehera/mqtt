@@ -74,7 +74,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -102,7 +102,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -134,7 +134,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -153,7 +153,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -181,7 +181,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -209,7 +209,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -252,7 +252,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -280,7 +280,7 @@ class PublishMessageTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }
