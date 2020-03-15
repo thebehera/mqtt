@@ -2,20 +2,17 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class PublishCompleteTests {
+class PublishCompleteTestsLegacy {
     private val packetIdentifier = 2
 
     @Test
     fun packetIdentifier() {
         val puback = PublishComplete(packetIdentifier)
-        val buffer = allocateNewBuffer(4u, limits)
-        puback.serialize(buffer)
-        buffer.resetForRead()
-        val pubackResult = ControlPacketV4.from(buffer) as PublishComplete
+        val data = puback.serialize()
+        val pubackResult = ControlPacketV4.from(data) as PublishComplete
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
     }
 }

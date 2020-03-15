@@ -26,13 +26,15 @@ data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payl
     : ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }
 
+    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
     override fun payload(writeBuffer: WriteBuffer) {
+        println(writeBuffer)
         payload.forEach { writeBuffer.write(it.byte.toUByte()) }
+        println(writeBuffer)
     }
 
     companion object {
@@ -55,7 +57,7 @@ data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payl
         fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeAcknowledgement {
             val packetIdentifier = buffer.readUnsignedShort()
             val returnCodes = mutableListOf<ReasonCode>()
-            while (returnCodes.size.toUInt() < remainingLength) {
+            while (returnCodes.size.toUInt() < remainingLength - buffer.variableByteSize(remainingLength) - 1u) {
                 val reasonCode = when (val reasonCodeByte = buffer.readUnsignedByte()) {
                     GRANTED_QOS_0.byte -> GRANTED_QOS_0
                     GRANTED_QOS_1.byte -> GRANTED_QOS_1

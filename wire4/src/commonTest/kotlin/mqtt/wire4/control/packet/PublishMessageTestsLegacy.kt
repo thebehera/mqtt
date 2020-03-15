@@ -2,7 +2,7 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.allocateNewBuffer
+import kotlinx.io.core.buildPacket
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.PublishMessage.FixedHeader
@@ -10,18 +10,18 @@ import mqtt.wire4.control.packet.PublishMessage.VariableHeader
 import kotlin.test.Test
 import kotlin.test.fail
 
-class PublishMessageTests {
+class PublishMessageTestsLegacy {
 
     @Test
     fun qosBothBitsSetTo1ThrowsMalformedPacketException() {
         val byte1 = 0b00111110.toByte()
         val remainingLength = 1.toByte()
-        val buffer = allocateNewBuffer(2u, limits)
-        buffer.write(byte1)
-        buffer.write(remainingLength)
-        buffer.resetForRead()
+        val packet = buildPacket {
+            writeByte(byte1)
+            writeByte(remainingLength)
+        }
         try {
-            ControlPacketV4.from(buffer)
+            ControlPacketV4.from(packet)
             fail()
         } catch (e: MalformedPacketException) {
         }

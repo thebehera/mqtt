@@ -2,19 +2,17 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
-class UnsubscribeAcknowledgmentTests {
+class UnsubscribeAcknowledgmentTestsLegacy {
     private val packetIdentifier = 2
+
     @Test
     fun serializeDeserializeDefault() {
-        val buffer = allocateNewBuffer(4u, limits)
         val actual = UnsubscribeAcknowledgment(packetIdentifier)
-        actual.serialize(buffer)
-        buffer.resetForRead()
-        val expected = ControlPacketV4.from(buffer)
+        val bytes = actual.serialize()
+        val expected = ControlPacketV4.from(bytes)
         assertEquals(expected, actual)
     }
 }

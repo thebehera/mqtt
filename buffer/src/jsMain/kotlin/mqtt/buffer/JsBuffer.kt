@@ -21,8 +21,9 @@ data class JsBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : PlatformBuf
     override fun readUnsignedInt() = buffer.readUInt()
 
     override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
-        val length = readUnsignedShort().toInt()
-        return Pair(length.toUInt(), buffer.readText(max = length))
+        val length = readUnsignedShort()
+        val text = buffer.readTextExactBytes(length.toInt())
+        return Pair(length.toUInt(), text)
     }
 
     override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as JsBuffer).buffer)

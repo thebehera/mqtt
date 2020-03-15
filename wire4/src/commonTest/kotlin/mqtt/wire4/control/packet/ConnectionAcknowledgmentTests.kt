@@ -2,8 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.readBytes
-import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire4.control.packet.ConnectionAcknowledgment.VariableHeader
@@ -12,22 +10,12 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+
 class ConnectionAcknowledgmentTests {
+
     @Test
     fun serializeDeserializeDefault() {
-        val actual = ConnectionAcknowledgment()
-        val bytes = actual.serialize()
-        val expected = ControlPacketV4.from(bytes)
-        assertEquals(expected, actual)
-    }
-
-
-    @Test
-    fun serializeDeserializeDefaultBuffer() {
-        val buffer = allocateNewBuffer(20u, object : BufferMemoryLimit {
-            override fun isTooLargeForMemory(size: UInt): Boolean = false
-        })
-
+        val buffer = allocateNewBuffer(4u, limits)
         val actual = ConnectionAcknowledgment()
         actual.serialize(buffer)
         buffer.resetForRead()
@@ -37,19 +25,27 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun bit0SessionPresentFalseFlags() {
+        val buffer = allocateNewBuffer(4u, limits)
         val model = ConnectionAcknowledgment()
-        val data = model.header.packet().readBytes()
-        val sessionPresentBit = data[0].toUByte().get(0)
+        model.header.serialize(buffer)
+        buffer.resetForRead()
+        val sessionPresentBit = buffer.readUnsignedByte().get(0)
         assertFalse(sessionPresentBit)
-        val result = ControlPacketV4.from(model.serialize()) as ConnectionAcknowledgment
+
+        val buffer2 = allocateNewBuffer(4u, limits)
+        model.serialize(buffer2)
+        buffer2.resetForRead()
+        val result = ControlPacketV4.from(buffer2) as ConnectionAcknowledgment
         assertFalse(result.header.sessionPresent)
     }
 
     @Test
     fun bit0SessionPresentFlags() {
+        val buffer = allocateNewBuffer(4u, limits)
         val model = ConnectionAcknowledgment(VariableHeader(true))
-        val data = model.header.packet().readBytes()
-        val sessionPresentBit = data[0].toUByte().get(0)
-        assertTrue(sessionPresentBit)
+        model.header.serialize(buffer)
+        buffer.resetForRead()
+        assertTrue(buffer.readUnsignedByte().get(0))
     }
 }
+

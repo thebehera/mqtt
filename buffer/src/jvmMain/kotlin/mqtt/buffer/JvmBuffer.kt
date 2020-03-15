@@ -12,7 +12,6 @@ import kotlin.coroutines.suspendCoroutine
 
 @ExperimentalUnsignedTypes
 data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = null) : PlatformBuffer {
-    val encoder = Charsets.UTF_8.newEncoder()
 
     override val type: BufferType = if (byteBuffer is MappedByteBuffer) {
         BufferType.Disk
@@ -80,6 +79,7 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         val buffer = CharBuffer.wrap(charSequence)
         val size = mqttUtf8Size(charSequence).toUShort()
         write(size)
+        val encoder = Charsets.UTF_8.newEncoder()
         encoder.encode(buffer, byteBuffer, true)
         encoder.flush(byteBuffer)
         return this
@@ -120,6 +120,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
             CodingErrorAction.REPORT
         }
     }
+
+    override fun toString() = byteBuffer.toString()
 
     override suspend fun close() {
         fileRef?.aClose()

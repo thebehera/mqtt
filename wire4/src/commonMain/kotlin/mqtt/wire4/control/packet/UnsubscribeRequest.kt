@@ -58,7 +58,7 @@ data class UnsubscribeRequest(
             val packetIdentifier = buffer.readUnsignedShort()
             val topics = mutableListOf<MqttUtf8String>()
             var bytesRead = 0
-            while (bytesRead.toUInt() < remainingLength) {
+            while (bytesRead.toUInt() < remainingLength - 2u) {
                 val pair = buffer.readMqttUtf8StringNotValidatedSized()
                 bytesRead += 2 + pair.first.toInt()
                 topics += MqttUtf8String(pair.second)
