@@ -40,9 +40,11 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         val length = readUnsignedShort().toInt()
         val finalPosition = byteBuffer.position() + length
         val readBuffer = byteBuffer.asReadOnlyBuffer()
+        println("final limit $finalPosition")
         readBuffer.limit(finalPosition)
         val decoded = Charsets.UTF_8.decode(readBuffer)
         byteBuffer.position(finalPosition)
+        println("decoded $decoded $length")
         return Pair(length.toUInt(), decoded)
     }
 
@@ -94,18 +96,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         encoder.onMalformedInput(codingErrorAction(encoder, malformedInput))
             .onUnmappableCharacter(codingErrorAction(encoder, unmappableCharacter))
         val input = CharBuffer.wrap(inputSequence)
-        val output = ByteBuffer.allocate(10)
-        val limit = input.limit()
-        var totalEncoded = 0
-        while (input.position() < limit) {
-            output.clear()
-            input.mark()
-            input.limit((input.position() + 2).coerceAtLeast(input.capacity()))
-            input.reset()
-            encoder.encode(input, output, false)
-            totalEncoded += output.position()
-        }
-        return totalEncoded.toUInt()
+        val result = encoder.encode(input)
+        return result.limit().toUInt()
     }
 
 

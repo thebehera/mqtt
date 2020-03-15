@@ -3,7 +3,9 @@
 package mqtt.wire5.control.packet.format.variable.property
 
 import kotlinx.io.core.*
+import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.*
@@ -11,9 +13,23 @@ import mqtt.wire.data.*
 
 abstract class Property(val identifierByte: Byte, val type: Type, val willProperties: Boolean = false) {
     open fun write(bytePacketBuilder: BytePacketBuilder) {}
+    open fun write(buffer: WriteBuffer): UInt {
+        return 0u
+    }
+
+    open fun size(buffer: WriteBuffer): UInt {
+        return 0u
+    }
+
     internal fun write(bytePacketBuilder: BytePacketBuilder, boolean: Boolean) {
         bytePacketBuilder.writeByte(identifierByte)
         bytePacketBuilder.writeByte(if (boolean) 1 else 0)
+    }
+
+    internal fun write(buffer: WriteBuffer, boolean: Boolean): UInt {
+        buffer.write(identifierByte)
+        buffer.write((if (boolean) 1 else 0).toUByte())
+        return 2u
     }
 
     fun write(bytePacketBuilder: BytePacketBuilder, number: UInt) {
@@ -21,9 +37,23 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         bytePacketBuilder.writeUInt(number)
     }
 
+    fun size(bytePacketBuilder: WriteBuffer, number: UInt) = 5u
+    fun write(bytePacketBuilder: WriteBuffer, number: UInt): UInt {
+        bytePacketBuilder.write(identifierByte)
+        bytePacketBuilder.write(number)
+        return 5u
+    }
+
     fun write(bytePacketBuilder: BytePacketBuilder, number: UShort) {
         bytePacketBuilder.writeByte(identifierByte)
         bytePacketBuilder.writeUShort(number)
+    }
+
+    fun size(bytePacketBuilder: WriteBuffer, number: UShort) = 3u
+    fun write(bytePacketBuilder: WriteBuffer, number: UShort): UInt {
+        bytePacketBuilder.write(identifierByte)
+        bytePacketBuilder.write(number)
+        return 3u
     }
 
     fun write(bytePacketBuilder: BytePacketBuilder, p: ByteReadPacket) {
@@ -36,11 +66,31 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         bytePacketBuilder.writeMqttUtf8String(string)
     }
 
+    fun size(bytePacketBuilder: WriteBuffer, string: CharSequence) =
+        bytePacketBuilder.mqttUtf8Size(string) + 1u
+
+    fun write(bytePacketBuilder: WriteBuffer, string: CharSequence): UInt {
+        bytePacketBuilder.write(identifierByte)
+        val size = bytePacketBuilder.mqttUtf8Size(string)
+        bytePacketBuilder.writeUtf8String(string)
+        return size
+    }
+
+
     fun write(bytePacketBuilder: BytePacketBuilder, data: ByteArrayWrapper) {
         bytePacketBuilder.writeByte(identifierByte)
         bytePacketBuilder.writeUShort(data.byteArray.size.toUShort())
         bytePacketBuilder.writeFully(data.byteArray)
     }
+
+    fun write(bytePacketBuilder: WriteBuffer, data: ByteArrayWrapper): UInt {
+        bytePacketBuilder.write(identifierByte)
+        bytePacketBuilder.write(data.byteArray.size.toUShort())
+        bytePacketBuilder.write(data.byteArray)
+        return 3u + data.byteArray.size.toUInt()
+    }
+
+    fun size(bytePacketBuilder: WriteBuffer, data: ByteArrayWrapper) = 3u + data.byteArray.size.toUInt()
 }
 
 private fun ByteReadPacket.readMqttBinary(): ByteArrayWrapper {
@@ -106,14 +156,11 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
 
 fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
     val byte = readByte().toInt()
-    var size = 1
     val property = when (byte) {
         0x01 -> {
-            size++
             PayloadFormatIndicator(readByte() == 1.toByte())
         }
         0x02 -> {
-            size += 4
             MessageExpiryInterval(readUnsignedInt().toLong())
         }
         0x03 -> {
@@ -167,8 +214,7 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
         0x2A -> SharedSubscriptionAvailable(readByte() == 1.toByte())
         else -> throw MalformedPacketException("Invalid Byte Code while reading properties")
     }
-//    val bytesRead = propertyIndexStart - remaining
-    return Pair(property, 1)
+    return Pair(property, property.size(this as PlatformBuffer).toLong() + 1)
 }
 
 fun ByteReadPacket.readPropertiesLegacy(): Collection<Property>? {
@@ -187,13 +233,16 @@ fun ByteReadPacket.readPropertiesLegacy(): Collection<Property>? {
 fun ReadBuffer.readProperties() = readPropertiesSized().second
 
 fun ReadBuffer.readPropertiesSized(): Pair<UInt, Collection<Property>?> {
+    println("properties $this")
     val propertyLength = readVariableByteInteger()
+    println("prop left $propertyLength $this")
     val list = mutableListOf<Property>()
     var totalBytesRead = 0L
     while (totalBytesRead < propertyLength.toInt()) {
         val (property, bytesRead) = readMqttProperty()
         totalBytesRead += bytesRead
         list += property
+        println("read prop $property $totalBytesRead $propertyLength $this")
     }
     return Pair(propertyLength, if (list.isEmpty()) null else list)
 }

@@ -15,6 +15,7 @@ interface WriteBuffer {
         if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
             throw MalformedInvalidVariableByteInteger(uInt)
         }
+        println("writing variable $uInt")
         var numBytes = 0
         var no = uInt.toLong()
         do {

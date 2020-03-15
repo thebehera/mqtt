@@ -10,6 +10,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -32,7 +33,10 @@ import mqtt.wire5.control.packet.format.variable.property.*
 @Parcelize
 data class AuthenticationExchange(val variable: VariableHeader)
     : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
-    @IgnoredOnParcel override val variableHeaderPacket = variable.packet
+    @IgnoredOnParcel
+    override val variableHeaderPacket = variable.packet
+
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     /**
      * 3.15.2 AUTH Variable Header
@@ -45,7 +49,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
      */
     @Parcelize
     data class VariableHeader(
-            /**
+        /**
              * 3.15.2.1 Authenticate Reason Code
              *
              * Byte 0 in the Variable Header is the Authenticate Reason Code. The values for the one byte unsigned
@@ -61,32 +65,37 @@ data class AuthenticationExchange(val variable: VariableHeader)
              * 25|0x19|Re-authenticate|Client
              */
             val reasonCode: ReasonCode = SUCCESS,
-            val properties: Properties = Properties()
+        val properties: Properties
     ) : Parcelable {
         init {
             // throw if reason code doesnt exist
             getReasonCode(reasonCode.byte)
         }
 
-        @IgnoredOnParcel val packet by lazy {
+        @IgnoredOnParcel
+        val packet by lazy {
             buildPacket {
                 writeUByte(reasonCode.byte)
                 writePacket(properties.packet)
             }
         }
 
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.write(reasonCode.byte)
+            properties.serialize(writeBuffer)
+        }
+
         @Parcelize
         data class Properties(
-            val method: MqttUtf8String? = null,
+            val method: MqttUtf8String,
             val data: ByteArrayWrapper? = null,
             val reasonString: MqttUtf8String? = null,
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            @IgnoredOnParcel val packet by lazy {
+            @IgnoredOnParcel
+            val packet by lazy {
                 val propertiesPacket = buildPacket {
-                    if (method != null) {
-                        AuthenticationMethod(method).write(this)
-                    }
+                    AuthenticationMethod(method).write(this)
                     if (data != null) {
                         AuthenticationData(data).write(this)
                     }
@@ -105,6 +114,27 @@ data class AuthenticationExchange(val variable: VariableHeader)
                 buildPacket {
                     writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
                     writePacket(propertiesPacket)
+                }
+            }
+
+            fun serialize(writeBuffer: WriteBuffer) {
+                val authMethod = if (method != null) AuthenticationMethod(method) else null
+                val authData = if (data != null) AuthenticationData(data) else null
+                val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
+                val props = userProperty.map { UserProperty(it.first, it.second) }
+                var size = authMethod?.size(writeBuffer) ?: 0.toUInt()
+                size += authData?.size(writeBuffer) ?: 0.toUInt()
+                size += authReasonString?.size(writeBuffer) ?: 0.toUInt()
+                props.forEach {
+                    size += it.size(writeBuffer)
+                }
+                writeBuffer.writeVariableByteInteger(size)
+                authMethod?.write(writeBuffer)
+                authData?.write(writeBuffer)
+                authReasonString?.write(writeBuffer)
+                props.forEach {
+                    println(it)
+                    it.write(writeBuffer)
                 }
             }
 
@@ -145,7 +175,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
                             else -> throw MalformedPacketException("Invalid UnsubscribeAck property type found in MQTT properties $it")
                         }
                     }
-                    return Properties(method, data, reasonString, userProperty)
+                    return Properties(method!!, data, reasonString, userProperty)
                 }
             }
         }

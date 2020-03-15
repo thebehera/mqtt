@@ -1,10 +1,16 @@
 package mqtt.wire5.control.packet.format.variable.property
 
 import kotlinx.io.core.BytePacketBuilder
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.data.Type
 
 data class RequestResponseInformation(val requestServerToReturnInfoInConnack: Boolean)
     : Property(0x19, Type.BYTE) {
-    override fun write(bytePacketBuilder: BytePacketBuilder) = write(bytePacketBuilder,
-            requestServerToReturnInfoInConnack)
+    override fun write(bytePacketBuilder: BytePacketBuilder) = write(
+        bytePacketBuilder,
+        requestServerToReturnInfoInConnack
+    )
+
+    override fun size(buffer: WriteBuffer) = 2u
+    override fun write(buffer: WriteBuffer) = write(buffer, requestServerToReturnInfoInConnack)
 }
