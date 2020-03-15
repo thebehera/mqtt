@@ -19,6 +19,6 @@ class UnsubscribeRequestTests {
         buffer.resetForRead()
         val result = ControlPacketV4.from(buffer) as UnsubscribeRequest
         assertEquals(result.topics.first().getValueOrThrow().toString(), "yolo")
-        assertEquals(result.topics[1].getValueOrThrow().toString(), "yolo")
+        assertEquals(result.topics[1].getValueOrThrow().toString(), "yolo1")
     }
 }
