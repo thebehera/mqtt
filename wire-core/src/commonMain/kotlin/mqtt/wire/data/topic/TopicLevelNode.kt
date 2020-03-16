@@ -7,7 +7,7 @@ import mqtt.wire.data.MqttUtf8String
  * to using a string and speeds up lookups to see if a topic matches a structure
  */
 data class TopicLevelNode(val value: TopicLevel) {
-    val children: MutableMap<String, TopicLevelNode> = mutableMapOf()
+    val children: MutableMap<CharSequence, TopicLevelNode> = mutableMapOf()
     var parent: TopicLevelNode? = null
     /**
      * Is this topic level a wildcard
@@ -70,17 +70,17 @@ data class TopicLevelNode(val value: TopicLevel) {
         return childrensChildren
     }
 
-    fun getCurrentPath(): String {
+    fun getCurrentPath(): CharSequence {
         val parent = parent
         val parentPath = parent?.getCurrentPath()
         return if (parentPath == null) {
             value.value
         } else {
-            parentPath + "/" + value.value
+            "$parentPath/${value.value}"
         }
     }
 
-    override fun toString() = getCurrentPath()
+    override fun toString() = getCurrentPath().toString()
 
     /**
      * Check and see if the other topic matches this topic structure.
@@ -164,7 +164,7 @@ data class TopicLevelNode(val value: TopicLevel) {
             if (topicValidated.isEmpty()) {
                 return TopicLevelNode(EmptyValue)
             }
-            return parse(topicValidated) ?: TopicLevelNode(EmptyValue)
+            return parse(topicValidated.toString()) ?: TopicLevelNode(EmptyValue)
         }
 
         /**

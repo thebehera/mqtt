@@ -29,7 +29,7 @@ data class Node internal constructor(val level: TopicLevel) {
         }
         val parent = parent!! // if we are not root we have a parent root
         return if (parent.isRoot) {
-            level.value
+            level.value.toString()
         } else {
             (parent.toString()) + TOPIC_SEPERATOR + level.value
         }
@@ -85,7 +85,7 @@ data class Node internal constructor(val level: TopicLevel) {
 
         fun from(topic: MqttUtf8String) = parse(topic.getValueOrThrow())
 
-        fun parse(topic: String): Node {
+        fun parse(topic: CharSequence): Node {
             val rootNode = Node(RootTopicValue)
             if (topic.isEmpty()) {
                 val emptyNode = Node(EmptyValue)

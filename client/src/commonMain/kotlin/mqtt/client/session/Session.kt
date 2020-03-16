@@ -59,11 +59,6 @@ class ClientSession(
                 when (controlPacket) {
                     is IPublishMessage -> {
                         callback?.onMessage(controlPacket)
-                        val topicName = controlPacket.topic.validateTopic()
-                        if (topicName == null) {
-                            println("Failed to validate the topic")
-                            return@launch
-                        }
                         state.subscriptionManager.handleIncomingPublish(controlPacket)
                         val response = controlPacket.expectedResponse() ?: return@launch
                         send(response)

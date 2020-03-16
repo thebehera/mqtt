@@ -32,6 +32,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
+                implementation project(':buffer')
                 implementation kotlin('stdlib-common')
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"

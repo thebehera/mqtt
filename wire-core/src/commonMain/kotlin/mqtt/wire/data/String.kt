@@ -22,7 +22,11 @@ fun String.validateMqttUTF8String(): Boolean {
     return true
 }
 
-class InvalidMqttUtf8StringMalformedPacketException(msg: String, indexOfError: Int, originalString: String) :
+class InvalidMqttUtf8StringMalformedPacketException(
+    msg: CharSequence,
+    indexOfError: Int,
+    originalString: CharSequence
+) :
     MalformedPacketException("Fails to match MQTT Spec for a UTF-8 String. Error:($msg) at index $indexOfError of $originalString")
 
 private val controlCharactersRange by lazy { '\uD800'..'\uDFFF' }
@@ -35,8 +39,8 @@ private val shouldNotIncludeCharRange2 by lazy { '\u007F'..'\u009F' }
 private val privateUseCharRange by lazy { '\uE000'..'\uF8FF' }
 
 @Parcelize
-data class MqttUtf8String(val value: String) : Parcelable {
-    fun getValueOrThrow(includeWarnings: Boolean = true): String {
+data class MqttUtf8String(val value: CharSequence) : Parcelable {
+    fun getValueOrThrow(includeWarnings: Boolean = true): CharSequence {
         val ex = exception
         if (ex != null) {
             throw ex
@@ -46,6 +50,10 @@ data class MqttUtf8String(val value: String) : Parcelable {
             throw w
         }
         return value
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return value.toString() == ((other as? MqttUtf8String)?.value).toString()
     }
 
     private val exception: InvalidMqttUtf8StringMalformedPacketException?
@@ -107,12 +115,12 @@ fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String, validate: Bool
         string.value
     }
 
-    val len = validatedString.utf8Length().toUShort()
+    val len = validatedString.toString().utf8Length().toUShort()
     writeUShort(len)
     writeStringUtf8(validatedString)
 }
 
-fun String.utf8Length(): Int {
+fun CharSequence.utf8Length(): Int {
     var count = 0
     var i = 0
     val len = length

@@ -6,10 +6,11 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.readMqttFilter
@@ -43,13 +44,18 @@ SubscribeRequest(
 
     @IgnoredOnParcel
     private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
+
     @IgnoredOnParcel
     override val variableHeaderPacket = buildPacket {
         writeUShort(packetIdentifier.toUShort())
     }
 
-    override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
+    override fun variableHeader(writeBuffer: WriteBuffer) {
+        writeBuffer.write(packetIdentifier.toUShort())
+    }
 
+    override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
+    override fun payload(writeBuffer: WriteBuffer) = Subscription.writeMany(subscriptions, writeBuffer)
     override fun expectedResponse(): SubscribeAcknowledgement {
         val returnCodes = subscriptions.map {
             when (it.maximumQos) {
@@ -67,6 +73,12 @@ SubscribeRequest(
         fun from(buffer: ByteReadPacket): SubscribeRequest {
             val packetIdentifier = buffer.readUShort().toInt()
             val subscriptions = Subscription.fromMany(buffer)
+            return SubscribeRequest(packetIdentifier, subscriptions)
+        }
+
+        fun from(buffer: ReadBuffer, remaining: UInt): SubscribeRequest {
+            val packetIdentifier = buffer.readUnsignedShort().toInt()
+            val subscriptions = Subscription.fromMany(buffer, remaining)
             return SubscribeRequest(packetIdentifier, subscriptions)
         }
     }
@@ -99,6 +111,17 @@ data class Subscription(val topicFilter: Filter,
             return subscriptions
         }
 
+        fun fromMany(buffer: ReadBuffer, remaining: UInt): List<Subscription> {
+            val subscriptions = ArrayList<Subscription>()
+            var bytesRead = 0
+            while (bytesRead.toUInt() < remaining) {
+                val result = from(buffer)
+                bytesRead += result.first.toInt()
+                subscriptions.add(result.second)
+            }
+            return subscriptions
+        }
+
         fun from(buffer: ByteReadPacket): Subscription {
             val topicFilter = buffer.readMqttFilter()
             val subOptionsInt = buffer.readUByte().toInt()
@@ -106,6 +129,18 @@ data class Subscription(val topicFilter: Filter,
             val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
             val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
             return Subscription(topicFilter, qos)
+        }
+
+        fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {
+            val result = buffer.readMqttUtf8StringNotValidatedSized()
+            var bytesRead = 2u + result.first
+            val topicFilter = result.second
+            val subOptionsInt = buffer.readUnsignedByte().toInt()
+            bytesRead++
+            val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
+            val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
+            val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
+            return Pair(bytesRead, Subscription(Filter(topicFilter), qos))
         }
 
         fun from(topics: List<Filter>, qos: List<QualityOfService>): List<Subscription> {
@@ -122,6 +157,13 @@ data class Subscription(val topicFilter: Filter,
         fun writeMany(subscriptions: Collection<Subscription>) = buildPacket {
             subscriptions.forEach {
                 writePacket(it.packet)
+            }
+        }
+
+        fun writeMany(subscriptions: Collection<Subscription>, writeBuffer: WriteBuffer) {
+            subscriptions.forEach {
+                writeBuffer.writeUtf8String(it.topicFilter.topicFilter)
+                writeBuffer.write(it.maximumQos.integerValue)
             }
         }
     }

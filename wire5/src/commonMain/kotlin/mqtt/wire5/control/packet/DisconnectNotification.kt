@@ -9,6 +9,7 @@ import kotlinx.io.core.writeUByte
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IDisconnectNotification
@@ -186,6 +187,13 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
             fun from(buffer: ByteReadPacket): VariableHeader {
                 val reasonCodeByte = buffer.readUByte()
                 val reasonCode = getDisconnectCode(reasonCodeByte)
+                val props = Properties.from(buffer.readPropertiesLegacy())
+                return VariableHeader(reasonCode, props)
+            }
+
+            fun from(buffer: ReadBuffer): VariableHeader {
+                val reasonCodeByte = buffer.readUnsignedByte()
+                val reasonCode = getDisconnectCode(reasonCodeByte)
                 val props = Properties.from(buffer.readProperties())
                 return VariableHeader(reasonCode, props)
             }
@@ -194,6 +202,11 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
 
     companion object {
         fun from(buffer: ByteReadPacket): DisconnectNotification {
+            val variableHeader = VariableHeader.from(buffer)
+            return DisconnectNotification(variableHeader)
+        }
+
+        fun from(buffer: ReadBuffer): DisconnectNotification {
             val variableHeader = VariableHeader.from(buffer)
             return DisconnectNotification(variableHeader)
         }

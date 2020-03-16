@@ -15,7 +15,7 @@ import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader
 import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties.Companion.from
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -153,7 +153,7 @@ class SubscribeAcknowledgementTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            from(props.readProperties())
+            from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }

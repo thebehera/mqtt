@@ -4,6 +4,7 @@ package mqtt.wire4.control.packet
 
 import kotlinx.io.core.readUByte
 import kotlinx.io.core.readUShort
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
 import kotlin.test.Test
@@ -13,41 +14,40 @@ class SubscribeRequestTest {
 
     @Test
     fun serializeTestByteArray() {
+        val readBuffer = allocateNewBuffer(12u, limits)
         val subscription = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val readPacket = Subscription.writeMany(subscription)
-        assertEquals(12, readPacket.remaining)
+        Subscription.writeMany(subscription, readBuffer)
+        readBuffer.resetForRead()
         // Topic Filter ("a/b")
         // byte 1: Length MSB (0)
-        assertEquals(0b00000000, readPacket.readByte())
+        assertEquals(0b00000000, readBuffer.readByte())
         // byte2: Length LSB (3)
-        assertEquals(0b00000011, readPacket.readByte())
+        assertEquals(0b00000011, readBuffer.readByte())
         // byte3: a (0x61)
-        assertEquals(0b01100001, readPacket.readByte())
+        assertEquals(0b01100001, readBuffer.readByte())
         // byte4: / (0x2F)
-        assertEquals(0b00101111, readPacket.readByte())
+        assertEquals(0b00101111, readBuffer.readByte())
         // byte5: b (0x62)
-        assertEquals(0b01100010, readPacket.readByte())
+        assertEquals(0b01100010, readBuffer.readByte())
         // Subscription Options
         // byte6: Subscription Options (1)
-        assertEquals(0b00000001, readPacket.readByte())
+        assertEquals(0b00000001, readBuffer.readByte())
 
 
         // Topic Filter ("c/d")
         // byte 1: Length MSB (0)
-        assertEquals(0b00000000, readPacket.readByte())
+        assertEquals(0b00000000, readBuffer.readByte())
         // byte2: Length LSB (3)
-        assertEquals(0b00000011, readPacket.readByte())
+        assertEquals(0b00000011, readBuffer.readByte())
         // byte3: c (0x63)
-        assertEquals(0b01100011, readPacket.readByte())
+        assertEquals(0b01100011, readBuffer.readByte())
         // byte4: / (0x2F)
-        assertEquals(0b00101111, readPacket.readByte())
+        assertEquals(0b00101111, readBuffer.readByte())
         // byte5: d (0x64)
-        assertEquals(0b01100100, readPacket.readByte())
+        assertEquals(0b01100100, readBuffer.readByte())
         // Subscription Options
         // byte6: Subscription Options (2)
-        assertEquals(0b00000010, readPacket.readByte())
-        // No more bytes to read
-        assertEquals(0, readPacket.remaining)
+        assertEquals(0b00000010, readBuffer.readByte())
     }
 
     @Test
@@ -59,51 +59,52 @@ class SubscribeRequestTest {
 
     @Test
     fun subscriptionPayload() {
-        val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val request = SubscribeRequest(0, subscriptions)
-        val readPacket = request.payloadPacket()
+        val readBuffer = allocateNewBuffer(12u, limits)
+        val subscription = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
+        Subscription.writeMany(subscription, readBuffer)
+        readBuffer.resetForRead()
         // Topic Filter ("a/b")
         // byte 1: Length MSB (0)
-        assertEquals(0b00000000, readPacket.readByte())
+        assertEquals(0b00000000, readBuffer.readByte())
         // byte2: Length LSB (3)
-        assertEquals(0b00000011, readPacket.readByte())
+        assertEquals(0b00000011, readBuffer.readByte())
         // byte3: a (0x61)
-        assertEquals(0b01100001, readPacket.readByte())
+        assertEquals(0b01100001, readBuffer.readByte())
         // byte4: / (0x2F)
-        assertEquals(0b00101111, readPacket.readByte())
+        assertEquals(0b00101111, readBuffer.readByte())
         // byte5: b (0x62)
-        assertEquals(0b01100010, readPacket.readByte())
+        assertEquals(0b01100010, readBuffer.readByte())
         // Subscription Options
         // byte6: Subscription Options (1)
-        assertEquals(0b00000001, readPacket.readByte())
+        assertEquals(0b00000001, readBuffer.readByte())
 
 
         // Topic Filter ("c/d")
         // byte 1: Length MSB (0)
-        assertEquals(0b00000000, readPacket.readByte())
+        assertEquals(0b00000000, readBuffer.readByte())
         // byte2: Length LSB (3)
-        assertEquals(0b00000011, readPacket.readByte())
+        assertEquals(0b00000011, readBuffer.readByte())
         // byte3: c (0x63)
-        assertEquals(0b01100011, readPacket.readByte())
+        assertEquals(0b01100011, readBuffer.readByte())
         // byte4: / (0x2F)
-        assertEquals(0b00101111, readPacket.readByte())
+        assertEquals(0b00101111, readBuffer.readByte())
         // byte5: d (0x64)
-        assertEquals(0b01100100, readPacket.readByte())
+        assertEquals(0b01100100, readBuffer.readByte())
         // Subscription Options
         // byte6: Subscription Options (2)
-        assertEquals(0b00000010, readPacket.readByte())
-        // No more bytes to read
-        assertEquals(0, readPacket.remaining)
+        assertEquals(0b00000010, readBuffer.readByte())
     }
 
     @Test
     fun packetIdentifierIsCorrect() {
+        val buffer = allocateNewBuffer(10u, limits)
         val subscription = SubscribeRequest(10.toUShort(), Filter("a/b"), AT_MOST_ONCE)
         assertEquals(10, subscription.packetIdentifier)
-        val stream = subscription.serialize()
-        stream.readByte()
-        stream.readByte()
-        val packetIdentifer = stream.readUShort()
+        subscription.serialize(buffer)
+        buffer.resetForRead()
+        buffer.readByte()
+        buffer.readByte()
+        val packetIdentifer = buffer.readUnsignedShort()
         assertEquals(10.toUShort(), packetIdentifer)
     }
 

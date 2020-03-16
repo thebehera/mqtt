@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
@@ -36,11 +37,11 @@ data class PublishMessage(
 
 
     constructor(
-        topic: String, qos: QualityOfService,
+        topic: CharSequence, qos: QualityOfService,
         packetIdentifier: UShort,
         dup: Boolean = false,
         retain: Boolean = false
-    ) : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic), packetIdentifier = packetIdentifier.toInt()))
+    ) : this(FixedHeader(dup, qos, retain), VariableHeader(topic, packetIdentifier = packetIdentifier.toInt()))
 
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
@@ -206,10 +207,11 @@ data class PublishMessage(
      */
     @Parcelize
     data class VariableHeader(
-        val topicName: Name,
+        val topicName: CharSequence,
         val packetIdentifier: Int? = null,
         val properties: Properties = Properties()
     ) : Parcelable {
+
         init {
             if (properties.topicAlias == 0) {
                 throw ProtocolError(
@@ -220,7 +222,7 @@ data class PublishMessage(
         }
 
         fun packet(sendDefaults: Boolean = false) = buildPacket {
-            writeMqttName(topicName)
+            writeMqttName(Name(topicName))
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier.toUShort())
             }
@@ -566,8 +568,24 @@ data class PublishMessage(
             fun from(buffer: ByteReadPacket, isQos0: Boolean): VariableHeader {
                 val topicName = buffer.readMqttUtf8String()
                 val packetIdentifier = if (isQos0) null else buffer.readUShort().toInt()
-                val props = Properties.from(buffer.readProperties())
-                return VariableHeader(Name(topicName.getValueOrThrow()), packetIdentifier, props)
+                val props = Properties.from(buffer.readPropertiesLegacy())
+                return VariableHeader(topicName.value, packetIdentifier, props)
+            }
+
+            fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
+                val result = buffer.readMqttUtf8StringNotValidatedSized()
+                var size = result.first
+                val topicName = MqttUtf8String(result.second)
+                val packetIdentifier = if (isQos0) {
+                    null
+                } else {
+                    size += 4u
+                    buffer.readUnsignedShort().toInt()
+                }
+                val propertiesSized = buffer.readPropertiesSized()
+                size += propertiesSized.first
+                val props = Properties.from(propertiesSized.second)
+                return Pair(size, VariableHeader(topicName.value, packetIdentifier, props))
             }
         }
     }
@@ -578,6 +596,13 @@ data class PublishMessage(
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             val payloadBytes = ByteArrayWrapper(buffer.readBytes())
             return PublishMessage(fixedHeader, variableHeader, payloadBytes)
+        }
+
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
+            val fixedHeader = FixedHeader.fromByte(byte1)
+            val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
+            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first))
+            return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
         }
     }
 

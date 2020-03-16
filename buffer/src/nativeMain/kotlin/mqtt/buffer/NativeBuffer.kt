@@ -20,9 +20,9 @@ data class NativeBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : Platfor
 
     override fun readUnsignedInt() = buffer.readUInt()
 
-    override fun readMqttUtf8StringNotValidated(): kotlin.CharSequence {
+    override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
         val length = readUnsignedShort().toInt()
-        return buffer.readText(max = length)
+        return Pair(length.toUInt(), buffer.readText(max = length))
     }
 
     override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as NativeBuffer).buffer)

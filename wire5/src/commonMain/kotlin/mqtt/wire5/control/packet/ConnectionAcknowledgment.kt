@@ -9,6 +9,7 @@ import kotlinx.io.core.writeUByte
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IConnectionAcknowledgment
@@ -664,7 +665,23 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 if (connectionReason == null) {
                     throw MalformedPacketException("Invalid property type found in MQTT payload $connectionReason")
                 }
-                val propeties =if (buffer.remaining > 0) {
+                val propeties = if (buffer.remaining > 0) {
+                    val properties = buffer.readPropertiesLegacy()
+                    Properties.from(properties)
+                } else {
+                    Properties()
+                }
+                return VariableHeader(sessionPresent, connectionReason, propeties)
+            }
+
+            fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader {
+                val sessionPresent = buffer.readByte() == 1.toByte()
+                val connectionReasonByte = buffer.readUnsignedByte()
+                val connectionReason = connackConnectReason[connectionReasonByte]
+                if (connectionReason == null) {
+                    throw MalformedPacketException("Invalid property type found in MQTT payload $connectionReason")
+                }
+                val propeties = if (remainingLength - 2u > 0u) {
                     val properties = buffer.readProperties()
                     Properties.from(properties)
                 } else {
@@ -677,6 +694,8 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
 
     companion object {
         fun from(buffer: ByteReadPacket) = ConnectionAcknowledgment(VariableHeader.from(buffer))
+        fun from(buffer: ReadBuffer, remainingLength: UInt) =
+            ConnectionAcknowledgment(VariableHeader.from(buffer, remainingLength))
     }
 }
 

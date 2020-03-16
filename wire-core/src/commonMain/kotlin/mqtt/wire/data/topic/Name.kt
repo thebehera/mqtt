@@ -13,7 +13,7 @@ import mqtt.wire.data.MqttUtf8String
  *
  * The wildcard characters can be used in Topic Filters, but MUST NOT be used within a Topic Name
  */
-inline class Name(val topic: String) {
+inline class Name(val topic: CharSequence) {
 
     fun validate(asServer: Boolean = false): Node? {
         return try {

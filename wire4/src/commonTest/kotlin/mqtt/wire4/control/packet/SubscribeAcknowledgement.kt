@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.ReasonCode.*
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -11,10 +12,12 @@ class SubscribeAcknowledgementTests {
 
     @Test
     fun successMaxQos0() {
+        val buffer = allocateNewBuffer(5u, limits)
         val payload = GRANTED_QOS_0
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV4.from(data) as SubscribeAcknowledgement
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
         assertEquals(pubackResult.payload, listOf(GRANTED_QOS_0))
     }

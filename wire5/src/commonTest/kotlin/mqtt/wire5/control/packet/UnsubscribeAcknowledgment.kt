@@ -14,7 +14,7 @@ import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.UnsubscribeAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -109,7 +109,7 @@ class UnsubscribeAcknowledgmentTests {
             writeFully(propsWithoutPropertyLength)
         }.copy()
         try {
-            VariableHeader.Properties.from(props.readProperties())
+            VariableHeader.Properties.from(props.readPropertiesLegacy())
             fail()
         } catch (e: ProtocolError) {
         }

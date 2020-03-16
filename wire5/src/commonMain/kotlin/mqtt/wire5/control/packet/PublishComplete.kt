@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishComplete
@@ -15,10 +16,7 @@ import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.variable.property.Property
-import mqtt.wire5.control.packet.format.variable.property.ReasonString
-import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
  * 3.7 PUBCOMP – Publish complete (QoS 2 delivery part 3)
@@ -170,8 +168,30 @@ data class PublishComplete(val variable: VariableHeader) :
                     val reasonCode = when (reasonCodeByte) {
                         SUCCESS.byte -> SUCCESS
                         PACKET_IDENTIFIER_NOT_FOUND.byte -> PACKET_IDENTIFIER_NOT_FOUND
-                        else -> throw MalformedPacketException("Invalid reason code $reasonCodeByte" +
-                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477444")
+                        else -> throw MalformedPacketException(
+                            "Invalid reason code $reasonCodeByte" +
+                                    "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477444"
+                        )
+                    }
+                    val propsData = buffer.readPropertiesLegacy()
+                    val props = Properties.from(propsData)
+                    VariableHeader(packetIdentifier.toInt(), reasonCode, props)
+                }
+            }
+
+            fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader {
+                val packetIdentifier = buffer.readUnsignedShort()
+                return if (remainingLength == 4u) {
+                    VariableHeader(packetIdentifier.toInt())
+                } else {
+                    val reasonCodeByte = buffer.readUnsignedByte()
+                    val reasonCode = when (reasonCodeByte) {
+                        SUCCESS.byte -> SUCCESS
+                        PACKET_IDENTIFIER_NOT_FOUND.byte -> PACKET_IDENTIFIER_NOT_FOUND
+                        else -> throw MalformedPacketException(
+                            "Invalid reason code $reasonCodeByte" +
+                                    "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477444"
+                        )
                     }
                     val propsData = buffer.readProperties()
                     val props = Properties.from(propsData)
@@ -183,5 +203,7 @@ data class PublishComplete(val variable: VariableHeader) :
 
     companion object {
         fun from(buffer: ByteReadPacket) = PublishComplete(VariableHeader.from(buffer))
+        fun from(buffer: ReadBuffer, remainingLength: UInt) =
+            PublishComplete(VariableHeader.from(buffer, remainingLength))
     }
 }

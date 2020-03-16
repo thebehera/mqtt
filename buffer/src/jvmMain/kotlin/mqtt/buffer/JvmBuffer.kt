@@ -12,7 +12,6 @@ import kotlin.coroutines.suspendCoroutine
 
 @ExperimentalUnsignedTypes
 data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = null) : PlatformBuffer {
-    val encoder = Charsets.UTF_8.newEncoder()
 
     override val type: BufferType = if (byteBuffer is MappedByteBuffer) {
         BufferType.Disk
@@ -37,14 +36,16 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
 
     override fun readUnsignedInt() = byteBuffer.int.toUInt()
 
-    override fun readMqttUtf8StringNotValidated(): CharSequence {
+    override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
         val length = readUnsignedShort().toInt()
         val finalPosition = byteBuffer.position() + length
         val readBuffer = byteBuffer.asReadOnlyBuffer()
+        println("final limit $finalPosition")
         readBuffer.limit(finalPosition)
         val decoded = Charsets.UTF_8.decode(readBuffer)
         byteBuffer.position(finalPosition)
-        return decoded
+        println("decoded $decoded $length")
+        return Pair(length.toUInt(), decoded)
     }
 
     override fun put(buffer: PlatformBuffer) {
@@ -80,6 +81,7 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         val buffer = CharBuffer.wrap(charSequence)
         val size = mqttUtf8Size(charSequence).toUShort()
         write(size)
+        val encoder = Charsets.UTF_8.newEncoder()
         encoder.encode(buffer, byteBuffer, true)
         encoder.flush(byteBuffer)
         return this
@@ -94,18 +96,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         encoder.onMalformedInput(codingErrorAction(encoder, malformedInput))
             .onUnmappableCharacter(codingErrorAction(encoder, unmappableCharacter))
         val input = CharBuffer.wrap(inputSequence)
-        val output = ByteBuffer.allocate(10)
-        val limit = input.limit()
-        var totalEncoded = 0
-        while (input.position() < limit) {
-            output.clear()
-            input.mark()
-            input.limit((input.position() + 2).coerceAtLeast(input.capacity()))
-            input.reset()
-            encoder.encode(input, output, false)
-            totalEncoded += output.position()
-        }
-        return totalEncoded.toUInt()
+        val result = encoder.encode(input)
+        return result.limit().toUInt()
     }
 
 
@@ -120,6 +112,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
             CodingErrorAction.REPORT
         }
     }
+
+    override fun toString() = byteBuffer.toString()
 
     override suspend fun close() {
         fileRef?.aClose()

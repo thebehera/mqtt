@@ -6,7 +6,7 @@ import kotlin.experimental.or
 interface WriteBuffer {
     fun resetForWrite()
     fun write(byte: Byte): WriteBuffer
-    fun write(byte: ByteArray): WriteBuffer
+    fun write(bytes: ByteArray): WriteBuffer
     fun write(uByte: UByte): WriteBuffer
     fun write(uShort: UShort): WriteBuffer
     fun write(uInt: UInt): WriteBuffer
@@ -15,6 +15,7 @@ interface WriteBuffer {
         if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
             throw MalformedInvalidVariableByteInteger(uInt)
         }
+        println("writing variable $uInt")
         var numBytes = 0
         var no = uInt.toLong()
         do {

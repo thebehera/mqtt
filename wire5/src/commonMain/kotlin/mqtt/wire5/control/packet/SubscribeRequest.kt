@@ -6,6 +6,7 @@ import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
+import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -15,10 +16,7 @@ import mqtt.wire.data.*
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.variable.property.Property
-import mqtt.wire5.control.packet.format.variable.property.ReasonString
-import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readProperties
+import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
  * 3.8 SUBSCRIBE - Subscribe request
@@ -36,7 +34,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
     constructor(
-        packetIdentifier: UShort, topic: String, qos: QualityOfService, props: Properties = Properties(),
+        packetIdentifier: UShort, topic: CharSequence, qos: QualityOfService, props: Properties = Properties(),
         noLocal: Boolean = false, retainAsPublished: Boolean = false,
         retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
     )
@@ -182,9 +180,22 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
                 return if (remaining == 2) {
                     VariableHeader(packetIdentifier)
                 } else {
-                    val propsData = buffer.readProperties()
+                    val propsData = buffer.readPropertiesLegacy()
                     val props = Properties.from(propsData)
                     VariableHeader(packetIdentifier, props)
+                }
+            }
+
+            fun from(buffer: ReadBuffer, remainingLength: UInt): Pair<UInt, VariableHeader> {
+                val packetIdentifier = buffer.readUnsignedShort().toInt()
+                var size = 2u
+                return if (remainingLength == 0u) {
+                    Pair(size, VariableHeader(packetIdentifier))
+                } else {
+                    val propsData = buffer.readPropertiesSized()
+                    val props = Properties.from(propsData.second)
+                    size += propsData.first
+                    Pair(size, VariableHeader(packetIdentifier, props))
                 }
             }
         }
@@ -195,6 +206,12 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
             val header = VariableHeader.from(buffer)
             val subscriptions = Subscription.fromMany(buffer)
             return SubscribeRequest(header, subscriptions)
+        }
+
+        fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeRequest {
+            val header = VariableHeader.from(buffer, remainingLength)
+            val subscriptions = Subscription.fromMany(buffer, remainingLength - header.first)
+            return SubscribeRequest(header.second, subscriptions)
         }
     }
 }
@@ -260,6 +277,18 @@ data class Subscription(val topicFilter: Filter,
             return subscriptions
         }
 
+
+        fun fromMany(buffer: ReadBuffer, remainingLength: UInt): Set<Subscription> {
+            val subscriptions = HashSet<Subscription>()
+            var bytesRead = 0u
+            while (bytesRead < remainingLength) {
+                val result = from(buffer)
+                bytesRead += result.first
+                subscriptions.add(result.second)
+            }
+            return subscriptions
+        }
+
         fun from(buffer: ByteReadPacket): Subscription {
             val topicFilter = buffer.readMqttUtf8String()
             val subOptionsInt = buffer.readUByte().toInt()
@@ -290,16 +319,58 @@ data class Subscription(val topicFilter: Filter,
             return Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling)
         }
 
-        fun from(topic: String,
-                 qos: QualityOfService,
-                 noLocal: Boolean = false,
-                 retainAsPublished: Boolean = false,
-                 retainHandlingList: RetainHandling =
-                     SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE) =
-            from(listOf(topic), listOf(qos), listOf(noLocal), listOf(retainAsPublished), listOf(retainHandlingList)).first()
+        fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {
+            var size = 0.toUInt()
+            val topic = buffer.readMqttUtf8StringNotValidatedSized()
+            size += topic.first
+            val topicFilter = MqttUtf8String(topic.second)
+            val subOptionsInt = buffer.readUnsignedByte().toInt()
+            size += 1u
+            val reservedBit7 = subOptionsInt.shr(7) == 1
+            if (reservedBit7) {
+                throw ProtocolError("Bit 7 in Subscribe payload is set to an invalid value (it is reserved)")
+            }
+            val reservedBit6 = subOptionsInt.shl(1).shr(7) == 1
+            if (reservedBit6) {
+                throw ProtocolError("Bit 7 in Subscribe payload is set to an invalid value (it is reserved)")
+            }
+            val retainHandlingBit5 = subOptionsInt.shl(2).shr(7) == 1
+            val retainHandlingBit4 = subOptionsInt.shl(3).shr(7) == 1
+            val retainHandling = if (retainHandlingBit5 && retainHandlingBit4) {
+                throw ProtocolError("Retain Handling Value cannot be set to 3")
+            } else if (retainHandlingBit5 && !retainHandlingBit4) {
+                DO_NOT_SEND_RETAINED_MESSAGES
+            } else if (!retainHandlingBit5 && retainHandlingBit4) {
+                SEND_RETAINED_MESSAGES_AT_SUBSCRIBE_ONLY_IF_SUBSCRIBE_DOESNT_EXISTS
+            } else {
+                SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+            }
+            val rapBit3 = subOptionsInt.shl(4).shr(7) == 1
+            val nlBit2 = subOptionsInt.shl(5).shr(7) == 1
+            val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
+            val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
+            val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
+            return Pair(size, Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling))
+        }
 
         fun from(
-            topics: List<String>, qos: List<QualityOfService>,
+            topic: CharSequence,
+            qos: QualityOfService,
+            noLocal: Boolean = false,
+            retainAsPublished: Boolean = false,
+            retainHandlingList: RetainHandling =
+                SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+        ) =
+            from(
+                listOf(topic),
+                listOf(qos),
+                listOf(noLocal),
+                listOf(retainAsPublished),
+                listOf(retainHandlingList)
+            ).first()
+
+        fun from(
+            topics: List<CharSequence>, qos: List<QualityOfService>,
             noLocalList: List<Boolean>? = null,
             retainAsPublishedList: List<Boolean>? = null,
             retainHandlingList: List<RetainHandling>? = null
