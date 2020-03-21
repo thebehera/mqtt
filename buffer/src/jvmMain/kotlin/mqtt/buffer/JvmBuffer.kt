@@ -40,11 +40,9 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         val length = readUnsignedShort().toInt()
         val finalPosition = byteBuffer.position() + length
         val readBuffer = byteBuffer.asReadOnlyBuffer()
-        println("final limit $finalPosition")
         readBuffer.limit(finalPosition)
         val decoded = Charsets.UTF_8.decode(readBuffer)
         byteBuffer.position(finalPosition)
-        println("decoded $decoded $length")
         return Pair(length.toUInt(), decoded)
     }
 

@@ -2,7 +2,7 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
+import kotlinx.io.core.toByteArray
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
@@ -11,7 +11,6 @@ import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties.Authentication
@@ -67,7 +66,7 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun bit0SessionPresentFlags() {
         val buffer = allocateNewBuffer(3u, limits)
-        val model = ConnectionAcknowledgment()
+        val model = ConnectionAcknowledgment(VariableHeader(true))
         model.header.serialize(buffer)
         buffer.resetForRead()
         val sessionPresentBit = buffer.readUnsignedByte().get(0)
@@ -166,16 +165,14 @@ class ConnectionAcknowledgmentTests {
     fun receiveMaximumMultipleTimesThrowsProtocolError() {
         val obj1 = ReceiveMaximum(4)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(7u, limits)
+        val size = obj1.size(buffer) + obj1.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -184,25 +181,26 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun maximumQos() {
         val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumQos = AT_LEAST_ONCE)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(8u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.maximumQos, AT_LEAST_ONCE)
+        assertEquals(expected, actual)
     }
 
     @Test
     fun maximumQosMultipleTimesThrowsProtocolError() {
         val obj1 = MaximumQos(AT_LEAST_ONCE)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(5u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            VariableHeader(properties = Properties.from(buffer.readProperties()))
             fail()
         } catch (e: ProtocolError) {
         }
@@ -211,25 +209,34 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun retainAvailableTrue() {
         val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(retainAvailable = true)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(5u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.retainAvailable, true)
+        assertEquals(expected, actual)
     }
 
     @Test
     fun retainAvailableFalse() {
         val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(retainAvailable = false)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(7u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.retainAvailable, false)
+        assertEquals(expected, actual)
     }
 
     @Test
     fun retainAvailableSendDefaults() {
         val actual = ConnectionAcknowledgment()
-        val bytes = actual.serialize(true)
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(5u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.retainAvailable, true)
+        assertEquals(expected, actual)
     }
 
 
@@ -237,16 +244,14 @@ class ConnectionAcknowledgmentTests {
     fun retainAvailableMultipleTimesThrowsProtocolError() {
         val obj1 = RetainAvailable(true)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(5u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -254,20 +259,23 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun maximumPacketSize() {
-        val actual = ConnectionAcknowledgment(
-            VariableHeader(properties = Properties(maximumPacketSize = 4))
-        )
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumPacketSize = 4)))
+        val buffer = allocateNewBuffer(10u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.maximumPacketSize, 4)
+        assertEquals(expected, actual)
     }
 
     @Test
     fun maximumPacketSizeSetToZeroThrowsProtocolError() {
         val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(maximumPacketSize = 0)))
-        val bytes = actual.serialize()
+        val buffer = allocateNewBuffer(10u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
         try {
-            ControlPacketV5.from(bytes)
+            ControlPacketV5.from(buffer)
             fail()
         } catch (e: ProtocolError) {
         }
@@ -277,16 +285,14 @@ class ConnectionAcknowledgmentTests {
     fun maximumPacketSizeMultipleTimesThrowsProtocolError() {
         val obj1 = MaximumPacketSize(4)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(11u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -295,26 +301,28 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun assignedClientIdentifier() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(assignedClientIdentifier = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+            VariableHeader(properties = Properties(assignedClientIdentifier = MqttUtf8String("yolo")))
+        )
+        val buffer = allocateNewBuffer(12u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.assignedClientIdentifier, MqttUtf8String("yolo"))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun assignedClientIdentifierMultipleTimesThrowsProtocolError() {
         val obj1 = AssignedClientIdentifier(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -323,9 +331,12 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun topicAliasMaximum() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(topicAliasMaximum = 4)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+            VariableHeader(properties = Properties(topicAliasMaximum = 4))
+        )
+        val buffer = allocateNewBuffer(8u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.topicAliasMaximum, 4)
     }
 
@@ -333,16 +344,14 @@ class ConnectionAcknowledgmentTests {
     fun topicAliasMaximumMultipleTimesThrowsProtocolError() {
         val obj1 = TopicAliasMaximum(4)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(7u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -351,26 +360,28 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun reasonString() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(reasonString = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+            VariableHeader(properties = Properties(reasonString = MqttUtf8String("yolo")))
+        )
+        val buffer = allocateNewBuffer(12u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -386,26 +397,34 @@ class ConnectionAcknowledgmentTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = ConnectionAcknowledgment(VariableHeader(properties = props)).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as ConnectionAcknowledgment
+        val connack = ConnectionAcknowledgment(VariableHeader(properties = props))
+        val buffer = allocateNewBuffer(18u, limits)
+        connack.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         val (key, value) = requestRead.header.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals(key.getValueOrThrow().toString(), "key")
+        assertEquals(value.getValueOrThrow().toString(), "value")
     }
 
     @Test
     fun wildcardSubscriptionAvailable() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(supportsWildcardSubscriptions = false)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val actual =
+            ConnectionAcknowledgment(VariableHeader(properties = Properties(supportsWildcardSubscriptions = false)))
+        val buffer = allocateNewBuffer(7u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.supportsWildcardSubscriptions, false)
     }
 
     @Test
     fun wildcardSubscriptionAvailableDefaults() {
         val actual = ConnectionAcknowledgment()
-        val bytes = actual.serialize(true)
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(5u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.supportsWildcardSubscriptions, true)
     }
 
@@ -413,16 +432,14 @@ class ConnectionAcknowledgmentTests {
     fun wildcardSubscriptionAvailableMultipleTimesThrowsProtocolError() {
         val obj1 = WildcardSubscriptionAvailable(true)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(5u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -431,16 +448,21 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun subscriptionIdentifierAvailableDefaults() {
         val actual = ConnectionAcknowledgment()
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(5u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.subscriptionIdentifiersAvailable, true)
     }
 
     @Test
     fun subscriptionIdentifierAvailable() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(subscriptionIdentifiersAvailable = false)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val actual =
+            ConnectionAcknowledgment(VariableHeader(properties = Properties(subscriptionIdentifiersAvailable = false)))
+        val buffer = allocateNewBuffer(7u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.subscriptionIdentifiersAvailable, false)
     }
 
@@ -448,16 +470,14 @@ class ConnectionAcknowledgmentTests {
     fun subscriptionIdentifierAvailableMultipleTimesThrowsProtocolError() {
         val obj1 = SubscriptionIdentifierAvailable(true)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(5u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -466,16 +486,21 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun sharedSubscriptionAvailableDefaults() {
         val actual = ConnectionAcknowledgment()
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(5u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.sharedSubscriptionAvailable, true)
     }
 
     @Test
     fun sharedSubscriptionAvailable() {
-        val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(sharedSubscriptionAvailable = false)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val actual =
+            ConnectionAcknowledgment(VariableHeader(properties = Properties(sharedSubscriptionAvailable = false)))
+        val buffer = allocateNewBuffer(7u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.sharedSubscriptionAvailable, false)
     }
 
@@ -483,16 +508,14 @@ class ConnectionAcknowledgmentTests {
     fun sharedSubscriptionAvailableMultipleTimesThrowsProtocolError() {
         val obj1 = SharedSubscriptionAvailable(true)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(5u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -501,8 +524,10 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun serverKeepAlive() {
         val actual = ConnectionAcknowledgment(VariableHeader(properties = Properties(serverKeepAlive = 5)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+        val buffer = allocateNewBuffer(8u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.sharedSubscriptionAvailable, true)
     }
 
@@ -510,16 +535,14 @@ class ConnectionAcknowledgmentTests {
     fun serverKeepAliveMultipleTimesThrowsProtocolError() {
         val obj1 = ServerKeepAlive(5)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(7u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -528,9 +551,12 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun responseInformation() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(responseInformation = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+            VariableHeader(properties = Properties(responseInformation = MqttUtf8String("yolo")))
+        )
+        val buffer = allocateNewBuffer(12u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.responseInformation, MqttUtf8String("yolo"))
     }
 
@@ -538,16 +564,14 @@ class ConnectionAcknowledgmentTests {
     fun responseInformationMultipleTimesThrowsProtocolError() {
         val obj1 = ResponseInformation(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -556,9 +580,12 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun serverReference() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(serverReference = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
+            VariableHeader(properties = Properties(serverReference = MqttUtf8String("yolo")))
+        )
+        val buffer = allocateNewBuffer(12u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.serverReference, MqttUtf8String("yolo"))
     }
 
@@ -566,16 +593,14 @@ class ConnectionAcknowledgmentTests {
     fun serverReferenceMultipleTimesThrowsProtocolError() {
         val obj1 = ServerReference(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -585,11 +610,18 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun authenticationMethodAndData() {
         val actual = ConnectionAcknowledgment(
-                VariableHeader(properties = Properties(authentication =
-                Authentication(MqttUtf8String("yolo"), ByteArrayWrapper("yolo".toByteArray())))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.authentication?.method?.getValueOrThrow(), "yolo")
+            VariableHeader(
+                properties = Properties(
+                    authentication =
+                    Authentication(MqttUtf8String("yolo"), ByteArrayWrapper("yolo".toByteArray()))
+                )
+            )
+        )
+        val buffer = allocateNewBuffer(19u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
+        assertEquals(expected.header.properties.authentication?.method?.getValueOrThrow().toString(), "yolo")
         assertEquals(expected.header.properties.authentication?.data, ByteArrayWrapper("yolo".toByteArray()))
     }
 
@@ -597,16 +629,14 @@ class ConnectionAcknowledgmentTests {
     fun authenticationMethodMultipleTimesThrowsProtocolError() {
         val obj1 = AuthenticationMethod(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -616,16 +646,14 @@ class ConnectionAcknowledgmentTests {
     fun authenticationDataMultipleTimesThrowsProtocolError() {
         val obj1 = AuthenticationData(ByteArrayWrapper("yolo".toByteArray()))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        val size = obj1.size(buffer) + obj2.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -643,12 +671,12 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun connectionReasonByteOnVariableHeaderIsInvalidThrowsMalformedPacketException() {
-        val buffer = buildPacket {
-            writeByte(1)
-            writeUByte(SERVER_SHUTTING_DOWN.byte)
-        }
+        val buffer = allocateNewBuffer(2u, limits)
+        buffer.write(1)
+        buffer.write(SERVER_SHUTTING_DOWN.byte)
+        buffer.resetForRead()
         try {
-            VariableHeader.from(buffer)
+            VariableHeader.from(buffer, 2u)
             fail()
         } catch (e: MalformedPacketException) {
         }
