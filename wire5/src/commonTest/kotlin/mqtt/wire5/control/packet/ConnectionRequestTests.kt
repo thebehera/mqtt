@@ -405,16 +405,6 @@ class ConnectionRequestTests {
     }
 
     @Test
-    fun variableHeaderConnectFlagsByte8HasWillFlagThrowWarning() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
-        try {
-            connectionRequest.serialize()
-            fail("should of thrown an exception since the default is to throw on warnings")
-        } catch (e: MqttWarning) {
-        }
-    }
-
-    @Test
     fun variableHeaderConnectFlagsByte8HasWillFlag() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
         val byteReader = connectionRequest.serialize(throwOnWarning = false).copy()
