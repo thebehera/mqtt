@@ -22,12 +22,13 @@ import kotlin.test.fail
 class DisconnectTests {
     @Test
     fun sessionExpiryInterval() {
-        val actual = DisconnectNotification(VariableHeader(properties = Properties(4)))
+        val expected = DisconnectNotification(VariableHeader(properties = Properties(4)))
         val buffer = allocateNewBuffer(9u, limits)
-        actual.serialize(buffer)
+        expected.serialize(buffer)
         buffer.resetForRead()
-        val expected = ControlPacketV5.from(buffer) as DisconnectNotification
-        assertEquals(expected.variable.properties.sessionExpiryIntervalSeconds, 4)
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(4, actual.variable.properties.sessionExpiryIntervalSeconds)
+        assertEquals(expected, actual)
     }
 
     @Test
