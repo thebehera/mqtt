@@ -10,6 +10,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IConnectionAcknowledgment
@@ -39,9 +40,14 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
 
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = header.packet()
-    @IgnoredOnParcel override val isSuccessful: Boolean = header.connectReason == SUCCESS
-    @IgnoredOnParcel override val connectionReason: String = header.connectReason.name
-    @IgnoredOnParcel override val sessionPresent: Boolean = header.sessionPresent
+    @IgnoredOnParcel
+    override val isSuccessful: Boolean = header.connectReason == SUCCESS
+    @IgnoredOnParcel
+    override val connectionReason: String = header.connectReason.name
+    @IgnoredOnParcel
+    override val sessionPresent: Boolean = header.sessionPresent
+    override fun variableHeader(writeBuffer: WriteBuffer) = header.serialize(writeBuffer)
+
     /**
      * The Variable Header of the CONNACK Packet contains the following fields in the order: Connect Acknowledge Flags,
      * Connect Reason Code, and Properties. The rules for encoding Properties are described in section 2.2.2.
@@ -451,6 +457,79 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 }
             }
 
+            fun buildProps(writeBuffer: WriteBuffer): List<Property> {
+                val props = ArrayList<Property>(16 + userProperty.size)
+                if (sessionExpiryIntervalSeconds != null) {
+                    props += SessionExpiryInterval(sessionExpiryIntervalSeconds)
+                }
+                if (receiveMaximum != UShort.MAX_VALUE.toInt()) {
+                    props += ReceiveMaximum(receiveMaximum)
+                }
+                if (maximumQos != QualityOfService.EXACTLY_ONCE) {
+                    props += MaximumQos(maximumQos)
+                }
+                if (!retainAvailable) {
+                    props += RetainAvailable(retainAvailable)
+                }
+                if (maximumPacketSize != null) {
+                    props += MaximumPacketSize(maximumPacketSize)
+                }
+                if (assignedClientIdentifier != null) {
+                    props += AssignedClientIdentifier(assignedClientIdentifier)
+                }
+                if (topicAliasMaximum != 0) {
+                    props += TopicAliasMaximum(topicAliasMaximum)
+                }
+                if (reasonString != null) {
+                    props += ReasonString(reasonString)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        props += UserProperty(key, value)
+                    }
+                }
+                if (!supportsWildcardSubscriptions) {
+                    props += WildcardSubscriptionAvailable(supportsWildcardSubscriptions)
+                }
+                if (!subscriptionIdentifiersAvailable) {
+                    props += SubscriptionIdentifierAvailable(subscriptionIdentifiersAvailable)
+                }
+                if (!sharedSubscriptionAvailable) {
+                    props += SharedSubscriptionAvailable(sharedSubscriptionAvailable)
+                }
+                if (serverKeepAlive != null) {
+                    props += ServerKeepAlive(serverKeepAlive)
+                }
+                if (responseInformation != null) {
+                    props += ResponseInformation(responseInformation)
+                }
+                if (serverReference != null) {
+                    props += ServerReference(serverReference)
+                }
+                if (authentication != null) {
+                    props += AuthenticationMethod(authentication.method)
+                    props += AuthenticationData(authentication.data)
+                }
+                return props
+            }
+
+            fun serialize(writeBuffer: WriteBuffer) {
+                val props = buildProps(writeBuffer)
+                var size = 0u
+                props.forEach { size += it.size(writeBuffer) }
+                writeBuffer.writeVariableByteInteger(size)
+                props.forEach { it.write(writeBuffer) }
+            }
+
+            fun size(writeBuffer: WriteBuffer): UInt {
+                val props = buildProps(writeBuffer)
+                var size = 0u
+                props.forEach { size += it.size(writeBuffer) }
+                return size + writeBuffer.variableByteIntegerSize(size)
+            }
+
             @Parcelize
             data class Authentication(
                 /**
@@ -656,6 +735,15 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 writePacket(properties.packet(sendDefaults))
             }
         }
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.write((if (sessionPresent) 0b1 else 0b0).toByte())
+            writeBuffer.write(connectReason.byte)
+            properties.serialize(writeBuffer)
+        }
+
+        fun size(writeBuffer: WriteBuffer) = 2u + properties.size(writeBuffer)
+
 
         companion object {
             fun from(buffer: ByteReadPacket): VariableHeader {

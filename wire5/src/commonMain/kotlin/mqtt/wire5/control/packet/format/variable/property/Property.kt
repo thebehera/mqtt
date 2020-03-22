@@ -233,16 +233,13 @@ fun ByteReadPacket.readPropertiesLegacy(): Collection<Property>? {
 fun ReadBuffer.readProperties() = readPropertiesSized().second
 
 fun ReadBuffer.readPropertiesSized(): Pair<UInt, Collection<Property>?> {
-    println("properties $this")
     val propertyLength = readVariableByteInteger()
-    println("prop left $propertyLength $this")
     val list = mutableListOf<Property>()
     var totalBytesRead = 0L
     while (totalBytesRead < propertyLength.toInt()) {
         val (property, bytesRead) = readMqttProperty()
         totalBytesRead += bytesRead
         list += property
-        println("read prop $property $totalBytesRead $propertyLength $this")
     }
     return Pair(propertyLength, if (list.isEmpty()) null else list)
 }

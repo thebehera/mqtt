@@ -18,13 +18,9 @@ data class UserProperty(val key: MqttUtf8String, val value: MqttUtf8String) : Pr
     }
 
     override fun write(buffer: WriteBuffer): UInt {
-        println("write props $buffer")
         buffer.write(identifierByte)
-        println("wrote $identifierByte $buffer")
         buffer.writeUtf8String(key.value)
-        println("wrote ${key.value} $buffer")
         buffer.writeUtf8String(value.value)
-        println("done  ${value.value}  $buffer")
         return size(buffer)
     }
 

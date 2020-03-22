@@ -27,14 +27,11 @@ interface ReadBuffer {
                 multiplier *= 128
             } while ((digit and 0x80.toByte()).toInt() != 0)
         } catch (e: Exception) {
-            println("exc $e")
             throw MalformedInvalidVariableByteInteger(value.toUInt())
         }
         if (value < 0 || value > VARIABLE_BYTE_INT_MAX.toLong()) {
-            println("out of range")
             throw MalformedInvalidVariableByteInteger(value.toUInt())
         }
-        println("read variable byte int $value")
         return value.toUInt()
     }
 
