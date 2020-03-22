@@ -6,6 +6,7 @@ import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.writeFully
 import kotlinx.io.core.writeUByte
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.*
@@ -22,8 +23,10 @@ class DisconnectTests {
     @Test
     fun sessionExpiryInterval() {
         val actual = DisconnectNotification(VariableHeader(properties = Properties(4)))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as DisconnectNotification
+        val buffer = allocateNewBuffer(9u, limits)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(expected.variable.properties.sessionExpiryIntervalSeconds, 4)
     }
 
