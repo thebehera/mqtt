@@ -35,16 +35,13 @@ class DisconnectTests {
     fun sessionExpiryIntervalMultipleTimesThrowsProtocolError() {
         val obj1 = SessionExpiryInterval(4)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(11u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            Properties.from(props.readPropertiesLegacy())
+            Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -54,10 +51,13 @@ class DisconnectTests {
     fun reasonString() {
         val props = Properties(reasonString = MqttUtf8String("yolo"))
         val header = VariableHeader(NORMAL_DISCONNECTION, properties = props)
-        val actual = DisconnectNotification(header)
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as DisconnectNotification
+        val expected = DisconnectNotification(header)
+        val buffer = allocateNewBuffer(11u, limits)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected, actual)
     }
 
     @Test
@@ -113,10 +113,14 @@ class DisconnectTests {
 
     @Test
     fun serverReference() {
-        val actual = DisconnectNotification(
-                VariableHeader(properties = Properties(serverReference = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as DisconnectNotification
+        val expected = DisconnectNotification(
+            VariableHeader(properties = Properties(serverReference = MqttUtf8String("yolo")))
+        )
+        val buffer = allocateNewBuffer(11u, limits)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(expected, actual)
         assertEquals(expected.variable.properties.serverReference, MqttUtf8String("yolo"))
     }
 
@@ -151,52 +155,75 @@ class DisconnectTests {
 
     @Test
     fun serializeDeserializeDefaults() {
-        val disconnect = DisconnectNotification(VariableHeader())
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
-        assertEquals(deserialized.variable.reasonCode, NORMAL_DISCONNECTION)
-        assertEquals(disconnect, deserialized)
+        val disconnect = DisconnectNotification()
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(disconnect.variable.reasonCode, NORMAL_DISCONNECTION)
+        assertEquals(disconnect, actual)
     }
 
     @Test
     fun serializeDeserializeNormalDisconnection() {
         val disconnect = DisconnectNotification(VariableHeader(NORMAL_DISCONNECTION))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
-        assertEquals(deserialized.variable.reasonCode, NORMAL_DISCONNECTION)
-        assertEquals(disconnect, deserialized)
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(actual.variable.reasonCode, NORMAL_DISCONNECTION)
+        assertEquals(disconnect, actual)
     }
 
     @Test
     fun serializeDeserializeDisconnectWithWillMessage() {
         val reason = DISCONNECT_WITH_WILL_MESSAGE
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
-        assertEquals(deserialized.variable.reasonCode, reason)
-        assertEquals(disconnect, deserialized)
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(actual.variable.reasonCode, reason)
+        assertEquals(disconnect, actual)
     }
 
     @Test
     fun serializeDeserializeUnspecifiedError() {
         val reason = UNSPECIFIED_ERROR
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
-        assertEquals(deserialized.variable.reasonCode, reason)
-        assertEquals(disconnect, deserialized)
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(disconnect, actual)
+        assertEquals(disconnect.variable.reasonCode, reason)
     }
 
     @Test
     fun serializeDeserializeMalformedPacket() {
         val reason = MALFORMED_PACKET
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
-        assertEquals(deserialized.variable.reasonCode, reason)
-        assertEquals(disconnect, deserialized)
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+        assertEquals(actual.variable.reasonCode, reason)
+        assertEquals(disconnect, actual)
     }
 
     @Test
     fun serializeDeserializeProtocolError() {
         val reason = PROTOCOL_ERROR
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -205,7 +232,11 @@ class DisconnectTests {
     fun serializeDeserializeImplementationSpecificError() {
         val reason = IMPLEMENTATION_SPECIFIC_ERROR
         val disconnect = DisconnectNotification(VariableHeader(IMPLEMENTATION_SPECIFIC_ERROR))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -214,7 +245,11 @@ class DisconnectTests {
     fun serializeDeserializeNotAuthorized() {
         val reason = NOT_AUTHORIZED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -223,7 +258,11 @@ class DisconnectTests {
     fun serializeDeserializeServerBusy() {
         val reason = SERVER_BUSY
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -232,7 +271,11 @@ class DisconnectTests {
     fun serializeDeserializeServerShuttingDown() {
         val reason = SERVER_SHUTTING_DOWN
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -241,7 +284,11 @@ class DisconnectTests {
     fun serializeDeserializeKeepAliveTimeout() {
         val reason = KEEP_ALIVE_TIMEOUT
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -250,7 +297,11 @@ class DisconnectTests {
     fun serializeDeserializeSessionTakeOver() {
         val reason = SESSION_TAKE_OVER
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -259,7 +310,11 @@ class DisconnectTests {
     fun serializeDeserializeTopicFilterInvalid() {
         val reason = TOPIC_FILTER_INVALID
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -268,7 +323,11 @@ class DisconnectTests {
     fun serializeDeserializeTopicNameInvalid() {
         val reason = TOPIC_NAME_INVALID
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -277,7 +336,11 @@ class DisconnectTests {
     fun serializeDeserializeReceiveMaximumExceeded() {
         val reason = RECEIVE_MAXIMUM_EXCEEDED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -286,7 +349,11 @@ class DisconnectTests {
     fun serializeDeserializeTopicAliasInvalid() {
         val reason = TOPIC_ALIAS_INVALID
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -295,7 +362,11 @@ class DisconnectTests {
     fun serializeDeserializePacketTooLarge() {
         val reason = PACKET_TOO_LARGE
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -304,7 +375,11 @@ class DisconnectTests {
     fun serializeDeserializeMessageRateTooHigh() {
         val reason = MESSAGE_RATE_TOO_HIGH
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -313,7 +388,11 @@ class DisconnectTests {
     fun serializeDeserializeQuotaExceeded() {
         val reason = QUOTA_EXCEEDED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -322,7 +401,11 @@ class DisconnectTests {
     fun serializeDeserializeAdministrativeAction() {
         val reason = ADMINISTRATIVE_ACTION
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -331,7 +414,11 @@ class DisconnectTests {
     fun serializeDeserializePayloadFormatInvalid() {
         val reason = PAYLOAD_FORMAT_INVALID
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -341,7 +428,11 @@ class DisconnectTests {
     fun serializeDeserializeRetainNotSupported() {
         val reason = RETAIN_NOT_SUPPORTED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -350,7 +441,11 @@ class DisconnectTests {
     fun serializeDeserializeQosNotSupported() {
         val reason = QOS_NOT_SUPPORTED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -359,7 +454,11 @@ class DisconnectTests {
     fun serializeDeserializeUseAnotherServer() {
         val reason = USE_ANOTHER_SERVER
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -369,7 +468,11 @@ class DisconnectTests {
     fun serializeDeserializeServerMoved() {
         val reason = SERVER_MOVED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -378,7 +481,11 @@ class DisconnectTests {
     fun serializeDeserializeSharedSubscriptionNotSupported() {
         val reason = SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -387,7 +494,11 @@ class DisconnectTests {
     fun serializeDeserializeConnectionRateExceeded() {
         val reason = CONNECTION_RATE_EXCEEDED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -396,7 +507,11 @@ class DisconnectTests {
     fun serializeDeserializeMaximumConnectionTime() {
         val reason = MAXIMUM_CONNECTION_TIME
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -405,7 +520,11 @@ class DisconnectTests {
     fun serializeDeserializeSubscriptionIdentifiersNotSupported() {
         val reason = SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
@@ -414,7 +533,11 @@ class DisconnectTests {
     fun serializeDeserializeWildcardSubscriptionsNotSupported() {
         val reason = WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
         val disconnect = DisconnectNotification(VariableHeader(reason))
-        val deserialized = ControlPacketV5.from(disconnect.serialize()) as DisconnectNotification
+        val buffer = allocateNewBuffer(4u, limits)
+        disconnect.serialize(buffer)
+
+        buffer.resetForRead()
+        val deserialized = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(deserialized.variable.reasonCode, reason)
         assertEquals(disconnect, deserialized)
     }
