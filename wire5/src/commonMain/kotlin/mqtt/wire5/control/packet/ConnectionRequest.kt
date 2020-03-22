@@ -7,6 +7,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
@@ -56,11 +57,13 @@ data class ConnectionRequest(
     @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
     @IgnoredOnParcel override val variableHeaderPacket = variableHeader.packet()
+    override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     @IgnoredOnParcel override val cleanStart: Boolean = variableHeader.cleanStart
     @IgnoredOnParcel override val username = payload.userName?.getValueOrThrow()
     @IgnoredOnParcel override val protocolName = variableHeader.protocolName.getValueOrThrow()
     @IgnoredOnParcel override val protocolVersion = variableHeader.protocolVersion.toInt()
     override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
+    override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
         if (variableHeader.willFlag &&
@@ -630,6 +633,52 @@ data class ConnectionRequest(
                 result
             }
 
+            val props by lazy {
+                val userPropertyCount = userProperty?.count() ?: 0
+                val list = ArrayList<Property>(8 + userPropertyCount)
+                if (sessionExpiryIntervalSeconds != null) {
+                    list += SessionExpiryInterval(sessionExpiryIntervalSeconds)
+                }
+                if (receiveMaximum != null) {
+                    list += ReceiveMaximum(receiveMaximum)
+                }
+                if (maximumPacketSize != null) {
+                    list += MaximumPacketSize(maximumPacketSize)
+                }
+                if (topicAliasMaximum != null) {
+                    list += TopicAliasMaximum(topicAliasMaximum)
+                }
+                if (requestResponseInformation != null) {
+                    list += RequestResponseInformation(requestResponseInformation)
+                }
+                if (requestProblemInformation != null) {
+                    list += RequestProblemInformation(requestProblemInformation)
+                }
+                if (userProperty != null && userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        list += UserProperty(key, value)
+                    }
+                }
+                if (authentication != null) {
+                    list += AuthenticationMethod(authentication.method)
+                    list += AuthenticationData(authentication.data)
+                }
+                list
+            }
+
+            fun size(writeBuffer: WriteBuffer): UInt {
+                var size = 0.toUInt()
+                props.forEach { size += it.size(writeBuffer) }
+                return size
+            }
+
+            fun serialize(writeBuffer: WriteBuffer) {
+                writeBuffer.writeVariableByteInteger(size(writeBuffer))
+                props.forEach { it.write(writeBuffer) }
+            }
+
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var sessionExpiryIntervalSeconds: Long? = null
@@ -758,6 +807,23 @@ data class ConnectionRequest(
                 if (protocolVersion > 4) {
                     writePacket(properties.packet)
                 }
+            }
+        }
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            val usernameFlag = if (hasUserName) 0b10000000 else 0
+            val passwordFlag = if (hasPassword) 0b1000000 else 0
+            val wRetain = if (willRetain) 0b100000 else 0
+            val qos = willQos.integerValue.toInt().shl(3)
+            val wFlag = if (willFlag) 0b100 else 0
+            val cleanStart = if (cleanStart) 0b10 else 0
+            val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
+            writeBuffer.writeUtf8String(protocolName.value)
+            writeBuffer.write(protocolVersion.toUByte())
+            writeBuffer.write(flags)
+            writeBuffer.write(keepAliveSeconds.toUShort())
+            if (protocolVersion > 4) {
+                properties.serialize(writeBuffer)
             }
         }
 
@@ -1095,6 +1161,47 @@ data class ConnectionRequest(
                 }
             }
 
+            val props by lazy {
+                val properties = ArrayList<Property>(6 + userProperty.count())
+                if (willDelayIntervalSeconds != 0L) {
+                    properties += WillDelayInterval(willDelayIntervalSeconds)
+                }
+                if (payloadFormatIndicator) {
+                    properties += PayloadFormatIndicator(payloadFormatIndicator)
+                }
+                if (messageExpiryIntervalSeconds != null) {
+                    properties += MessageExpiryInterval(messageExpiryIntervalSeconds)
+                }
+                if (contentType != null) {
+                    properties += ContentType(contentType)
+                }
+                if (responseTopic != null) {
+                    properties += ResponseTopic(responseTopic)
+                }
+                if (correlationData != null) {
+                    properties += CorrelationData(correlationData)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        properties += UserProperty(key, value)
+                    }
+                }
+                properties
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0.toUInt()
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                buffer.writeVariableByteInteger(size(buffer))
+                props.forEach { it.write(buffer) }
+            }
+
             companion object {
                 fun from(buffer: ByteReadPacket): WillProperties {
                     var willDelayIntervalSeconds: Long? = null
@@ -1269,6 +1376,25 @@ data class ConnectionRequest(
                 if (password != null) {
                     writeMqttUtf8String(password)
                 }
+            }
+        }
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.writeUtf8String(clientId.value)
+            willProperties?.serialize(writeBuffer)
+            if (willTopic != null) {
+                writeBuffer.writeUtf8String(willTopic.value)
+            }
+            if (willPayload != null) {
+                val payload = willPayload.byteArray
+                writeBuffer.write(payload.size.toUShort())
+                writeBuffer.write(payload)
+            }
+            if (userName != null) {
+                writeBuffer.writeUtf8String(userName.value)
+            }
+            if (password != null) {
+                writeBuffer.writeUtf8String(password.value)
             }
         }
 
