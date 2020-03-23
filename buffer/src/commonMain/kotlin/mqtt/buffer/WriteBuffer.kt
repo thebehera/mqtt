@@ -42,12 +42,8 @@ interface WriteBuffer {
         var numBytes = 0
         var no = uInt.toLong()
         do {
-            var digit = (no % 128).toByte()
+            (no % 128).toByte()
             no /= 128
-            if (no > 0) {
-                digit = digit or 0x80.toByte()
-            }
-            write(digit)
             numBytes++
         } while (no > 0 && numBytes < 4)
         return numBytes.toUInt()
