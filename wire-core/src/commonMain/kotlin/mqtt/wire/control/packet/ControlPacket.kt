@@ -43,7 +43,7 @@ interface ControlPacket : Parcelable {
     val payloadPacketSize: UInt get() = payloadPacket(false)?.remaining?.toUInt() ?: 0.toUInt()
     fun payloadPacket(sendDefaults: Boolean = false): ByteReadPacket? = null
     fun payload(writeBuffer: WriteBuffer) {}
-    private fun remainingLength(): UInt {
+    fun remainingLength(): UInt {
         val variableHeaderSize = variableHeaderPacket?.copy()?.remaining?.toUInt() ?: 0.toUInt()
         return variableHeaderSize + payloadPacketSize
     }

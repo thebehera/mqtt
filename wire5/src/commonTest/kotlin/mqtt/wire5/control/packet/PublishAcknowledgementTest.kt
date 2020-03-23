@@ -1,10 +1,11 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
 import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.writeFully
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.data.MqttUtf8String
@@ -23,80 +24,108 @@ class PublishAcknowledgementTest {
     @Test
     fun packetIdentifier() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(4u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b01000000, buffer.readUnsignedByte().toInt(), "fixed header invalid byte 1, packet identifier")
+        assertEquals(2u, buffer.readVariableByteInteger(), "fixed header invalid byte 2, remaining length")
+        assertEquals(
+            packetIdentifier.toUShort(),
+            buffer.readUnsignedShort(),
+            "variable header invalid byte 3-4, packet identifier"
+        )
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
     }
 
     @Test
     fun packetIdentifierSendDefaults() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier))
-        val data = puback.serialize(true)
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(4u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
     }
 
     @Test
     fun noMatchingSubscribers() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, NO_MATCHING_SUBSCRIBERS))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, NO_MATCHING_SUBSCRIBERS)
     }
 
     @Test
     fun unspecifiedError() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, UNSPECIFIED_ERROR))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, UNSPECIFIED_ERROR)
     }
 
     @Test
     fun implementationSpecificError() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, IMPLEMENTATION_SPECIFIC_ERROR))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, IMPLEMENTATION_SPECIFIC_ERROR)
     }
 
     @Test
     fun notAuthorized() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, NOT_AUTHORIZED))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, NOT_AUTHORIZED)
     }
 
     @Test
     fun topicNameInvalid() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, TOPIC_NAME_INVALID))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, TOPIC_NAME_INVALID)
     }
 
     @Test
     fun packetIdentifierInUse() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, PACKET_IDENTIFIER_IN_USE))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, PACKET_IDENTIFIER_IN_USE)
     }
 
     @Test
     fun quotaExceeded() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, QUOTA_EXCEEDED))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, QUOTA_EXCEEDED)
     }
 
     @Test
     fun payloadFormatInvalid() {
         val puback = PublishAcknowledgment(VariableHeader(packetIdentifier, PAYLOAD_FORMAT_INVALID))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishAcknowledgment
+        val buffer = allocateNewBuffer(6u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(pubackResult.variable.reasonCode, PAYLOAD_FORMAT_INVALID)
     }
 
@@ -112,10 +141,18 @@ class PublishAcknowledgementTest {
 
     @Test
     fun reasonString() {
-        val actual = PublishAcknowledgment(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as PublishAcknowledgment
+        val expected = PublishAcknowledgment(
+            VariableHeader(
+                packetIdentifier,
+                properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+            )
+        )
+        val buffer = allocateNewBuffer(13u, limits)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected, actual)
     }
 
     @Test
