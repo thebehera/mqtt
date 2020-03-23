@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet.format.variable.property
 
@@ -155,8 +155,7 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
 
 
 fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
-    val byte = readByte().toInt()
-    val property = when (byte) {
+    val property = when (readByte().toInt()) {
         0x01 -> {
             PayloadFormatIndicator(readByte() == 1.toByte())
         }
@@ -241,5 +240,5 @@ fun ReadBuffer.readPropertiesSized(): Pair<UInt, Collection<Property>?> {
         totalBytesRead += bytesRead
         list += property
     }
-    return Pair(propertyLength, if (list.isEmpty()) null else list)
+    return Pair(variableByteSize(propertyLength).toUInt(), if (list.isEmpty()) null else list)
 }

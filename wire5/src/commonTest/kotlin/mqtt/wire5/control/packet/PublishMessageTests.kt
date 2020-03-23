@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -6,6 +6,7 @@ import kotlinx.io.core.buildPacket
 import kotlinx.io.core.readBytes
 import kotlinx.io.core.toByteArray
 import kotlinx.io.core.writeFully
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.ByteArrayWrapper
@@ -20,15 +21,32 @@ import kotlin.test.*
 class PublishMessageTests {
 
     @Test
+    fun serialize() {
+        val buffer = allocateNewBuffer(7u, limits)
+        val expected = PublishMessage("", QualityOfService.AT_LEAST_ONCE, 1u)
+        expected.serialize(buffer)
+        println(buffer)
+        buffer.resetForRead()
+        assertEquals(0b00110010, buffer.readByte(), "fixed header byte 1")
+        assertEquals(5u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        assertEquals("", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        assertEquals(1u, buffer.readUnsignedShort(), "packet identifier")
+        assertEquals(0, buffer.readProperties()?.count() ?: 0, "properties")
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as PublishMessage
+        assertEquals(expected, actual)
+    }
+
+    @Test
     fun qosBothBitsSetTo1ThrowsMalformedPacketException() {
         val byte1 = 0b00111110.toByte()
-        val remainingLength = 1.toByte()
-        val packet = buildPacket {
-            writeByte(byte1)
-            writeByte(remainingLength)
-        }
+        val remainingLength = 1u
+        val buffer = allocateNewBuffer(2u, limits)
+        buffer.write(byte1)
+        buffer.writeVariableByteInteger(remainingLength)
+        buffer.resetForRead()
         try {
-            ControlPacketV5.from(packet)
+            ControlPacketV5.from(buffer)
             fail()
         } catch (e: MalformedPacketException) {
         }
