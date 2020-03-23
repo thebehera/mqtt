@@ -10,6 +10,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IDisconnectNotification
@@ -36,6 +37,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
     ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL), IDisconnectNotification {
     @IgnoredOnParcel
     override val variableHeaderPacket = variable.packet
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     @Parcelize
     data class VariableHeader(
@@ -47,11 +49,17 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
             getDisconnectCode(reasonCode.byte)
         }
 
-        @IgnoredOnParcel val packet by lazy {
+        @IgnoredOnParcel
+        val packet by lazy {
             buildPacket {
                 writeUByte(reasonCode.byte)
                 writePacket(properties.packet)
             }
+        }
+
+        fun serialize(buffer: WriteBuffer) {
+            buffer.write(reasonCode.byte)
+            properties.serialize(buffer)
         }
 
         @Parcelize
@@ -139,6 +147,38 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
                     writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
                     writePacket(propertiesPacket)
                 }
+            }
+
+            val props by lazy {
+                val list = ArrayList<Property>(3 + userProperty.count())
+                if (sessionExpiryIntervalSeconds != null) {
+                    list += SessionExpiryInterval(sessionExpiryIntervalSeconds)
+                }
+                if (reasonString != null) {
+                    list += ReasonString(reasonString)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        list += UserProperty(key, value)
+                    }
+                }
+                if (serverReference != null) {
+                    list += ServerReference(serverReference)
+                }
+                list
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0.toUInt()
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                buffer.writeVariableByteInteger(size(buffer))
+                props.forEach { it.write(buffer) }
             }
 
             companion object {

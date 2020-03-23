@@ -457,7 +457,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 }
             }
 
-            fun buildProps(writeBuffer: WriteBuffer): List<Property> {
+            val props by lazy {
                 val props = ArrayList<Property>(16 + userProperty.size)
                 if (sessionExpiryIntervalSeconds != null) {
                     props += SessionExpiryInterval(sessionExpiryIntervalSeconds)
@@ -512,11 +512,10 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     props += AuthenticationMethod(authentication.method)
                     props += AuthenticationData(authentication.data)
                 }
-                return props
+                props
             }
 
             fun serialize(writeBuffer: WriteBuffer) {
-                val props = buildProps(writeBuffer)
                 var size = 0u
                 props.forEach { size += it.size(writeBuffer) }
                 writeBuffer.writeVariableByteInteger(size)
@@ -524,7 +523,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
             }
 
             fun size(writeBuffer: WriteBuffer): UInt {
-                val props = buildProps(writeBuffer)
                 var size = 0u
                 props.forEach { size += it.size(writeBuffer) }
                 return size + writeBuffer.variableByteIntegerSize(size)

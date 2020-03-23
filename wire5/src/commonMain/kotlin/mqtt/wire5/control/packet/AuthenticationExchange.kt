@@ -133,7 +133,6 @@ data class AuthenticationExchange(val variable: VariableHeader)
                 authData?.write(writeBuffer)
                 authReasonString?.write(writeBuffer)
                 props.forEach {
-                    println(it)
                     it.write(writeBuffer)
                 }
             }

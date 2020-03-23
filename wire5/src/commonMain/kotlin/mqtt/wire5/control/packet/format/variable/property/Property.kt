@@ -176,7 +176,7 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
         0x15 -> AuthenticationMethod(MqttUtf8String(readMqttUtf8StringNotValidated()))
         0x16 -> AuthenticationData(ByteArrayWrapper(readByteArray(readUnsignedShort().toUInt())))
         0x17 -> {
-            val uByteAsInt = readUnsignedInt().toInt()
+            val uByteAsInt = readByte().toInt()
             if (!(uByteAsInt == 0 || uByteAsInt == 1)) {
                 throw ProtocolError(
                     "Request Problem Information cannot have a value other than 0 or 1" +
