@@ -175,7 +175,6 @@ data class PublishComplete(val variable: VariableHeader) :
 
             fun serialize(buffer: WriteBuffer) {
                 buffer.writeVariableByteInteger(size(buffer))
-                println("write ${size(buffer)}")
                 props.forEach { it.write(buffer) }
             }
 

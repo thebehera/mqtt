@@ -25,7 +25,6 @@ class PublishMessageTests {
         val buffer = allocateNewBuffer(7u, limits)
         val expected = PublishMessage("", QualityOfService.AT_LEAST_ONCE, 1u)
         expected.serialize(buffer)
-        println(buffer)
         buffer.resetForRead()
         assertEquals(0b00110010, buffer.readByte(), "fixed header byte 1")
         assertEquals(5u, buffer.readVariableByteInteger(), "fixed header remaining length")
@@ -54,10 +53,16 @@ class PublishMessageTests {
 
     @Test
     fun payloadFormatIndicatorDefault() {
-        val props = VariableHeader.Properties()
-        val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
+        val buffer = allocateNewBuffer(6u, limits)
+        val expected = PublishMessage(variable = VariableHeader("t"))
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
+        assertEquals(4u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        assertEquals(0, buffer.readProperties()?.count() ?: 0, "properties")
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
         assertFalse(publish.variable.properties.payloadFormatIndicator)
     }
 
