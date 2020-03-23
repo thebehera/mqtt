@@ -2,18 +2,14 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
-import kotlinx.io.core.writeFully
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.PublishAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
+import mqtt.wire5.control.packet.format.variable.property.readProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -159,16 +155,13 @@ class PublishAcknowledgementTest {
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            DisconnectNotification.VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -185,11 +178,14 @@ class PublishAcknowledgementTest {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = PublishAcknowledgment(VariableHeader(packetIdentifier, properties = props)).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as PublishAcknowledgment
+        val request = PublishAcknowledgment(VariableHeader(packetIdentifier, properties = props))
+        val buffer = allocateNewBuffer(19u, limits)
+        request.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as PublishAcknowledgment
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals(key.getValueOrThrow().toString(), "key")
+        assertEquals(value.getValueOrThrow().toString(), "value")
     }
 
 }
