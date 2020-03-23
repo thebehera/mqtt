@@ -1,19 +1,16 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
-import kotlinx.io.core.writeFully
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
 import mqtt.wire.control.packet.format.ReasonCode.RECEIVE_MAXIMUM_EXCEEDED
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.PublishComplete.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
+import mqtt.wire5.control.packet.format.variable.property.readProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
@@ -23,26 +20,32 @@ class PublishCompleteTests {
 
     @Test
     fun packetIdentifier() {
-        val puback = PublishComplete(VariableHeader(packetIdentifier))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishComplete
-        assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
+        val pubcomp = PublishComplete(VariableHeader(packetIdentifier))
+        val buffer = allocateNewBuffer(4u, limits)
+        pubcomp.serialize(buffer)
+        buffer.resetForRead()
+        val pubcompResult = ControlPacketV5.from(buffer) as PublishComplete
+        assertEquals(pubcompResult.variable.packetIdentifier, packetIdentifier)
     }
 
     @Test
     fun packetIdentifierSendDefaults() {
-        val puback = PublishComplete(VariableHeader(packetIdentifier))
-        val data = puback.serialize(true)
-        val pubackResult = ControlPacketV5.from(data) as PublishComplete
-        assertEquals(pubackResult.variable.packetIdentifier, packetIdentifier)
+        val pubcomp = PublishComplete(VariableHeader(packetIdentifier))
+        val buffer = allocateNewBuffer(4u, limits)
+        pubcomp.serialize(buffer)
+        buffer.resetForRead()
+        val pubcompResult = ControlPacketV5.from(buffer) as PublishComplete
+        assertEquals(pubcompResult.variable.packetIdentifier, packetIdentifier)
     }
 
     @Test
     fun noMatchingSubscribers() {
-        val puback = PublishComplete(VariableHeader(packetIdentifier, PACKET_IDENTIFIER_NOT_FOUND))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV5.from(data) as PublishComplete
-        assertEquals(pubackResult.variable.reasonCode, PACKET_IDENTIFIER_NOT_FOUND)
+        val pubcomp = PublishComplete(VariableHeader(packetIdentifier, PACKET_IDENTIFIER_NOT_FOUND))
+        val buffer = allocateNewBuffer(6u, limits)
+        pubcomp.serialize(buffer)
+        buffer.resetForRead()
+        val pubcompResult = ControlPacketV5.from(buffer) as PublishComplete
+        assertEquals(pubcompResult.variable.reasonCode, PACKET_IDENTIFIER_NOT_FOUND)
     }
 
     @Test
@@ -56,26 +59,32 @@ class PublishCompleteTests {
 
     @Test
     fun reasonString() {
-        val actual = PublishComplete(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as PublishComplete
+        val expected = PublishComplete(
+            VariableHeader(
+                packetIdentifier,
+                properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+            )
+        )
+        val buffer = allocateNewBuffer(13u, limits)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        val actual = ControlPacketV5.from(buffer) as PublishComplete
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected, actual)
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(35u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        println(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            DisconnectNotification.VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -92,11 +101,15 @@ class PublishCompleteTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = PublishComplete(VariableHeader(packetIdentifier, properties = props)).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as PublishComplete
+        val buffer = allocateNewBuffer(19u, limits)
+        val request = PublishComplete(VariableHeader(packetIdentifier, properties = props))
+        request.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as PublishComplete
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals(key.getValueOrThrow().toString(), "key")
+        assertEquals(value.getValueOrThrow().toString(), "value")
+        assertEquals(request, requestRead)
     }
 
 }
