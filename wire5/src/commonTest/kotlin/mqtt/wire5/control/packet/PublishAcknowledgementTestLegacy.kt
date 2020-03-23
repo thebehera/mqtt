@@ -17,7 +17,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class PublishAcknowledgementTest {
+class PublishAcknowledgementTestLegacy {
     private val packetIdentifier = 2
 
     @Test
@@ -112,7 +112,12 @@ class PublishAcknowledgementTest {
 
     @Test
     fun reasonString() {
-        val actual = PublishAcknowledgment(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
+        val actual = PublishAcknowledgment(
+            VariableHeader(
+                packetIdentifier,
+                properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+            )
+        )
         val bytes = actual.serialize()
         val expected = ControlPacketV5.from(bytes) as PublishAcknowledgment
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
