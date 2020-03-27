@@ -81,7 +81,6 @@ class PublishCompleteTests {
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
         obj1.write(buffer)
         obj2.write(buffer)
-        println(buffer)
         buffer.resetForRead()
         try {
             DisconnectNotification.VariableHeader.Properties.from(buffer.readProperties())

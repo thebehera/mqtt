@@ -662,10 +662,11 @@ data class PublishMessage(
                 val packetIdentifier = if (isQos0) {
                     null
                 } else {
-                    size += 4u
+                    size += 2u
                     buffer.readUnsignedShort().toInt()
                 }
                 val propertiesSized = buffer.readPropertiesSized()
+                size += 1u
                 size += propertiesSized.first
                 val props = Properties.from(propertiesSized.second)
                 return Pair(size, VariableHeader(topicName.value, packetIdentifier, props))
@@ -684,12 +685,7 @@ data class PublishMessage(
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            val remaining = if (variableHeaderSized.second.packetIdentifier != null) {
-                remainingLength + 2u
-            } else {
-                remainingLength
-            }
-            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remaining - variableHeaderSized.first))
+            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first))
             return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
         }
     }

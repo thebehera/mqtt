@@ -240,5 +240,5 @@ fun ReadBuffer.readPropertiesSized(): Pair<UInt, Collection<Property>?> {
         totalBytesRead += bytesRead
         list += property
     }
-    return Pair(variableByteSize(propertyLength).toUInt(), if (list.isEmpty()) null else list)
+    return Pair(propertyLength, if (list.isEmpty()) null else list)
 }
