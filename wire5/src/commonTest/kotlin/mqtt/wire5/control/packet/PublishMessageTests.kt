@@ -70,7 +70,7 @@ class PublishMessageTests {
     fun payloadFormatIndicatorTrue() {
         val props = VariableHeader.Properties(true)
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(19u, limits)
+        val buffer = allocateNewBuffer(8u, limits)
         val expected = PublishMessage(variable = variableHeader)
         expected.serialize(buffer)
         buffer.resetForRead()
@@ -91,9 +91,19 @@ class PublishMessageTests {
     @Test
     fun payloadFormatIndicatorFalse() {
         val props = VariableHeader.Properties(false)
+        val buffer = allocateNewBuffer(6u, limits)
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
+        val expected = PublishMessage(variable = variableHeader)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
+        assertEquals(4u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        val propertiesActual = buffer.readProperties()
+        assertEquals(0, propertiesActual?.count() ?: 0, "properties")
+        assertNull((propertiesActual?.firstOrNull() as? PayloadFormatIndicator)?.willMessageIsUtf8)
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
         assertFalse(publish.variable.properties.payloadFormatIndicator)
     }
 
@@ -101,16 +111,13 @@ class PublishMessageTests {
     fun payloadFormatIndicatorDuplicateThrowsProtocolError() {
         val obj1 = PayloadFormatIndicator(false)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(5u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -120,8 +127,21 @@ class PublishMessageTests {
     fun messageExpiryInterval() {
         val props = VariableHeader.Properties(messageExpiryInterval = 2)
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
+        val buffer = allocateNewBuffer(11u, limits)
+        val msg = PublishMessage(variable = variableHeader)
+        msg.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
+        assertEquals(9u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        val propertiesActual = buffer.readProperties()
+        assertEquals(1, propertiesActual?.count() ?: 0, "properties")
+        assertEquals(
+            props.messageExpiryInterval,
+            (propertiesActual?.firstOrNull() as? MessageExpiryInterval)?.seconds
+        )
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
         assertEquals(2, publish.variable.properties.messageExpiryInterval)
     }
 
@@ -129,16 +149,13 @@ class PublishMessageTests {
     fun messageExpiryIntervalDuplicateThrowsProtocolError() {
         val obj1 = MessageExpiryInterval(2)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(11u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -148,9 +165,19 @@ class PublishMessageTests {
     fun topicAlias() {
         val props = VariableHeader.Properties(topicAlias = 2)
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals(2, publish.variable.properties.topicAlias)
+        val expected = PublishMessage(variable = variableHeader)
+        val buffer = allocateNewBuffer(9u, limits)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
+        assertEquals(7u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        val propertiesActual = buffer.readProperties()
+        assertEquals(1, propertiesActual?.count() ?: 0, "properties")
+        assertEquals(2, (propertiesActual?.firstOrNull() as? TopicAlias)?.value)
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        assertEquals(expected, publish)
     }
 
 

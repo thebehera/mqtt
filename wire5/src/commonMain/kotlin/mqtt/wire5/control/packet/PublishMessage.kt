@@ -485,7 +485,7 @@ data class PublishMessage(
                     list += PayloadFormatIndicator(payloadFormatIndicator)
                 }
                 if (messageExpiryInterval != null) {
-                    MessageExpiryInterval(messageExpiryInterval)
+                    list += MessageExpiryInterval(messageExpiryInterval)
                 }
                 if (topicAlias != null) {
                     list += TopicAlias(topicAlias)
