@@ -34,7 +34,7 @@ class AuthenticationExchangeTests {
         assertEquals(9u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
         // variable header
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
-        assertEquals(5u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(7u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
         assertEquals("test", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
     }
@@ -132,7 +132,7 @@ class AuthenticationExchangeTests {
         assertEquals(19u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
         // variable header
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
-        assertEquals(15u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(17u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
         assertEquals("2", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
         assertEquals(0x26.toUByte(), buffer.readUnsignedByte(), "user property flag")

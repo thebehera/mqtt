@@ -188,18 +188,9 @@ class PublishMessageTests {
             fail()
         } catch (e: ProtocolError) {
         }
-        val obj1 = TopicAlias(0)
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
-        try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
-            fail()
-        } catch (e: ProtocolError) {
+        assertFails {
+            PublishMessage(variable = VariableHeader(properties = VariableHeader.Properties(topicAlias = 0),
+                topicName = "yolo"))
         }
     }
 
@@ -207,16 +198,13 @@ class PublishMessageTests {
     fun topicAliasDuplicateThrowsProtocolError() {
         val obj1 = TopicAlias(2)
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(7u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -226,25 +214,37 @@ class PublishMessageTests {
     fun responseTopic() {
         val props = VariableHeader.Properties(responseTopic = MqttUtf8String("t/as"))
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals("t/as", publish.variable.properties.responseTopic?.getValueOrThrow())
+        val buffer = allocateNewBuffer(13u, limits)
+        val actual = PublishMessage(variable = variableHeader)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
+        assertEquals(11u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        println("fixed header $buffer")
+        assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        println("start props $buffer")
+        assertEquals(7u, buffer.readVariableByteInteger(), "property length")
+        println("property length $buffer")
+        assertEquals(0x08, buffer.readByte(), "property identifier response topic")
+        println("property identifier response topic $buffer")
+        assertEquals("t/as", buffer.readMqttUtf8StringNotValidated().toString(), "response topic value")
+        println("done $buffer")
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        assertEquals("t/as", publish.variable.properties.responseTopic?.getValueOrThrow().toString())
     }
 
     @Test
     fun responseTopicDuplicateThrowsProtocolError() {
         val obj1 = ResponseTopic(MqttUtf8String("t/as"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -263,16 +263,13 @@ class PublishMessageTests {
     fun correlationDataDuplicateThrowsProtocolError() {
         val obj1 = CorrelationData(ByteArrayWrapper("t/as".toByteArray()))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
+        val buffer = allocateNewBuffer(15u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
         try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
+            VariableHeader.Properties.from(buffer.readProperties())
             fail()
         } catch (e: ProtocolError) {
         }
@@ -334,19 +331,12 @@ class PublishMessageTests {
     fun contentTypeDuplicateThrowsProtocolError() {
         val obj1 = ContentType(MqttUtf8String("t/as"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
-        try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
-            fail()
-        } catch (e: ProtocolError) {
-        }
+        val buffer = allocateNewBuffer(15u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
+        assertFailsWith<ProtocolError> { VariableHeader.Properties.from(buffer.readProperties()) }
     }
 
     @Test

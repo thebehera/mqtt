@@ -521,8 +521,11 @@ data class PublishMessage(
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                val size = size(buffer)
+                buffer.writeVariableByteInteger(size)
+                println("wrote buffer $size $buffer")
                 props.forEach { it.write(buffer) }
+                println("wrote props $props $buffer")
             }
 
             fun packet(sendDefaults: Boolean = false): ByteReadPacket {
@@ -657,7 +660,7 @@ data class PublishMessage(
 
             fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
                 val result = buffer.readMqttUtf8StringNotValidatedSized()
-                var size = result.first + 2u
+                var size = result.first
                 val topicName = MqttUtf8String(result.second)
                 val packetIdentifier = if (isQos0) {
                     null
@@ -684,8 +687,11 @@ data class PublishMessage(
 
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)
+            val fixedHeaderSize = 1u + buffer.variableByteSize(remainingLength)
+            println("fixed read: ${fixedHeaderSize} $buffer")
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first))
+            println("variable header ${variableHeaderSized.first} $buffer ${remainingLength - variableHeaderSized.first- fixedHeaderSize}")
+            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first - fixedHeaderSize))
             return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
         }
     }
