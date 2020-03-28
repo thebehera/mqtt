@@ -68,8 +68,6 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
             }
         }
 
-
-
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
             properties.serialize(writeBuffer)
