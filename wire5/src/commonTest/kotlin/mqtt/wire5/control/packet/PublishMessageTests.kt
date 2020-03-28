@@ -2,17 +2,12 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
-import kotlinx.io.core.toByteArray
-import kotlinx.io.core.writeFully
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.*
@@ -220,15 +215,10 @@ class PublishMessageTests {
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
         assertEquals(11u, buffer.readVariableByteInteger(), "fixed header remaining length")
-        println("fixed header $buffer")
         assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
-        println("start props $buffer")
         assertEquals(7u, buffer.readVariableByteInteger(), "property length")
-        println("property length $buffer")
         assertEquals(0x08, buffer.readByte(), "property identifier response topic")
-        println("property identifier response topic $buffer")
         assertEquals("t/as", buffer.readMqttUtf8StringNotValidated().toString(), "response topic value")
-        println("done $buffer")
         buffer.resetForRead()
         val publish = ControlPacketV5.from(buffer) as PublishMessage
         assertEquals("t/as", publish.variable.properties.responseTopic?.getValueOrThrow().toString())
@@ -252,16 +242,19 @@ class PublishMessageTests {
 
     @Test
     fun correlationData() {
-        val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper("t/as".toByteArray()))
+        val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper(byteArrayOf(1,2,4,5)))
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals(ByteArrayWrapper("t/as".toByteArray()), publish.variable.properties.coorelationData)
+        val buffer = allocateNewBuffer(13u, limits)
+        val actual = PublishMessage(variable = variableHeader)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        assertEquals(ByteArrayWrapper(byteArrayOf(1,2,4,5)), publish.variable.properties.coorelationData)
     }
 
     @Test
     fun correlationDataDuplicateThrowsProtocolError() {
-        val obj1 = CorrelationData(ByteArrayWrapper("t/as".toByteArray()))
+        val obj1 = CorrelationData(ByteArrayWrapper(byteArrayOf(1,2,4,5)))
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
@@ -296,35 +289,35 @@ class PublishMessageTests {
     fun subscriptionIdentifier() {
         val props = VariableHeader.Properties(subscriptionIdentifier = setOf(2))
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
+        val buffer = allocateNewBuffer(8u, limits)
+        val actual = PublishMessage(variable = variableHeader)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
         assertEquals(2, publish.variable.properties.subscriptionIdentifier.first())
     }
 
     @Test
     fun subscriptionIdentifierZeroThrowsProtocolError() {
         val obj1 = SubscriptionIdentifier(0)
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
-        try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
-            fail()
-        } catch (e: ProtocolError) {
-        }
+        val buffer = allocateNewBuffer(6u, limits)
+        val size = obj1.size(buffer)
+        buffer.writeVariableByteInteger(size)
+        obj1.write(buffer)
+        buffer.resetForRead()
+        assertFailsWith<ProtocolError> { VariableHeader.Properties.from(buffer.readProperties()) }
     }
 
     @Test
     fun contentType() {
         val props = VariableHeader.Properties(contentType = MqttUtf8String("t/as"))
         val variableHeader = VariableHeader("t", properties = props)
-        val publishByteReadPacket = PublishMessage(variable = variableHeader).serialize()
-        val publish = ControlPacketV5.from(publishByteReadPacket) as PublishMessage
-        assertEquals("t/as", publish.variable.properties.contentType?.getValueOrThrow())
+        val buffer = allocateNewBuffer(13u, limits)
+        val actual = PublishMessage(variable = variableHeader)
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        assertEquals("t/as", publish.variable.properties.contentType?.getValueOrThrow().toString())
     }
 
     @Test
