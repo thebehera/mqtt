@@ -2,20 +2,17 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
-import kotlinx.io.core.writeFully
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.PublishReceived.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
+import mqtt.wire5.control.packet.format.variable.property.readProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.fail
 
 class PublishReceivedTests {
@@ -190,29 +187,33 @@ class PublishReceivedTests {
 
     @Test
     fun reasonString() {
-        val actual = PublishReceived(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as PublishReceived
+        val expected = PublishReceived(VariableHeader(packetIdentifier, properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))))
+        val buffer = allocateNewBuffer(13u, limits)
+        expected.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals(0b01010000, buffer.readByte(), "fixed header byte1")
+        assertEquals(11u, buffer.readVariableByteInteger(), "fixed header byte2 remaining length")
+        assertEquals(packetIdentifier, buffer.readUnsignedShort().toInt(), "variable header byte 1-2")
+        assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "reason code")
+        assertEquals(7u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(0x1F, buffer.readByte(), "user property identifier")
+        assertEquals("yolo", buffer.readMqttUtf8StringNotValidated().toString(), "reason string")
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV5.from(buffer) as PublishReceived
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected, pubackResult)
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
-        try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
-            fail()
-        } catch (e: ProtocolError) {
-        }
+        val buffer = allocateNewBuffer(15u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
+        assertFailsWith<ProtocolError> { VariableHeader.Properties.from(buffer.readProperties()) }
     }
 
 
@@ -226,11 +227,14 @@ class PublishReceivedTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = PublishReceived(VariableHeader(packetIdentifier, properties = props)).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as PublishReceived
+        val buffer = allocateNewBuffer(19u, limits)
+        val request = PublishReceived(VariableHeader(packetIdentifier, properties = props))
+        request.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as PublishReceived
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals(key.getValueOrThrow().toString(), "key")
+        assertEquals(value.getValueOrThrow().toString(), "value")
     }
 
 }

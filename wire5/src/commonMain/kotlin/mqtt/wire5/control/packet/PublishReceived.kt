@@ -138,13 +138,13 @@ data class PublishReceived(val variable: VariableHeader)
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {
-                    ReasonString(reasonString)
+                    props += ReasonString(reasonString)
                 }
                 if (userProperty.isNotEmpty()) {
                     for (keyValueProperty in userProperty) {
                         val key = keyValueProperty.first
                         val value = keyValueProperty.second
-                        UserProperty(key, value)
+                        props += UserProperty(key, value)
                     }
                 }
                 props
