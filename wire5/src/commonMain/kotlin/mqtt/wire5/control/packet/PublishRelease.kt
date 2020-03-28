@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -7,6 +7,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishRelease
@@ -33,6 +34,8 @@ data class PublishRelease(val variable: VariableHeader)
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
     override fun expectedResponse() = PublishComplete(packetIdentifier.toUShort())
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
+
     /**
      * 3.6.2 PUBREL Variable Header
      *
@@ -55,7 +58,7 @@ data class PublishRelease(val variable: VariableHeader)
          */
         val reasonCode: ReasonCode = SUCCESS,
         /**
-         * 3.4.2.2 PUBACK Properties
+         * 3.4.2.2 PUBREL Properties
          */
         val properties: Properties = Properties()
     ) : Parcelable {
@@ -64,7 +67,7 @@ data class PublishRelease(val variable: VariableHeader)
                 0, 0x92 -> {
                 }
                 else -> throw ProtocolError(
-                    "Invalid Publish Acknowledgment reason code ${reasonCode.byte} " +
+                    "Invalid Publish Release reason code ${reasonCode.byte} " +
                             "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477424"
                 )
             }
@@ -81,6 +84,17 @@ data class PublishRelease(val variable: VariableHeader)
                     writeUByte(reasonCode.byte)
                     writePacket(properties.packet())
                 }
+            }
+        }
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.write(packetIdentifier.toUShort())
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
+                    && properties.userProperty.isEmpty()
+                    && properties.reasonString == null)
+            if (!canOmitReasonCodeAndProperties) {
+                writeBuffer.write(reasonCode.byte)
+                properties.serialize(writeBuffer)
             }
         }
 
@@ -133,6 +147,32 @@ data class PublishRelease(val variable: VariableHeader)
                 }
             }
 
+            val props by lazy {
+                val props = ArrayList<Property>(1 + userProperty.size)
+                if (reasonString != null) {
+                    props += ReasonString(reasonString)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        props += UserProperty(key, value)
+                    }
+                }
+                props
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0u
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                buffer.writeVariableByteInteger(size(buffer))
+                props.forEach { it.write(buffer) }
+            }
+
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
@@ -179,7 +219,7 @@ data class PublishRelease(val variable: VariableHeader)
 
             fun from(buffer: ReadBuffer, remaining: UInt): VariableHeader {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
-                return if (remaining == 4u) {
+                return if (remaining == 2u) {
                     VariableHeader(packetIdentifier)
                 } else {
                     val reasonCodeByte = buffer.readUnsignedByte()

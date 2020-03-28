@@ -18,7 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class PublishReleaseTests {
+class PublishReleaseTestsLegacy {
     private val packetIdentifier = 2
 
     @Test
