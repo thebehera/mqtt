@@ -7,6 +7,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishReceived
@@ -29,6 +30,7 @@ data class PublishReceived(val variable: VariableHeader)
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     @Parcelize
     data class VariableHeader(
@@ -70,6 +72,17 @@ data class PublishReceived(val variable: VariableHeader)
                     writeUByte(reasonCode.byte)
                     writePacket(properties.packet())
                 }
+            }
+        }
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.write(packetIdentifier.toUShort())
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
+                    && properties.userProperty.isEmpty()
+                    && properties.reasonString == null)
+            if (!canOmitReasonCodeAndProperties) {
+                writeBuffer.write(reasonCode.byte)
+                properties.serialize(writeBuffer)
             }
         }
 
@@ -120,6 +133,32 @@ data class PublishReceived(val variable: VariableHeader)
                     writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
                     writePacket(propertiesPacket)
                 }
+            }
+
+            val props by lazy {
+                val props = ArrayList<Property>(1 + userProperty.size)
+                if (reasonString != null) {
+                    ReasonString(reasonString)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        UserProperty(key, value)
+                    }
+                }
+                props
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0u
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                buffer.writeVariableByteInteger(size(buffer))
+                props.forEach { it.write(buffer) }
             }
 
             companion object {
@@ -175,7 +214,7 @@ data class PublishReceived(val variable: VariableHeader)
 
             fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
-                if (remainingLength == 4u) {
+                if (remainingLength == 2u) {
                     return VariableHeader(packetIdentifier)
                 } else {
                     val reasonCodeByte = buffer.readUnsignedByte()
