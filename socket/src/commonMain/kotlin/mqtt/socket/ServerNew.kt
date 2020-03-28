@@ -1,14 +1,9 @@
 package mqtt.socket
 
-<<<<<<< HEAD
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
-=======
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
->>>>>>> initial checkin
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
@@ -24,15 +19,9 @@ class ServerNew <T : ServerSocket> (val host: String, val port: UShort, val proc
     suspend fun getClient() {
         var client : ClientSocket
 
-<<<<<<< HEAD
-        listenx().collect {
-            process.process(it)
-        }
-=======
        this.listenx().collect {
            process.process(client)
        }
->>>>>>> initial checkin
 
     }
 
