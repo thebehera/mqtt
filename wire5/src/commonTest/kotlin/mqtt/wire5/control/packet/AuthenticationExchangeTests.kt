@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -34,7 +34,7 @@ class AuthenticationExchangeTests {
         assertEquals(9u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
         // variable header
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
-        assertEquals(5u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(7u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
         assertEquals("test", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
     }
@@ -51,8 +51,6 @@ class AuthenticationExchangeTests {
         buffer.write(0x15.toUByte()) // identifier of the authentication method
         buffer.writeUtf8String("test") // authentication method value
         buffer.resetForRead()
-        println(buffer)
-
         val actual = ControlPacketV5.from(buffer) as AuthenticationExchange
         assertEquals(SUCCESS, actual.variable.reasonCode)
         assertEquals("test", actual.variable.properties.method.value.toString())
@@ -128,14 +126,13 @@ class AuthenticationExchangeTests {
 
         val buffer = allocateNewBuffer(21u, limits)
         AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize(buffer)
-        println(buffer)
         buffer.resetForRead()
         // fixed header
         assertEquals(0b11110000.toUByte(), buffer.readUnsignedByte(), "byte1 fixed header")
         assertEquals(19u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
         // variable header
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
-        assertEquals(15u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(17u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
         assertEquals("2", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
         assertEquals(0x26.toUByte(), buffer.readUnsignedByte(), "user property flag")
@@ -160,9 +157,7 @@ class AuthenticationExchangeTests {
 
         val buffer = allocateNewBuffer(21u, limits)
         AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize(buffer)
-        println(buffer)
         buffer.resetForRead()
-        println("reset $buffer")
         val requestRead = ControlPacketV5.from(buffer) as AuthenticationExchange
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.getValueOrThrow().toString(), "key")

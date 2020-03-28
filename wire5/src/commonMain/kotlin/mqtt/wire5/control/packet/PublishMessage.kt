@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "KDocUnresolvedReference", "EXPERIMENTAL_UNSIGNED_LITERALS", "DuplicatedCode")
 
 package mqtt.wire5.control.packet
 
@@ -7,6 +7,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
@@ -45,18 +46,23 @@ data class PublishMessage(
 
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
+
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet()
-
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
+    override fun payload(writeBuffer: WriteBuffer) {
+        writeBuffer.write(payload.byteArray)
+    }
+
     @IgnoredOnParcel
     override val topic = variable.topicName
 
-    override fun expectedResponse() = when {
-        fixed.qos == AT_LEAST_ONCE -> {
+    override fun expectedResponse() = when (fixed.qos) {
+        AT_LEAST_ONCE -> {
             PublishAcknowledgment(variable.packetIdentifier!!.toUShort())
         }
-        fixed.qos == QualityOfService.EXACTLY_ONCE -> {
+        QualityOfService.EXACTLY_ONCE -> {
             PublishRelease(variable.packetIdentifier!!.toUShort())
         }
         else -> null
@@ -221,12 +227,43 @@ data class PublishMessage(
             }
         }
 
+        override fun equals(other: Any?): Boolean {
+            if (other !is VariableHeader) return false
+            return when {
+                topicName.toString() != other.topicName.toString() -> {
+                    false
+                }
+                packetIdentifier != other.packetIdentifier -> {
+                    false
+                }
+                properties != other.properties -> {
+                    false
+                }
+                else -> true
+            }
+        }
+
         fun packet(sendDefaults: Boolean = false) = buildPacket {
             writeMqttName(Name(topicName))
             if (packetIdentifier != null) {
                 writeUShort(packetIdentifier.toUShort())
             }
             writePacket(properties.packet(sendDefaults))
+        }
+
+        fun serialize(buffer: WriteBuffer) {
+            buffer.writeUtf8String(topicName)
+            if (packetIdentifier != null) {
+                buffer.write(packetIdentifier.toUShort())
+            }
+            properties.serialize(buffer)
+        }
+
+        override fun hashCode(): Int {
+            var result = topicName.toString().hashCode()
+            result = 31 * result + (packetIdentifier ?: 0)
+            result = 31 * result + properties.hashCode()
+            return result
         }
 
         @Parcelize
@@ -442,6 +479,53 @@ data class PublishMessage(
                 }
             }
 
+            val props by lazy {
+                val list = ArrayList<Property>(7 + userProperty.count())
+                if (payloadFormatIndicator) {
+                    list += PayloadFormatIndicator(payloadFormatIndicator)
+                }
+                if (messageExpiryInterval != null) {
+                    list += MessageExpiryInterval(messageExpiryInterval)
+                }
+                if (topicAlias != null) {
+                    list += TopicAlias(topicAlias)
+                }
+                if (responseTopic != null) {
+                    list += ResponseTopic(responseTopic)
+                }
+                if (coorelationData != null) {
+                    list += CorrelationData(coorelationData)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        list += UserProperty(key, value)
+                    }
+                }
+                if (subscriptionIdentifier.isNotEmpty()) {
+                    for (sub in subscriptionIdentifier) {
+                        list += SubscriptionIdentifier(sub)
+                    }
+                }
+                if (contentType != null) {
+                    list += ContentType(contentType)
+                }
+                list
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0u
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                val size = size(buffer)
+                buffer.writeVariableByteInteger(size)
+                props.forEach { it.write(buffer) }
+            }
+
             fun packet(sendDefaults: Boolean = false): ByteReadPacket {
                 val packet = buildPacket {
                     if (payloadFormatIndicator || sendDefaults) {
@@ -579,10 +663,11 @@ data class PublishMessage(
                 val packetIdentifier = if (isQos0) {
                     null
                 } else {
-                    size += 4u
+                    size += 2u
                     buffer.readUnsignedShort().toInt()
                 }
                 val propertiesSized = buffer.readPropertiesSized()
+                size += 1u
                 size += propertiesSized.first
                 val props = Properties.from(propertiesSized.second)
                 return Pair(size, VariableHeader(topicName.value, packetIdentifier, props))
@@ -600,8 +685,9 @@ data class PublishMessage(
 
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)
+            val fixedHeaderSize = 1u + buffer.variableByteSize(remainingLength)
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first))
+            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first - fixedHeaderSize))
             return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
         }
     }

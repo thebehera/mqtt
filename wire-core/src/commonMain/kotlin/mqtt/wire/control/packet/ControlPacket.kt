@@ -35,7 +35,8 @@ interface ControlPacket : Parcelable {
         val packetValueShifted = packetValueUInt.shl(4)
         val localFlagsByte = flags.toUByte().toInt()
         val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
-        writeBuffer.write(byte1).writeVariableByteInteger(remainingLength())
+        writeBuffer.write(byte1)
+        writeBuffer.writeVariableByteInteger(remainingLength(writeBuffer))
     }
 
     val variableHeaderPacket: ByteReadPacket? get() = null
@@ -47,6 +48,8 @@ interface ControlPacket : Parcelable {
         val variableHeaderSize = variableHeaderPacket?.copy()?.remaining?.toUInt() ?: 0.toUInt()
         return variableHeaderSize + payloadPacketSize
     }
+
+    fun remainingLength(buffer: WriteBuffer) = remainingLength()
 
     fun validateOrGetWarning(): MqttWarning? {
         return null

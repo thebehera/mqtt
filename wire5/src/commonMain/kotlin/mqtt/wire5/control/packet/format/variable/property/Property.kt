@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet.format.variable.property
 
@@ -67,7 +67,7 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
     }
 
     fun size(bytePacketBuilder: WriteBuffer, string: CharSequence) =
-        bytePacketBuilder.mqttUtf8Size(string) + 1u
+        bytePacketBuilder.mqttUtf8Size(string) + UShort.SIZE_BYTES.toUInt() + 1u
 
     fun write(bytePacketBuilder: WriteBuffer, string: CharSequence): UInt {
         bytePacketBuilder.write(identifierByte)
@@ -155,8 +155,7 @@ fun ByteReadPacket.readMqttProperty(): Pair<Property, Long> {
 
 
 fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
-    val byte = readByte().toInt()
-    val property = when (byte) {
+    val property = when (readByte().toInt()) {
         0x01 -> {
             PayloadFormatIndicator(readByte() == 1.toByte())
         }
@@ -164,7 +163,6 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
             MessageExpiryInterval(readUnsignedInt().toLong())
         }
         0x03 -> {
-            readMqttUtf8StringNotValidated()
             ContentType(MqttUtf8String(readMqttUtf8StringNotValidated()))
         }
         0x08 -> ResponseTopic(MqttUtf8String(readMqttUtf8StringNotValidated()))
