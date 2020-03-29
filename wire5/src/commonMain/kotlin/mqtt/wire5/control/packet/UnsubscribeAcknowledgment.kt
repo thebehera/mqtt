@@ -7,6 +7,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
@@ -21,6 +22,14 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
     @IgnoredOnParcel
     override val variableHeaderPacket: ByteReadPacket = variable.packet
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { reasonCodes.forEach { writeUByte(it.byte) } }
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
+    override fun remainingLength(buffer: WriteBuffer): UInt {
+        val variableSize = variable.size(buffer)
+        val subSize = reasonCodes.size.toUInt()
+        return variableSize + subSize
+    }
+
+    override fun payload(writeBuffer: WriteBuffer) = reasonCodes.forEach { writeBuffer.write(it.byte) }
 
     init {
         val invalidCodes = reasonCodes.map { it.byte } - validSubscribeCodes
@@ -47,6 +56,16 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
                 writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet)
             }
+        }
+
+        fun size(writeBuffer: WriteBuffer) =
+            UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
+                writeBuffer
+            )
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.write(packetIdentifier.toUShort())
+            properties.serialize(writeBuffer)
         }
 
         /**
@@ -102,6 +121,32 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
                 }
             }
 
+            val props by lazy {
+                val props = ArrayList<Property>(1 + userProperty.size)
+                if (reasonString != null) {
+                    props += ReasonString(reasonString)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        props += UserProperty(key, value)
+                    }
+                }
+                props
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0u
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                buffer.writeVariableByteInteger(size(buffer))
+                props.forEach { it.write(buffer) }
+            }
+
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
@@ -110,7 +155,8 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
                         when (it) {
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
                                             "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476")
                                 }
                                 reasonString = it.diagnosticInfoDontParse
@@ -135,7 +181,10 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
                 val packetIdentifier = buffer.readUnsignedShort()
                 val sized = buffer.readPropertiesSized()
                 val props = Properties.from(sized.second)
-                return Pair(sized.first + 2u, VariableHeader(packetIdentifier.toInt(), props))
+                return Pair(
+                    UShort.SIZE_BYTES.toUInt() + buffer.variableByteSize(sized.first) + sized.first,
+                    VariableHeader(packetIdentifier.toInt(), props)
+                )
             }
         }
     }
