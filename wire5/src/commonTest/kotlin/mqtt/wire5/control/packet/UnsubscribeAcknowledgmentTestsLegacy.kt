@@ -19,8 +19,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.fail
 
-class UnsubscribeAcknowledgmentTests {
+class UnsubscribeAcknowledgmentTestsLegacy {
     private val packetIdentifier = 2
+
     @Test
     fun serializeDeserializeDefault() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier))
@@ -118,8 +119,11 @@ class UnsubscribeAcknowledgmentTests {
     @Test
     fun variableHeaderPropertyUserProperty() {
         val props = VariableHeader.Properties.from(
-                setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value")),
-                        UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+            setOf(
+                UserProperty(MqttUtf8String("key"), MqttUtf8String("value")),
+                UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
+            )
+        )
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
             assertEquals(key.getValueOrThrow(), "key")
