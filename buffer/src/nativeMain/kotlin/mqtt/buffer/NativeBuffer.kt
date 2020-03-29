@@ -22,7 +22,7 @@ data class NativeBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : Platfor
 
     override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
         val length = readUnsignedShort().toInt()
-        return Pair(length.toUInt(), buffer.readText(max = length))
+        return Pair(length.toUInt(), buffer.readTextExactBytes(length))
     }
 
     override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as NativeBuffer).buffer)

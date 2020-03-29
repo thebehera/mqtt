@@ -27,7 +27,6 @@ class SubscribeRequestTest {
         assertEquals(subscribeRequest.subscriptions.first().topicFilter.validate().toString(), "test")
         val buffer = allocateNewBuffer(12u, limits)
         subscribeRequest.serialize(buffer)
-        println(buffer)
         buffer.resetForRead()
         // fixed header 2 bytes
         // byte 1 fixed header
@@ -50,16 +49,15 @@ class SubscribeRequestTest {
         assertEquals(4, buffer.readByte())
         // byte3: t
         assertEquals('t', buffer.readByte().toChar())
-        // byte4: / (0x2F)
+        // byte4: e
         assertEquals('e', buffer.readByte().toChar())
-        // byte5: b (0x62)
+        // byte5: s
         assertEquals('s', buffer.readByte().toChar())
-        // byte6: b (0x62)
+        // byte6: t
         assertEquals('t', buffer.readByte().toChar())
         // Subscription Options
         // byte7: Subscription Options (1)
         assertEquals(0b00000001, buffer.readByte())
-        println(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as SubscribeRequest
         assertEquals(requestRead.subscriptions.first().topicFilter.validate().toString(), "test")
