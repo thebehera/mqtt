@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
@@ -26,8 +26,10 @@ class SubscribeAcknowledgementTests {
     fun grantedQos1() {
         val payload = GRANTED_QOS_1
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV4.from(data) as SubscribeAcknowledgement
+        val buffer = allocateNewBuffer(5u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
         assertEquals(pubackResult.payload, listOf(GRANTED_QOS_1))
 
@@ -37,8 +39,10 @@ class SubscribeAcknowledgementTests {
     fun grantedQos2() {
         val payload = GRANTED_QOS_2
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV4.from(data) as SubscribeAcknowledgement
+        val buffer = allocateNewBuffer(5u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
         assertEquals(pubackResult.payload, listOf(GRANTED_QOS_2))
     }
@@ -47,8 +51,10 @@ class SubscribeAcknowledgementTests {
     fun failure() {
         val payload = UNSPECIFIED_ERROR
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val data = puback.serialize()
-        val pubackResult = ControlPacketV4.from(data) as SubscribeAcknowledgement
+        val buffer = allocateNewBuffer(5u, limits)
+        puback.serialize(buffer)
+        buffer.resetForRead()
+        val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement
         assertEquals(pubackResult.packetIdentifier, packetIdentifier)
         assertEquals(pubackResult.payload, listOf(UNSPECIFIED_ERROR))
     }

@@ -78,7 +78,7 @@ SubscribeRequest(
 
         fun from(buffer: ReadBuffer, remaining: UInt): SubscribeRequest {
             val packetIdentifier = buffer.readUnsignedShort().toInt()
-            val subscriptions = Subscription.fromMany(buffer, remaining)
+            val subscriptions = Subscription.fromMany(buffer, remaining - UShort.SIZE_BYTES.toUInt())
             return SubscribeRequest(packetIdentifier, subscriptions)
         }
     }
@@ -133,7 +133,7 @@ data class Subscription(val topicFilter: Filter,
 
         fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {
             val result = buffer.readMqttUtf8StringNotValidatedSized()
-            var bytesRead = 2u + result.first
+            var bytesRead = UShort.SIZE_BYTES.toUInt() + result.first
             val topicFilter = result.second
             val subOptionsInt = buffer.readUnsignedByte().toInt()
             bytesRead++
