@@ -19,6 +19,7 @@ kotlin {
                 compileOnly project(":wire5")
                 api project(":wire-core")
                 implementation project(":time")
+                implementation project(":buffer")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"

@@ -545,7 +545,6 @@ class ConnectionRequestTestsLegacy {
         byteReader.readUShort() // read byte 9 and 10 since UShort is 2 Bytes
         val properties = byteReader.readPropertiesLegacy()
         assertNotNull(properties!!.first())
-//        assertEquals(properties.first().property, Property.SessionExpiryInterval)
     }
 
     @Test
