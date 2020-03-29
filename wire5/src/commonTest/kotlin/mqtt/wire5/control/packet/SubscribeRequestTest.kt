@@ -2,21 +2,19 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
+import mqtt.wire5.control.packet.format.variable.property.readProperties
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.fail
+import kotlin.test.assertFailsWith
 
 class SubscribeRequestTest {
     private val packetIdentifier = 2.toUShort()
@@ -120,9 +118,10 @@ class SubscribeRequestTest {
     @Test
     fun subscriptionPayloadOptions() {
         val subscription = Subscription.from("a/b", AT_LEAST_ONCE)
-        val buffer = subscription.packet
-        assertEquals(3.toUShort(), buffer.readUShort())
-        assertEquals("a/b", buffer.readTextExact(3))
+        val buffer = allocateNewBuffer(6u, limits)
+        subscription.serialize(buffer)
+        buffer.resetForRead()
+        assertEquals("a/b", buffer.readMqttUtf8StringNotValidated().toString())
         assertEquals(0b000001, buffer.readByte())
     }
 
@@ -134,48 +133,17 @@ class SubscribeRequestTest {
     }
 
     @Test
-    fun subscriptionPayload() {
-        val request = SubscribeRequest(0.toUShort(), listOf("a/b", "c/d"), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val buffer = request.payloadPacket()
-        // Topic Filter ("a/b")
-        // byte 1: Length MSB (0)
-        assertEquals(0b00000000, buffer.readByte())
-        // byte2: Length LSB (3)
-        assertEquals(0b00000011, buffer.readByte())
-        // byte3: a (0x61)
-        assertEquals(0b01100001, buffer.readByte())
-        // byte4: / (0x2F)
-        assertEquals(0b00101111, buffer.readByte())
-        // byte5: b (0x62)
-        assertEquals(0b01100010, buffer.readByte())
-        // Subscription Options
-        // byte6: Subscription Options (1)
-        assertEquals(0b00000001, buffer.readByte())
-
-
-        // Topic Filter ("c/d")
-        // byte 1: Length MSB (0)
-        assertEquals(0b00000000, buffer.readByte())
-        // byte2: Length LSB (3)
-        assertEquals(0b00000011, buffer.readByte())
-        // byte3: c (0x63)
-        assertEquals(0b01100011, buffer.readByte())
-        // byte4: / (0x2F)
-        assertEquals(0b00101111, buffer.readByte())
-        // byte5: d (0x64)
-        assertEquals(0b01100100, buffer.readByte())
-        // Subscription Options
-        // byte6: Subscription Options (2)
-        assertEquals(0b00000010, buffer.readByte())
-        // No more bytes to read
-        assertEquals(0, buffer.remaining)
-    }
-
-    @Test
     fun reasonString() {
-        val actual = SubscribeRequest(VariableHeader(packetIdentifier.toInt(), properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))), setOf(Subscription(Filter("test"))))
-        val bytes = actual.serialize()
-        val expected = ControlPacketV5.from(bytes) as SubscribeRequest
+        val buffer = allocateNewBuffer(19u, limits)
+        val actual = SubscribeRequest(
+            VariableHeader(
+                packetIdentifier.toInt(),
+                properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+            ), setOf(Subscription(Filter("test")))
+        )
+        actual.serialize(buffer)
+        buffer.resetForRead()
+        val expected = ControlPacketV5.from(buffer) as SubscribeRequest
         assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
     }
 
@@ -183,19 +151,12 @@ class SubscribeRequestTest {
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString(MqttUtf8String("yolo"))
         val obj2 = obj1.copy()
-        val propsWithoutPropertyLength = buildPacket {
-            obj1.write(this)
-            obj2.write(this)
-        }.readBytes()
-        val props = buildPacket {
-            writePacket(VariableByteInteger(propsWithoutPropertyLength.size.toUInt()).encodedValue())
-            writeFully(propsWithoutPropertyLength)
-        }.copy()
-        try {
-            VariableHeader.Properties.from(props.readPropertiesLegacy())
-            fail()
-        } catch (e: ProtocolError) {
-        }
+        val buffer = allocateNewBuffer(15u, limits)
+        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        obj1.write(buffer)
+        obj2.write(buffer)
+        buffer.resetForRead()
+        assertFailsWith<ProtocolError> { VariableHeader.Properties.from(buffer.readProperties()) }
     }
 
 
@@ -209,11 +170,17 @@ class SubscribeRequestTest {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = SubscribeRequest(VariableHeader(packetIdentifier.toInt(), properties = props), setOf(Subscription(Filter("test")))).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as SubscribeRequest
+        val request = SubscribeRequest(
+            VariableHeader(packetIdentifier.toInt(), properties = props),
+            setOf(Subscription(Filter("test")))
+        )
+        val buffer = allocateNewBuffer(25u, limits)
+        request.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as SubscribeRequest
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals("key", key.getValueOrThrow().toString())
+        assertEquals("value", value.getValueOrThrow().toString())
     }
 
 
