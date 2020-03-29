@@ -1,8 +1,8 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet.format.fixed
 
-import kotlinx.io.core.readBytes
+import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.MqttUtf8String
@@ -78,7 +78,7 @@ class FlagTests {
         assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
     }
 
-    @Test // THIS IS WHAT I NEED TO WORK ON FIRST FIX THIS
+    @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtLeastOnce_retain_false() {
         val expected = 0b10.toByte()
         val fixed = FixedHeader(dup = false, qos = AT_LEAST_ONCE, retain = false)
@@ -86,7 +86,10 @@ class FlagTests {
         val detailed = PublishMessage(fixed, variable)
         assertEquals(detailed.controlPacketValue, 0x03,
                 "Invalid Byte 1 in the fixed header: Control Packet Value")
-        val byteAsUInt = detailed.serialize().readBytes()[0].toUInt()
+        val buffer = allocateNewBuffer(8u, limits)
+        detailed.serialize(buffer)
+        buffer.resetForRead()
+        val byteAsUInt = buffer.readByte().toUInt()
 
         assertEquals(byteAsUInt.shr(4), 0x03.toUInt(),
                 "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times")

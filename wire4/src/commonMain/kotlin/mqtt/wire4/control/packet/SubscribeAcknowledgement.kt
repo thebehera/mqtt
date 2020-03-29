@@ -32,9 +32,7 @@ data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payl
 
     override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
     override fun payload(writeBuffer: WriteBuffer) {
-        println(writeBuffer)
         payload.forEach { writeBuffer.write(it.byte.toUByte()) }
-        println(writeBuffer)
     }
 
     companion object {

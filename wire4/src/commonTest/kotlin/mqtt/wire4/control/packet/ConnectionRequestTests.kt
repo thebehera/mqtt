@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
@@ -378,16 +378,6 @@ class ConnectionRequestTests {
         assertFalse(cleanStart, "invalid byte 8 bit 1 on the CONNECT variable header for cleanSession flag")
         val reserved = connectFlagsPackedInByte.shl(7).shr(7) == 1
         assertFalse(reserved, "invalid byte 8 bit 0 on the CONNECT variable header for reserved flag")
-    }
-
-    @Test
-    fun variableHeaderConnectFlagsByte8HasWillFlagThrowWarning() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
-        try {
-            connectionRequest.serialize()
-            fail("should of thrown an exception since the default is to throw on warnings")
-        } catch (e: MqttWarning) {
-        }
     }
 
     @Test
