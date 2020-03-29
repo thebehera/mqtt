@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -7,6 +7,7 @@ import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -58,6 +59,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     override val packetIdentifier = variable.packetIdentifier
     @IgnoredOnParcel
     override val variableHeaderPacket = variable.packet()
+    override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     @IgnoredOnParcel
     private val payload by lazy {
         buildPacket {
@@ -68,6 +70,12 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier.toUShort(), ReasonCode.SUCCESS)
     override fun payloadPacket(sendDefaults: Boolean) = payload
     override fun getTopics() = subscriptions.map { it.topicFilter }
+    override fun payload(writeBuffer: WriteBuffer)  = subscriptions.forEach { it.serialize(writeBuffer) }
+    override fun remainingLength(buffer: WriteBuffer): UInt {
+        val variableSize = variable.size(buffer)
+        val subSize = subscriptions.size(buffer)
+        return variableSize + subSize
+    }
 
     /**
      * 3.8.2 SUBSCRIBE Variable Header
@@ -90,6 +98,13 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
                 writeUShort(packetIdentifier.toUShort())
                 writePacket(properties.packet())
             }
+        }
+
+        fun size(writeBuffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(writeBuffer)
+
+        fun serialize(writeBuffer: WriteBuffer) {
+            writeBuffer.write(packetIdentifier.toUShort())
+            properties.serialize(writeBuffer)
         }
 
         @Parcelize
@@ -151,6 +166,32 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
                 }
             }
 
+            val props by lazy {
+                val props = ArrayList<Property>(1 + userProperty.size)
+                if (reasonString != null) {
+                    props += ReasonString(reasonString)
+                }
+                if (userProperty.isNotEmpty()) {
+                    for (keyValueProperty in userProperty) {
+                        val key = keyValueProperty.first
+                        val value = keyValueProperty.second
+                        props += UserProperty(key, value)
+                    }
+                }
+                props
+            }
+
+            fun size(buffer: WriteBuffer): UInt {
+                var size = 0u
+                props.forEach { size += it.size(buffer) }
+                return size
+            }
+
+            fun serialize(buffer: WriteBuffer) {
+                buffer.writeVariableByteInteger(size(buffer))
+                props.forEach { it.write(buffer) }
+            }
+
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var reasonString: MqttUtf8String? = null
@@ -189,12 +230,12 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
             fun from(buffer: ReadBuffer, remainingLength: UInt): Pair<UInt, VariableHeader> {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
                 var size = 2u
-                return if (remainingLength == 0u) {
+                return if (remainingLength == 2u) {
                     Pair(size, VariableHeader(packetIdentifier))
                 } else {
                     val propsData = buffer.readPropertiesSized()
                     val props = Properties.from(propsData.second)
-                    size += propsData.first
+                    size += propsData.first + buffer.variableByteSize(propsData.first)
                     Pair(size, VariableHeader(packetIdentifier, props))
                 }
             }
@@ -268,6 +309,18 @@ data class Subscription(val topicFilter: Filter,
         }
     }
 
+    fun serialize(writeBuffer: WriteBuffer) {
+        writeBuffer.writeUtf8String(topicFilter.topicFilter)
+        val qosInt = maximumQos.integerValue
+        val nlShifted = (if (noLocal) 1 else 0).shl(2)
+        val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
+        val rH = retainHandling.value.toInt().shl(4)
+        val combinedByte = (qosInt + nlShifted + rapShifted + rH).toByte()
+        writeBuffer.write(combinedByte)
+    }
+
+    fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
+
     companion object {
         fun fromMany(buffer: ByteReadPacket): Set<Subscription> {
             val subscriptions = HashSet<Subscription>()
@@ -322,7 +375,7 @@ data class Subscription(val topicFilter: Filter,
         fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {
             var size = 0.toUInt()
             val topic = buffer.readMqttUtf8StringNotValidatedSized()
-            size += topic.first
+            size += topic.first + 2u
             val topicFilter = MqttUtf8String(topic.second)
             val subOptionsInt = buffer.readUnsignedByte().toInt()
             size += 1u
@@ -396,7 +449,15 @@ data class Subscription(val topicFilter: Filter,
             }
             return subscriptions
         }
+
+
     }
+}
+
+fun Collection<Subscription>.size(writeBuffer: WriteBuffer): UInt {
+    var size = 0u
+    forEach { size += it.size(writeBuffer) }
+    return size
 }
 
 enum class RetainHandling(val value: UByte) {
