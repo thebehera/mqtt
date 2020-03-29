@@ -197,11 +197,14 @@ class SubscribeAcknowledgementTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = SubscribeAcknowledgement(packetIdentifier.toUShort(), props, WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as SubscribeAcknowledgement
+        val request = SubscribeAcknowledgement(packetIdentifier.toUShort(), props, WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED)
+        val buffer = allocateNewBuffer(19u, limits)
+        request.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as SubscribeAcknowledgement
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals("key", key.getValueOrThrow().toString())
+        assertEquals("value", value.getValueOrThrow().toString())
     }
 
     @Test

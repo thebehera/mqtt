@@ -71,7 +71,11 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     override fun payloadPacket(sendDefaults: Boolean) = payload
     override fun getTopics() = subscriptions.map { it.topicFilter }
     override fun payload(writeBuffer: WriteBuffer)  = subscriptions.forEach { it.serialize(writeBuffer) }
-    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + subscriptions.size(buffer)
+    override fun remainingLength(buffer: WriteBuffer): UInt {
+        val variableSize = variable.size(buffer)
+        val subSize = subscriptions.size(buffer)
+        return variableSize + subSize
+    }
 
     /**
      * 3.8.2 SUBSCRIBE Variable Header
@@ -226,12 +230,12 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
             fun from(buffer: ReadBuffer, remainingLength: UInt): Pair<UInt, VariableHeader> {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
                 var size = 2u
-                return if (remainingLength == 0u) {
+                return if (remainingLength == 2u) {
                     Pair(size, VariableHeader(packetIdentifier))
                 } else {
                     val propsData = buffer.readPropertiesSized()
                     val props = Properties.from(propsData.second)
-                    size += propsData.first
+                    size += propsData.first + buffer.variableByteSize(propsData.first)
                     Pair(size, VariableHeader(packetIdentifier, props))
                 }
             }
@@ -315,7 +319,7 @@ data class Subscription(val topicFilter: Filter,
         writeBuffer.write(combinedByte)
     }
 
-    fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(topicFilter.topicFilter) + Byte.SIZE_BYTES.toUInt()
+    fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
 
     companion object {
         fun fromMany(buffer: ByteReadPacket): Set<Subscription> {
@@ -371,7 +375,7 @@ data class Subscription(val topicFilter: Filter,
         fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {
             var size = 0.toUInt()
             val topic = buffer.readMqttUtf8StringNotValidatedSized()
-            size += topic.first
+            size += topic.first + 2u
             val topicFilter = MqttUtf8String(topic.second)
             val subOptionsInt = buffer.readUnsignedByte().toInt()
             size += 1u
