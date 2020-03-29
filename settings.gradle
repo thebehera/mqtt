@@ -9,4 +9,4 @@ pluginManagement {
 }
 enableFeaturePreview('GRADLE_METADATA')
 
-include ':wire-core', ':wire5', ':wire4', ':client', ':time', ':android_app_sample', ':android_roomdb_core', ':android_roomdb_generator', ':server', ':transport', ':socket', ":buffer"
+include ':wire-core', ':wire5', ':wire4', ':client', ':time', ':android_app_sample', ':android_roomdb_core', ':android_roomdb_generator', ':server', ':socket', ":buffer"
