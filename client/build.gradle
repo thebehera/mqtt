@@ -20,6 +20,7 @@ kotlin {
                 api project(":wire-core")
                 implementation project(":time")
                 implementation project(":buffer")
+                implementation project(":socket")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
@@ -40,6 +41,9 @@ kotlin {
                 implementation "androidx.room:room-ktx:$room_version"
                 implementation "androidx.room:room-common:$room_version"
                 implementation kotlin('stdlib-jdk7')
+                implementation project(":buffer")
+                implementation project(":socket")
+                implementation project(":wire-core")
                 implementation "io.ktor:ktor-client-cio:$ktor_version"
                 implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"

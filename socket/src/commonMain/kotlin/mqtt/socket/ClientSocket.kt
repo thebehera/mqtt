@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket
 
 import mqtt.buffer.PlatformBuffer
@@ -6,7 +8,6 @@ import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-@ExperimentalUnsignedTypes
 interface ClientSocket : SuspendCloseable {
     fun isOpen(): Boolean
     fun localPort(): UShort?
@@ -15,11 +16,19 @@ interface ClientSocket : SuspendCloseable {
     suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int
 }
 
-@ExperimentalUnsignedTypes
+@ExperimentalTime
+fun getClientSocket(): ClientToServerSocket {
+    try {
+        return asyncClientSocket()
+    } catch (e: Throwable) {
+        // failed to allocate async socket channel based socket, fallback to nio
+    }
+    return clientSocket(false)
+}
+
 @ExperimentalTime
 expect fun asyncClientSocket(): ClientToServerSocket
 
-@ExperimentalUnsignedTypes
 @ExperimentalTime
 expect fun clientSocket(blocking: Boolean): ClientToServerSocket
 

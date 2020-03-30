@@ -1,11 +1,11 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.wire4.control.packet
+package mqtt.wire5.control.packet
 
 import mqtt.buffer.ReadBuffer
 import mqtt.wire.control.packet.ControlPacketReader
 
-object ControlPacketV4Reader : ControlPacketReader {
+object ControlPacketV5Reader : ControlPacketReader {
     override fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) =
-        ControlPacketV4.from(buffer, byte1, remainingLength)
+        ControlPacketV5.from(buffer, byte1, remainingLength)
 }

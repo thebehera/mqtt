@@ -24,7 +24,7 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
     }
 
     override fun resetForWrite() {
-        byteBuffer.flip()
+        byteBuffer.clear()
     }
 
     override fun readByte() = byteBuffer.get()
