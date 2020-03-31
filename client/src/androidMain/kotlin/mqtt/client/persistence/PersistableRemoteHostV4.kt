@@ -6,7 +6,7 @@ import androidx.room.Embedded
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.TypeConverters
-import mqtt.Parcelize
+import kotlinx.android.parcel.Parcelize
 import mqtt.client.RemoteHost.Security
 import mqtt.client.RemoteHost.Websocket
 import mqtt.connection.IRemoteHost
