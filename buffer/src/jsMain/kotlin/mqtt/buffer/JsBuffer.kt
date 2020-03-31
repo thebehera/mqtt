@@ -65,10 +65,6 @@ data class JsBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : PlatformBuf
         unmappableCharacter: CharSequence?
     ) = Charsets.UTF_8.newEncoder().encode(inputSequence).remaining.toUInt()
 
-    override fun clear() {
-        buffer.resetForWrite()
-    }
-
     override suspend fun close() {}
 }
 
