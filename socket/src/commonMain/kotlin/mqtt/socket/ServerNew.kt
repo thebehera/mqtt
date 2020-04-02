@@ -6,34 +6,41 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-class ServerNew <T : ServerSocket> (val host: String, val port: UShort, val process: ServerProcess) {
-    private lateinit var serverSocket : T
+class ServerNew (val host: String, val port: UShort, val process: ServerProcessAbs) {
+    private lateinit var serverSocket : ServerSocket
 
-    suspend fun start() {
-        serverSocket = asyncServerSocket() as T
-        serverSocket.bind(port, host)
+    suspend fun startServer() {
+        serverSocket = asyncServerSocket()
+        if (!serverSocket.isOpen())
+            serverSocket.bind(port, host)
     }
 
-    suspend fun getClient() {
-        var client : ClientSocket
+    suspend fun isOpen() : Boolean {
+        return serverSocket?.isOpen()
+    }
+    suspend fun getClientConnection() {
 
-        listenx().collect {
-            process.process(it)
+        listen().collect {
+            process.startProcessing(it)
         }
 
     }
 
-    suspend fun listenx () = flow {
+    suspend fun close() {
+        if (serverSocket?.isOpen())
+            serverSocket?.close()
+    }
+
+    private suspend fun listen () = flow {
         try {
-            while (serverSocket.isOpen()) {
-                val client = serverSocket.accept()
+            while (serverSocket?.isOpen()) {
+                val client = serverSocket?.accept()
 
                 emit(client)
             }
         } catch (e: Exception) {
 
         }
+        close()
     }
 }
-
-
