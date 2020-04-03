@@ -6,10 +6,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import kotlin.test.*
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
@@ -20,11 +17,12 @@ class NewSocketTests {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
+    @ExperimentalUnsignedTypes
     @ExperimentalTime
     @Test
     fun oneServerOneClient() = block {
-        val port : UShort = 6001u
-        var server : ServerNew? = null
+        var port : UShort = 0u
+        lateinit var server : ServerNew
         var client: ClientToServerSocket? = null
         val serverMutex = Mutex()
         val clientMutex = Mutex()
@@ -34,11 +32,13 @@ class NewSocketTests {
             val serverProcess = TestServerProcess()
             serverProcess.name = "Server-1"
             serverProcess.clientResponse = "Client-"
-            server  = ServerNew ("localhost", port, serverProcess)
+            server = ServerNew ("localhost", port, serverProcess)
             launchServer (serverMutex, port, server!!)
         }
 
         clientMutex.lock()
+        serverMutex.lock()
+        port = if (server != null) server.getListenPort() else 0u
 
         launch {
             client = asyncClientSocket()
@@ -46,7 +46,7 @@ class NewSocketTests {
 
             clientMutex.unlock()
         }
-        serverMutex.lock()
+
         clientMutex.lock()
         // both server & client are up & running.
 
@@ -83,7 +83,7 @@ class NewSocketTests {
     @ExperimentalTime
     private suspend fun launchServer(mutex: Mutex, port: UShort, server: ServerNew) {
         server.startServer()
-        assertEquals(server.port, port, "Server listen port is diferent")
+        assertNotEquals(server.getListenPort(), port, "Server listen port is diferent")
         mutex.unlock()
         server.getClientConnection()
 

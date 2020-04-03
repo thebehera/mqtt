@@ -10,9 +10,11 @@ class ServerNew (val host: String, val port: UShort, val process: ServerProcessA
     private lateinit var serverSocket : ServerSocket
 
     suspend fun startServer() {
+        val x : UShort = 0u
+        val nPort :UShort? = if (port > x)  port else null
         serverSocket = asyncServerSocket()
         if (!serverSocket.isOpen())
-            serverSocket.bind(port, host)
+            serverSocket.bind(nPort, host)
     }
 
     suspend fun isOpen() : Boolean {
@@ -23,7 +25,11 @@ class ServerNew (val host: String, val port: UShort, val process: ServerProcessA
         listen().collect {
             process.startProcessing(it)
         }
+    }
 
+    suspend fun getListenPort() : UShort {
+        val x : UShort = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
+        return x
     }
 
     suspend fun close() {
