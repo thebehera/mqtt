@@ -45,7 +45,7 @@ class ServerNew (val host: String, val port: UShort, val process: ServerProcessA
                 emit(client)
             }
         } catch (e: Exception) {
-
+            println("listen exception: ${e.message}")
         }
         close()
     }
