@@ -55,6 +55,47 @@ class NewSocketTests {
         server?.close()
     }
 
+    @ExperimentalUnsignedTypes
+    @ExperimentalTime
+    @Test
+    fun oneServerMultClient() = block {
+        var port: UShort = 0u
+        lateinit var server: ServerNew
+        val client = mutableListOf<ClientToServerSocket>()
+        val clientCount: Int = 100
+        var serverMutex : Mutex = Mutex()
+        val clientMutex : Mutex = Mutex()
+
+        serverMutex.lock()
+        launch {
+            val serverProcess = TestServerProcess()
+            serverProcess.name = "Server-1"
+            serverProcess.clientResponse = "Client-"
+            server = ServerNew("localhost", port, serverProcess)
+            launchServer(serverMutex, port, server)
+        }
+        
+        serverMutex.lock()
+
+        port = if (server != null) server.getListenPort() else 0u
+        clientMutex.lock()
+        repeat (clientCount) {
+                val i: Int = it
+                client.add(asyncClientSocket())
+                initiateClient(client[i]!!, port)
+                clientMessage(client[i]!!, "Client-$i", "Client-$i:Server-1")
+                client[i].close()
+
+                if (i >= clientCount - 1)
+                    clientMutex.unlock()
+        }
+
+
+        clientMutex.lock()
+        server.close()
+        clientMutex.unlock()
+    }
+
     @ExperimentalTime
     private suspend fun clientMessage(socket: ClientSocket, sendMsg: String, respMsg: String) {
         val timeout = 100.milliseconds
@@ -65,7 +106,8 @@ class NewSocketTests {
         socket.write(wbuffer, timeout)
         socket.read(rbuffer, timeout)
 
-        assertEquals(respMsg, rbuffer.readMqttUtf8StringNotValidated().toString(), "Excepted message not received.")
+        val str:String = rbuffer.readMqttUtf8StringNotValidated().toString()
+        assertEquals(respMsg, str, "Excepted message not received.")
     }
 
     @ExperimentalTime

@@ -33,7 +33,7 @@ class ServerNew <T : ServerSocket> (val host: String, val port: UShort, val proc
                 emit(client)
             }
         } catch (e: Exception) {
-
+            println("listen exception: ${e.message}")
         }
     }
 }
