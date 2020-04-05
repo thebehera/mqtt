@@ -46,25 +46,29 @@ class NewSocketTests {
     @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
-        val clientCount = 100
-        val mut = Mutex()
-        var c = 0
+        lateinit var server: ServerNew
+//        val client = mutableListOf<ClientToServerSocket>()
+        val clientCount: Int = 100
+        val mut: Mutex = Mutex()
+        var c: Int = 0
 
         val serverProcess = TestServerProcess()
         serverProcess.name = "Server-1"
         serverProcess.clientResponse = "Client-"
-
-        val server = ServerNew("localhost", port, serverProcess)
+        server = ServerNew("localhost", port, serverProcess)
         launchServer(this, port, server)
+
 
         port = server.getListenPort()
 
         repeat(clientCount) { i ->
             launch {
                 val client: ClientToServerSocket = asyncClientSocket()
+                //client.add(asyncClientSocket())
                 initiateClient(client, port)
                 clientMessage(client, "Client-$i", "Client-$i:Server-1")
                 client.close()
+                mut.lock()
                 c++
                 mut.unlock()
                 if (c >= clientCount - 1)
