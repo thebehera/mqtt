@@ -13,6 +13,7 @@ import kotlin.time.seconds
 
 class NewSocketTests {
 
+    @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
@@ -23,79 +24,61 @@ class NewSocketTests {
     fun oneServerOneClient() = block {
         var port : UShort = 0u
         lateinit var server : ServerNew
-        var client: ClientToServerSocket? = null
-        val serverMutex = Mutex()
-        val clientMutex = Mutex()
+        lateinit var client: ClientToServerSocket
 
-        serverMutex.lock()
-        launch {
-            val serverProcess = TestServerProcess()
-            serverProcess.name = "Server-1"
-            serverProcess.clientResponse = "Client-"
-            server = ServerNew ("localhost", port, serverProcess)
-            launchServer (serverMutex, port, server!!)
-        }
+        val serverProcess = TestServerProcess()
+        serverProcess.name = "Server-1"
+        serverProcess.clientResponse = "Client-"
+        server = ServerNew ("localhost", port, serverProcess)
+        launchServer (this, port, server)
 
-        clientMutex.lock()
-        serverMutex.lock()
-        port = if (server != null) server.getListenPort() else 0u
+        port = server.getListenPort()
 
-        launch {
-            client = asyncClientSocket()
-            initiateClient(client!!, port)
+        client = asyncClientSocket()
+        initiateClient(client, port)
 
-            clientMutex.unlock()
-        }
-
-        clientMutex.lock()
-        // both server & client are up & running.
-
-        clientMessage (client!!, "Client-1", "Client-1:Server-1")
-        client!!.close()
-        server?.close()
+        clientMessage (client, "Client-1", "Client-1:Server-1")
+        client.close()
+        server.close()
     }
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     @Test
-    fun oneServerMultClient() = block {
+    fun oneServerMultiClient() = block {
         var port: UShort = 0u
         lateinit var server: ServerNew
-        val client = mutableListOf<ClientToServerSocket>()
+//        val client = mutableListOf<ClientToServerSocket>()
         val clientCount: Int = 100
-        var serverMutex : Mutex = Mutex()
-        val clientMutex : Mutex = Mutex()
+        val mut:Mutex = Mutex()
+        var c:Int = 0
 
-        serverMutex.lock()
-        launch {
-            val serverProcess = TestServerProcess()
-            serverProcess.name = "Server-1"
-            serverProcess.clientResponse = "Client-"
-            server = ServerNew("localhost", port, serverProcess)
-            launchServer(serverMutex, port, server)
+        val serverProcess = TestServerProcess()
+        serverProcess.name = "Server-1"
+        serverProcess.clientResponse = "Client-"
+        server = ServerNew("localhost", port, serverProcess)
+        launchServer(this, port, server)
+
+
+        port = server.getListenPort()
+
+        repeat(clientCount) { i ->
+            launch {
+                val client: ClientToServerSocket = asyncClientSocket()
+                //client.add(asyncClientSocket())
+                initiateClient(client, port)
+                clientMessage(client, "Client-$i", "Client-$i:Server-1")
+                client.close()
+                mut.lock()
+                c++
+                mut.unlock()
+                if (c >= clientCount -1)
+                    server.close()
+            }
         }
-        
-        serverMutex.lock()
-
-        port = if (server != null) server.getListenPort() else 0u
-        clientMutex.lock()
-        repeat (clientCount) {
-                val i: Int = it
-                client.add(asyncClientSocket())
-                initiateClient(client[i]!!, port)
-                clientMessage(client[i]!!, "Client-$i", "Client-$i:Server-1")
-                client[i].close()
-
-                if (i >= clientCount - 1)
-                    clientMutex.unlock()
-        }
-
-
-        clientMutex.lock()
-        server.close()
-        clientMutex.unlock()
     }
 
+    @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun clientMessage(socket: ClientSocket, sendMsg: String, respMsg: String) {
         val timeout = 100.milliseconds
@@ -110,6 +93,7 @@ class NewSocketTests {
         assertEquals(respMsg, str, "Excepted message not received.")
     }
 
+    @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun initiateClient(socket: ClientToServerSocket, port: UShort) {
 
@@ -123,12 +107,13 @@ class NewSocketTests {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-    private suspend fun launchServer(mutex: Mutex, port: UShort, server: ServerNew) {
+    private suspend fun launchServer(scope: CoroutineScope, port: UShort, server: ServerNew) {
         server.startServer()
         assertNotEquals(server.getListenPort(), port, "Server listen port is diferent")
-        mutex.unlock()
-        server.getClientConnection()
-
-        assertFalse(server.isOpen(), "Server socket is still open.")
+        scope.launch {
+            server.getClientConnection()
+            assertFalse(server.isOpen(), "Server socket is still open.")
+        }
+        assertTrue(server.isOpen(), "Server socket is not open.")
     }
 }
