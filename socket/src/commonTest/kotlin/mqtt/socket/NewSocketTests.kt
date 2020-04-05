@@ -3,11 +3,12 @@ package mqtt.socket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeout
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
+import kotlin.time.measureTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
@@ -48,28 +49,39 @@ class NewSocketTests {
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
         val clientCount = 1000
-        val mut = Mutex()
-
         val serverProcess = TestServerProcess()
         serverProcess.name = "Server-1"
         serverProcess.clientResponse = "Client-"
         val server = ServerNew("localhost", port, serverProcess)
         launchServer(this, port, server)
         port = server.getListenPort()
+
+        val clients = mutableListOf<ClientToServerSocket>()
+        var closedConnections = 0
+        val doneMutex = Mutex(true)
         repeat(clientCount) { i ->
+            val client = asyncClientSocket()
+            initiateClient(client, port)
+            clients += client
             launch {
-                val client = asyncClientSocket()
-                mut.withLock {
-                    initiateClient(client, port)
-                    clientMessage(client, "Client-$i", "Client-$i:Server-1")
-                }
-                client.close()
-                if (i >= clientCount - 1) {
-                    server.close()
-                    assertEquals(0, readStats(port, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+                clientMessage(client, "Client-$i", "Client-$i:Server-1")
+                launch {
+                    client.close()
+                    closedConnections++
+                    if (closedConnections >= clientCount) {
+                        server.close()
+                        assertEquals(0, readStats(port, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+                        doneMutex.unlock()
+                    }
                 }
             }
         }
+        val timeTook = measureTime {
+            withTimeout(5000) {
+                doneMutex.lock()
+            }
+        }
+        println("Took $timeTook for $clientCount connections")
     }
 
     @ExperimentalUnsignedTypes
