@@ -56,13 +56,11 @@ class NewSocketTests {
         launchServer(this, port, server)
         port = server.getListenPort()
 
-        val clients = mutableListOf<ClientToServerSocket>()
         var closedConnections = 0
         val doneMutex = Mutex(true)
         repeat(clientCount) { i ->
             val client = asyncClientSocket()
             initiateClient(client, port)
-            clients += client
             launch {
                 clientMessage(client, "Client-$i", "Client-$i:Server-1")
                 launch {
