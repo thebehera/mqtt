@@ -2,6 +2,7 @@ package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
@@ -46,10 +47,13 @@ class NewSocketTests {
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
         val clientCount = 100
+        val mut = Mutex()
+        var c = 0
 
         val serverProcess = TestServerProcess()
         serverProcess.name = "Server-1"
         serverProcess.clientResponse = "Client-"
+
         val server = ServerNew("localhost", port, serverProcess)
         launchServer(this, port, server)
 
@@ -61,7 +65,9 @@ class NewSocketTests {
                 initiateClient(client, port)
                 clientMessage(client, "Client-$i", "Client-$i:Server-1")
                 client.close()
-                if (i >= clientCount - 1)
+                c++
+                mut.unlock()
+                if (c >= clientCount - 1)
                     server.close()
             }
         }
