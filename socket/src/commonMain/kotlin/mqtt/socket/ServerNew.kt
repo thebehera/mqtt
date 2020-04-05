@@ -18,7 +18,7 @@ class ServerNew (val host: String, val port: UShort, val process: ServerProcessA
     }
 
     suspend fun isOpen() : Boolean {
-        return serverSocket?.isOpen()
+        return serverSocket.isOpen()
     }
     suspend fun getClientConnection() {
 
@@ -33,19 +33,19 @@ class ServerNew (val host: String, val port: UShort, val process: ServerProcessA
     }
 
     suspend fun close() {
-        if (serverSocket?.isOpen())
-            serverSocket?.close()
+        if (serverSocket.isOpen())
+            serverSocket.close()
     }
 
     private suspend fun listen () = flow {
         try {
-            while (serverSocket?.isOpen()) {
-                val client = serverSocket?.accept()
+            while (serverSocket.isOpen()) {
+                val client = serverSocket.accept()
 
                 emit(client)
             }
         } catch (e: Exception) {
-            println("listen exception: ${e.message}")
+            println("listen exception: $e ${e.message}")
         }
         close()
     }
