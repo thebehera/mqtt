@@ -1,10 +1,14 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.client
+package mqtt.client.session.transport
 
 import kotlinx.coroutines.flow.first
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.BufferPool
+import mqtt.client.RemoteHost
+import mqtt.client.blockWithTimeout
+import mqtt.client.getClientId
+import mqtt.client.port
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire4.control.packet.ConnectionRequest
 import mqtt.wire4.control.packet.ControlPacketV4Reader
@@ -15,7 +19,7 @@ import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-class LiveMqttNetworkSessionTests {
+class MqttNetworkSessionTests {
     fun createConnectionRequest(clientId: String = getClientId()): Pair<ConnectionRequest, RemoteHost> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
         val host = RemoteHost(

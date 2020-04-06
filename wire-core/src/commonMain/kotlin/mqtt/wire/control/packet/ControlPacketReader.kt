@@ -12,4 +12,7 @@ interface ControlPacketReader {
     }
 
     fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): ControlPacket
+
+    fun pingRequest(): IPingRequest
+    fun pingResponse(): IPingResponse
 }
