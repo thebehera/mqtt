@@ -11,7 +11,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mqtt.buffer.BufferPool
 import mqtt.buffer.PlatformBuffer
-import mqtt.buffer.ReadBuffer
 import mqtt.connection.IRemoteHost
 import mqtt.socket.ClientToServerSocket
 import mqtt.socket.getClientSocket
@@ -22,7 +21,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import kotlin.time.*
 
 @ExperimentalTime
-class MqttNetworkSession private constructor(
+class MqttTransport private constructor(
     private val scope: CoroutineScope,
     private val pool: BufferPool,
     val remoteHost: IRemoteHost,
@@ -82,14 +81,14 @@ class MqttNetworkSession private constructor(
     override suspend fun close() = socket.close()
 
     companion object {
-        suspend fun openConnection(scope: CoroutineScope, remoteHost: IRemoteHost, pool: BufferPool): MqttNetworkSession {
+        suspend fun openConnection(scope: CoroutineScope, remoteHost: IRemoteHost, pool: BufferPool): MqttTransport {
             val clientSocket = getClientSocket()
             clientSocket.open(
                 remoteHost.connectionTimeout.toDuration(DurationUnit.MILLISECONDS),
                 remoteHost.port.toUShort(),
                 remoteHost.name
             )
-            val session = MqttNetworkSession(scope, pool, remoteHost, clientSocket, remoteHost.request.controlPacketReader)
+            val session = MqttTransport(scope, pool, remoteHost, clientSocket, remoteHost.request.controlPacketReader)
             session.asyncWrite(remoteHost.request)
             val connack = pool.borrowSuspend {
                 session.readPacket(it) as IConnectionAcknowledgment

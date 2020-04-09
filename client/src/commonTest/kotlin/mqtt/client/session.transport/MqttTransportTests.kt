@@ -11,7 +11,6 @@ import mqtt.client.getClientId
 import mqtt.client.port
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire4.control.packet.ConnectionRequest
-import mqtt.wire4.control.packet.ControlPacketV4Reader
 import mqtt.wire4.control.packet.DisconnectNotification
 import kotlin.test.Test
 import kotlin.test.assertFalse
@@ -19,7 +18,7 @@ import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-class MqttNetworkSessionTests {
+class MqttTransportTests {
     fun createConnectionRequest(clientId: String = getClientId()): Pair<ConnectionRequest, RemoteHost> {
         val request = ConnectionRequest(clientId, keepAliveSeconds = 10.toUShort())
         val host = RemoteHost(
@@ -43,7 +42,7 @@ class MqttNetworkSessionTests {
     @Test
     fun connectDisconnect() = blockWithTimeout {
         val (connectionRequest, remoteHost) = createConnectionRequest()
-        val liveSession = MqttNetworkSession.openConnection(this, remoteHost, pool)
+        val liveSession = MqttTransport.openConnection(this, remoteHost, pool)
         liveSession.asyncWrite(connectionRequest)
         assertTrue(liveSession.incomingPackets().first() is IConnectionAcknowledgment)
         liveSession.asyncWrite(DisconnectNotification)

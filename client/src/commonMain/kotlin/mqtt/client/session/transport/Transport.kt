@@ -24,4 +24,4 @@ interface Transport2 : SuspendCloseable {
 }
 
 @ExperimentalTime
-expect suspend fun CoroutineScope.openMqttNetworkSession(remoteHost: IRemoteHost, pool: BufferPool): MqttNetworkSession
+expect suspend fun CoroutineScope.openMqttNetworkSession(remoteHost: IRemoteHost, pool: BufferPool): MqttTransport

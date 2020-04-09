@@ -9,4 +9,4 @@ import kotlin.time.ExperimentalTime
 actual suspend fun CoroutineScope.openMqttNetworkSession(
     remoteHost: IRemoteHost,
     pool: BufferPool
-): MqttNetworkSession = MqttNetworkSession.openConnection(this, remoteHost, pool)
+): MqttTransport = MqttTransport.openConnection(this, remoteHost, pool)
