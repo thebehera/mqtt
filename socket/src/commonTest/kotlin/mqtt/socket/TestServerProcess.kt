@@ -27,17 +27,21 @@ class TestServerProcess : ServerProcessAbs() {
         val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
-        assertTrue(socket.isOpen(), "Client socket is not open")
+        try {
+            assertTrue(socket.isOpen(), "Client socket is not open")
 
-        socket.read(rbuffer, readTimeout)
+            socket.read(rbuffer, readTimeout)
 
-        var str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+            var str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
 //println("server received msg: $str")
-        assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
+            assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
 
-        wbuffer.writeUtf8String(str + ":" + name)
+            wbuffer.writeUtf8String(str + ":" + name)
 
-        socket.write(wbuffer, writeTimeout)
+            socket.write(wbuffer, writeTimeout)
+        } catch (e: Exception) {
+            println("TestServerProcess.serverSideProcess.exception:")
+        }
 
     }
 
