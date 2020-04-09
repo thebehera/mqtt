@@ -22,6 +22,7 @@ abstract class ControlPacketV5(override val controlPacketValue: Byte,
                                override val flags: Byte = 0b0) : ControlPacket {
     override val mqttVersion: Byte = 5
 
+    override val controlPacketReader = ControlPacketV5Reader
     companion object {
 
         fun from(buffer: ByteReadPacket, throwOnWarning: Boolean = true): ControlPacketV5 {

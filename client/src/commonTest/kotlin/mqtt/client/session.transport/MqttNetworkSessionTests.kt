@@ -43,9 +43,9 @@ class MqttNetworkSessionTests {
     @Test
     fun connectDisconnect() = blockWithTimeout {
         val (connectionRequest, remoteHost) = createConnectionRequest()
-        val liveSession = MqttNetworkSession.openConnection(remoteHost, pool)
+        val liveSession = MqttNetworkSession.openConnection(this, remoteHost, pool)
         liveSession.asyncWrite(connectionRequest)
-        assertTrue(liveSession.incomingPackets(ControlPacketV4Reader).first() is IConnectionAcknowledgment)
+        assertTrue(liveSession.incomingPackets().first() is IConnectionAcknowledgment)
         liveSession.asyncWrite(DisconnectNotification)
         liveSession.socket.close()
         assertFalse(liveSession.socket.isOpen())

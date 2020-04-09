@@ -13,11 +13,11 @@ data class BufferPool(val limits: BufferMemoryLimit) {
         recycle(buffer)
     }
 
-    suspend fun borrowSuspend(size: UInt = limits.defaultBufferSize, cb: suspend ((PlatformBuffer) -> Unit)) {
+    suspend fun <T> borrowSuspend(size: UInt = limits.defaultBufferSize, cb: suspend ((PlatformBuffer) -> T)): T {
         val buffer = borrow(size)
         buffer.resetForWrite()
         try {
-            cb(buffer)
+            return cb(buffer)
         } finally {
             recycle(buffer)
         }

@@ -20,8 +20,8 @@ interface Transport {
 
 interface Transport2 : SuspendCloseable {
     suspend fun asyncWrite(controlPacket: ControlPacket)
-    suspend fun incomingPackets(scope: CoroutineScope): Flow<ControlPacket>
+    suspend fun incomingPackets(): Flow<ControlPacket>
 }
 
 @ExperimentalTime
-expect suspend fun openMqttNetworkSession(remoteHost: IRemoteHost, pool: BufferPool): MqttNetworkSession
+expect suspend fun CoroutineScope.openMqttNetworkSession(remoteHost: IRemoteHost, pool: BufferPool): MqttNetworkSession

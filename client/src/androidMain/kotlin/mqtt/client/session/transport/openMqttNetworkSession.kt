@@ -1,11 +1,12 @@
 package mqtt.client.session.transport
 
+import kotlinx.coroutines.CoroutineScope
 import mqtt.buffer.BufferPool
 import mqtt.connection.IRemoteHost
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-actual suspend fun openMqttNetworkSession(
+actual suspend fun CoroutineScope.openMqttNetworkSession(
     remoteHost: IRemoteHost,
     pool: BufferPool
-): MqttNetworkSession = MqttNetworkSession.openConnection(remoteHost, pool)
+): MqttNetworkSession = MqttNetworkSession.openConnection(this, remoteHost, pool)
