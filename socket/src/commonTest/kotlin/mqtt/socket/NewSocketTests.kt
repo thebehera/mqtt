@@ -1,9 +1,7 @@
 package mqtt.socket
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withTimeout
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
@@ -48,7 +46,7 @@ class NewSocketTests {
     @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
-        val clientCount = 1000
+        val clientCount = 20000
         val serverProcess = TestServerProcess()
         serverProcess.name = "Server-1"
         serverProcess.clientResponse = "Client-"
@@ -61,9 +59,10 @@ class NewSocketTests {
         repeat(clientCount) { i ->
             val client = asyncClientSocket()
             initiateClient(client, port)
-            launch {
+            launch (Dispatchers.Default){
                 clientMessage(client, "Client-$i", "Client-$i:Server-1")
                 launch {
+                    println("b==> $i")
                     client.close()
                     closedConnections++
                     if (closedConnections >= clientCount) {
@@ -89,24 +88,32 @@ class NewSocketTests {
         val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
-        wbuffer.writeUtf8String(sendMsg)
-        socket.write(wbuffer, timeout)
-        socket.read(rbuffer, timeout)
-
-        val str:String = rbuffer.readMqttUtf8StringNotValidated().toString()
-        assertEquals(respMsg, str, "Excepted message not received.")
+        try {
+            wbuffer.writeUtf8String(sendMsg)
+            socket.write(wbuffer, timeout)
+            socket.read(rbuffer, timeout)
+            println("a==>$sendMsg")
+            val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+            assertEquals(respMsg, str, "Excepted message not received.")
+        } catch (e: Exception) {
+            println("NewSocketTest.clientMessage.exception: $sendMsg")
+        }
     }
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun initiateClient(socket: ClientToServerSocket, port: UShort) {
 
-        assertFalse(socket.isOpen(), "Client socket should not be open state")
-        socket.open(100.seconds, port, "localhost")
+        try {
+            assertFalse(socket.isOpen(), "Client socket should not be open state")
+            socket.open(100.seconds, port, "localhost")
 
-        assertEquals(socket.remotePort(), port, "Remote port is not the as in connect request.")
-        //println("client port #: ${client!!.localPort()}, ${client!!.remotePort()}")
-        assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
+            assertEquals(socket.remotePort(), port, "Remote port is not the as in connect request.")
+            //println("client port #: ${client!!.localPort()}, ${client!!.remotePort()}")
+            assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
+        } catch (e: Exception) {
+            println("NewSocketTest.initiateClient.exception: $port")
+        }
     }
 
     @ExperimentalUnsignedTypes
