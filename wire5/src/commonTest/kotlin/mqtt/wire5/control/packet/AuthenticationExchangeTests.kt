@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.toByteArray
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
@@ -182,7 +181,7 @@ class AuthenticationExchangeTests {
     @Test
     fun authDataMultipleTimesThrowsProtocolError() {
         val method = AuthenticationMethod(MqttUtf8String("yolo"))
-        val obj1 = AuthenticationData(ByteArrayWrapper("yas".toByteArray()))
+        val obj1 = AuthenticationData(ByteArrayWrapper("yas"))
         val buffer1 = allocateNewBuffer(20u, limits)
         buffer1.writeVariableByteInteger(19u)
         method.write(buffer1)

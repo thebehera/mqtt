@@ -3,7 +3,9 @@ package mqtt.client.persistence
 import android.content.Context
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 abstract class MqttDatabaseDescriptor<Database : MqttRoomDatabase>(
     private val type: Class<out Database>,
     val dbName: String = "mqtt.db"

@@ -3,10 +3,8 @@
 package mqtt.client.session.transport
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import mqtt.buffer.BufferPool
@@ -30,9 +28,8 @@ class MqttTransport private constructor(
 ) : Transport2 {
     private val writeMutex = Mutex()
     private val keepAliveTimeout = remoteHost.request.keepAliveTimeoutSeconds.toInt().toDuration(DurationUnit.SECONDS)
-    private lateinit var lastMessageReceived: ClockMark
-    private lateinit var lastMessageSent: ClockMark
-    private lateinit var connack: IConnectionAcknowledgment
+    lateinit var lastMessageReceived: ClockMark
+    lateinit var lastMessageSent: ClockMark
 
     override suspend fun asyncWrite(controlPacket: ControlPacket) {
         if (controlPacket.direction == DirectionOfFlow.SERVER_TO_CLIENT) {
@@ -62,26 +59,16 @@ class MqttTransport private constructor(
         }
     }
 
-    private fun startKeepAlive() = scope.launch {
-        while (isOpen()) {
-            delayUntilKeepAlive()
-            asyncWrite(controlPacketReader.pingRequest())
-        }
-    }
-
-    private suspend fun delayUntilKeepAlive() {
-        val keepAliveDuration = remoteHost.request.keepAliveTimeoutSeconds.toInt().toDuration(DurationUnit.SECONDS)
-        while (lastMessageReceived.elapsedNow() > keepAliveDuration) {
-            delay((lastMessageReceived.elapsedNow() - keepAliveDuration).toLongMilliseconds())
-        }
-    }
-
     fun isOpen() = socket.isOpen() && scope.isActive
 
     override suspend fun close() = socket.close()
 
     companion object {
-        suspend fun openConnection(scope: CoroutineScope, remoteHost: IRemoteHost, pool: BufferPool): MqttTransport {
+        suspend fun openConnection(
+            scope: CoroutineScope,
+            remoteHost: IRemoteHost,
+            pool: BufferPool
+        ): ConnectedMqttTransport {
             val clientSocket = getClientSocket()
             clientSocket.open(
                 remoteHost.connectionTimeout.toDuration(DurationUnit.MILLISECONDS),
@@ -93,9 +80,10 @@ class MqttTransport private constructor(
             val connack = pool.borrowSuspend {
                 session.readPacket(it) as IConnectionAcknowledgment
             }
-            session.connack = connack
-            session.startKeepAlive()
-            return session
+            return ConnectedMqttTransport(session, connack)
         }
     }
 }
+
+@ExperimentalTime
+data class ConnectedMqttTransport(val transport: MqttTransport, val connack: IConnectionAcknowledgment)

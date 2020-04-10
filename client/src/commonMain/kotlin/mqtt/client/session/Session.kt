@@ -6,10 +6,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.session.transport.OnMessageReceivedCallback
-import mqtt.client.session.transport.PlatformSocketConnection
-import mqtt.client.session.transport.SocketTransport
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
+import mqtt.connection.Initializing
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
@@ -20,37 +19,22 @@ import mqtt.wire4.control.packet.SubscribeRequest
 import mqtt.wire4.control.packet.UnsubscribeRequest
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 class ClientSession(
     val remoteHost: IRemoteHost,
     val queuedObjectCollection: QueuedObjectCollection,
     override val coroutineContext: CoroutineContext,
     val state: ClientSessionState = ClientSessionState(queuedObjectCollection, remoteHost)
 ) : CoroutineScope, OnMessageReceivedCallback {
-    var transport: SocketTransport? = null
     var callback: OnMessageReceivedCallback? = null
     var everyRecvMessageCallback: OnMessageReceivedCallback? = null
     var connack: IConnectionAcknowledgment? = null
     var outboundCallback: ((ControlPacket, Int) -> Unit)? = null
 
     suspend fun connect(): ConnectionState {
-        val transportLocal = transport
-        if (transportLocal != null) {
-            println("transportLocal $transportLocal")
-            return transportLocal.state.value
-        }
-        val platformSocketConnection =
-            PlatformSocketConnection(remoteHost, coroutineContext)
-        platformSocketConnection.outboundCallback = outboundCallback
-        this@ClientSession.transport = platformSocketConnection
-        platformSocketConnection.messageReceiveCallback = this@ClientSession
-        val state = platformSocketConnection.openConnectionAsync(true).await()
-        val connack = platformSocketConnection.connack
-        this.connack = connack
-        if (!remoteHost.request.cleanStart && connack != null && connack.isSuccessful && connack.sessionPresent) {
-            flushQueues()
-        }
-        return state.value
+        return Initializing
     }
 
     override fun onMessage(controlPacket: ControlPacket) {
@@ -95,8 +79,8 @@ class ClientSession(
     }
 
     suspend fun awaitSocketClose() {
-        transport?.awaitSocketClose()
-        this.transport = null
+//        transport?.awaitSocketClose()
+//        this.transport = null
     }
 
     suspend fun publish(topic: String, qos: QualityOfService,
@@ -190,14 +174,14 @@ class ClientSession(
         if (warning != null) {
             throw warning
         }
-        val transport = transport ?: return
-        transport.clientToServer.send(msg)
+//        val transport = transport ?: return
+//        transport.clientToServer.send(msg)
     }
 
     private suspend fun flushQueues() {
-        val transport = transport ?: return
-        val controlPacket = state.queue.get() ?: return
-        transport.clientToServer.send(controlPacket)
+//        val transport = transport ?: return
+//        val controlPacket = state.queue.get() ?: return
+//        transport.clientToServer.send(controlPacket)
     }
 
     suspend fun unsubscribe(packetIdentifier: UShort, topics: List<String>) {
@@ -213,8 +197,9 @@ class ClientSession(
     }
 
     suspend fun disconnectAsync(): Boolean {
-        val result = transport?.closeAsync()?.await() ?: false
-        transport = null
-        return result
+//        val result = transport?.closeAsync()?.await() ?: false
+//        transport = null
+//        return result
+        return true
     }
 }

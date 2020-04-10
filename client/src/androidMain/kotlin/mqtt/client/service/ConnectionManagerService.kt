@@ -18,6 +18,7 @@ import mqtt.connection.MqttConnectionStateUpdated
 import mqtt.connection.Open
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
+import kotlin.time.ExperimentalTime
 
 private const val TAG = "[MQTT][SiCo]"
 const val MESSAGE_PAYLOAD = "msg_payload"
@@ -25,9 +26,11 @@ const val REGISTER_CLIENT = Int.MIN_VALUE
 const val UNREGISTER_CLIENT = Int.MIN_VALUE + 1
 
 
+@ExperimentalTime
 class ConnectionManagerService : CoroutineService() {
 
     private lateinit var dbProvider: MqttConnectionsDatabaseDescriptor
+
     @SuppressLint("UseSparseArrays")
     private val connectionManagers = HashMap<Int, ConnectionManager>()
 

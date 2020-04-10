@@ -19,7 +19,9 @@ import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 data class MqttClient(
     val remoteHost: IRemoteHost,
     val otherMsgCallback: OnMessageReceivedCallback? = null,
@@ -48,9 +50,9 @@ data class MqttClient(
     }
 
     fun startAsync(newConnectionCb: ((ConnectionState) -> Unit)? = null) = async {
-        if (session.transport?.isOpenAndActive() == true) {
-            return@async true
-        }
+//        if (session.transport?.isOpenAndActive() == true) {
+//            return@async true
+//        }
         return@async retryIO(remoteHost.maxNumberOfRetries) {
             val result = try {
                 if (isActive) {

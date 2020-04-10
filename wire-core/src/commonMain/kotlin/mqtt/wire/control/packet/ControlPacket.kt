@@ -16,6 +16,7 @@ interface ControlPacket : Parcelable {
     val direction: DirectionOfFlow
     val flags: Byte get() = 0b0
     val mqttVersion: Byte
+
     val controlPacketReader: ControlPacketReader
 
     private fun fixedHeader(): ByteReadPacket {

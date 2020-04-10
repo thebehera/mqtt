@@ -9,7 +9,6 @@ import mqtt.Parcelable
 import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire.control.packet.ControlPacketReader
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.decodeVariableByteInteger
 
@@ -28,6 +27,8 @@ abstract class ControlPacketV4(
 ) : ControlPacket, Parcelable {
     @Ignore
     override val mqttVersion: Byte = 4
+
+    @Ignore
     override val controlPacketReader = ControlPacketV4Reader
 
     companion object {

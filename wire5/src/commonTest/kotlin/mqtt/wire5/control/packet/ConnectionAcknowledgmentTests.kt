@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.toByteArray
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
@@ -613,7 +612,7 @@ class ConnectionAcknowledgmentTests {
             VariableHeader(
                 properties = Properties(
                     authentication =
-                    Authentication(MqttUtf8String("yolo"), ByteArrayWrapper("yolo".toByteArray()))
+                    Authentication(MqttUtf8String("yolo"), ByteArrayWrapper("yolo"))
                 )
             )
         )
@@ -622,7 +621,7 @@ class ConnectionAcknowledgmentTests {
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.authentication?.method?.getValueOrThrow().toString(), "yolo")
-        assertEquals(expected.header.properties.authentication?.data, ByteArrayWrapper("yolo".toByteArray()))
+        assertEquals(expected.header.properties.authentication?.data, ByteArrayWrapper("yolo"))
     }
 
     @Test
@@ -644,7 +643,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun authenticationDataMultipleTimesThrowsProtocolError() {
-        val obj1 = AuthenticationData(ByteArrayWrapper("yolo".toByteArray()))
+        val obj1 = AuthenticationData(ByteArrayWrapper("yolo"))
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
