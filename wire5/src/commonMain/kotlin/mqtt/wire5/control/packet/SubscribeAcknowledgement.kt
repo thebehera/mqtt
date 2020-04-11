@@ -39,7 +39,6 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
 
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override val payloadPacketSize: UInt = payload.size.toUInt()
     override fun payload(writeBuffer: WriteBuffer) = payload.forEach { writeBuffer.write(it.byte) }
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.size.toUInt()
     init {

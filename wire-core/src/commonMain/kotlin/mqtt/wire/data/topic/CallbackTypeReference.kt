@@ -12,7 +12,7 @@ constructor(
     val serializer: MqttSerializable<T>? = findSerializer(klass)
 ) {
     fun handleCallback(incomingPublish: IPublishMessage) {
-        val payload = incomingPublish.payloadPacket()
+        val payload = null //incomingPublish.payloadPacket()
         val topic = incomingPublish.topic
         val qos = incomingPublish.qualityOfService
         if (payload == null) {
@@ -24,7 +24,7 @@ constructor(
             callback.onMessageReceived(Name(topic), qos, null)
             return
         }
-        val message = serializer.deserialize(payload)
-        callback.onMessageReceived(Name(topic), qos, message)
+//        val message = serializer.deserialize(payload)
+//        callback.onMessageReceived(Name(topic), qos, message)
     }
 }
