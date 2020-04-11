@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -14,7 +13,9 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.*
+import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.ConnectionRequest.VariableHeader.Properties.Authentication
 import mqtt.wire5.control.packet.format.variable.property.*
 
@@ -56,13 +57,11 @@ data class ConnectionRequest(
     override val clientIdentifier: CharSequence = payload.clientId.getValueOrThrow()
     @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
-    @IgnoredOnParcel override val variableHeaderPacket = variableHeader.packet()
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     @IgnoredOnParcel override val cleanStart: Boolean = variableHeader.cleanStart
     @IgnoredOnParcel override val username = payload.userName?.getValueOrThrow()
     @IgnoredOnParcel override val protocolName = variableHeader.protocolName.getValueOrThrow()
     @IgnoredOnParcel override val protocolVersion = variableHeader.protocolVersion.toInt()
-    override fun payloadPacket(sendDefaults: Boolean) = payload.packet(sendDefaults)
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
@@ -589,49 +588,6 @@ data class ConnectionRequest(
                     throw ProtocolError("Maximum Packet Size cannot be set to 0")
                 }
             }
-            @IgnoredOnParcel
-            val packet by lazy {
-                val propertiesPacket = buildPacket {
-                    if (sessionExpiryIntervalSeconds != null) {
-                        SessionExpiryInterval(sessionExpiryIntervalSeconds).write(this)
-                    }
-                    if (receiveMaximum != null) {
-                        ReceiveMaximum(receiveMaximum).write(this)
-                    }
-                    if (maximumPacketSize != null) {
-                        MaximumPacketSize(maximumPacketSize).write(this)
-                    }
-                    if (topicAliasMaximum != null) {
-                        TopicAliasMaximum(topicAliasMaximum).write(this)
-                    }
-                    if (requestResponseInformation != null) {
-                        RequestResponseInformation(requestResponseInformation).write(this)
-                    }
-                    if (requestProblemInformation != null) {
-                        RequestProblemInformation(requestProblemInformation).write(this)
-                    }
-                    if (userProperty != null && userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                    if (authentication != null) {
-                        AuthenticationMethod(authentication.method).write(this)
-                        AuthenticationData(authentication.data).write(this)
-                    }
-                }
-                // The length of the Properties in the CONNECT packet Variable Header encoded as a
-                // Variable Byte Integer.
-                val propertyLength = propertiesPacket.remaining
-                val result = buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-
-                result
-            }
 
             val props by lazy {
                 val userPropertyCount = userProperty?.count() ?: 0
@@ -791,25 +747,6 @@ data class ConnectionRequest(
          * The Variable Header for the CONNECT Packet contains the following fields in this order: Protocol Name,
          * Protocol Level, Connect Flags, Keep Alive, and Properties
          */
-        fun packet(): ByteReadPacket {
-            val usernameFlag = if (hasUserName) 0b10000000 else 0
-            val passwordFlag = if (hasPassword) 0b1000000 else 0
-            val wRetain = if (willRetain) 0b100000 else 0
-            val qos = willQos.integerValue.toInt().shl(3)
-            val wFlag = if (willFlag) 0b100 else 0
-            val cleanStart = if (cleanStart) 0b10 else 0
-            val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            return buildPacket {
-                writeMqttUtf8String(protocolName)
-                writeUByte(protocolVersion.toUByte())
-                writeByte(flags)
-                writeUShort(keepAliveSeconds.toUShort())
-                if (protocolVersion > 4) {
-                    writePacket(properties.packet)
-                }
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             val usernameFlag = if (hasUserName) 0b10000000 else 0
             val passwordFlag = if (hasPassword) 0b1000000 else 0
@@ -828,33 +765,6 @@ data class ConnectionRequest(
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val protocolName = buffer.readMqttUtf8String()
-                val protocolVersion = buffer.readUByte().toShort()
-                val connectFlags = buffer.readUByte()
-                val reserved = connectFlags.get(0)
-                val cleanStart = connectFlags.get(1)
-                val willFlag = connectFlags.get(2)
-                val willQosBit1 = connectFlags.get(3)
-                val willQosBit2 = connectFlags.get(4)
-                val willQos = QualityOfService.fromBooleans(willQosBit2, willQosBit1)
-                val willRetain = connectFlags.get(5)
-                val hasPassword = connectFlags.get(6)
-                val hasUsername = connectFlags.get(7)
-                if (reserved) {
-                    throw MalformedPacketException(
-                        "Reserved flag in Connect Variable Header packet is set incorrectly to 1"
-                    )
-                }
-                val keepAliveSeconds = buffer.readUShort().toInt()
-                val propertiesRaw = buffer.readPropertiesLegacy()
-                val properties = Properties.from(propertiesRaw)
-                return VariableHeader(
-                    protocolName, protocolVersion, hasUsername, hasPassword, willRetain, willQos,
-                    willFlag, cleanStart, keepAliveSeconds, properties
-                )
-            }
-
             fun from(buffer: ReadBuffer): VariableHeader {
                 val protocolName = buffer.readMqttUtf8StringNotValidated()
                 val protocolVersion = buffer.readUnsignedByte().toShort()
@@ -1122,45 +1032,6 @@ data class ConnectionRequest(
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-
-            /**
-             * Create a byte array representing Will Properties
-             * @param sendDefaults Increase the data transferred by defining the default explicitly
-             */
-            fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-                val data = buildPacket {
-                    if (willDelayIntervalSeconds != 0L || sendDefaults) {
-                        WillDelayInterval(willDelayIntervalSeconds).write(this)
-                    }
-                    if (payloadFormatIndicator || sendDefaults) {
-                        PayloadFormatIndicator(payloadFormatIndicator).write(this)
-                    }
-                    if (messageExpiryIntervalSeconds != null) {
-                        MessageExpiryInterval(messageExpiryIntervalSeconds).write(this)
-                    }
-                    if (contentType != null) {
-                        ContentType(contentType).write(this)
-                    }
-                    if (responseTopic != null) {
-                        ResponseTopic(responseTopic).write(this)
-                    }
-                    if (correlationData != null) {
-                        CorrelationData(correlationData).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                return buildPacket {
-                    writePacket(VariableByteInteger(data.remaining.toUInt()).encodedValue())
-                    writePacket(data)
-                }
-            }
-
             val props by lazy {
                 val properties = ArrayList<Property>(6 + userProperty.count())
                 if (willDelayIntervalSeconds != 0L) {
@@ -1203,85 +1074,6 @@ data class ConnectionRequest(
             }
 
             companion object {
-                fun from(buffer: ByteReadPacket): WillProperties {
-                    var willDelayIntervalSeconds: Long? = null
-                    var payloadFormatIndicator: Boolean? = null
-                    var messageExpiryIntervalSeconds: Long? = null
-                    var contentType: MqttUtf8String? = null
-                    var responseTopic: MqttUtf8String? = null
-                    var correlationData: ByteArrayWrapper? = null
-                    var userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
-                    val properties = buffer.readPropertiesLegacy() ?: return WillProperties()
-                    properties.forEach {
-                        when (it) {
-                            is WillDelayInterval -> {
-                                if (willDelayIntervalSeconds != null) {
-                                    throw ProtocolError(
-                                        "Will Delay Interval added multiple times see: " +
-                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477362"
-                                    )
-                                }
-                                willDelayIntervalSeconds = it.seconds
-                            }
-                            is PayloadFormatIndicator -> {
-                                if (payloadFormatIndicator != null) {
-                                    throw ProtocolError(
-                                        "Payload Format Indicator added multiple times see: " +
-                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
-                                    )
-                                }
-                                payloadFormatIndicator = it.willMessageIsUtf8
-                            }
-                            is MessageExpiryInterval -> {
-                                if (messageExpiryIntervalSeconds != null) {
-                                    throw ProtocolError(
-                                        "Message Expiry Interval added multiple times see: " +
-                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
-                                    )
-                                }
-                                messageExpiryIntervalSeconds = it.seconds.toLong()
-                            }
-                            is ContentType -> {
-                                if (contentType != null) {
-                                    throw ProtocolError(
-                                        "Content Type added multiple times see: " +
-                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477365"
-                                    )
-                                }
-                                contentType = it.value
-                            }
-                            is ResponseTopic -> {
-                                if (responseTopic != null) {
-                                    throw ProtocolError(
-                                        "Response Topic added multiple times see: " +
-                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477366"
-                                    )
-                                }
-                                responseTopic = it.value
-                            }
-                            is CorrelationData -> {
-                                if (correlationData != null) {
-                                    throw ProtocolError(
-                                        "Coorelation data added multiple times see: " +
-                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477367"
-                                    )
-                                }
-                                correlationData = it.data
-                            }
-                            is UserProperty -> {
-                                val key = it.key
-                                val value = it.value
-                                userProperty.add(Pair(key, value))
-                            }
-                            else -> throw MalformedPacketException("Invalid property type found in MQTT payload $it")
-                        }
-                    }
-                    return WillProperties(
-                        willDelayIntervalSeconds ?: 0L,
-                        payloadFormatIndicator ?: false, messageExpiryIntervalSeconds,
-                        contentType, responseTopic, correlationData, userProperty
-                    )
-                }
 
                 fun from(buffer: ReadBuffer): WillProperties {
                     var willDelayIntervalSeconds: Long? = null
@@ -1355,30 +1147,6 @@ data class ConnectionRequest(
             }
         }
 
-        fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-            return buildPacket {
-                writeMqttUtf8String(clientId)
-                if (willProperties != null) {
-                    val properties = willProperties.packet(sendDefaults = sendDefaults)
-                    writePacket(properties)
-                }
-                if (willTopic != null) {
-                    writeMqttUtf8String(willTopic)
-                }
-                if (willPayload != null) {
-                    val payload = willPayload.byteArray
-                    writeUShort(payload.size.toUShort())
-                    writeFully(payload)
-                }
-                if (userName != null) {
-                    writeMqttUtf8String(userName)
-                }
-                if (password != null) {
-                    writeMqttUtf8String(password)
-                }
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.writeUtf8String(clientId.value)
             willProperties?.serialize(writeBuffer)
@@ -1399,35 +1167,6 @@ data class ConnectionRequest(
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket, variableHeader: VariableHeader): Payload {
-                val clientId = buffer.readMqttUtf8String()
-                val willProperties = if (variableHeader.willFlag) {
-                    WillProperties.from(buffer)
-                } else {
-                    null
-                }
-                val willTopic = if (variableHeader.willFlag) {
-                    buffer.readMqttUtf8String()
-                } else {
-                    null
-                }
-                val willPayload = if (variableHeader.willFlag) {
-                    ByteArrayWrapper(buildPacket { writeFully(buffer.readMqttBinary()) }.readBytes())
-                } else {
-                    null
-                }
-                val username = if (variableHeader.hasUserName) {
-                    buffer.readMqttUtf8String()
-                } else {
-                    null
-                }
-                val password = if (variableHeader.hasPassword) {
-                    buffer.readMqttUtf8String()
-                } else {
-                    null
-                }
-                return Payload(clientId, willProperties, willTopic, willPayload, username, password)
-            }
 
             fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload {
                 val clientId = MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
@@ -1463,13 +1202,6 @@ data class ConnectionRequest(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): ConnectionRequest {
-            val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from(buffer, variableHeader)
-            return ConnectionRequest(variableHeader, payload)
-        }
-
-
         fun from(buffer: ReadBuffer): ConnectionRequest {
             val variableHeader = VariableHeader.from(buffer)
             val payload = Payload.from(buffer, variableHeader)

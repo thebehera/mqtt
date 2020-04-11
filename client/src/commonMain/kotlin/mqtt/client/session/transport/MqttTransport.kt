@@ -25,7 +25,7 @@ class MqttTransport private constructor(
     val remoteHost: IRemoteHost,
     val socket: ClientToServerSocket,
     val controlPacketReader: ControlPacketReader
-) : Transport2 {
+) : Transport {
     private val writeMutex = Mutex()
     private val keepAliveTimeout = remoteHost.request.keepAliveTimeoutSeconds.toInt().toDuration(DurationUnit.SECONDS)
     lateinit var lastMessageReceived: ClockMark

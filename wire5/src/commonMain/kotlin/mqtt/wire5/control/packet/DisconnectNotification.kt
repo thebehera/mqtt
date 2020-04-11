@@ -2,11 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUByte
-import kotlinx.io.core.writeUByte
-import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
@@ -17,7 +12,6 @@ import mqtt.wire.control.packet.IDisconnectNotification
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -35,8 +29,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
 @Parcelize
 data class DisconnectNotification(val variable: VariableHeader = VariableHeader()) :
     ControlPacketV5(14, DirectionOfFlow.BIDIRECTIONAL), IDisconnectNotification {
-    @IgnoredOnParcel
-    override val variableHeaderPacket = variable.packet
+
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     @Parcelize
@@ -47,14 +40,6 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
         init {
             // throw if the reason code is not valid for the disconnect notification
             getDisconnectCode(reasonCode.byte)
-        }
-
-        @IgnoredOnParcel
-        val packet by lazy {
-            buildPacket {
-                writeUByte(reasonCode.byte)
-                writePacket(properties.packet)
-            }
         }
 
         fun serialize(buffer: WriteBuffer) {
@@ -123,31 +108,6 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
              */
             val serverReference: MqttUtf8String? = null
         ) : Parcelable {
-            @IgnoredOnParcel val packet by lazy {
-                val propertiesPacket = buildPacket {
-                    if (sessionExpiryIntervalSeconds != null) {
-                        SessionExpiryInterval(sessionExpiryIntervalSeconds).write(this)
-                    }
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                    if (serverReference != null) {
-                        ServerReference(serverReference).write(this)
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
 
             val props by lazy {
                 val list = ArrayList<Property>(3 + userProperty.count())
@@ -224,13 +184,6 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val reasonCodeByte = buffer.readUByte()
-                val reasonCode = getDisconnectCode(reasonCodeByte)
-                val props = Properties.from(buffer.readPropertiesLegacy())
-                return VariableHeader(reasonCode, props)
-            }
-
             fun from(buffer: ReadBuffer): VariableHeader {
                 val reasonCodeByte = buffer.readUnsignedByte()
                 val reasonCode = getDisconnectCode(reasonCodeByte)
@@ -241,11 +194,6 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): DisconnectNotification {
-            val variableHeader = VariableHeader.from(buffer)
-            return DisconnectNotification(variableHeader)
-        }
-
         fun from(buffer: ReadBuffer): DisconnectNotification {
             val variableHeader = VariableHeader.from(buffer)
             return DisconnectNotification(variableHeader)

@@ -2,11 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUByte
-import kotlinx.io.core.writeUByte
-import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
@@ -18,7 +13,6 @@ import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -33,9 +27,8 @@ import mqtt.wire5.control.packet.format.variable.property.*
 @Parcelize
 data class AuthenticationExchange(val variable: VariableHeader)
     : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
-    @IgnoredOnParcel
-    override val variableHeaderPacket = variable.packet
 
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     /**
@@ -72,13 +65,7 @@ data class AuthenticationExchange(val variable: VariableHeader)
             getReasonCode(reasonCode.byte)
         }
 
-        @IgnoredOnParcel
-        val packet by lazy {
-            buildPacket {
-                writeUByte(reasonCode.byte)
-                writePacket(properties.packet)
-            }
-        }
+        fun size(writeBuffer: WriteBuffer) = UByte.SIZE_BYTES.toUInt() + properties.size(writeBuffer)
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(reasonCode.byte)
@@ -92,44 +79,30 @@ data class AuthenticationExchange(val variable: VariableHeader)
             val reasonString: MqttUtf8String? = null,
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            @IgnoredOnParcel
-            val packet by lazy {
-                val propertiesPacket = buildPacket {
-                    AuthenticationMethod(method).write(this)
-                    if (data != null) {
-                        AuthenticationData(data).write(this)
-                    }
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
 
-            fun serialize(writeBuffer: WriteBuffer) {
-                val authMethod = if (method != null) AuthenticationMethod(method) else null
+            fun size(writeBuffer: WriteBuffer): UInt {
+                val authMethod = AuthenticationMethod(method)
                 val authData = if (data != null) AuthenticationData(data) else null
                 val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
                 val props = userProperty.map { UserProperty(it.first, it.second) }
-                var size = authMethod?.size(writeBuffer) ?: 0.toUInt()
+                var size = authMethod.size(writeBuffer)
                 size += authData?.size(writeBuffer) ?: 0.toUInt()
                 size += authReasonString?.size(writeBuffer) ?: 0.toUInt()
                 props.forEach {
                     size += it.size(writeBuffer)
                 }
+                size += writeBuffer.variableByteIntegerSize(size)
+                return size
+            }
+
+            fun serialize(writeBuffer: WriteBuffer) {
+                val authMethod = AuthenticationMethod(method)
+                val authData = if (data != null) AuthenticationData(data) else null
+                val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
+                val props = userProperty.map { UserProperty(it.first, it.second) }
+                var size = size(writeBuffer)
                 writeBuffer.writeVariableByteInteger(size)
-                authMethod?.write(writeBuffer)
+                authMethod.write(writeBuffer)
                 authData?.write(writeBuffer)
                 authReasonString?.write(writeBuffer)
                 props.forEach {
@@ -180,13 +153,6 @@ data class AuthenticationExchange(val variable: VariableHeader)
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val reasonCodeByte = buffer.readUByte()
-                val reasonCode = getReasonCode(reasonCodeByte)
-                val props = Properties.from(buffer.readPropertiesLegacy())
-                return VariableHeader(reasonCode, props)
-            }
-
             fun from(buffer: ReadBuffer): VariableHeader {
                 val reasonCodeByte = buffer.readUnsignedByte()
                 val reasonCode = getReasonCode(reasonCodeByte)
@@ -197,7 +163,6 @@ data class AuthenticationExchange(val variable: VariableHeader)
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket) = AuthenticationExchange(VariableHeader.from(buffer))
         fun from(buffer: ReadBuffer) = AuthenticationExchange(VariableHeader.from(buffer))
 
     }

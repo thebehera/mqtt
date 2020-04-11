@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -12,10 +11,11 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.*
+import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
-import mqtt.wire.data.topic.Name
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -46,11 +46,7 @@ data class PublishMessage(
 
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
-
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override fun payloadPacket(sendDefaults: Boolean) = ByteReadPacket(payload.byteArray)
     override fun payload(writeBuffer: WriteBuffer) {
         writeBuffer.write(payload.byteArray)
     }
@@ -241,14 +237,6 @@ data class PublishMessage(
                 }
                 else -> true
             }
-        }
-
-        fun packet(sendDefaults: Boolean = false) = buildPacket {
-            writeMqttName(Name(topicName))
-            if (packetIdentifier != null) {
-                writeUShort(packetIdentifier.toUShort())
-            }
-            writePacket(properties.packet(sendDefaults))
         }
 
         fun serialize(buffer: WriteBuffer) {
@@ -526,48 +514,6 @@ data class PublishMessage(
                 props.forEach { it.write(buffer) }
             }
 
-            fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-                val packet = buildPacket {
-                    if (payloadFormatIndicator || sendDefaults) {
-                        PayloadFormatIndicator(payloadFormatIndicator).write(this)
-                    }
-                    if (messageExpiryInterval != null) {
-                        MessageExpiryInterval(messageExpiryInterval).write(this)
-                    }
-                    if (topicAlias != null) {
-                        TopicAlias(topicAlias).write(this)
-                    }
-                    if (responseTopic != null) {
-                        ResponseTopic(responseTopic).write(this)
-                    }
-                    if (coorelationData != null) {
-                        CorrelationData(coorelationData).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                    if (subscriptionIdentifier.isNotEmpty()) {
-                        for (sub in subscriptionIdentifier) {
-                            SubscriptionIdentifier(sub).write(this)
-                        }
-                    }
-                    if (contentType != null) {
-                        ContentType(contentType).write(this)
-                    }
-                }
-                // The length of the Properties in the CONNECT packet Variable Header encoded as a
-                // Variable Byte Integer.
-                val propertyLength = packet.remaining
-                return buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(packet)
-                }
-            }
-
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var payloadFormatIndicator: Boolean? = null
@@ -649,12 +595,6 @@ data class PublishMessage(
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket, isQos0: Boolean): VariableHeader {
-                val topicName = buffer.readMqttUtf8String()
-                val packetIdentifier = if (isQos0) null else buffer.readUShort().toInt()
-                val props = Properties.from(buffer.readPropertiesLegacy())
-                return VariableHeader(topicName.value, packetIdentifier, props)
-            }
 
             fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
                 val result = buffer.readMqttUtf8StringNotValidatedSized()
@@ -676,12 +616,6 @@ data class PublishMessage(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket, byte1: UByte): PublishMessage {
-            val fixedHeader = FixedHeader.fromByte(byte1)
-            val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            val payloadBytes = ByteArrayWrapper(buffer.readBytes())
-            return PublishMessage(fixedHeader, variableHeader, payloadBytes)
-        }
 
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)

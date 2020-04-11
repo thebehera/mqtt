@@ -2,10 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUByte
-import kotlinx.io.core.writeUByte
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -20,7 +16,6 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.format.variable.property.*
 
 typealias CONNACK = ConnectionAcknowledgment
@@ -38,8 +33,6 @@ typealias CONNACK = ConnectionAcknowledgment
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
 
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = header.packet()
     @IgnoredOnParcel
     override val isSuccessful: Boolean = header.connectReason == SUCCESS
     @IgnoredOnParcel
@@ -392,71 +385,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
             val serverReference: MqttUtf8String? = null,
             val authentication: Authentication? = null
         ) : Parcelable {
-            fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-                val propertiesPacket = buildPacket {
-                    if (sessionExpiryIntervalSeconds != null) {
-                        SessionExpiryInterval(sessionExpiryIntervalSeconds).write(this)
-                    }
-                    if (receiveMaximum != UShort.MAX_VALUE.toInt() || sendDefaults) {
-                        ReceiveMaximum(receiveMaximum).write(this)
-                    }
-                    if (maximumQos != QualityOfService.EXACTLY_ONCE || sendDefaults) {
-                        MaximumQos(maximumQos).write(this)
-                    }
-                    if (!retainAvailable || sendDefaults) {
-                        RetainAvailable(retainAvailable).write(this)
-                    }
-                    if (maximumPacketSize != null) {
-                        MaximumPacketSize(maximumPacketSize).write(this)
-                    }
-                    if (assignedClientIdentifier != null) {
-                        AssignedClientIdentifier(assignedClientIdentifier).write(this)
-                    }
-                    if (topicAliasMaximum != 0 || sendDefaults) {
-                        TopicAliasMaximum(topicAliasMaximum).write(this)
-                    }
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                    if (!supportsWildcardSubscriptions || sendDefaults) {
-                        WildcardSubscriptionAvailable(supportsWildcardSubscriptions).write(this)
-                    }
-                    if (!subscriptionIdentifiersAvailable || sendDefaults) {
-                        SubscriptionIdentifierAvailable(subscriptionIdentifiersAvailable).write(this)
-                    }
-                    if (!sharedSubscriptionAvailable || sendDefaults) {
-                        SharedSubscriptionAvailable(sharedSubscriptionAvailable).write(this)
-                    }
-                    if (serverKeepAlive != null) {
-                        ServerKeepAlive(serverKeepAlive).write(this)
-                    }
-                    if (responseInformation != null) {
-                        ResponseInformation(responseInformation).write(this)
-                    }
-                    if (serverReference != null) {
-                        ServerReference(serverReference).write(this)
-                    }
-                    if (authentication != null) {
-                        AuthenticationMethod(authentication.method).write(this)
-                        AuthenticationData(authentication.data).write(this)
-                    }
-                }
-                // The length of the Properties in the CONNECT packet Variable Header encoded as a
-                // Variable Byte Integer.
-                val propertyLength = propertiesPacket.remaining
-                return buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
-
             val props by lazy {
                 val props = ArrayList<Property>(16 + userProperty.size)
                 if (sessionExpiryIntervalSeconds != null) {
@@ -726,14 +654,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
             }
         }
 
-        fun packet(sendDefaults: Boolean = false): ByteReadPacket {
-            return buildPacket {
-                writeByte(if (sessionPresent) 0b1 else 0b0)
-                writeUByte(connectReason.byte)
-                writePacket(properties.packet(sendDefaults))
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write((if (sessionPresent) 0b1 else 0b0).toByte())
             writeBuffer.write(connectReason.byte)
@@ -744,21 +664,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
 
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val sessionPresent = buffer.readByte() == 1.toByte()
-                val connectionReasonByte = buffer.readUByte()
-                val connectionReason = connackConnectReason[connectionReasonByte]
-                if (connectionReason == null) {
-                    throw MalformedPacketException("Invalid property type found in MQTT payload $connectionReason")
-                }
-                val propeties = if (buffer.remaining > 0) {
-                    val properties = buffer.readPropertiesLegacy()
-                    Properties.from(properties)
-                } else {
-                    Properties()
-                }
-                return VariableHeader(sessionPresent, connectionReason, propeties)
-            }
 
             fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader {
                 val sessionPresent = buffer.readByte() == 1.toByte()
@@ -779,7 +684,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket) = ConnectionAcknowledgment(VariableHeader.from(buffer))
         fun from(buffer: ReadBuffer, remainingLength: UInt) =
             ConnectionAcknowledgment(VariableHeader.from(buffer, remainingLength))
     }
