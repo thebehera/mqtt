@@ -6,7 +6,7 @@ import mqtt.wire.data.QualityOfService
 interface IPublishMessage : ControlPacket {
     val qualityOfService: QualityOfService
     val topic: CharSequence
-    override fun payloadPacket(sendDefaults: Boolean): ByteReadPacket?
+    override fun payloadPacket(sendDefaults: Boolean): ByteReadPacket? = null
     fun expectedResponse(): ControlPacket?
 
     companion object {

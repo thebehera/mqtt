@@ -52,6 +52,12 @@ interface ReadBuffer {
         return numBytes.toUByte()
     }
 
+    fun utf8StringSize(
+        inputSequence: CharSequence,
+        malformedInput: CharSequence? = null,
+        unmappableCharacter: CharSequence? = null
+    ): UInt
+
 //    fun <T> readTyped(deserializationStrategy: MqttDeserializationStrategy<T>): T
     // mqtt 5
     // fun readProperty():Property

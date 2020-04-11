@@ -1,8 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.*
 import mqtt.*
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
@@ -11,7 +10,9 @@ import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.*
+import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.QualityOfService
 
 typealias CONNECT = ConnectionRequest
 
@@ -85,14 +86,11 @@ data class ConnectionRequest(
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
 
-    @Ignore
-    @IgnoredOnParcel
-    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
+    override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
 
     @Ignore
     @IgnoredOnParcel
-    override val variableHeaderPacket = variableHeader.packet()
-    override fun payloadPacket(sendDefaults: Boolean) = payload.packet()
+    override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
 
     @Ignore
     @IgnoredOnParcel
@@ -362,22 +360,6 @@ data class ConnectionRequest(
          * The Variable Header for the CONNECT Packet contains the following fields in this order: Protocol Name,
          * Protocol Level, Connect Flags, Keep Alive, and Properties
          */
-        fun packet(): ByteReadPacket {
-            val usernameFlag = if (hasUserName) 0b10000000 else 0
-            val passwordFlag = if (hasPassword) 0b1000000 else 0
-            val wRetain = if (willRetain) 0b100000 else 0
-            val qos = willQos.integerValue.toInt().shl(3)
-            val wFlag = if (willFlag) 0b100 else 0
-            val cleanStart = if (cleanSession) 0b10 else 0
-            val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            return buildPacket {
-                writeMqttUtf8String(protocolName)
-                writeUByte(protocolLevel.toUByte())
-                writeByte(flags)
-                writeUShort(keepAliveSeconds.toUShort())
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             val usernameFlag = if (hasUserName) 0b10000000 else 0
             val passwordFlag = if (hasPassword) 0b1000000 else 0
@@ -392,31 +374,9 @@ data class ConnectionRequest(
             writeBuffer.write(keepAliveSeconds.toUShort())
         }
 
+        fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(protocolName.value) + 6u
+
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val protocolName = buffer.readMqttUtf8String()
-                val protocolVersion = buffer.readUByte()
-                val connectFlags = buffer.readUByte()
-                val reserved = connectFlags.get(0)
-                val cleanStart = connectFlags.get(1)
-                val willFlag = connectFlags.get(2)
-                val willQosBit1 = connectFlags.get(3)
-                val willQosBit2 = connectFlags.get(4)
-                val willQos = QualityOfService.fromBooleans(willQosBit2, willQosBit1)
-                val willRetain = connectFlags.get(5)
-                val hasPassword = connectFlags.get(6)
-                val hasUsername = connectFlags.get(7)
-                if (reserved) {
-                    throw MalformedPacketException(
-                        "Reserved flag in Connect Variable Header packet is set incorrectly to 1"
-                    )
-                }
-                val keepAliveSeconds = buffer.readUShort()
-                return VariableHeader(
-                    protocolName, protocolVersion.toByte(), hasUsername, hasPassword, willRetain, willQos,
-                    willFlag, cleanStart, keepAliveSeconds.toInt()
-                )
-            }
 
             fun from(buffer: ReadBuffer): VariableHeader {
                 val protocolName = buffer.readMqttUtf8StringNotValidated()
@@ -537,24 +497,22 @@ data class ConnectionRequest(
             val password: MqttUtf8String? = null
     ) : Parcelable {
 
-        fun packet(): ByteReadPacket {
-            return buildPacket {
-                writeMqttUtf8String(clientId)
-                if (willTopic != null) {
-                    writeMqttUtf8String(willTopic)
-                }
-                if (willPayload != null) {
-                    val payload = willPayload.byteArray
-                    writeUShort(payload.size.toUShort())
-                    writeFully(payload)
-                }
-                if (userName != null) {
-                    writeMqttUtf8String(userName)
-                }
-                if (password != null) {
-                    writeMqttUtf8String(password)
-                }
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = 2u + writeBuffer.mqttUtf8Size(clientId.value)
+            if (willTopic != null) {
+                size += 2u + writeBuffer.mqttUtf8Size(willTopic.value)
             }
+            if (willPayload != null) {
+                val payload = willPayload.byteArray
+                size += 2u + payload.size.toUInt()
+            }
+            if (userName != null) {
+                size += 2u + writeBuffer.mqttUtf8Size(userName.value)
+            }
+            if (password != null) {
+                size += 2u + writeBuffer.mqttUtf8Size(password.value)
+            }
+            return size
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
@@ -577,30 +535,6 @@ data class ConnectionRequest(
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket, variableHeader: VariableHeader): Payload {
-                val clientId = buffer.readMqttUtf8String()
-                val willTopic = if (variableHeader.willFlag) {
-                    buffer.readMqttUtf8String()
-                } else {
-                    null
-                }
-                val willPayload = if (variableHeader.willFlag) {
-                    ByteArrayWrapper(buildPacket { writeFully(buffer.readMqttBinary()) }.readBytes())
-                } else {
-                    null
-                }
-                val username = if (variableHeader.hasUserName) {
-                    buffer.readMqttUtf8String()
-                } else {
-                    null
-                }
-                val password = if (variableHeader.hasPassword) {
-                    buffer.readMqttUtf8String()
-                } else {
-                    null
-                }
-                return Payload(clientId, willTopic, willPayload, username, password)
-            }
 
             fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
@@ -631,11 +565,6 @@ data class ConnectionRequest(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): ConnectionRequest {
-            val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from(buffer, variableHeader)
-            return ConnectionRequest(variableHeader, payload)
-        }
 
         fun from(buffer: ReadBuffer): ConnectionRequest {
             val variableHeader = VariableHeader.from(buffer)

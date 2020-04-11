@@ -7,11 +7,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.launch
-import kotlinx.io.core.*
+import kotlinx.io.core.ByteReadPacket
+import kotlinx.io.core.IoBuffer
+import kotlinx.io.core.readFully
+import kotlinx.io.core.writeFully
 import mqtt.time.currentTimestampMs
 import mqtt.wire.control.packet.ControlPacket
-import mqtt.wire4.control.packet.ControlPacketV4
-import mqtt.wire5.control.packet.ControlPacketV5
+import mqtt.wire4.control.packet.Reserved
 import kotlin.coroutines.CoroutineContext
 
 class WebSocketTransport(
@@ -49,11 +51,8 @@ class WebSocketTransport(
         if (buffer.readRemaining < remaining) {
             return null
         }
-        return if (protocolVersion == 5) {
-            ControlPacketV5.from(buildPacket { writeFully(buffer, remaining) }, byte1)
-        } else {
-            ControlPacketV4.from(buildPacket { writeFully(buffer, remaining) }, byte1)
-        }
+        // TODO fix this back to original
+        return Reserved
     }
 
     private suspend fun hardClose() {

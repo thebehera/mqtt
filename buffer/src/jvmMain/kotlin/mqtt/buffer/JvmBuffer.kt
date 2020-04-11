@@ -75,6 +75,12 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         return this
     }
 
+    override fun utf8StringSize(
+        inputSequence: CharSequence,
+        malformedInput: CharSequence?,
+        unmappableCharacter: CharSequence?
+    ) = mqttUtf8Size(inputSequence, malformedInput, unmappableCharacter)
+
     override fun writeUtf8String(charSequence: CharSequence): WriteBuffer {
         val buffer = CharBuffer.wrap(charSequence)
         val size = mqttUtf8Size(charSequence).toUShort()

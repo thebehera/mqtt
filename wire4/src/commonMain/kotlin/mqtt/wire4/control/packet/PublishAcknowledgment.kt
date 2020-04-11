@@ -2,11 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUShort
-import kotlinx.io.core.writeUShort
-import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
@@ -21,14 +16,11 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 @Parcelize
 data class PublishAcknowledgment(override val packetIdentifier: Int)
     : ControlPacketV4(4, DirectionOfFlow.BIDIRECTIONAL), IPublishAcknowledgment {
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket) = PublishAcknowledgment(buffer.readUShort().toInt())
         fun from(buffer: ReadBuffer) = PublishAcknowledgment(buffer.readUnsignedShort().toInt())
     }
 }

@@ -67,6 +67,12 @@ data class JsBuffer(val buffer: IoBuffer = IoBuffer.Pool.borrow()) : PlatformBuf
         unmappableCharacter: CharSequence?
     ) = Charsets.UTF_8.newEncoder().encode(inputSequence).remaining.toUInt()
 
+    override fun utf8StringSize(
+        inputSequence: CharSequence,
+        malformedInput: CharSequence?,
+        unmappableCharacter: CharSequence?
+    ) = mqttUtf8Size(inputSequence, malformedInput, unmappableCharacter)
+
     override suspend fun close() {}
 }
 

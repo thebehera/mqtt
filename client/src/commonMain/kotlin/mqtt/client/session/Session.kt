@@ -103,7 +103,7 @@ class ClientSession(
             val serializer = findSerializer<T>() ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }
-        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
+//        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
     }
 
     suspend fun <T : Any> publish(
@@ -118,7 +118,7 @@ class ClientSession(
                 findSerializer(typeClass) ?: throw RuntimeException("Failed to find serializer for $payload")
             serializer.serialize(payload)
         }
-        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
+//        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
     }
 
 
