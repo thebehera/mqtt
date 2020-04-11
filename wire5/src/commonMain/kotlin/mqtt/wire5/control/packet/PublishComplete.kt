@@ -34,6 +34,7 @@ data class PublishComplete(val variable: VariableHeader) :
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     @IgnoredOnParcel
     override val packetIdentifier = variable.packetIdentifier
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
 
     /**
      * 3.7.2 PUBCOMP Variable Header
@@ -73,6 +74,17 @@ data class PublishComplete(val variable: VariableHeader) :
             }
         }
 
+        fun size(buffer: WriteBuffer): UInt {
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
+                    && properties.userProperty.isEmpty()
+                    && properties.reasonString == null)
+            var size = UShort.SIZE_BYTES.toUInt()
+            if (!canOmitReasonCodeAndProperties) {
+                val propsSize = properties.size(buffer)
+                size += UByte.SIZE_BYTES.toUInt() + buffer.variableByteIntegerSize(propsSize) + propsSize
+            }
+            return size
+        }
 
         fun serialize(buffer: WriteBuffer) {
             val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS

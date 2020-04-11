@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -80,15 +80,21 @@ data class ConnectionRequest(
                     "to 0, a User Name MUST NOT be present in the Payload")
         }
         if (variableHeader.hasPassword && payload.password == null) {
-            return MqttWarning("[MQTT-3.1.2-19]", "If the Password Flag is set" +
-                    " to 1, a Password MUST be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-19]", "If the Password Flag is set" +
+                        " to 1, a Password MUST be present in the Payload"
+            )
         }
         if (!variableHeader.hasPassword && payload.password != null) {
-            return MqttWarning("[MMQTT-3.1.2-18]", "If the Password Flag is set " +
-                    "to 0, a Password MUST NOT be present in the Payload")
+            return MqttWarning(
+                "[MMQTT-3.1.2-18]", "If the Password Flag is set " +
+                        "to 0, a Password MUST NOT be present in the Payload"
+            )
         }
         return null
     }
+
+    override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
 
     @Parcelize
     data class VariableHeader(
@@ -759,9 +765,15 @@ data class ConnectionRequest(
             writeBuffer.write(protocolVersion.toUByte())
             writeBuffer.write(flags)
             writeBuffer.write(keepAliveSeconds.toUShort())
-            if (protocolVersion > 4) {
-                properties.serialize(writeBuffer)
-            }
+            properties.serialize(writeBuffer)
+        }
+
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(protocolName.value)
+            size += (2u * UByte.SIZE_BYTES.toUInt()) + UShort.SIZE_BYTES.toUInt()
+            val propsSize = properties.size(writeBuffer)
+            size += propsSize + writeBuffer.variableByteIntegerSize(propsSize)
+            return size
         }
 
         companion object {
@@ -1164,6 +1176,24 @@ data class ConnectionRequest(
             if (password != null) {
                 writeBuffer.writeUtf8String(password.value)
             }
+        }
+
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(clientId.value)
+            if (willTopic != null) {
+                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(willTopic.value)
+            }
+            if (willProperties != null) {
+                val willPropertiesSize = willProperties.size(writeBuffer)
+                size += writeBuffer.variableByteIntegerSize(willPropertiesSize) + willPropertiesSize
+            }
+            if (userName != null) {
+                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(userName.value)
+            }
+            if (password != null) {
+                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(password.value)
+            }
+            return size
         }
 
         companion object {

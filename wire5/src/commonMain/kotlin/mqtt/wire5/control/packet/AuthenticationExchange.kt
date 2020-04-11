@@ -65,7 +65,10 @@ data class AuthenticationExchange(val variable: VariableHeader)
             getReasonCode(reasonCode.byte)
         }
 
-        fun size(writeBuffer: WriteBuffer) = UByte.SIZE_BYTES.toUInt() + properties.size(writeBuffer)
+        fun size(writeBuffer: WriteBuffer): UInt {
+            val propSize = properties.size(writeBuffer)
+            return propSize + UByte.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(propSize)
+        }
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(reasonCode.byte)
@@ -91,7 +94,6 @@ data class AuthenticationExchange(val variable: VariableHeader)
                 props.forEach {
                     size += it.size(writeBuffer)
                 }
-                size += writeBuffer.variableByteIntegerSize(size)
                 return size
             }
 

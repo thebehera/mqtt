@@ -41,6 +41,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override val payloadPacketSize: UInt = payload.size.toUInt()
     override fun payload(writeBuffer: WriteBuffer) = payload.forEach { writeBuffer.write(it.byte) }
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.size.toUInt()
     init {
         payload.forEach {
             if (!validSubscribeCodes.contains(it)) {
@@ -65,15 +66,22 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
             properties.serialize(writeBuffer)
         }
 
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = UShort.SIZE_BYTES.toUInt()
+            val propsSize = properties.size(writeBuffer)
+            size += writeBuffer.variableByteIntegerSize(propsSize) + propsSize
+            return size
+        }
+
         /**
          * 3.9.2.1 SUBACK Properties
          */
         @Parcelize
         data class Properties(
-                /**
-                 * 3.9.2.1.2 Reason String
-                 *
-                 * 31 (0x1F) Byte, Identifier of the Reason String.
+            /**
+             * 3.9.2.1.2 Reason String
+             *
+             * 31 (0x1F) Byte, Identifier of the Reason String.
                  *
                  * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
                  * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the Client.

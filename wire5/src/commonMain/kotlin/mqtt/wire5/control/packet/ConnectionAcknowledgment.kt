@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -40,6 +40,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
     @IgnoredOnParcel
     override val sessionPresent: Boolean = header.sessionPresent
     override fun variableHeader(writeBuffer: WriteBuffer) = header.serialize(writeBuffer)
+    override fun remainingLength(buffer: WriteBuffer) = header.size(buffer)
 
     /**
      * The Variable Header of the CONNACK Packet contains the following fields in the order: Connect Acknowledge Flags,

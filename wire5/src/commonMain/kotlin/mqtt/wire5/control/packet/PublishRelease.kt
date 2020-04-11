@@ -33,6 +33,7 @@ data class PublishRelease(val variable: VariableHeader)
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
     override fun expectedResponse() = PublishComplete(packetIdentifier.toUShort())
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
 
     /**
      * 3.6.2 PUBREL Variable Header
@@ -69,6 +70,18 @@ data class PublishRelease(val variable: VariableHeader)
                             "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477424"
                 )
             }
+        }
+
+        fun size(buffer: WriteBuffer): UInt {
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
+                    && properties.userProperty.isEmpty()
+                    && properties.reasonString == null)
+            var size = UShort.SIZE_BYTES.toUInt()
+            if (!canOmitReasonCodeAndProperties) {
+                val propsSize = properties.size(buffer)
+                size += UByte.SIZE_BYTES.toUInt() + buffer.variableByteIntegerSize(propsSize) + propsSize
+            }
+            return size
         }
 
         fun serialize(writeBuffer: WriteBuffer) {

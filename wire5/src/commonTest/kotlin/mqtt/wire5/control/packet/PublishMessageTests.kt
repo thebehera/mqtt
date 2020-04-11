@@ -284,8 +284,8 @@ class PublishMessageTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as PublishMessage
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals("key", key.getValueOrThrow().toString())
+        assertEquals("value", value.getValueOrThrow().toString())
     }
 
     @Test

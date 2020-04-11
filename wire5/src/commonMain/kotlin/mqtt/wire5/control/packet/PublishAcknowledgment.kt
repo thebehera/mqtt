@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -31,6 +31,7 @@ data class PublishAcknowledgment(val variable: VariableHeader)
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
 
     @Parcelize
     data class VariableHeader(
@@ -72,6 +73,18 @@ data class PublishAcknowledgment(val variable: VariableHeader)
                 buffer.write(reasonCode.byte)
                 properties.serialize(buffer)
             }
+        }
+
+        fun size(buffer: WriteBuffer): UInt {
+            val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
+                    && properties.userProperty.isEmpty()
+                    && properties.reasonString == null)
+            var size = UShort.SIZE_BYTES.toUInt()
+            if (!canOmitReasonCodeAndProperties) {
+                val propsSize = properties.size(buffer)
+                size += UByte.SIZE_BYTES.toUInt() + buffer.variableByteIntegerSize(propsSize) + propsSize
+            }
+            return size
         }
 
         @Parcelize

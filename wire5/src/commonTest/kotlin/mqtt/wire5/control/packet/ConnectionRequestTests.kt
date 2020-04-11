@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
@@ -84,6 +84,8 @@ class ConnectionRequestTests {
     fun serializeAtMostOnce() {
         val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
         val buffer = allocateNewBuffer(15u, limits)
+        assertEquals(11u, connectionRequest.variableHeader.size(buffer), "variable header size")
+        assertEquals(2u, connectionRequest.payload.size(buffer), "payload size")
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00010000, buffer.readByte(), "invalid byte 1 on the CONNECT fixed header")

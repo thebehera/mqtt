@@ -51,6 +51,8 @@ data class PublishMessage(
         writeBuffer.write(payload.byteArray)
     }
 
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.byteArray.size.toUInt()
+
     @IgnoredOnParcel
     override val topic = variable.topicName
 
@@ -245,6 +247,16 @@ data class PublishMessage(
                 buffer.write(packetIdentifier.toUShort())
             }
             properties.serialize(buffer)
+        }
+
+        fun size(buffer: WriteBuffer): UInt {
+            var size = UShort.SIZE_BYTES.toUInt() + buffer.mqttUtf8Size(topicName)
+            if (packetIdentifier != null) {
+                size += UShort.SIZE_BYTES.toUInt()
+            }
+            val propsSize = properties.size(buffer)
+            size += buffer.variableByteIntegerSize(propsSize) + propsSize
+            return size
         }
 
         override fun hashCode(): Int {
