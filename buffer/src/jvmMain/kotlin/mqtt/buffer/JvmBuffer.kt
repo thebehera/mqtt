@@ -35,6 +35,7 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
     override fun readUnsignedShort() = byteBuffer.short.toUShort()
 
     override fun readUnsignedInt() = byteBuffer.int.toUInt()
+    override fun readLong() = byteBuffer.long
 
     override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
         val length = readUnsignedShort().toInt()
@@ -72,6 +73,11 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
 
     override fun write(uInt: UInt): WriteBuffer {
         byteBuffer.putInt(uInt.toInt())
+        return this
+    }
+
+    override fun write(long: Long): WriteBuffer {
+        byteBuffer.putLong(long)
         return this
     }
 

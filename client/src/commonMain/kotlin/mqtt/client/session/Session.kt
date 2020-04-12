@@ -10,13 +10,11 @@ import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
 import mqtt.connection.Initializing
 import mqtt.wire.control.packet.*
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.SubscriptionCallback
 import mqtt.wire4.control.packet.PublishMessage
 import mqtt.wire4.control.packet.SubscribeRequest
-import mqtt.wire4.control.packet.UnsubscribeRequest
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
 import kotlin.time.ExperimentalTime
@@ -99,10 +97,10 @@ class ClientSession(
         packetIdentifier: UShort,
         payload: T
     ) {
-        val actualPayload = run {
-            val serializer = findSerializer<T>() ?: throw RuntimeException("Failed to find serializer for $payload")
-            serializer.serialize(payload)
-        }
+//        val actualPayload = run {
+//            val serializer = findSerializer<T>() ?: throw RuntimeException("Failed to find serializer for $payload")
+//            serializer.serialize(payload)
+//        }
 //        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
     }
 
@@ -113,11 +111,11 @@ class ClientSession(
         typeClass: KClass<T>,
         payload: T
     ) {
-        val actualPayload = run {
-            val serializer =
-                findSerializer(typeClass) ?: throw RuntimeException("Failed to find serializer for $payload")
-            serializer.serialize(payload)
-        }
+//        val actualPayload = run {
+//            val serializer =
+//                findSerializer(typeClass) ?: throw RuntimeException("Failed to find serializer for $payload")
+//            serializer.serialize(payload)
+//        }
 //        send(PublishMessage(topic, qos, actualPayload, packetIdentifier))
     }
 
@@ -128,19 +126,19 @@ class ClientSession(
         callback: SubscriptionCallback<T>
     ) {
         val node = topic.validate() ?: return
-        state.subscriptionManager.register(node, typeClass, callback)
-        state.sentSubscriptionRequest(subscribe(packetIdentifier, topic, qos), typeClass, listOf(callback))
+//        state.subscriptionManager.register(node, typeClass, callback)
+//        state.sentSubscriptionRequest(subscribe(packetIdentifier, topic, qos), typeClass, listOf(callback))
     }
 
     suspend fun subscribe(packetIdentifier: UShort, topic: Filter, qos: QualityOfService): ISubscribeRequest {
-        val subscription = if (remoteHost.request.protocolVersion == 5) {
-            mqtt.wire5.control.packet.SubscribeRequest(packetIdentifier.toUShort(), topic.topicFilter, qos)
-        } else {
-            SubscribeRequest(packetIdentifier, topic, qos)
-        }
-        send(subscription)
-        state.unacknowledgedSubscriptions[packetIdentifier.toInt()] = subscription
-        return subscription
+//        val subscription = if (remoteHost.request.protocolVersion == 5) {
+//            mqtt.wire5.control.packet.SubscribeRequest(packetIdentifier.toUShort(), topic.topicFilter, qos)
+//        } else {
+//            SubscribeRequest(packetIdentifier, topic, qos)
+//        }
+//        send(subscription)
+//        state.unacknowledgedSubscriptions[packetIdentifier.toInt()] = subscription
+        return SubscribeRequest(1, emptyList())
     }
 
     suspend inline fun <reified T : Any> subscribe(
@@ -160,13 +158,13 @@ class ClientSession(
             throw IllegalArgumentException("Failed to subscribe: Topics.size != qos.size != callbacks.size")
         }
         val size = topics.size
-        val subscription = SubscribeRequest(packetIdentifier, topics, qos)
-        for (index in 0..size) {
-            val node = topics[index].validate() ?: return
-            state.subscriptionManager.register(node, callbacks[index])
-        }
-        send(subscription)
-        state.sentSubscriptionRequest(subscription, callbacks)
+//        val subscription = SubscribeRequest(packetIdentifier, topics, qos)
+//        for (index in 0..size) {
+//            val node = topics[index].validate() ?: return
+//            state.subscriptionManager.register(node, callbacks[index])
+//        }
+//        send(subscription)
+//        state.sentSubscriptionRequest(subscription, callbacks)
     }
 
     suspend fun send(msg: ControlPacket) {
@@ -185,15 +183,15 @@ class ClientSession(
     }
 
     suspend fun unsubscribe(packetIdentifier: UShort, topics: List<String>) {
-        val unsubscription = if (remoteHost.request.protocolVersion == 5) {
-            mqtt.wire5.control.packet.UnsubscribeRequest(
-                packetIdentifier.toInt(),
-                topics.map { MqttUtf8String(it) }.toSet()
-            )
-        } else {
-            UnsubscribeRequest(packetIdentifier.toInt(), topics = topics.map { MqttUtf8String(it) })
-        }
-        send(unsubscription)
+//        val unsubscription = if (remoteHost.request.protocolVersion == 5) {
+//            mqtt.wire5.control.packet.UnsubscribeRequest(
+//                packetIdentifier.toInt(),
+//                topics.map { MqttUtf8String(it) }.toSet()
+//            )
+//        } else {
+//            UnsubscribeRequest(packetIdentifier.toInt(), topics = topics.map { MqttUtf8String(it) })
+//        }
+//        send(unsubscription)
     }
 
     suspend fun disconnectAsync(): Boolean {

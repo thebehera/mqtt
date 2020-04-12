@@ -1,30 +1,37 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.wire.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readBytes
-import kotlinx.io.core.writeFully
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import kotlin.reflect.KClass
 
 interface MqttSerializationStrategy<T> {
-    fun serialize(obj: T): ByteReadPacket = buildPacket { }
+    fun serialize(obj: T, writeBuffer: WriteBuffer)
 }
 
 interface MqttDeserializationStrategy<T> {
-    fun deserialize(buffer: ByteReadPacket): T? = null
+    fun deserialize(readBuffer: ReadBuffer): T? = null
 }
 
 
 interface MqttSerializable<T : Any> : MqttSerializationStrategy<T>, MqttDeserializationStrategy<T>
 
 object ByteArraySerializer : MqttSerializable<ByteArray> {
-    override fun serialize(obj: ByteArray) = buildPacket { writeFully(obj) }
-    override fun deserialize(buffer: ByteReadPacket) = buffer.readBytes()
+    override fun serialize(obj: ByteArray, writeBuffer: WriteBuffer) {
+        writeBuffer.writeVariableByteInteger(obj.size.toUInt())
+        writeBuffer.write(obj)
+    }
+
+    override fun deserialize(readBuffer: ReadBuffer) = readBuffer.readByteArray(readBuffer.readVariableByteInteger())
 }
 
 object StringSerializer : MqttSerializable<String> {
-    override fun serialize(obj: String) = buildPacket { writeStringUtf8(obj) }
-    override fun deserialize(buffer: ByteReadPacket) = buffer.readText()
+    override fun serialize(obj: String, writeBuffer: WriteBuffer) {
+        writeBuffer.writeUtf8String(obj)
+    }
+
+    override fun deserialize(readBuffer: ReadBuffer) = readBuffer.readMqttUtf8StringNotValidated().toString()
 }
 
 val serializers = mutableMapOf<KClass<*>, MqttSerializable<*>>(

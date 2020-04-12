@@ -11,6 +11,7 @@ interface ReadBuffer {
     fun readUnsignedByte(): UByte
     fun readUnsignedShort(): UShort
     fun readUnsignedInt(): UInt
+    fun readLong(): Long
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence>
 
