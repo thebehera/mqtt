@@ -11,7 +11,9 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
-
+plugins {
+    id "com.gradle.build-scan" version "3.2.1"
+}
 ext {
     kotlinx_io_version = '0.1.16'
     ktor_version = '1.3.2'
@@ -39,6 +41,15 @@ allprojects {
             if(task.name.contains("jsBrowserTest")) {
                 task.enabled = false
             }
+        }
+    }
+}
+gradleEnterprise {
+    buildScan {
+        if (System.getenv("CI")) {
+            termsOfServiceUrl = "https://gradle.com/terms-of-service"
+            termsOfServiceAgree = "yes"
+            tag "CI"
         }
     }
 }
