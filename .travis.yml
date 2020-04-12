@@ -13,6 +13,7 @@ addons:
     packages:
       - mosquitto
       - libgbm-dev
+    update: true
   chrome: stable
 matrix:
   include:
