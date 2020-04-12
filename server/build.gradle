@@ -7,7 +7,12 @@ repositories {
 }
 
 kotlin {
-    jvm()
+    jvm {
+        compilations.main.kotlinOptions {
+            // Setup the Kotlin compiler options for the 'main' compilation:
+            jvmTarget = "1.8"
+        }
+    }
     sourceSets {
         commonMain {
             dependencies {
