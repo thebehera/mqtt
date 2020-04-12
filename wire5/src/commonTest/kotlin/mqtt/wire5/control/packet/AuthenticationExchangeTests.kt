@@ -181,7 +181,7 @@ class AuthenticationExchangeTests {
     @Test
     fun authDataMultipleTimesThrowsProtocolError() {
         val method = AuthenticationMethod(MqttUtf8String("yolo"))
-        val obj1 = AuthenticationData(ByteArrayWrapper("yas"))
+        val obj1 = AuthenticationData(ByteArrayWrapper(byteArrayOf(1, 2, 3)))
         val buffer1 = allocateNewBuffer(20u, limits)
         buffer1.writeVariableByteInteger(19u)
         method.write(buffer1)

@@ -18,7 +18,6 @@ kotlin {
                 compileOnly project(":wire4")
                 compileOnly project(":wire5")
                 api project(":wire-core")
-                implementation project(":time")
                 implementation project(":buffer")
                 implementation project(":socket")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
