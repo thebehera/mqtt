@@ -1,9 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.*
-import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
@@ -24,33 +22,16 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 @Parcelize
 data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payload: List<ReasonCode>)
     : ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
+    override fun remainingLength(buffer: WriteBuffer) = 2u + payload.size.toUInt()
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }
 
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
     override fun payload(writeBuffer: WriteBuffer) {
         payload.forEach { writeBuffer.write(it.byte.toUByte()) }
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): SubscribeAcknowledgement {
-            val packetIdentifier = buffer.readUShort()
-            val returnCodes = mutableListOf<ReasonCode>()
-            while (buffer.remaining > 0) {
-                val reasonCode = when (val reasonCodeByte = buffer.readUByte()) {
-                    GRANTED_QOS_0.byte -> GRANTED_QOS_0
-                    GRANTED_QOS_1.byte -> GRANTED_QOS_1
-                    GRANTED_QOS_2.byte -> GRANTED_QOS_2
-                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
-                    else -> throw MalformedPacketException("Invalid return code $reasonCodeByte")
-                }
-                returnCodes += reasonCode
-            }
-            return SubscribeAcknowledgement(packetIdentifier.toInt(), returnCodes)
-        }
 
         fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeAcknowledgement {
             val packetIdentifier = buffer.readUnsignedShort()

@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -13,11 +12,15 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.*
+import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.variable.property.*
+import mqtt.wire5.control.packet.format.variable.property.Property
+import mqtt.wire5.control.packet.format.variable.property.ReasonString
+import mqtt.wire5.control.packet.format.variable.property.UserProperty
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
 /**
  * 3.8 SUBSCRIBE - Subscribe request
@@ -57,18 +60,9 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
 
     @IgnoredOnParcel
     override val packetIdentifier = variable.packetIdentifier
-    @IgnoredOnParcel
-    override val variableHeaderPacket = variable.packet()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    @IgnoredOnParcel
-    private val payload by lazy {
-        buildPacket {
-            subscriptions.forEach { writePacket(it.packet) }
-        }
-    }
 
     override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier.toUShort(), ReasonCode.SUCCESS)
-    override fun payloadPacket(sendDefaults: Boolean) = payload
     override fun getTopics() = subscriptions.map { it.topicFilter }
     override fun payload(writeBuffer: WriteBuffer)  = subscriptions.forEach { it.serialize(writeBuffer) }
     override fun remainingLength(buffer: WriteBuffer): UInt {
@@ -93,13 +87,6 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
-        fun packet(): ByteReadPacket {
-            return buildPacket {
-                writeUShort(packetIdentifier.toUShort())
-                writePacket(properties.packet())
-            }
-        }
-
         fun size(writeBuffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(writeBuffer)
 
         fun serialize(writeBuffer: WriteBuffer) {
@@ -146,25 +133,6 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            fun packet(): ByteReadPacket {
-                val propertiesPacket = buildPacket {
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                return buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
 
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
@@ -215,18 +183,6 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort().toInt()
-                val remaining = buffer.remaining.toInt()
-                return if (remaining == 2) {
-                    VariableHeader(packetIdentifier)
-                } else {
-                    val propsData = buffer.readPropertiesLegacy()
-                    val props = Properties.from(propsData)
-                    VariableHeader(packetIdentifier, props)
-                }
-            }
-
             fun from(buffer: ReadBuffer, remainingLength: UInt): Pair<UInt, VariableHeader> {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
                 var size = 2u
@@ -243,12 +199,6 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): SubscribeRequest {
-            val header = VariableHeader.from(buffer)
-            val subscriptions = Subscription.fromMany(buffer)
-            return SubscribeRequest(header, subscriptions)
-        }
-
         fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeRequest {
             val header = VariableHeader.from(buffer, remainingLength)
             val subscriptions = Subscription.fromMany(buffer, remainingLength - header.first)
@@ -297,17 +247,6 @@ data class Subscription(val topicFilter: Filter,
                          */
                         val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
 ) : Parcelable {
-    @IgnoredOnParcel val packet by lazy {
-        val qosInt = maximumQos.integerValue
-        val nlShifted = (if (noLocal) 1 else 0).shl(2)
-        val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
-        val rH = retainHandling.value.toInt().shl(4)
-        val combinedByte = (qosInt + nlShifted + rapShifted + rH).toByte()
-        buildPacket {
-            writeMqttFilter(topicFilter)
-            writeByte(combinedByte)
-        }
-    }
 
     fun serialize(writeBuffer: WriteBuffer) {
         writeBuffer.writeUtf8String(topicFilter.topicFilter)
@@ -322,15 +261,6 @@ data class Subscription(val topicFilter: Filter,
     fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
 
     companion object {
-        fun fromMany(buffer: ByteReadPacket): Set<Subscription> {
-            val subscriptions = HashSet<Subscription>()
-            while (buffer.remaining > 1.toLong()) {
-                subscriptions.add(from(buffer))
-            }
-            return subscriptions
-        }
-
-
         fun fromMany(buffer: ReadBuffer, remainingLength: UInt): Set<Subscription> {
             val subscriptions = HashSet<Subscription>()
             var bytesRead = 0u
@@ -340,36 +270,6 @@ data class Subscription(val topicFilter: Filter,
                 subscriptions.add(result.second)
             }
             return subscriptions
-        }
-
-        fun from(buffer: ByteReadPacket): Subscription {
-            val topicFilter = buffer.readMqttUtf8String()
-            val subOptionsInt = buffer.readUByte().toInt()
-            val reservedBit7 = subOptionsInt.shr(7) == 1
-            if (reservedBit7) {
-                throw ProtocolError("Bit 7 in Subscribe payload is set to an invalid value (it is reserved)")
-            }
-            val reservedBit6 = subOptionsInt.shl(1).shr(7) == 1
-            if (reservedBit6) {
-                throw ProtocolError("Bit 7 in Subscribe payload is set to an invalid value (it is reserved)")
-            }
-            val retainHandlingBit5 = subOptionsInt.shl(2).shr(7) == 1
-            val retainHandlingBit4 = subOptionsInt.shl(3).shr(7) == 1
-            val retainHandling = if (retainHandlingBit5 && retainHandlingBit4) {
-                throw ProtocolError("Retain Handling Value cannot be set to 3")
-            } else if (retainHandlingBit5 && !retainHandlingBit4) {
-                DO_NOT_SEND_RETAINED_MESSAGES
-            } else if (!retainHandlingBit5 && retainHandlingBit4) {
-                SEND_RETAINED_MESSAGES_AT_SUBSCRIBE_ONLY_IF_SUBSCRIBE_DOESNT_EXISTS
-            } else {
-                SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
-            }
-            val rapBit3 = subOptionsInt.shl(4).shr(7) == 1
-            val nlBit2 = subOptionsInt.shl(5).shr(7) == 1
-            val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
-            val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
-            val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
-            return Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling)
         }
 
         fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {

@@ -1,10 +1,11 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.android_app
 
 import androidx.room.*
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.streams.readerUTF8
 import mqtt.androidx.room.*
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.client.persistence.MqttRoomDatabase
 import mqtt.wire.control.packet.MqttSerializable
 import mqtt.wire.data.utf8Length
@@ -20,14 +21,14 @@ data class SimpleModel(val stringValue: String, @PrimaryKey(autoGenerate = true)
 
 @MqttSerializer
 object SimpleModelSerializer : MqttSerializable<SimpleModel> {
-    override fun serialize(obj: SimpleModel) = buildPacket {
-        writeLong(obj.key)
-        writeStringUtf8(obj.stringValue)
+    override fun serialize(obj: SimpleModel, writeBuffer: WriteBuffer) {
+        writeBuffer.write(obj.key)
+        writeBuffer.writeUtf8String(obj.stringValue)
     }
 
-    override fun deserialize(buffer: ByteReadPacket) = with(buffer) {
+    override fun deserialize(readBuffer: ReadBuffer) = with(readBuffer) {
         val key = readLong()
-        val string = readerUTF8().use { readText() }
+        val string = readMqttUtf8StringNotValidated().toString()
         SimpleModel(string, key)
     }
 }

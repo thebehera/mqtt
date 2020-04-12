@@ -49,13 +49,6 @@ class SubscribeRequestTest {
     }
 
     @Test
-    fun subscriptionPayloadSize() {
-        val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val request = SubscribeRequest(0, subscriptions)
-        assertEquals(12.toUInt(), request.payloadPacketSize)
-    }
-
-    @Test
     fun subscriptionPayload() {
         val readBuffer = allocateNewBuffer(12u, limits)
         val subscription = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))

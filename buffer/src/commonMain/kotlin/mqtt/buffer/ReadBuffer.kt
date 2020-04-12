@@ -11,6 +11,7 @@ interface ReadBuffer {
     fun readUnsignedByte(): UByte
     fun readUnsignedShort(): UShort
     fun readUnsignedInt(): UInt
+    fun readLong(): Long
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence>
 
@@ -51,6 +52,12 @@ interface ReadBuffer {
         } while (no > 0 && numBytes < 4)
         return numBytes.toUByte()
     }
+
+    fun utf8StringSize(
+        inputSequence: CharSequence,
+        malformedInput: CharSequence? = null,
+        unmappableCharacter: CharSequence? = null
+    ): UInt
 
 //    fun <T> readTyped(deserializationStrategy: MqttDeserializationStrategy<T>): T
     // mqtt 5

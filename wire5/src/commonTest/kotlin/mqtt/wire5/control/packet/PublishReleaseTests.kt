@@ -37,7 +37,7 @@ class PublishReleaseTests {
     fun defaultAndNonDefaultSuccessDeserialization() {
         val pubrel = PublishRelease(VariableHeader(packetIdentifier))
         val bufferNonDefaults = allocateNewBuffer(6u, limits)
-        bufferNonDefaults.write(0b01100010)
+        bufferNonDefaults.write(0b01100010.toByte())
         bufferNonDefaults.writeVariableByteInteger(4u)
         bufferNonDefaults.write(packetIdentifier.toUShort())
         bufferNonDefaults.write(0.toUByte())

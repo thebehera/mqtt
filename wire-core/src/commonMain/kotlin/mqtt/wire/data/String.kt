@@ -2,12 +2,9 @@
 
 package mqtt.wire.data
 
-import kotlinx.io.core.*
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
-import mqtt.wire.data.topic.Filter
-import mqtt.wire.data.topic.Name
 
 fun String.validateMqttUTF8String(): Boolean {
     if (length > 65_535) {
@@ -108,18 +105,6 @@ data class MqttUtf8String(val value: CharSequence) : Parcelable {
         }
 }
 
-fun BytePacketBuilder.writeMqttUtf8String(string: MqttUtf8String, validate: Boolean = true) {
-    val validatedString = if (validate) {
-        string.getValueOrThrow()
-    } else {
-        string.value
-    }
-
-    val len = validatedString.toString().utf8Length().toUShort()
-    writeUShort(len)
-    writeStringUtf8(validatedString)
-}
-
 fun CharSequence.utf8Length(): Int {
     var count = 0
     var i = 0
@@ -138,40 +123,4 @@ fun CharSequence.utf8Length(): Int {
         i++
     }
     return count
-}
-
-
-fun BytePacketBuilder.writeMqttFilter(string: Filter) {
-    val validatedString = string.validate()!!.allChildren().first().toString()
-    writeMqttUtf8String(MqttUtf8String(validatedString))
-}
-
-fun BytePacketBuilder.writeMqttName(string: Name) {
-    val validatedString = string.validateTopic()!!.getAllBottomLevelChildren().first().toString()
-    writeMqttUtf8String(MqttUtf8String(validatedString))
-}
-
-fun ByteReadPacket.readMqttUtf8String(): MqttUtf8String {
-    val ushort = readUShort()
-    val stringLength = ushort.toInt()
-    if (stringLength == 0) {
-        return MqttUtf8String("")
-    }
-    val text = readTextExactBytes(bytesCount = stringLength)
-    return MqttUtf8String(text)
-}
-
-fun ByteReadPacket.readMqttFilter(): Filter {
-    val ushort = readUShort()
-    val stringLength = ushort.toInt()
-    if (stringLength == 0) {
-        return Filter("")
-    }
-    val text = readTextExactBytes(bytesCount = stringLength)
-    return Filter(text)
-}
-
-fun ByteReadPacket.readMqttBinary(): ByteArray {
-    val stringLength = readUShort().toInt()
-    return readBytesOf(max = stringLength)
 }

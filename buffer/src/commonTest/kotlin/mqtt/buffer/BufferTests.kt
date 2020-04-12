@@ -65,6 +65,15 @@ class BufferTests {
     }
 
     @Test
+    fun long() {
+        val platformBuffer = allocateNewBuffer(8u, limit)
+        val long = Random.nextLong()
+        platformBuffer.write(long)
+        platformBuffer.resetForRead()
+        assertEquals(long, platformBuffer.readLong())
+    }
+
+    @Test
     @ExperimentalStdlibApi
     fun utf8String() {
         val string = "yolo swag lyfestyle"

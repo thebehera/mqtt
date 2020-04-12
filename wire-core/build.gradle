@@ -34,7 +34,6 @@ kotlin {
             dependencies {
                 implementation project(':buffer')
                 implementation kotlin('stdlib-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
             }
         }
@@ -47,7 +46,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
@@ -61,7 +59,6 @@ kotlin {
             dependsOn commonMain
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
                 implementation "androidx.room:room-common:$room_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
             }
@@ -76,7 +73,6 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-js')
                 implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
@@ -87,7 +83,6 @@ kotlin {
         }
         nativeMain {
             dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
             }
         }

@@ -34,7 +34,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }

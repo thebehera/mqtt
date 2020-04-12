@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire4.control.packet.ConnectionAcknowledgment.VariableHeader
@@ -49,3 +50,7 @@ class ConnectionAcknowledgmentTests {
     }
 }
 
+
+val limits = object : BufferMemoryLimit {
+    override fun isTooLargeForMemory(size: UInt): Boolean = false
+}

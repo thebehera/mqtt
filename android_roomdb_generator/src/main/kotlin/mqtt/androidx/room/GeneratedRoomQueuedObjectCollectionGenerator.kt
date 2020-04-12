@@ -3,7 +3,6 @@ package mqtt.androidx.room
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.KModifier.OVERRIDE
 import com.squareup.kotlinpoet.KModifier.SUSPEND
-import com.squareup.kotlinpoet.MemberName.Companion.member
 import kotlinx.metadata.jvm.KotlinClassHeader
 import kotlinx.metadata.jvm.KotlinClassMetadata
 import javax.lang.model.element.Element
@@ -35,12 +34,10 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
                     publishQueue.topic,
                     queuedObj.qos,
                     // publishable format
-                    %M(obj),
                     publishQueue.packetIdentifier.toUShort(),
                     publishQueue.dup,
                     publishQueue.retain
-                )""", ClassName("mqtt.wire4.control.packet", "PublishMessage"),
-                    annotatedSerializerClass.asClassName().member("serialize")
+                )""", ClassName("mqtt.wire4.control.packet", "PublishMessage")
                 )
                 .endControlFlow()
                 .build()

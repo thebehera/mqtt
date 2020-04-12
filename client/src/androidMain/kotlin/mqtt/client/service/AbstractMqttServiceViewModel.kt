@@ -17,7 +17,9 @@ import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Node
 import mqtt.wire.data.topic.SubscriptionCallback
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: MqttConnectionsDatabaseDescriptor) :
     AndroidViewModel(app), CoroutineScope {
     val job = Job()
@@ -30,6 +32,7 @@ abstract class AbstractMqttServiceViewModel(app: Application, val dbDescriptor: 
             dbDescriptor
         )
     }
+
     @SuppressLint("UseSparseArrays")
     val subscriptions = HashMap<Int, SubscriptionManager>()
 

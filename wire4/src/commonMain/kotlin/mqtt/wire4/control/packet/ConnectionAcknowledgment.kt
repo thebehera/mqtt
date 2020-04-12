@@ -2,10 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUByte
-import kotlinx.io.core.writeUByte
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -31,14 +27,8 @@ typealias CONNACK = ConnectionAcknowledgment
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV4(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
 
-    constructor(sessionPresent: Boolean, connectReason: VariableHeader.ReturnCode) :
-            this(VariableHeader(sessionPresent, connectReason))
-
     @IgnoredOnParcel
     override val sessionPresent: Boolean = header.sessionPresent
-
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = header.packet()
 
     @IgnoredOnParcel
     override val isSuccessful: Boolean = header.connectReason == CONNECTION_ACCEPTED
@@ -118,13 +108,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
             RESERVED(6.toUByte())
         }
 
-        fun packet(): ByteReadPacket {
-            return buildPacket {
-                writeByte(if (sessionPresent) 0b1 else 0b0)
-                writeUByte(connectReason.value)
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write((if (sessionPresent) 0b1 else 0b0).toByte())
             writeBuffer.write(connectReason.value)
@@ -145,27 +128,11 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 }
                 return VariableHeader(sessionPresent, connectionReason)
             }
-
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val sessionPresent = buffer.readByte() == 1.toByte()
-                val connectionReasonByte = buffer.readUByte()
-                val connectionReasonByteNormalized = if (connectionReasonByte > 5.toUByte()) {
-                    RESERVED
-                } else {
-                    connectionReasonByte
-                }
-                val connectionReason = connackReturnCode[connectionReasonByteNormalized]
-                if (connectionReason == null) {
-                    throw MalformedPacketException("Invalid property type found in MQTT payload $connectionReason")
-                }
-                return VariableHeader(sessionPresent, connectionReason)
-            }
         }
     }
 
     companion object {
-        fun from(buffer: ReadBuffer) = ConnectionAcknowledgment(VariableHeader.Companion.from(buffer))
-        fun from(buffer: ByteReadPacket) = ConnectionAcknowledgment(VariableHeader.from(buffer))
+        fun from(buffer: ReadBuffer) = ConnectionAcknowledgment(VariableHeader.from(buffer))
     }
 }
 

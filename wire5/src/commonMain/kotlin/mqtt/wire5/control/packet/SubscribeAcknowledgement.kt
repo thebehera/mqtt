@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -15,9 +14,11 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
 import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties
-import mqtt.wire5.control.packet.format.variable.property.*
+import mqtt.wire5.control.packet.format.variable.property.Property
+import mqtt.wire5.control.packet.format.variable.property.ReasonString
+import mqtt.wire5.control.packet.format.variable.property.UserProperty
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
 /**
  * 3.9 SUBACK – Subscribe acknowledgement
@@ -35,13 +36,11 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
 
     constructor(packetIdentifier: UShort, payload: ReasonCode = SUCCESS, properties: Properties = Properties())
             : this(VariableHeader(packetIdentifier.toInt(), properties), listOf(payload))
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { payload.forEach { writeUByte(it.byte) } }
+
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override val payloadPacketSize: UInt = payload.size.toUInt()
     override fun payload(writeBuffer: WriteBuffer) = payload.forEach { writeBuffer.write(it.byte) }
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.size.toUInt()
     init {
         payload.forEach {
             if (!validSubscribeCodes.contains(it)) {
@@ -61,16 +60,16 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
-        @IgnoredOnParcel val packet by lazy {
-            buildPacket {
-                writeUShort(packetIdentifier.toUShort())
-                writePacket(properties.packet)
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
             properties.serialize(writeBuffer)
+        }
+
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = UShort.SIZE_BYTES.toUInt()
+            val propsSize = properties.size(writeBuffer)
+            size += writeBuffer.variableByteIntegerSize(propsSize) + propsSize
+            return size
         }
 
         /**
@@ -78,10 +77,10 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
          */
         @Parcelize
         data class Properties(
-                /**
-                 * 3.9.2.1.2 Reason String
-                 *
-                 * 31 (0x1F) Byte, Identifier of the Reason String.
+            /**
+             * 3.9.2.1.2 Reason String
+             *
+             * 31 (0x1F) Byte, Identifier of the Reason String.
                  *
                  * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
                  * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the Client.
@@ -104,26 +103,6 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
                  */
                 val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            @IgnoredOnParcel val packet by lazy {
-                val propertiesPacket = buildPacket {
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
-
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {
@@ -173,16 +152,6 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort()
-                val props = if (buffer.remaining > 1L) {
-                    Properties.from(buffer.readPropertiesLegacy())
-                } else {
-                    Properties()
-                }
-                return VariableHeader(packetIdentifier.toInt(), props)
-            }
-
             fun from(buffer: ReadBuffer, remainingLength: UInt): Pair<UInt, VariableHeader> {
                 val packetIdentifier = buffer.readUnsignedShort()
                 var bytesRead = 3u
@@ -199,33 +168,6 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): SubscribeAcknowledgement {
-            val variableHeader = VariableHeader.from(buffer)
-            val codes = ArrayList<ReasonCode>(buffer.remaining.toInt())
-            while (buffer.remaining > 0) {
-                val reasonCode = when (val reasonCodeByte = buffer.readUByte()) {
-                    GRANTED_QOS_0.byte -> GRANTED_QOS_0
-                    GRANTED_QOS_1.byte -> GRANTED_QOS_1
-                    GRANTED_QOS_2.byte -> GRANTED_QOS_2
-                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
-                    IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
-                    NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
-                    TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
-                    PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
-                    QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
-                    SHARED_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> SHARED_SUBSCRIPTIONS_NOT_SUPPORTED
-                    SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED.byte -> SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED
-                    WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED.byte -> WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
-                    else -> throw MalformedPacketException(
-                        "Invalid reason code $reasonCodeByte " +
-                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478"
-                    )
-                }
-                codes += reasonCode
-            }
-            return SubscribeAcknowledgement(variableHeader, codes)
-        }
-
         fun from(buffer: ReadBuffer, remainingLength: UInt): SubscribeAcknowledgement {
             val variableHeader = VariableHeader.from(buffer, remainingLength)
             val max = (remainingLength - variableHeader.first).toInt()
