@@ -85,7 +85,6 @@ dependencies {
     implementation "androidx.room:room-ktx:$room_version"
 
 
-    implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
     implementation project(":wire4")
     api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"

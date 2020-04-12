@@ -22,7 +22,6 @@ kotlin {
                 implementation project(":socket")
                 implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
-                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
                 implementation "io.ktor:ktor-client-websocket:1.2.0-alpha-2"
             }
         }
@@ -45,7 +44,6 @@ kotlin {
                 implementation project(":wire-core")
                 implementation "io.ktor:ktor-client-cio:$ktor_version"
                 implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
                 implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
             }
         }
