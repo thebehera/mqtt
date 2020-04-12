@@ -32,7 +32,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation kotlin('stdlib-common')
+                implementation kotlin('stdlib')
             }
         }
         commonTest {
@@ -50,7 +50,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         jvmTest {
@@ -63,7 +62,7 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-js')
                 implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
+                implementation "io.ktor:ktor-io-js:$ktor_version"
             }
         }
         jsTest {
@@ -74,7 +73,7 @@ kotlin {
         nativeMain {
             dependsOn commonMain
             dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
+                implementation "io.ktor:ktor-io-native:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
             }
         }

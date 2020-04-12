@@ -20,9 +20,7 @@ kotlin {
                 api project(":wire-core")
                 implementation project(":buffer")
                 implementation project(":socket")
-                implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
-                implementation "io.ktor:ktor-client-websocket:1.2.0-alpha-2"
             }
         }
         commonTest {
@@ -42,8 +40,6 @@ kotlin {
                 implementation project(":buffer")
                 implementation project(":socket")
                 implementation project(":wire-core")
-                implementation "io.ktor:ktor-client-cio:$ktor_version"
-                implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
                 implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
             }
         }
@@ -69,8 +65,6 @@ kotlin {
 
 dependencies {
     implementation project(":android_roomdb_core")
-    implementation "io.ktor:ktor-client-cio:$ktor_version"
-    implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
     implementation "androidx.room:room-runtime:$room_version"
     implementation "androidx.room:room-ktx:$room_version"
     api "androidx.room:room-common:$room_version"

@@ -186,7 +186,7 @@ class ConnectionRequestTests {
             VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
             ConnectionRequest.Payload(userName = MqttUtf8String("yolo"))
         )
-        val buffer = allocateNewBuffer(18u, limits)
+        val buffer = allocateNewBuffer(20u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
         buffer.readByte() // skip the first byte
@@ -226,11 +226,14 @@ class ConnectionRequestTests {
             VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
             ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
         )
-        val buffer = allocateNewBuffer(18u, limits)
+        val buffer = allocateNewBuffer(20u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
+        val actual = ControlPacketV4.from(buffer)
+        assertEquals(actual, connectionRequest)
+        buffer.resetForRead()
         buffer.readByte() // skip the first byte
-        buffer.readVariableByteInteger() // skip the remaining length
+        val remaining = buffer.readVariableByteInteger() // skip the remaining length
         buffer.readByte() // Length MSB (0)
         buffer.readByte() // Length LSB (4)
         buffer.readByte() // 'M' or 0b01001101

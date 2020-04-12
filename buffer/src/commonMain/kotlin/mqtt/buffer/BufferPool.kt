@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "DANGEROUS_INTERNAL_IO_API")
 
 package mqtt.buffer
 
