@@ -7,6 +7,9 @@ pluginManagement {
         }
     }
 }
+plugins {
+    id "com.gradle.enterprise" version "3.2.1"
+}
 enableFeaturePreview('GRADLE_METADATA')
 
 include ':wire-core', ':wire5', ':wire4', ':client', ':android_app_sample', ':android_roomdb_core', ':android_roomdb_generator', ':server', ':socket', ":buffer"
