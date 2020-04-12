@@ -233,7 +233,7 @@ class ConnectionRequestTests {
         assertEquals(actual, connectionRequest)
         buffer.resetForRead()
         buffer.readByte() // skip the first byte
-        val remaining = buffer.readVariableByteInteger() // skip the remaining length
+        buffer.readVariableByteInteger() // skip the remaining length
         buffer.readByte() // Length MSB (0)
         buffer.readByte() // Length LSB (4)
         buffer.readByte() // 'M' or 0b01001101
