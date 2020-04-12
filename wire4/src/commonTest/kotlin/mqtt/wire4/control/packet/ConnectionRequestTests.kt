@@ -226,7 +226,7 @@ class ConnectionRequestTests {
             VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
             ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
         )
-        val buffer = allocateNewBuffer(20u, limits)
+        val buffer = allocateNewBuffer(10u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
         val actual = ControlPacketV4.from(buffer)
