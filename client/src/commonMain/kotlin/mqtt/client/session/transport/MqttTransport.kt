@@ -28,8 +28,8 @@ class MqttTransport private constructor(
 ) : Transport {
     private val writeMutex = Mutex()
     private val keepAliveTimeout = remoteHost.request.keepAliveTimeoutSeconds.toInt().toDuration(DurationUnit.SECONDS)
-    lateinit var lastMessageReceived: ClockMark
-    lateinit var lastMessageSent: ClockMark
+    lateinit var lastMessageReceived: TimeMark
+    lateinit var lastMessageSent: TimeMark
 
     override suspend fun asyncWrite(controlPacket: ControlPacket) {
         if (controlPacket.direction == DirectionOfFlow.SERVER_TO_CLIENT) {
@@ -39,7 +39,7 @@ class MqttTransport private constructor(
             controlPacket.serialize(buffer)
             writeMutex.withLock {
                 socket.write(buffer, keepAliveTimeout)
-                lastMessageSent = MonoClock.markNow()
+                lastMessageSent = TimeSource.Monotonic.markNow()
             }
         }
     }
@@ -47,7 +47,7 @@ class MqttTransport private constructor(
     private suspend fun readPacket(buffer: PlatformBuffer): ControlPacket {
         socket.read(buffer, keepAliveTimeout)
         val packet = controlPacketReader.from(buffer)
-        lastMessageReceived = MonoClock.markNow()
+        lastMessageReceived = TimeSource.Monotonic.markNow()
         return packet
     }
 

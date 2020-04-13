@@ -595,6 +595,7 @@ data class ConnectionRequest(
                 }
             }
 
+            @IgnoredOnParcel
             val props by lazy {
                 val userPropertyCount = userProperty?.count() ?: 0
                 val list = ArrayList<Property>(8 + userPropertyCount)
@@ -1044,6 +1045,7 @@ data class ConnectionRequest(
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
+            @IgnoredOnParcel
             val props by lazy {
                 val properties = ArrayList<Property>(6 + userProperty.count())
                 if (willDelayIntervalSeconds != 0L) {

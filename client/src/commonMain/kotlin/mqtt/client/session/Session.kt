@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "UNUSED_PARAMETER", "UNUSED_VARIABLE")
 
 package mqtt.client.session
 

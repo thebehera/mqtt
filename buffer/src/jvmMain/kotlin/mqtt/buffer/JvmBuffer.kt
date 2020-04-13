@@ -56,8 +56,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         return this
     }
 
-    override fun write(byte: ByteArray): WriteBuffer {
-        byteBuffer.put(byte)
+    override fun write(bytes: ByteArray): WriteBuffer {
+        byteBuffer.put(bytes)
         return this
     }
 

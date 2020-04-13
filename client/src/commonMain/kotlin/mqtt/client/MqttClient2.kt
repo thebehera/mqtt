@@ -29,7 +29,7 @@ class MqttClient2(
             if (transport?.socket?.isOpen() == true) {
                 return@withLock
             }
-            val (transport, connack) = MqttTransport.openConnection(scope, remoteHost, pool)
+            val (transport, _) = MqttTransport.openConnection(scope, remoteHost, pool)
             scope.launchKeepAlive(transport, remoteHost)
             this.transport = transport
         }
