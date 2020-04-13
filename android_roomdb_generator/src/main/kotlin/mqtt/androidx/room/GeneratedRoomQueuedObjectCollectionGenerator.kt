@@ -27,7 +27,7 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
                 .beginControlFlow("%T::class.java.simpleName ->", annotatedPublishClass.asType())
                 // db is std convention.
                 // modelsDao() is by looking at the enclosing element for @MqttPublishDequeue
-                .addStatement("val obj = db.modelsDao().${annotatedPublishDequeueElement!!.simpleName}(queuedObj.queuedRowId) ?: return null")
+//                .addStatement("val obj = db.modelsDao().${annotatedPublishDequeueElement!!.simpleName}(queuedObj.queuedRowId) ?: return null")
                 // validate annotatedSerializerClass is enclosing the correct class and is annotating something that returns ByteReadPacket
                 .addStatement(
                     """return %T(
