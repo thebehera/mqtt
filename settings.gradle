@@ -12,4 +12,7 @@ plugins {
 }
 enableFeaturePreview('GRADLE_METADATA')
 
-include ':wire-core', ':wire5', ':wire4', ':client', ':android_app_sample', ':android_roomdb_core', ':android_roomdb_generator', ':server', ':socket', ":buffer"
+include ':wire-core', ':wire5', ':wire4', ':client', ':android_roomdb_core', ':android_roomdb_generator', ':server', ':socket', ":buffer"
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    include ':android_app_sample'
+}

@@ -1,6 +1,5 @@
 plugins {
     id 'kotlin-multiplatform'
-    id 'com.android.library'
 }
 apply from: "../gradle/android.gradle"
 repositories {
@@ -10,7 +9,9 @@ repositories {
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    android()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     js {
         browser {
             testTask {
@@ -55,18 +56,20 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        androidMain {
-            dependsOn commonMain
-            dependencies {
-                implementation kotlin('stdlib-jdk7')
-                implementation "androidx.room:room-common:$room_version"
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependsOn commonMain
+                dependencies {
+                    implementation kotlin('stdlib-jdk7')
+                    implementation "androidx.room:room-common:$room_version"
+                    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+                }
             }
-        }
-        androidTest {
-            dependencies {
-                implementation kotlin('test')
-                implementation kotlin('test-junit')
+            androidTest {
+                dependencies {
+                    implementation kotlin('test')
+                    implementation kotlin('test-junit')
+                }
             }
         }
         jsMain {
