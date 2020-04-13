@@ -97,4 +97,16 @@ kotlin {
             dependsOn nativeMain
         }
     }
+
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.RequiresOptIn"
+                ]
+            }
+        }
+    }
 }
