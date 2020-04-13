@@ -81,7 +81,8 @@ kotlin {
             kotlinOptions {
                 freeCompilerArgs += [
                         "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
-                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.time.ExperimentalTime"
                 ]
             }
         }
