@@ -1,12 +1,16 @@
 package mqtt.socket.nio2
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mqtt.socket.ClientToServerSocket
 import mqtt.socket.SocketOptions
 import mqtt.socket.nio.util.asInetAddress
 import mqtt.socket.nio.util.asyncSetOptions
 import mqtt.socket.nio2.util.aConnect
 import mqtt.socket.nio2.util.asyncSocket
+import java.net.InetAddress
 import java.net.InetSocketAddress
+import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
@@ -20,7 +24,15 @@ class AsyncClientSocket : AsyncBaseClientSocket(), ClientToServerSocket {
         hostname: String?,
         socketOptions: SocketOptions?
     ): SocketOptions {
-        val socketAddress = InetSocketAddress(hostname?.asInetAddress(), port.toInt())
+        val socketAddress = if (hostname != null) {
+            InetSocketAddress(hostname.asInetAddress(), port.toInt())
+        } else {
+            withContext(Dispatchers.IO) {
+                suspendCoroutine {
+                    InetSocketAddress(InetAddress.getLocalHost(), port.toInt())
+                }
+            }
+        }
         val asyncSocket = asyncSocket()
         this.socket = asyncSocket
         val options = asyncSocket.asyncSetOptions(socketOptions)
