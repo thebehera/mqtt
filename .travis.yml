@@ -1,11 +1,17 @@
 addons:
-  chrome: stable
+  homebrew:
+    taps: homebrew/cask-versions
+    packages:
+      - mosquitto
+    update: true
   apt:
     sources:
       - sourceline: ppa:mosquitto-dev/mosquitto-ppa
     packages:
       - mosquitto
+      - libgbm-dev
     update: true
+  chrome: stable
 matrix:
   include:
     - os: linux
