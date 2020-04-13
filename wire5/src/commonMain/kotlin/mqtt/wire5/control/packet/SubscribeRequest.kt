@@ -133,7 +133,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-
+            @IgnoredOnParcel
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {

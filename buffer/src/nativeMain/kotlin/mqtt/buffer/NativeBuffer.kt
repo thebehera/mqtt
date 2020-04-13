@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "DEPRECATION")
 
 package mqtt.buffer
 
@@ -75,9 +75,7 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
     ): UInt {
-        val size = Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
-        println("size $inputSequence = $size")
-        return size
+        return Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
     }
 
     override fun utf8StringSize(

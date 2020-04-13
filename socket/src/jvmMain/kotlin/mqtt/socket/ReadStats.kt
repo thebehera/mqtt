@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket
 
 actual fun readStats(port: UShort, contains: String): List<String> {
@@ -8,7 +10,7 @@ actual fun readStats(port: UShort, contains: String): List<String> {
             .start()
         try {
             process.inputStream.use { stream ->
-                return String(stream.readBytes()).split(System.lineSeparator()).filter { it.isNotBlank() }
+                return String(stream.readBytes()).split("\n").filter { it.isNotBlank() }
                     .filter { it.contains(contains) }
             }
         } finally {

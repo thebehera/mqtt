@@ -11,7 +11,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
-import kotlin.time.MonoClock
+import kotlin.time.TimeSource
 import kotlin.time.milliseconds
 
 
@@ -48,7 +48,7 @@ suspend fun SocketChannel.suspendUntilReady(selector: Selector, ops: Int, timeou
 
 @ExperimentalTime
 suspend fun Selector.select(selectionKey: SelectionKey, attachment: Any, timeout: Duration) {
-    val startTime = MonoClock.markNow()
+    val startTime = TimeSource.Monotonic.markNow()
     val selectedCount = aSelect(timeout)
     if (selectedCount == 0) {
         throw CancellationException("Selector timed out after waiting $timeout for ${selectionKey.isConnectable}")
@@ -101,7 +101,7 @@ suspend fun SocketChannel.connect(
     if (connected || aFinishConnecting()) {
         return true
     }
-    throw TimeoutException("${MonoClock.markNow()} Failed to connect to $remote within $timeout maybe invalid selector")
+    throw TimeoutException("${TimeSource.Monotonic.markNow()} Failed to connect to $remote within $timeout maybe invalid selector")
 }
 
 suspend fun SocketChannel.aFinishConnecting() = suspendCancellableCoroutine<Boolean> {

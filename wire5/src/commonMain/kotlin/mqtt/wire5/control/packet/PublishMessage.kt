@@ -478,7 +478,7 @@ data class PublishMessage(
                     )
                 }
             }
-
+            @IgnoredOnParcel
             val props by lazy {
                 val list = ArrayList<Property>(7 + userProperty.count())
                 if (payloadFormatIndicator) {

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket.nio2.util
 
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -31,8 +33,7 @@ suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCorout
  */
 @ExperimentalTime
 suspend fun AsynchronousSocketChannel.aConnect(
-    socketAddress: SocketAddress,
-    tag: Any? = null
+    socketAddress: SocketAddress
 ) = suspendCoroutine<Unit> { cont ->
     connect(socketAddress, cont, AsyncVoidIOHandler())
 }
