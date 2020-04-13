@@ -9,7 +9,7 @@ repositories {
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    if (System.getenv("ANDROID_HOME")) {
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
         android()
     }
     js {
@@ -56,7 +56,7 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        if (System.getenv("ANDROID_HOME")) {
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
             androidMain {
                 dependsOn commonMain
                 dependencies {

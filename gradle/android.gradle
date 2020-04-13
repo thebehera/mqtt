@@ -1,5 +1,5 @@
 
-if (System.getenv("ANDROID_HOME")) {
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
     apply plugin: 'com.android.library'
     apply plugin: 'kotlin-android-extensions'
     androidExtensions {

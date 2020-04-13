@@ -1,7 +1,7 @@
 plugins {
     id 'kotlin-multiplatform'
 }
-if (System.getenv("ANDROID_HOME")) {
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
     apply plugin: 'kotlin-android-extensions'
     androidExtensions {
         experimental = true
@@ -33,7 +33,7 @@ kotlin {
             }
         }
     }
-    if (System.getenv("ANDROID_HOME")) {
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
         android()
     }
     ios("iOS")
@@ -65,7 +65,7 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        if (System.getenv("ANDROID_HOME")) {
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
             androidMain {
                 dependencies {
                     implementation "androidx.room:room-common:$room_version"
@@ -105,7 +105,7 @@ kotlin {
         }
     }
 }
-if (System.getenv("ANDROID_HOME")) {
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
     dependencies {
         implementation project(':wire-core')
     }

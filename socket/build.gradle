@@ -11,7 +11,7 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
 
-    if (System.getenv("ANDROID_HOME")) {
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
         android()
     }
     sourceSets {
@@ -28,7 +28,7 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        if (System.getenv("ANDROID_HOME")) {
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
             androidMain {
                 dependsOn jvmMain
             }
