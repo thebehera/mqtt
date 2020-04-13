@@ -10,7 +10,9 @@ apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    android()
+    if (System.getenv("ANDROID_HOME")) {
+        android()
+    }
     ios("iOS")
     js {
         browser {
@@ -41,11 +43,13 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        androidMain {
-            dependsOn jvmMain
-        }
-        androidTest {
-            dependsOn jvmTest
+        if (System.getenv("ANDROID_HOME")) {
+            androidMain {
+                dependsOn jvmMain
+            }
+            androidTest {
+                dependsOn jvmTest
+            }
         }
         jvmMain {
             dependencies {

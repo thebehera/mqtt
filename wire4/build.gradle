@@ -1,12 +1,13 @@
 plugins {
     id 'kotlin-multiplatform'
-    id 'com.android.library'
 }
-apply plugin: 'kotlin-android-extensions'
-androidExtensions {
-    experimental = true
+if (System.getenv("ANDROID_HOME")) {
+    apply plugin: 'kotlin-android-extensions'
+    androidExtensions {
+        experimental = true
+    }
+    apply from: "../gradle/android.gradle"
 }
-apply from: "../gradle/android.gradle"
 configurations {
     compileClasspath
 }
@@ -32,7 +33,9 @@ kotlin {
             }
         }
     }
-    android()
+    if (System.getenv("ANDROID_HOME")) {
+        android()
+    }
     ios("iOS")
     macosX64("macos")
     linuxX64("linux")
@@ -62,17 +65,19 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        androidMain {
-            dependencies {
-                implementation "androidx.room:room-common:$room_version"
-                implementation project(':wire-core')
-                implementation kotlin('stdlib-jdk7')
+        if (System.getenv("ANDROID_HOME")) {
+            androidMain {
+                dependencies {
+                    implementation "androidx.room:room-common:$room_version"
+                    implementation project(':wire-core')
+                    implementation kotlin('stdlib-jdk7')
+                }
             }
-        }
-        androidTest {
-            dependencies {
-                implementation kotlin('test')
-                implementation kotlin('test-junit')
+            androidTest {
+                dependencies {
+                    implementation kotlin('test')
+                    implementation kotlin('test-junit')
+                }
             }
         }
         jsMain {
@@ -100,6 +105,8 @@ kotlin {
         }
     }
 }
-dependencies {
-    implementation project(':wire-core')
+if (System.getenv("ANDROID_HOME")) {
+    dependencies {
+        implementation project(':wire-core')
+    }
 }
