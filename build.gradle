@@ -19,7 +19,7 @@ ext {
 }
 if (JavaVersion.current().ordinal() != JavaVersion.VERSION_1_8.ordinal()) {
     throw new Exception("*******Java 8 is required!**********\n Please set to java 8 and ensure that it's the default. The current version is set to " + JavaVersion.current().getMajorVersion() + "\n" +
-    "Install SDKMan at https://sdkman.io/install")
+    "Install Java 8 through SDKMan at https://sdkman.io/install")
 }
 if (!System.getenv("ANDROID_HOME")) {
     throw new Exception("*******Android SDK is required!**********\nis required! Please install the Android SDK from: https://developer.android.com/studio/index.html#command-tools and set your ANDROID_HOME env value")
