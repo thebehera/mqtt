@@ -30,10 +30,20 @@ matrix:
       language: java
       dist: precise
     - os: osx
-      language: ruby
-      osx_image: xcode11.2
-    - os: windows
       language: java
+      osx_image: xcode11.3
+    - os: osx
+      language: java
+      osx_image: xcode10.3
+    - os: osx
+      language: java
+    - os: windows
+      language: sh
+      before_install:
+        - choco install jdk8 -params 'installdir=c:\\java8'
+        - export JAVA_HOME="/C/java8/"
+      before_cache:
+        - rm -rf $HOME/.gradle/
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
