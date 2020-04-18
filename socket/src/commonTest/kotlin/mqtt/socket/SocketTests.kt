@@ -24,14 +24,14 @@ class SocketTests {
     val validateCloseWaitAgressive = false
 
     @Test
-    fun nio2ConnectClientReadWriteDisconnect() = block {
+    fun nio2ConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @Test
-    fun nio2ConnectDisconnectStress() = block {
+    fun nio2ConnectDisconnectStress() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
@@ -39,7 +39,7 @@ class SocketTests {
     }
 
     @Test
-    fun nio2ConnectDisconnectStressOpenConnections() = block {
+    fun nio2ConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
         val serverLaunched = launchServer(this, serverSocket)
@@ -47,14 +47,14 @@ class SocketTests {
     }
 
     @Test
-    fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
+    fun nioNonBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @Test
-    fun nioNonBlockingConnectDisconnectStress() = block {
+    fun nioNonBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
@@ -62,7 +62,7 @@ class SocketTests {
     }
 
     @Test
-    fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
+    fun nioNonBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(false) }
         val serverLaunched = launchServer(this, serverSocket)
@@ -70,14 +70,14 @@ class SocketTests {
     }
 
     @Test
-    fun nioBlockingConnectClientReadWriteDisconnect() = block {
+    fun nioBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @Test
-    fun nioBlockingConnectDisconnectStress() = block {
+    fun nioBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
@@ -85,7 +85,7 @@ class SocketTests {
     }
 
     @Test
-    fun nioBlockingConnectDisconnectStressOpenConnections() = block {
+    fun nioBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { clientSocket(true) }
         val serverLaunched = launchServer(this, serverSocket)
