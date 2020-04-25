@@ -29,26 +29,13 @@ class SocketTests {
         val s = asyncClientSocket()
         console.log("open")
         s.open(1.seconds, 8080u)
-
         console.log("opened")
         val buffer = allocateNewBuffer(20u, limits)
-
         val buffer2 = allocateNewBuffer(20u, limits)
-        val mutex1 = Mutex(true)
-        launch {
-            buffer.writeUtf8String("hi\r\n")
-            s.write(buffer, 1.seconds)
-            mutex1.unlock()
-        }
-        val m2 = Mutex(true)
-        launch {
-            s.read(buffer2, 1.seconds)
-            m2.unlock()
-        }
+        buffer.writeUtf8String("hi\r\n")
+        s.write(buffer, 1.seconds)
+        s.read(buffer2, 1.seconds)
         console.log(buffer2.toString())
-        mutex1.lock()
-        m2.lock()
-        console.log("unlock")
         s.close()
     }
 
