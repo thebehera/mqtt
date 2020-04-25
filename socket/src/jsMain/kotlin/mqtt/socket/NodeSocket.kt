@@ -1,9 +1,21 @@
 package mqtt.socket
 
+import mqtt.buffer.JsBuffer
 import mqtt.buffer.PlatformBuffer
+import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
+
+class OnRead(val buffer: () -> Uint8Array, val callback: (Int, Uint8Array) -> Boolean)
+
+class tcpOptions(
+    val port: Int,
+    val host: String? = null,
+    val onread: OnRead
+)
+
 
 class NodeClientSocket : ClientToServerSocket {
     var netSocket: dynamic = null
@@ -15,9 +27,19 @@ class NodeClientSocket : ClientToServerSocket {
         hostname: String?,
         socketOptions: SocketOptions?
     ): SocketOptions {
+        val onRead = OnRead({
+            Uint8Array(13)
+        }, { bytesRead, buffer ->
+            val string = buffer.unsafeCast<ByteArray>().decodeToString()
+            console.log("Incoming $bytesRead $string ${jsTypeOf(buffer)}")
+            true
+        })
         netSocket = suspendCoroutine {
-            net.connect(port, hostname ?: "localhost") { socket ->
+            val socket = net.connect(tcpOptions(port.toInt(), hostname, onRead)) { socket ->
                 it.resume(socket)
+            }
+            socket.on("error") { e ->
+                it.resumeWithException(RuntimeException(e.toString()))
             } as Unit
         }
         return SocketOptions()
@@ -44,7 +66,13 @@ class NodeClientSocket : ClientToServerSocket {
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
-        return 1
+        val array = Uint8Array((buffer as JsBuffer).buffer.memory.view.buffer)
+        suspendCoroutine<Unit> {
+            netSocket.write(array) {
+                it.resume(Unit)
+            } as Unit
+        }
+        return array.byteLength
     }
 
     override suspend fun close() {
