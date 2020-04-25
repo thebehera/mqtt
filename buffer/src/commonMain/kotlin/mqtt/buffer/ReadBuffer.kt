@@ -1,7 +1,6 @@
 package mqtt.buffer
 
 import kotlin.experimental.and
-import kotlin.experimental.or
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
@@ -43,11 +42,7 @@ interface ReadBuffer {
         var numBytes = 0
         var no = uInt.toLong()
         do {
-            var digit = (no % 128).toByte()
             no /= 128
-            if (no > 0) {
-                digit = digit or 0x80.toByte()
-            }
             numBytes++
         } while (no > 0 && numBytes < 4)
         return numBytes.toUByte()
@@ -59,7 +54,4 @@ interface ReadBuffer {
         unmappableCharacter: CharSequence? = null
     ): UInt
 
-//    fun <T> readTyped(deserializationStrategy: MqttDeserializationStrategy<T>): T
-    // mqtt 5
-    // fun readProperty():Property
 }

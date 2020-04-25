@@ -10,7 +10,10 @@ apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    android()
+
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     sourceSets {
         commonMain {
             dependencies {
@@ -25,11 +28,13 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        androidMain {
-            dependsOn jvmMain
-        }
-        androidTest {
-            dependsOn jvmTest
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependsOn jvmMain
+            }
+            androidTest {
+                dependsOn jvmTest
+            }
         }
         jvmMain {
             dependencies {
@@ -42,6 +47,19 @@ kotlin {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+            }
+        }
+    }
+
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.time.ExperimentalTime",
+                        "-Xopt-in=kotlin.RequiresOptIn"
+                ]
             }
         }
     }

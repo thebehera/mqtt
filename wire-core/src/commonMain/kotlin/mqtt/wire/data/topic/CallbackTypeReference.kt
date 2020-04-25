@@ -12,18 +12,18 @@ constructor(
     val serializer: MqttSerializable<T>? = findSerializer(klass)
 ) {
     fun handleCallback(incomingPublish: IPublishMessage) {
-        val payload = null //incomingPublish.payloadPacket()
+//        val payload = null //incomingPublish.payloadPacket()
         val topic = incomingPublish.topic
         val qos = incomingPublish.qualityOfService
-        if (payload == null) {
-            callback.onMessageReceived(Name(topic), qos, null)
-            return
-        }
-        if (serializer == null) {
-            println("Failed to find serializer for payload $callback")
-            callback.onMessageReceived(Name(topic), qos, null)
-            return
-        }
+//        if (payload == null) {
+        callback.onMessageReceived(Name(topic), qos, null)
+//            return
+//        }
+//        if (serializer == null) {
+//            println("Failed to find serializer for payload $callback")
+//            callback.onMessageReceived(Name(topic), qos, null)
+//            return
+//        }
 //        val message = serializer.deserialize(payload)
 //        callback.onMessageReceived(Name(topic), qos, message)
     }

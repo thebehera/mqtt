@@ -386,6 +386,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
             val serverReference: MqttUtf8String? = null,
             val authentication: Authentication? = null
         ) : Parcelable {
+            @IgnoredOnParcel
             val props by lazy {
                 val props = ArrayList<Property>(16 + userProperty.size)
                 if (sessionExpiryIntervalSeconds != null) {

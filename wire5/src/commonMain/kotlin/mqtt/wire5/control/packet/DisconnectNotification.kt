@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
@@ -108,7 +109,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
              */
             val serverReference: MqttUtf8String? = null
         ) : Parcelable {
-
+            @IgnoredOnParcel
             val props by lazy {
                 val list = ArrayList<Property>(3 + userProperty.count())
                 if (sessionExpiryIntervalSeconds != null) {

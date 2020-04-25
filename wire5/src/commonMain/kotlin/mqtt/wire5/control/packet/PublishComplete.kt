@@ -127,7 +127,7 @@ data class PublishComplete(val variable: VariableHeader) :
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-
+            @IgnoredOnParcel
             val props by lazy {
                 val list = ArrayList<Property>(1 + userProperty.count())
                 if (reasonString != null) {

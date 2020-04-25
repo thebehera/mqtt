@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
@@ -85,6 +86,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
                  */
                 val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
+            @IgnoredOnParcel
             val props by lazy {
                 val props = ArrayList<Property>(userProperty.size)
                 if (userProperty.isNotEmpty()) {
