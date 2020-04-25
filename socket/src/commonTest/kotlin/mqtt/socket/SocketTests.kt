@@ -32,11 +32,24 @@ class SocketTests {
 
         console.log("opened")
         val buffer = allocateNewBuffer(20u, limits)
-        buffer.writeUtf8String("hi")
-        s.write(buffer, 1.seconds)
+
         val buffer2 = allocateNewBuffer(20u, limits)
-        s.read(buffer2, 1.seconds)
+        val mutex1 = Mutex(true)
+        launch {
+            buffer.writeUtf8String("hi\r\n")
+            s.write(buffer, 1.seconds)
+            mutex1.unlock()
+        }
+        val m2 = Mutex(true)
+        launch {
+            s.read(buffer2, 1.seconds)
+            m2.unlock()
+        }
         console.log(buffer2.toString())
+        mutex1.lock()
+        m2.lock()
+        console.log("unlock")
+        s.close()
     }
 
     @Test
