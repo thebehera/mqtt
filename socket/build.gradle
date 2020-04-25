@@ -68,6 +68,7 @@ kotlin {
                 implementation kotlin('stdlib-js')
                 implementation(npm("text-encoding", "0.7.0"))
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
+                implementation "io.ktor:ktor-io-js:$ktor_version"
             }
         }
         jsTest {

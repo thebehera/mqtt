@@ -24,6 +24,22 @@ class SocketTests {
     val validateCloseWaitAgressive = false
 
     @Test
+    fun client() = blockIgnoreUnsupported {
+        console.log("start")
+        val s = asyncClientSocket()
+        console.log("open")
+        s.open(1.seconds, 8080u)
+
+        console.log("opened")
+        val buffer = allocateNewBuffer(20u, limits)
+        buffer.writeUtf8String("hi")
+        s.write(buffer, 1.seconds)
+        val buffer2 = allocateNewBuffer(20u, limits)
+        s.read(buffer2, 1.seconds)
+        console.log(buffer2.toString())
+    }
+
+    @Test
     fun nio2ConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { asyncServerSocket() }
         val clientSocket = { asyncClientSocket() }
