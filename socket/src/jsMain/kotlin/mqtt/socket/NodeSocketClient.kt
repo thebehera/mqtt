@@ -43,13 +43,7 @@ class NodeClientSocket : ClientToServerSocket {
         return SocketOptions()
     }
 
-    override fun isOpen(): Boolean {
-        return try {
-            netSocket?.remoteAddress is String
-        } catch (t: Throwable) {
-            false
-        }
-    }
+    override fun isOpen() = netSocket?.remoteAddress != null
 
     override fun localPort() = netSocket?.localPort?.toUShort()
 
