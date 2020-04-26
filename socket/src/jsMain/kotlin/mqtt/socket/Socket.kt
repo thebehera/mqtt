@@ -12,14 +12,6 @@ val isNodeJs by lazy {
     }
 }
 
-val netRef: Net? by lazy {
-    if (isNodeJs) {
-        require("net")
-    } else {
-        null
-    }
-}
-
 @ExperimentalTime
 actual fun asyncClientSocket(): ClientToServerSocket {
     return if (isNodeJs) {

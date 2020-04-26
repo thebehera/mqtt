@@ -11,9 +11,6 @@ import mqtt.buffer.JsBuffer
 import mqtt.buffer.PlatformBuffer
 import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 import kotlin.time.Duration
 
 class NodeClientSocket : ClientToServerSocket {
@@ -31,24 +28,17 @@ class NodeClientSocket : ClientToServerSocket {
     ): SocketOptions {
         val ctx = CoroutineScope(coroutineContext)
         val onRead = OnRead({
-            val b = Uint8Array((pool.borrow(520u) as JsBuffer).buffer.memory.view.buffer)
-            b
+            Uint8Array((pool.borrow(520u) as JsBuffer).buffer.memory.view.buffer)
         }, { _, buffer ->
+            netSocket?.pause()
             ctx.launch {
                 incomingMessageChannel.send(buffer)
+                netSocket?.resume()
             }
             true
         })
         console.log(tcpOptions(port.toInt(), hostname, onRead))
-        suspendCoroutine<Socket> {
-            val socket = netRef!!.connect(tcpOptions(port.toInt(), hostname, onRead)) { socket ->
-                it.resume(socket)
-            }
-            netSocket = socket
-            socket.on("error") { e ->
-                it.resumeWithException(RuntimeException(e.toString()))
-            }
-        }
+        netSocket = connect(tcpOptions(port.toInt(), hostname, onRead))
         console.log("$netSocket local: ${netSocket?.localPort} ${netSocket?.remoteAddress}:${netSocket?.remotePort}")
         return SocketOptions()
     }
@@ -73,19 +63,13 @@ class NodeClientSocket : ClientToServerSocket {
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
         val array = Uint8Array((buffer as JsBuffer).buffer.memory.view.buffer)
         val netSocket = netSocket ?: return 0
-        suspendCoroutine<Unit> {
-            netSocket.write(array) {
-                it.resume(Unit)
-            }
-        }
+        netSocket.write(array)
         return array.byteLength
     }
 
     override suspend fun close() {
-        suspendCoroutine<Unit> {
-            netSocket?.end {
-                it.resume(Unit)
-            } as Any
-        }
+        val socket = netSocket
+        netSocket = null
+        socket?.close()
     }
 }

@@ -5,7 +5,9 @@ import org.khronos.webgl.Uint8Array
 @JsModule("net")
 @JsNonModule
 external class Net {
-    fun connect(tcpOptions: tcpOptions, connectListener: (Socket) -> Unit): Socket
+    companion object {
+        fun connect(tcpOptions: tcpOptions, connectListener: () -> Unit): Socket
+    }
 }
 
 external class Socket {
