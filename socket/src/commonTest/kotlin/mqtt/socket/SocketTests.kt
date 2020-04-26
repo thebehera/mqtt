@@ -28,7 +28,7 @@ class SocketTests {
         console.log("start")
         val s = asyncClientSocket()
         console.log("open")
-        console.log(s.remotePort())
+        console.log(s.isOpen())
         s.open(1.seconds, 8080u)
         console.log("opened")
         val buffer = allocateNewBuffer(20u, limits)
