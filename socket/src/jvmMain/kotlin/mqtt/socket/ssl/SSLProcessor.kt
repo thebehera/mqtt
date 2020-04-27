@@ -1,91 +1,73 @@
-package jvmMain.kotlin.mqtt.socket.ssl
+package mqtt.socket.ssl
 
+import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.socket.ClientSocket
 import mqtt.socket.ClientToServerSocket
 import java.nio.ByteBuffer
-import kotlinx.coroutines.sync.Mutex
-import java.io.FileInputStream
-import java.security.KeyStore
-import javax.net.ssl.*
+import javax.net.ssl.SSLEngine
+import javax.net.ssl.SSLEngineResult
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 
-class SSLClient {
-    private lateinit var ctx : SSLContext
-    private lateinit var clientEngine: SSLEngine
-    @ExperimentalTime
+class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerSocket) {
     private val timeout: Duration = 5000.milliseconds
+    private var networkData:ByteBuffer = ByteBuffer.allocate(sslEngine.session.packetBufferSize + 100)
+    private lateinit var localData: ByteBuffer
     private val wrapMutex: Mutex = Mutex()
     private val unWrapMutex: Mutex = Mutex()
-    private lateinit var localData: ByteBuffer
-    private lateinit var networkData: ByteBuffer
-    @ExperimentalTime
-    private lateinit var socket: ClientSocket
 
-//    data class ResultStatusBuf (var src: ByteBuffer, var dest: ByteBuffer)
-
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
-    suspend fun open(socket: ClientToServerSocket, host: String, port: UShort) {
-
-        try {
-            sslSetup()
-            socket.open(timeout, port, host)
-            println("open ${socket.isOpen()}")
-            this.socket = socket
-            clientEngine.beginHandshake()
-            println("starting handshake")
-            manageHandshake()
-            println("handshake done")
-        } catch (e: Exception) {
-            println("SSLClient.open.exception: ${e.message}")
-            throw e
+    init {
+            println("SSLProcessor.init.peerHost: ${sslEngine.peerHost}, peerPort: ${sslEngine.peerPort}")
         }
-    }
 
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
+    suspend fun doHandshake() {
+        println("SSLProcessor.doHandshake.begin")
+        socket.open(timeout, sslEngine.peerPort.toUShort(), sslEngine.peerHost)
+        println("SSLProcessor.doHandshake.open done")
+        localData = ByteBuffer.allocate(sslEngine.session.applicationBufferSize + 100)
+        println("SSLProcessor.doHandshake: start handshake")
+        sslEngine.beginHandshake()
+        manageHandshake()
+        println("SSLProcessor.doHandshake: end handshake")
+    }
     suspend fun sslRead(buffer: PlatformBuffer) : Int{
         try {
             val jbuf: JvmBuffer = buffer as JvmBuffer
             localData = jbuf.byteBuffer
             networkData.compact()
-     //       val nBuf: JvmBuffer = JvmBuffer(networkData)
-     //       if (socket.read(nBuf, timeout) < 0)
-     //           println("sslRead failed")
-     //       networkData.flip()
-     //       localData.compact()
+            //       val nBuf: JvmBuffer = JvmBuffer(networkData)
+            //       if (socket.read(nBuf, timeout) < 0)
+            //           println("sslRead failed")
+            //       networkData.flip()
+            //       localData.compact()
 
             val enresult: SSLEngineResult = sslUnwrap(true)
-            if (enresult.status == SSLEngineResult.Status.CLOSED || clientEngine.isInboundDone) {
+            if (enresult.status == SSLEngineResult.Status.CLOSED || sslEngine.isInboundDone) {
                 println("SSL closed by server")
                 socket.close()
                 return -1
             }
-            val x:Int = localData.limit() - localData.position()
 
-            return x
+            return localData.remaining()
         } catch (e: Exception) {
             println("sslRead.exception: ${e.message}")
             throw e
         }
     }
 
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
     suspend fun sslWrite(buffer: PlatformBuffer) : Int {
         try {
             val jbuf: JvmBuffer = buffer as JvmBuffer
             localData = jbuf.byteBuffer
-            localData.flip()
-            networkData.compact()
+           // localData.flip()
+           // networkData.compact()
+            resetBufForRead(localData)
             val ret: Int = localData.remaining()
             val enresult: SSLEngineResult = sslWrap()
-     //       localData.compact()
-     //       networkData.compact()
+            //       localData.compact()
+            //       networkData.compact()
             return ret
         } catch (e: Exception) {
             println("sslWrite.exception: ${e.message}")
@@ -94,12 +76,11 @@ class SSLClient {
 
     }
 
-    @ExperimentalTime
     suspend fun initiateClose() {
         var status:SSLEngineResult.Status = SSLEngineResult.Status.OK
         try {
-            clientEngine.closeOutbound()
-            while(! ((status == SSLEngineResult.Status.CLOSED) || clientEngine.isOutboundDone)) {
+            sslEngine.closeOutbound()
+            while(! ((status == SSLEngineResult.Status.CLOSED) || sslEngine.isOutboundDone)) {
                 val res: SSLEngineResult = sslWrap()
                 status = res.status
             }
@@ -109,11 +90,10 @@ class SSLClient {
         }
     }
 
-    @ExperimentalTime
     suspend fun receivedClose(socket: ClientSocket) {
         var status:SSLEngineResult.Status = SSLEngineResult.Status.OK
         try {
-            clientEngine.closeInbound()
+            sslEngine.closeInbound()
             socket.close()
         } catch (e: Exception) {
             println("receiveClose.exception: ${e.message}")
@@ -121,21 +101,16 @@ class SSLClient {
         }
     }
 
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
     suspend private fun sslWrap() : SSLEngineResult {
         val result: SSLEngineResult
 
         try {
-            if ((localData.position() != 0) && (localData.limit() != localData.capacity()))
-                localData.compact()
-            if (localData.position() != 0)
-                localData.flip()
-            if ((networkData.position() != 0) && (networkData.limit() != networkData.capacity()))
-                networkData.compact()
+            resetBufForRead(localData)
+            resetBufForWrite(networkData)
+
             println("sslWrap1.localData: ${localData}, networkData: ${networkData}")
             wrapMutex.lock()
-            result = clientEngine.wrap(localData, networkData)
+            result = sslEngine.wrap(localData, networkData)
             wrapMutex.unlock()
             println("sslWrap2.localData: ${localData}, networkData: ${networkData}")
             engineResultStatus(result.status, true)
@@ -155,8 +130,6 @@ class SSLClient {
         return result
     }
 
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
     suspend private fun sslUnwrap(readData: Boolean) : SSLEngineResult {
         val result: SSLEngineResult
         var ret: Int = 0
@@ -168,18 +141,14 @@ class SSLClient {
                     println("sslUnwrap read failure")
                 println("sslUnwrap3.ret: $ret, localData: ${localData}, networkData: ${networkData}")
             } else {
-                if ((networkData.position() != 0) && (networkData.capacity() != networkData.limit()))
-                    networkData.compact()
-                if (networkData.position() != 0)
-                    networkData.flip()
+                resetBufForRead(networkData)
             }
 
-            if ((localData.position() != 0) && (localData.limit() != localData.capacity()))
-                localData.compact()
+            resetBufForWrite(localData)
 
             println("sslUnwrap4.localData: ${localData}; networkData: ${networkData}")
             unWrapMutex.lock()
-            result = clientEngine.unwrap(networkData, localData)
+            result = sslEngine.unwrap(networkData, localData)
             unWrapMutex.unlock()
             engineResultStatus(result.status, false)
             println("sslUnwrap5.localData: ${localData}; networkData: ${networkData}")
@@ -191,27 +160,21 @@ class SSLClient {
     }
 
     suspend private fun sslRunable () {
-        var delTask: Runnable? = clientEngine.delegatedTask
+        var delTask: Runnable? = sslEngine.delegatedTask
         println("sslRunnable")
         while (delTask != null) {
             Thread(delTask).start()
-            delTask = clientEngine.delegatedTask
+            delTask = sslEngine.delegatedTask
         }
     }
 
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
     suspend private fun manageHandshake() {
-        var hstatus : SSLEngineResult.HandshakeStatus = clientEngine.handshakeStatus
+        var hstatus : SSLEngineResult.HandshakeStatus = sslEngine.handshakeStatus
         var pstatus: SSLEngineResult.HandshakeStatus = hstatus
 
-        var x: Int = 0
         try {
             while (true) {
                 println("manageHandshake: $hstatus")
-                x++
-                if (x >= 100)
-                    return
                 when (hstatus) {
                     SSLEngineResult.HandshakeStatus.FINISHED -> {
                         return
@@ -223,7 +186,7 @@ class SSLClient {
                     SSLEngineResult.HandshakeStatus.NEED_UNWRAP -> {
                         var result: SSLEngineResult = sslUnwrap(true)
                         while ((result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) ||
-                               (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP)){
+                            (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP)){
                             if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK)
                                 sslRunable()
                             result = sslUnwrap(false)
@@ -252,8 +215,6 @@ class SSLClient {
         }
     }
 
-    @ExperimentalTime
-    @ExperimentalUnsignedTypes
     suspend private fun engineResultStatus(status: SSLEngineResult.Status, wrap: Boolean) {
         println("engineResultStatus: $status, $wrap")
         when (status) {
@@ -287,24 +248,21 @@ class SSLClient {
     }
 
     suspend private fun bufferOverflowMemory(buf: ByteBuffer) : ByteBuffer {
-        val x:Int = clientEngine.session.applicationBufferSize
-        val tBuf: ByteBuffer = ByteBuffer.allocate(x + buf.position() + 100)
-        if (buf.position() != 0)
-            buf.flip()
+        val appSize:Int = sslEngine.session.applicationBufferSize
+        val availSpace: Int = if (buf.limit() == buf.capacity())  buf.limit() - buf.position() else buf.capacity() - buf.limit()
+        val tBuf: ByteBuffer = ByteBuffer.allocate(appSize + availSpace + 100)
+        resetBufForRead(buf)
         tBuf.put(buf)
         return tBuf
     }
 
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
     suspend private fun bufferUnderflowMemory(buf: ByteBuffer) : ByteBuffer {
-        val x: Int = clientEngine.session.packetBufferSize
-        val availSpace: Int = buf.capacity() - buf.limit()
-        println("bufferUnderflowMemory1: $x, $availSpace, ${buf.capacity()}")
-        if (x > availSpace) {
-            val tBuf:ByteBuffer = ByteBuffer.allocate(x + availSpace + 100)
-            if (buf.position() != 0)
-                buf.flip()
+        val packetSize: Int = sslEngine.session.packetBufferSize
+        val availSpace: Int = if (buf.limit() == buf.capacity())  buf.limit() - buf.position() else buf.capacity() - buf.limit()
+        println("bufferUnderflowMemory1.packetSize: $packetSize, availableSpace: $availSpace, capacity: ${buf.capacity()}")
+        if (packetSize > availSpace) {
+            val tBuf:ByteBuffer = ByteBuffer.allocate(packetSize + availSpace + 100)
+            resetBufForRead(buf)
             tBuf.put(buf)
             return tBuf
         } else {
@@ -315,6 +273,29 @@ class SSLClient {
         }
     }
 
+    suspend private fun resetBufForRead(buf: ByteBuffer) {
+        if (buf.limit() != buf.capacity()) {
+            if (buf.position() != 0) {
+                buf.compact()
+                buf.flip()
+            }
+        } else {
+            if (buf.position() != 0)
+                buf.flip()
+        }
+    }
+
+    suspend private fun resetBufForWrite(buf: ByteBuffer) {
+        if (buf.limit() != buf.capacity())
+            if (buf.position() != 0)
+                buf.compact()
+            else {
+                buf.position(buf.limit())
+                buf.limit(buf.capacity())
+            }
+    }
+
+    // reads data from the network into buf.
     suspend private fun baseRead(buf: ByteBuffer) : Int {
         try {
             if (buf.limit() != buf.capacity())
@@ -340,32 +321,4 @@ class SSLClient {
         }
     }
 
-    suspend private fun sslSetup() {
-        try {
-            val passPhrase: CharArray = "changeit".toCharArray()
-            val trustStore: KeyStore = KeyStore.getInstance("JKS")
-            val keyStore: KeyStore = KeyStore.getInstance("JKS")
-            trustStore.load(FileInputStream("/Users/sbehera/cacerts"), passPhrase)
-            keyStore.load(FileInputStream("/Users/sbehera/cacerts"), passPhrase)
-            val tMf: TrustManagerFactory = TrustManagerFactory.getInstance("SunX509")
-            val kMf: KeyManagerFactory = KeyManagerFactory.getInstance("SunX509")
-
-            tMf.init(trustStore)
-            kMf.init(keyStore, passPhrase)
-
-            System.setProperty("javax.net.debug", "all")
-            ctx = SSLContext.getInstance("TLSv1.2")
-            ctx.init(kMf.keyManagers, tMf.trustManagers, null)
-            clientEngine = ctx.createSSLEngine("controlcenter.centurylink.com", 443)
-            clientEngine.useClientMode = true
-
-            val sess: SSLSession = clientEngine.session
-            println("sslSetup.cypherSuites: ${clientEngine.supportedCipherSuites.size}")
-            localData = ByteBuffer.allocate(sess.applicationBufferSize + 100)
-            networkData = ByteBuffer.allocate(sess.packetBufferSize + 100)
-        } catch (e: Exception) {
-            println("sslSetup.exception: ${e.message}")
-            throw e
-        }
-    }
 }
