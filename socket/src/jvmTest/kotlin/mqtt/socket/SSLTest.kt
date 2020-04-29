@@ -2,18 +2,23 @@ package mqtt.socket
 
 import jvmMain.kotlin.mqtt.socket.ssl.SSLClient
 import mqtt.buffer.BufferMemoryLimit
+import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.allocateNewBuffer
 import mqtt.socket.ssl.SSLManager
 import mqtt.socket.ssl.SSLProcessor
 import org.junit.Test
+import java.nio.ByteBuffer
+import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets.UTF_8
+import kotlin.text.Charsets.UTF_8
 import kotlin.time.ExperimentalTime
 
 class SSLTest {
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
-        override fun isTooLargeForMemory(size: UInt) = size > 1_000u
+        override fun isTooLargeForMemory(size: UInt) = size > 6000u
     }
 
     @Test
@@ -23,8 +28,28 @@ class SSLTest {
 //        System.setProperty("javax.net.debug", "all")
         val manager:SSLManager = SSLManager("/Users/sbehera/cacerts", "changeit", "/Users/sbehera/cacerts", "changeit")
         println("oneClient: about to call getSSLclient")
-        val client: SSLProcessor = manager.getSSLclient(clientSocket, "www.paypal.com", 443)
+        val client: SSLProcessor = manager.getSSLclient(clientSocket, "www.google.com", 443)
+        val req: String = "GET / HTTP/1.1\r\nHost: www.amazon.com\r\naccept: text/html\r\r"
+
+        var buf: PlatformBuffer = allocateNewBuffer(5000.toUInt(), limits)
+        buf.writeUtf8String(req)
+        var x: Int = client.sslWrite(buf)
+        println("message.write: $x, buf: $buf")
+
+        x = client.sslRead(buf)
+        println("message.read: $x, buf: $buf")
         client.initiateClose()
+        println("==>${buf.readMqttUtf8StringNotValidated().toString()}")
+     /*   val bufx: ByteBuffer = (buf as JvmBuffer).byteBuffer
+ //       bufx.flip()
+        println("message.read: bufx: $bufx")
+        val charset: Charset = Charsets.UTF_8
+        val ar: ByteArray = bufx.array()
+        val ax: ByteArray = ByteArray(1)
+        ax[0] = ar[0]
+        val str: String = String(ax, charset)
+        println("message.output: ${str}")
+      */
     }
     /*
     @ExperimentalUnsignedTypes
