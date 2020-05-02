@@ -25,18 +25,14 @@ class SocketTests {
 
     @Test
     fun client() = blockIgnoreUnsupported {
-        console.log("start")
         val s = asyncClientSocket()
-        console.log("open")
-        console.log(s.isOpen())
+//        console.log(s.isOpen())
         s.open(1.seconds, 8080u)
-        console.log("opened")
         val buffer = allocateNewBuffer(20u, limits)
         val buffer2 = allocateNewBuffer(20u, limits)
         buffer.writeUtf8String("hi\r\n")
         s.write(buffer, 1.seconds)
         s.read(buffer2, 1.seconds)
-        console.log(buffer2.toString())
         s.close()
     }
 
