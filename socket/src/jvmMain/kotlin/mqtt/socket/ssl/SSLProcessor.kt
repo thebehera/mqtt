@@ -37,13 +37,9 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
             val jbuf: JvmBuffer = buffer as JvmBuffer
             localData = jbuf.byteBuffer
             networkData.compact()
-            //       val nBuf: JvmBuffer = JvmBuffer(networkData)
-            //       if (socket.read(nBuf, timeout) < 0)
-            //           println("sslRead failed")
-            //       networkData.flip()
-            //       localData.compact()
 
             val enresult: SSLEngineResult = sslUnwrap(true)
+            println("sslRead: $enresult")
             if (enresult.status == SSLEngineResult.Status.CLOSED || sslEngine.isInboundDone) {
                 println("SSL closed by server")
                 socket.close()
@@ -63,11 +59,12 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
             localData = jbuf.byteBuffer
            // localData.flip()
            // networkData.compact()
-            resetBufForRead(localData)
+           // resetBufForRead(localData)
             val ret: Int = localData.remaining()
-            val enresult: SSLEngineResult = sslWrap()
+            val enresult: SSLEngineResult = sslWrap(true)
             //       localData.compact()
             //       networkData.compact()
+            println("sslWrite: $enresult")
             return ret
         } catch (e: Exception) {
             println("sslWrite.exception: ${e.message}")
@@ -101,7 +98,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun sslWrap() : SSLEngineResult {
+    suspend private fun sslWrap(writeData: Boolean = true) : SSLEngineResult {
         val result: SSLEngineResult
 
         try {
@@ -116,12 +113,13 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
             engineResultStatus(result.status, true)
             if (result.status == SSLEngineResult.Status.OK) {
                 println("sslWrap3.localData: ${localData}, networkData: ${networkData}")
-                val r: JvmBuffer = JvmBuffer(networkData)
-                val ret:Int = socket.write(r, timeout)
-                if (ret < 0) {
-                    println("sslWrap.write failure")
+                if (writeData) {
+                    val ret: Int = baseWrite(networkData)
+                    if (ret < 0) {
+                        println("sslWrap.write failure")
+                    }
+                    println("sslWrap4.ret: $ret, localData: ${localData}, networkData: ${networkData}")
                 }
-                println("sslWrap4.ret: $ret, localData: ${localData}, networkData: ${networkData}")
             }
         } catch (e: Exception) {
             println("sslWrap.exception: ${e.message}")
@@ -288,8 +286,11 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     suspend private fun resetBufForWrite(buf: ByteBuffer) {
         if (buf.limit() != buf.capacity())
             if (buf.position() != 0)
+                // some data has been read and some are left to be read
                 buf.compact()
             else {
+                // buf is inread status and some data to be read
+                // chagne the pos * limit pointers to read additional data
                 buf.position(buf.limit())
                 buf.limit(buf.capacity())
             }
@@ -298,16 +299,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     // reads data from the network into buf.
     suspend private fun baseRead(buf: ByteBuffer) : Int {
         try {
-            if (buf.limit() != buf.capacity())
-                if (buf.position() == 0) {
-                    //buf is in read status with some data to be read
-                    //change the pos & limit pointers to read additional data
-                    buf.position(buf.limit())
-                    buf.limit(buf.capacity())
-                } else {
-                    //some data has been read and some are left to be read
-                    buf.compact()
-                }
+            resetBufForWrite(buf)
 
             val jBuf: JvmBuffer = JvmBuffer(buf)
             println("baseRead1.jvmBuf: ${jBuf}")
@@ -321,4 +313,33 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
+    suspend private fun baseWrite(buf: ByteBuffer) : Int {
+        var count: Int = 0
+        var sendCount: Int = 0
+        try {
+           resetBufForWrite(buf)
+            println("baseWrite1: $buf")
+            while (buf.hasRemaining()) {
+                val r: JvmBuffer = JvmBuffer(buf)
+                println("baseWrite.jvmBuffer: $r")
+                val ret:Int = socket.write(r, timeout)
+                println("baseWrite2.ret: $ret, buf: $buf")
+                if (ret < 0) {
+                    println("baseWrite3: socket error")
+                    return -1
+                } else if (ret == 0) {
+                    count++
+                    if (count > 10) {
+                        println("baseWrite4. unable to send data")
+                        return -2
+                    }
+                    sendCount += ret
+                }
+            }
+            return sendCount
+        } catch (e: Exception) {
+            println("baseWrite.exception: ${e.message}")
+            throw e
+        }
+    }
 }

@@ -28,18 +28,29 @@ class SSLTest {
 //        System.setProperty("javax.net.debug", "all")
         val manager:SSLManager = SSLManager("/Users/sbehera/cacerts", "changeit", "/Users/sbehera/cacerts", "changeit")
         println("oneClient: about to call getSSLclient")
-        val client: SSLProcessor = manager.getSSLclient(clientSocket, "www.google.com", 443)
-        val req: String = "GET / HTTP/1.1\r\nHost: www.amazon.com\r\naccept: text/html\r\r"
+        val client: SSLProcessor = manager.getSSLclient(clientSocket, "www.amazon.com", 443)
+        val req: String = "GET / HTTP/1.1\r\nHost: www.amazon.com\r\naccept: text/html\r\n\r\n"
+        //val req: String = "GET / HTTP/1.1\r\nHost: localhost:44330\r\naccept: text/html\r\n"
 
         var buf: PlatformBuffer = allocateNewBuffer(5000.toUInt(), limits)
-        buf.writeUtf8String(req)
+        //buf.writeUtf8String(req)
+        val ch: Charset = Charsets.UTF_8
+        var bx: ByteBuffer = (buf as JvmBuffer).byteBuffer
+        bx.put(req.toByteArray(ch))
         var x: Int = client.sslWrite(buf)
         println("message.write: $x, buf: $buf")
 
         x = client.sslRead(buf)
         println("message.read: $x, buf: $buf")
         client.initiateClose()
-        println("==>${buf.readMqttUtf8StringNotValidated().toString()}")
+//        println("==>${buf.readMqttUtf8StringNotValidated().toString()}")
+
+        bx = (buf as JvmBuffer).byteBuffer
+        println("==> buf: $bx")
+        val ar: ByteArray = buf.readByteArray(426u)
+
+        val str: String = String(ar, ch)
+        println("==> $str")
      /*   val bufx: ByteBuffer = (buf as JvmBuffer).byteBuffer
  //       bufx.flip()
         println("message.read: bufx: $bufx")

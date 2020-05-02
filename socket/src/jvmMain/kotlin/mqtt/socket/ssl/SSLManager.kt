@@ -49,6 +49,7 @@ class SSLManager (val trustStore: String, val trustPassword: String, val keyStor
         } else {
             val enginex: SSLEngine = ctx.createSSLEngine(host, port)
             enginex.useClientMode = true
+            enginex.needClientAuth = false
             val x: Engine = Engine(enginex)
             engineMap.put(key, x)
             val sslPro: SSLProcessor = SSLProcessor(enginex, socket)
