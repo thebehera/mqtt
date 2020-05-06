@@ -42,6 +42,7 @@ class SSLTest {
 
         x = client.sslRead(buf)
         println("message.read: $x, buf: $buf")
+        println("initiated close:")
         client.initiateClose()
 //        println("==>${buf.readMqttUtf8StringNotValidated().toString()}")
 

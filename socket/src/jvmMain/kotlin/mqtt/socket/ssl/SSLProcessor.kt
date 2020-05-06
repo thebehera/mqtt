@@ -39,6 +39,8 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
             networkData.compact()
 
             val enresult: SSLEngineResult = sslUnwrap(true)
+
+
             println("sslRead: $enresult")
             if (enresult.status == SSLEngineResult.Status.CLOSED || sslEngine.isInboundDone) {
                 println("SSL closed by server")
@@ -56,6 +58,15 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     suspend fun sslWrite(buffer: PlatformBuffer) : Int {
         try {
             val jbuf: JvmBuffer = buffer as JvmBuffer
+
+            println("sslWrite1: ${sslEngine.handshakeStatus}")
+            if (sslEngine.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                println("sslWrite2a.localData: ${localData}, networkData: ${networkData}")
+                sslEngine.beginHandshake()
+                manageHandshake()
+                println("sslWrite2: handshake done")
+            }
+
             localData = jbuf.byteBuffer
            // localData.flip()
            // networkData.compact()
@@ -64,7 +75,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
             val enresult: SSLEngineResult = sslWrap(true)
             //       localData.compact()
             //       networkData.compact()
-            println("sslWrite: $enresult")
+            println("sslWrite3: $enresult")
             return ret
         } catch (e: Exception) {
             println("sslWrite.exception: ${e.message}")
@@ -99,29 +110,39 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     }
 
     suspend private fun sslWrap(writeData: Boolean = true) : SSLEngineResult {
-        val result: SSLEngineResult
+        var result: SSLEngineResult
 
         try {
-            resetBufForRead(localData)
-            resetBufForWrite(networkData)
+            do {
+                resetBufForRead(localData)
+                resetBufForWrite(networkData)
 
-            println("sslWrap1.localData: ${localData}, networkData: ${networkData}")
-            wrapMutex.lock()
-            result = sslEngine.wrap(localData, networkData)
-            wrapMutex.unlock()
-            println("sslWrap2.localData: ${localData}, networkData: ${networkData}")
-            engineResultStatus(result.status, true)
-            if (result.status == SSLEngineResult.Status.OK) {
-                println("sslWrap3.localData: ${localData}, networkData: ${networkData}")
-                if (writeData) {
-                    val ret: Int = baseWrite(networkData)
-                    if (ret < 0) {
-                        println("sslWrap.write failure")
+                println("sslWrap1.localData: ${localData}, networkData: ${networkData}")
+                println("sslWrap1a: ${sslEngine.handshakeStatus}")
+                wrapMutex.lock()
+                result = sslEngine.wrap(localData, networkData)
+                wrapMutex.unlock()
+                println("sslWrap2.result: ${result}, -- localData: ${localData}, networkData: ${networkData}")
+                engineResultStatus(result.status, true)
+                if (result.status == SSLEngineResult.Status.OK) {
+                    println("sslWrap3.localData: ${localData}, networkData: ${networkData}")
+                    if (writeData) {
+                        val ret: Int = baseWrite(networkData)
+                        if (ret < 0) {
+                            println("sslWrap.write failure")
+                        }
+                        println("sslWrap4.ret: $ret, localData: ${localData}, networkData: ${networkData}")
                     }
-                    println("sslWrap4.ret: $ret, localData: ${localData}, networkData: ${networkData}")
                 }
-            }
+                if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK)
+                    sslRunable()
+            } while ((result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_WRAP) ||
+                (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) ||
+                (result.status == SSLEngineResult.Status.BUFFER_OVERFLOW) ||
+                (result.status == SSLEngineResult.Status.BUFFER_UNDERFLOW))
         } catch (e: Exception) {
+            if (wrapMutex.isLocked)
+                wrapMutex.unlock()
             println("sslWrap.exception: ${e.message}")
             throw e
         }
@@ -129,7 +150,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     }
 
     suspend private fun sslUnwrap(readData: Boolean) : SSLEngineResult {
-        val result: SSLEngineResult
+        var result: SSLEngineResult
         var ret: Int = 0
         try {
             println("sslUnwrap1.readData: $readData, localData: ${localData}, networkData: ${networkData}")
@@ -144,14 +165,25 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
 
             resetBufForWrite(localData)
 
-            println("sslUnwrap4.localData: ${localData}; networkData: ${networkData}")
-            unWrapMutex.lock()
-            result = sslEngine.unwrap(networkData, localData)
-            unWrapMutex.unlock()
-            engineResultStatus(result.status, false)
+            do {
+                resetBufForRead(networkData)
+                println("sslUnwrap4.localData: ${localData}; networkData: ${networkData}")
+                unWrapMutex.lock()
+                result = sslEngine.unwrap(networkData, localData)
+                unWrapMutex.unlock()
+                engineResultStatus(result.status, false)
+                println("sslUnwrap4a.result: $result, localData: $localData, networkData: $networkData")
+                if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK)
+                    sslRunable()
+            } while ((result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) ||
+                (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) ||
+                (result.status == SSLEngineResult.Status.BUFFER_OVERFLOW) ||
+                (result.status == SSLEngineResult.Status.BUFFER_UNDERFLOW))
             println("sslUnwrap5.localData: ${localData}; networkData: ${networkData}")
             return result
         } catch (e: Exception) {
+            if (unWrapMutex.isLocked)
+                unWrapMutex.unlock()
             println("sslUnwrap.exception: ${e.message}")
             throw e
         }
@@ -168,7 +200,6 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
 
     suspend private fun manageHandshake() {
         var hstatus : SSLEngineResult.HandshakeStatus = sslEngine.handshakeStatus
-        var pstatus: SSLEngineResult.HandshakeStatus = hstatus
 
         try {
             while (true) {
@@ -178,27 +209,17 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
                         return
                     }
                     SSLEngineResult.HandshakeStatus.NEED_TASK -> {
-                        sslRunable()
-                        hstatus = pstatus
+                    //    sslRunable()
+                        println("manageHandshake. *******should never reach here*******")
                     }
                     SSLEngineResult.HandshakeStatus.NEED_UNWRAP -> {
-                        var result: SSLEngineResult = sslUnwrap(true)
-                        while ((result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) ||
-                            (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_UNWRAP)){
-                            if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK)
-                                sslRunable()
-                            result = sslUnwrap(false)
-                        }
-                        pstatus = hstatus
+                        val result: SSLEngineResult = sslUnwrap(true)
+
                         hstatus = result.handshakeStatus
                     }
                     SSLEngineResult.HandshakeStatus.NEED_WRAP -> {
-                        var result: SSLEngineResult = sslWrap()
-                        while (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) {
-                            sslRunable()
-                            result = sslWrap()
-                        }
-                        pstatus = hstatus
+                        val result: SSLEngineResult = sslWrap()
+
                         hstatus = result.handshakeStatus
                     }
                     SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING -> {
