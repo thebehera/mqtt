@@ -11,7 +11,7 @@ import javax.net.ssl.SSLEngineResult
 import kotlin.time.Duration
 import kotlin.time.milliseconds
 
-class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerSocket) {
+class SSLProcessor (private val sslEngine: SSLEngine, public val socket: ClientToServerSocket) {
     private val timeout: Duration = 5000.milliseconds
     private var networkData:ByteBuffer = ByteBuffer.allocate(sslEngine.session.packetBufferSize + 100)
     private lateinit var localData: ByteBuffer
@@ -58,24 +58,26 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     suspend fun sslWrite(buffer: PlatformBuffer) : Int {
         try {
             val jbuf: JvmBuffer = buffer as JvmBuffer
+            var ret: Int
+            var enresult: SSLEngineResult
+            var handshake: Boolean
 
             println("sslWrite1: ${sslEngine.handshakeStatus}")
-            if (sslEngine.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-                println("sslWrite2a.localData: ${localData}, networkData: ${networkData}")
-                sslEngine.beginHandshake()
-                manageHandshake()
-                println("sslWrite2: handshake done")
-            }
 
-            localData = jbuf.byteBuffer
-           // localData.flip()
-           // networkData.compact()
-           // resetBufForRead(localData)
-            val ret: Int = localData.remaining()
-            val enresult: SSLEngineResult = sslWrap(true)
-            //       localData.compact()
-            //       networkData.compact()
-            println("sslWrite3: $enresult")
+            do {
+                handshake = false
+                localData = jbuf.byteBuffer
+                ret = localData.remaining()
+                enresult = sslWrap(true)
+                println("sslWrite3: $enresult")
+                if (enresult.handshakeStatus != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                    handshake = true
+                    localData = ByteBuffer.allocate(sslEngine.session.applicationBufferSize + 100)
+                    manageHandshake()
+                }
+                println("sslWrite4: ${sslEngine.handshakeStatus}")
+            } while (handshake)
+
             return ret
         } catch (e: Exception) {
             println("sslWrite.exception: ${e.message}")
@@ -99,7 +101,6 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     }
 
     suspend fun receivedClose(socket: ClientSocket) {
-        var status:SSLEngineResult.Status = SSLEngineResult.Status.OK
         try {
             sslEngine.closeInbound()
             socket.close()
@@ -109,7 +110,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun sslWrap(writeData: Boolean = true) : SSLEngineResult {
+    private suspend fun sslWrap(writeData: Boolean = true) : SSLEngineResult {
         var result: SSLEngineResult
 
         try {
@@ -117,21 +118,21 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
                 resetBufForRead(localData)
                 resetBufForWrite(networkData)
 
-                println("sslWrap1.localData: ${localData}, networkData: ${networkData}")
+                println("sslWrap1.localData: $localData, networkData: $networkData")
                 println("sslWrap1a: ${sslEngine.handshakeStatus}")
                 wrapMutex.lock()
                 result = sslEngine.wrap(localData, networkData)
                 wrapMutex.unlock()
-                println("sslWrap2.result: ${result}, -- localData: ${localData}, networkData: ${networkData}")
+                println("sslWrap2.result: ${result}, -- localData: $localData, networkData: $networkData")
                 engineResultStatus(result.status, true)
                 if (result.status == SSLEngineResult.Status.OK) {
-                    println("sslWrap3.localData: ${localData}, networkData: ${networkData}")
+                    println("sslWrap3.localData: $localData, networkData: $networkData")
                     if (writeData) {
-                        val ret: Int = baseWrite(networkData)
+                        val ret: Int = networkWrite(networkData)
                         if (ret < 0) {
                             println("sslWrap.write failure")
                         }
-                        println("sslWrap4.ret: $ret, localData: ${localData}, networkData: ${networkData}")
+                        println("sslWrap4.ret: $ret, localData: $localData, networkData: $networkData")
                     }
                 }
                 if (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK)
@@ -149,16 +150,16 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         return result
     }
 
-    suspend private fun sslUnwrap(readData: Boolean) : SSLEngineResult {
+    private suspend fun sslUnwrap(readData: Boolean) : SSLEngineResult {
         var result: SSLEngineResult
-        var ret: Int = 0
+        val ret: Int
         try {
-            println("sslUnwrap1.readData: $readData, localData: ${localData}, networkData: ${networkData}")
+            println("sslUnwrap1.readData: $readData, localData: $localData, networkData: $networkData")
             if (readData) {
-                ret = baseRead(networkData)
+                ret = networkRead(networkData)
                 if (ret < 0)
                     println("sslUnwrap read failure")
-                println("sslUnwrap3.ret: $ret, localData: ${localData}, networkData: ${networkData}")
+                println("sslUnwrap3.ret: $ret, localData: $localData, networkData: $networkData")
             } else {
                 resetBufForRead(networkData)
             }
@@ -167,7 +168,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
 
             do {
                 resetBufForRead(networkData)
-                println("sslUnwrap4.localData: ${localData}; networkData: ${networkData}")
+                println("sslUnwrap4.localData: $localData; networkData: $networkData")
                 unWrapMutex.lock()
                 result = sslEngine.unwrap(networkData, localData)
                 unWrapMutex.unlock()
@@ -179,7 +180,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
                 (result.handshakeStatus == SSLEngineResult.HandshakeStatus.NEED_TASK) ||
                 (result.status == SSLEngineResult.Status.BUFFER_OVERFLOW) ||
                 (result.status == SSLEngineResult.Status.BUFFER_UNDERFLOW))
-            println("sslUnwrap5.localData: ${localData}; networkData: ${networkData}")
+            println("sslUnwrap5.localData: $localData; networkData: $networkData")
             return result
         } catch (e: Exception) {
             if (unWrapMutex.isLocked)
@@ -189,7 +190,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun sslRunable () {
+    private suspend fun sslRunable () {
         var delTask: Runnable? = sslEngine.delegatedTask
         println("sslRunnable")
         while (delTask != null) {
@@ -198,7 +199,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun manageHandshake() {
+    private suspend fun manageHandshake() {
         var hstatus : SSLEngineResult.HandshakeStatus = sslEngine.handshakeStatus
 
         try {
@@ -234,7 +235,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun engineResultStatus(status: SSLEngineResult.Status, wrap: Boolean) {
+    private suspend fun engineResultStatus(status: SSLEngineResult.Status, wrap: Boolean) {
         println("engineResultStatus: $status, $wrap")
         when (status) {
             SSLEngineResult.Status.BUFFER_OVERFLOW -> {
@@ -243,7 +244,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
                     networkData = bufferOverflowMemory(networkData)
                 else
                     localData = bufferOverflowMemory(localData)
-                println("engineResultStatus.OverFlow.localData: ${localData}, networkData: ${networkData}")
+                println("engineResultStatus.OverFlow.localData: $localData, networkData: $networkData")
                 return
             }
             SSLEngineResult.Status.BUFFER_UNDERFLOW -> {
@@ -252,7 +253,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
                     localData = bufferUnderflowMemory(localData)
                 else
                     networkData = bufferUnderflowMemory(networkData)
-                println("engineResultStatus.UnderFlow.localData: ${localData}, networkData: ${networkData}")
+                println("engineResultStatus.UnderFlow.localData: $localData, networkData: $networkData")
                 return
             }
             SSLEngineResult.Status.CLOSED -> {
@@ -266,33 +267,39 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun bufferOverflowMemory(buf: ByteBuffer) : ByteBuffer {
+    private suspend fun bufferOverflowMemory(buf: ByteBuffer) : ByteBuffer {
         val appSize:Int = sslEngine.session.applicationBufferSize
         val availSpace: Int = if (buf.limit() == buf.capacity())  buf.limit() - buf.position() else buf.capacity() - buf.limit()
         val tBuf: ByteBuffer = ByteBuffer.allocate(appSize + availSpace + 100)
         resetBufForRead(buf)
+        if ((buf.position() == 0) && (buf.limit() == buf.capacity()))
+            // buf is empty
+            return tBuf
         tBuf.put(buf)
         return tBuf
     }
 
-    suspend private fun bufferUnderflowMemory(buf: ByteBuffer) : ByteBuffer {
+    private suspend fun bufferUnderflowMemory(buf: ByteBuffer) : ByteBuffer {
         val packetSize: Int = sslEngine.session.packetBufferSize
         val availSpace: Int = if (buf.limit() == buf.capacity())  buf.limit() - buf.position() else buf.capacity() - buf.limit()
         println("bufferUnderflowMemory1.packetSize: $packetSize, availableSpace: $availSpace, capacity: ${buf.capacity()}")
         if (packetSize > availSpace) {
             val tBuf:ByteBuffer = ByteBuffer.allocate(packetSize + availSpace + 100)
             resetBufForRead(buf)
+            if ((buf.position() == 0) && (buf.limit() == buf.capacity()))
+            // buf is empty
+                return tBuf
             tBuf.put(buf)
             return tBuf
         } else {
             //this should not happen for wrap status; happen only for unwrap status
-            if (baseRead(buf) < 0)
+            if (networkRead(buf) < 0)
                 println("bufferUnderflowMemory2.read failure")
             return buf
         }
     }
 
-    suspend private fun resetBufForRead(buf: ByteBuffer) {
+    private suspend fun resetBufForRead(buf: ByteBuffer) {
         if (buf.limit() != buf.capacity()) {
             if (buf.position() != 0) {
                 buf.compact()
@@ -304,7 +311,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
         }
     }
 
-    suspend private fun resetBufForWrite(buf: ByteBuffer) {
+    private suspend fun resetBufForWrite(buf: ByteBuffer) {
         if (buf.limit() != buf.capacity())
             if (buf.position() != 0)
                 // some data has been read and some are left to be read
@@ -318,40 +325,40 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
     }
 
     // reads data from the network into buf.
-    suspend private fun baseRead(buf: ByteBuffer) : Int {
+    private suspend fun networkRead(buf: ByteBuffer) : Int {
         try {
             resetBufForWrite(buf)
 
             val jBuf: JvmBuffer = JvmBuffer(buf)
-            println("baseRead1.jvmBuf: ${jBuf}")
+            println("networkRead1.jvmBuf: $jBuf")
             val ret: Int = socket.read(jBuf, timeout)
-            println("baseRead2.read: $ret, jvmBuf: ${jBuf}")
+            println("networkRead2.read: $ret, jvmBuf: $jBuf")
 
             return ret
         } catch (e: Exception) {
-            println("baseRead.exception: ${e.message}")
+            println("networkRead.exception: ${e.message}")
             throw e
         }
     }
 
-    suspend private fun baseWrite(buf: ByteBuffer) : Int {
+    private suspend fun networkWrite(buf: ByteBuffer) : Int {
         var count: Int = 0
         var sendCount: Int = 0
         try {
            resetBufForWrite(buf)
-            println("baseWrite1: $buf")
+            println("networkWrite1: $buf")
             while (buf.hasRemaining()) {
                 val r: JvmBuffer = JvmBuffer(buf)
-                println("baseWrite.jvmBuffer: $r")
+                println("networkWrite.jvmBuffer: $r")
                 val ret:Int = socket.write(r, timeout)
-                println("baseWrite2.ret: $ret, buf: $buf")
+                println("networkWrite2.ret: $ret, buf: $buf")
                 if (ret < 0) {
-                    println("baseWrite3: socket error")
+                    println("networkWrite3: socket error")
                     return -1
                 } else if (ret == 0) {
                     count++
                     if (count > 10) {
-                        println("baseWrite4. unable to send data")
+                        println("networkWrite4. unable to send data")
                         return -2
                     }
                     sendCount += ret
@@ -359,7 +366,7 @@ class SSLProcessor (val sslEngine: SSLEngine, public val socket: ClientToServerS
             }
             return sendCount
         } catch (e: Exception) {
-            println("baseWrite.exception: ${e.message}")
+            println("neworkWrite.exception: ${e.message}")
             throw e
         }
     }

@@ -32,7 +32,7 @@ class SSLTest {
         val req: String = "GET / HTTP/1.1\r\nHost: www.amazon.com\r\naccept: text/html\r\n\r\n"
         //val req: String = "GET / HTTP/1.1\r\nHost: localhost:44330\r\naccept: text/html\r\n"
 
-        var buf: PlatformBuffer = allocateNewBuffer(5000.toUInt(), limits)
+        val buf: PlatformBuffer = allocateNewBuffer(5000.toUInt(), limits)
         //buf.writeUtf8String(req)
         val ch: Charset = Charsets.UTF_8
         var bx: ByteBuffer = (buf as JvmBuffer).byteBuffer
@@ -46,7 +46,7 @@ class SSLTest {
         client.initiateClose()
 //        println("==>${buf.readMqttUtf8StringNotValidated().toString()}")
 
-        bx = (buf as JvmBuffer).byteBuffer
+        bx = buf.byteBuffer
         println("==> buf: $bx")
         val ar: ByteArray = buf.readByteArray(426u)
 
