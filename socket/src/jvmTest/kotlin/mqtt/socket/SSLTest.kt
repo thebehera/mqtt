@@ -21,6 +21,16 @@ class SSLTest {
         override fun isTooLargeForMemory(size: UInt) = size > 6000u
     }
 
+  /*  fun createServer() : Int = block {
+        var port: Int = -1
+
+        val serverSocket = AsyncServerSocket()
+        //serverSocket.bind(host = "localhost")
+
+
+    }
+*/
+
     @Test
     fun oneClient() = block {
         val clientSocket = asyncClientSocket()
@@ -33,7 +43,6 @@ class SSLTest {
         //val req: String = "GET / HTTP/1.1\r\nHost: localhost:44330\r\naccept: text/html\r\n"
 
         val buf: PlatformBuffer = allocateNewBuffer(5000.toUInt(), limits)
-        //buf.writeUtf8String(req)
         val ch: Charset = Charsets.UTF_8
         var bx: ByteBuffer = (buf as JvmBuffer).byteBuffer
         bx.put(req.toByteArray(ch))
@@ -44,7 +53,6 @@ class SSLTest {
         println("message.read: $x, buf: $buf")
         println("initiated close:")
         client.initiateClose()
-//        println("==>${buf.readMqttUtf8StringNotValidated().toString()}")
 
         bx = buf.byteBuffer
         println("==> buf: $bx")
@@ -52,16 +60,6 @@ class SSLTest {
 
         val str: String = String(ar, ch)
         println("==> $str")
-     /*   val bufx: ByteBuffer = (buf as JvmBuffer).byteBuffer
- //       bufx.flip()
-        println("message.read: bufx: $bufx")
-        val charset: Charset = Charsets.UTF_8
-        val ar: ByteArray = bufx.array()
-        val ax: ByteArray = ByteArray(1)
-        ax[0] = ar[0]
-        val str: String = String(ax, charset)
-        println("message.output: ${str}")
-      */
     }
     /*
     @ExperimentalUnsignedTypes
