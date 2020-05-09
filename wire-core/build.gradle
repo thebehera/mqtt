@@ -16,7 +16,9 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    useChromeHeadless()
+                    if (System.getenv("CHROME_BIN")) {
+                        useChromeHeadless()
+                    }
                 }
             }
         }
