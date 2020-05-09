@@ -26,6 +26,7 @@ kotlin {
                     if (System.getenv("CHROME_BIN")) {
                         useChromeHeadless()
                     }
+                    usePhantomJS()
                 }
             }
         }
