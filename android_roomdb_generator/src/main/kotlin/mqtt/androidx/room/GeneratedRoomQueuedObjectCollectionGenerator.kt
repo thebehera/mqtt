@@ -3,7 +3,6 @@ package mqtt.androidx.room
 import com.squareup.kotlinpoet.*
 import com.squareup.kotlinpoet.KModifier.OVERRIDE
 import com.squareup.kotlinpoet.KModifier.SUSPEND
-import com.squareup.kotlinpoet.MemberName.Companion.member
 import kotlinx.metadata.jvm.KotlinClassHeader
 import kotlinx.metadata.jvm.KotlinClassMetadata
 import javax.lang.model.element.Element
@@ -28,19 +27,17 @@ data class GeneratedRoomQueuedObjectCollectionGenerator(
                 .beginControlFlow("%T::class.java.simpleName ->", annotatedPublishClass.asType())
                 // db is std convention.
                 // modelsDao() is by looking at the enclosing element for @MqttPublishDequeue
-                .addStatement("val obj = db.modelsDao().${annotatedPublishDequeueElement!!.simpleName}(queuedObj.queuedRowId) ?: return null")
+//                .addStatement("val obj = db.modelsDao().${annotatedPublishDequeueElement!!.simpleName}(queuedObj.queuedRowId) ?: return null")
                 // validate annotatedSerializerClass is enclosing the correct class and is annotating something that returns ByteReadPacket
                 .addStatement(
                     """return %T(
                     publishQueue.topic,
                     queuedObj.qos,
                     // publishable format
-                    %M(obj),
                     publishQueue.packetIdentifier.toUShort(),
                     publishQueue.dup,
                     publishQueue.retain
-                )""", ClassName("mqtt.wire4.control.packet", "PublishMessage"),
-                    annotatedSerializerClass.asClassName().member("serialize")
+                )""", ClassName("mqtt.wire4.control.packet", "PublishMessage")
                 )
                 .endControlFlow()
                 .build()

@@ -10,7 +10,9 @@ apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    android()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     ios("iOS")
     js {
         browser {
@@ -32,7 +34,7 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation kotlin('stdlib-common')
+                implementation kotlin('stdlib')
             }
         }
         commonTest {
@@ -41,16 +43,17 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        androidMain {
-            dependsOn jvmMain
-        }
-        androidTest {
-            dependsOn jvmTest
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependsOn jvmMain
+            }
+            androidTest {
+                dependsOn jvmTest
+            }
         }
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         jvmTest {
@@ -63,7 +66,7 @@ kotlin {
             dependencies {
                 implementation kotlin('stdlib-js')
                 implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
+                implementation "io.ktor:ktor-io-js:$ktor_version"
             }
         }
         jsTest {
@@ -74,7 +77,7 @@ kotlin {
         nativeMain {
             dependsOn commonMain
             dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-io-native:$kotlinx_io_version"
+                implementation "io.ktor:ktor-io-native:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
             }
         }
@@ -92,6 +95,18 @@ kotlin {
         }
         windowsMain {
             dependsOn nativeMain
+        }
+    }
+
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.RequiresOptIn"
+                ]
+            }
         }
     }
 }

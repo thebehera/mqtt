@@ -1,10 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.charsets.Charsets
-import kotlinx.io.charsets.encodeToByteArray
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -13,8 +10,9 @@ import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.*
-
+import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Name
 
@@ -30,32 +28,10 @@ data class PublishMessage(
 )
     : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
-    /**
-     * Build a QOS 0 At most once publish message
-     */
-    constructor(topic: String, payload: ByteReadPacket? = null, dup: Boolean = false, retain: Boolean = false)
-            : this(FixedHeader(dup, retain = retain), VariableHeader(Name(topic).topic), ByteArrayWrapper(payload))
-
-    constructor(topic: String, payload: String, dup: Boolean = false, retain: Boolean = false)
-            : this(
-        FixedHeader(dup, retain = retain), VariableHeader(Name(topic).topic),
-        ByteArrayWrapper(buildPacket { writeStringUtf8(payload) })
-    )
 
     /**
      * Build a QOS 1 or 2 publish message
      */
-    constructor(topic: String, qos: QualityOfService, payload: ByteReadPacket? = null,
-                packetIdentifier: UShort,
-                dup: Boolean = false,
-                retain: Boolean = false
-    )
-            : this(
-        FixedHeader(dup, qos, retain),
-        VariableHeader(Name(topic).topic, packetIdentifier.toInt()),
-        ByteArrayWrapper(payload)
-    )
-
     constructor(topic: String, qos: QualityOfService,
                 packetIdentifier: UShort,
                 dup: Boolean = false,
@@ -73,10 +49,6 @@ data class PublishMessage(
 
     @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
-
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet()
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { writeFully(payload?.byteArray ?: ByteArray(0)) }
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
@@ -233,13 +205,6 @@ data class PublishMessage(
         val packetIdentifier: Int? = null
     ) : Parcelable {
 
-        fun packet() = buildPacket {
-            writeMqttName(Name(topicName))
-            if (packetIdentifier != null) {
-                writeUShort(packetIdentifier.toUShort())
-            }
-        }
-
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.writeUtf8String(topicName)
             if (packetIdentifier != null) {
@@ -248,15 +213,6 @@ data class PublishMessage(
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket, isQos0: Boolean): VariableHeader {
-                val topicName = buffer.readMqttUtf8String()
-                // Intention NullPointerException. This should fail the validation and immediately bail out
-                val topicNameValidated = Name(topicName.getValueOrThrow()).validateTopic()!!
-                val packetIdentifier = if (isQos0) null else buffer.readUShort()
-                return VariableHeader(topicNameValidated.getCurrentPath(), packetIdentifier?.toInt())
-            }
-
-
             fun from(buffer: ReadBuffer, isQos0: Boolean): VariableHeader {
                 val topicName = MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
                 // Intention NullPointerException. This should fail the validation and immediately bail out
@@ -268,20 +224,14 @@ data class PublishMessage(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket, byte1: UByte): PublishMessage {
-            val fixedHeader = FixedHeader.fromByte(byte1)
-            val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            return PublishMessage(fixedHeader, variableHeader, ByteArrayWrapper(buffer.readBytes()))
-        }
 
 
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-
-            var variableSize = 2 + Charsets.UTF_8.newEncoder().encodeToByteArray(variableHeader.topicName).size
+            var variableSize = 2u + buffer.utf8StringSize(variableHeader.topicName)
             if (variableHeader.packetIdentifier != null) {
-                variableSize += 2
+                variableSize += 2u
             }
             return PublishMessage(
                 fixedHeader,

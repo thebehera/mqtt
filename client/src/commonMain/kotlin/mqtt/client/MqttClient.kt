@@ -1,25 +1,27 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "UNUSED_PARAMETER")
 
 package mqtt.client
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.client.persistence.MemoryQueuedObjectCollection
 import mqtt.client.persistence.QueuedObjectCollection
 import mqtt.client.session.ClientSession
 import mqtt.client.session.transport.OnMessageReceivedCallback
-import mqtt.connection.ConnectionFailure
 import mqtt.connection.ConnectionState
 import mqtt.connection.IRemoteHost
-import mqtt.connection.Open
-import mqtt.retryIO
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.Name
 import mqtt.wire.data.topic.SubscriptionCallback
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 data class MqttClient(
     val remoteHost: IRemoteHost,
     val otherMsgCallback: OnMessageReceivedCallback? = null,
@@ -48,27 +50,28 @@ data class MqttClient(
     }
 
     fun startAsync(newConnectionCb: ((ConnectionState) -> Unit)? = null) = async {
-        if (session.transport?.isOpenAndActive() == true) {
-            return@async true
-        }
-        return@async retryIO(remoteHost.maxNumberOfRetries) {
-            val result = try {
-                if (isActive) {
-                    val result = session.connect()
-                    connectionCount++
-                    newConnectionCb?.invoke(result)
-                    session.awaitSocketClose()
-                    result is Open
-                } else {
-                    newConnectionCb?.invoke(ConnectionFailure(CancellationException("Client cancelled")))
-                    false
-                }
-            } catch (e: Exception) {
-                newConnectionCb?.invoke(ConnectionFailure(e))
-                false
-            }
-            result
-        }
+//        if (session.transport?.isOpenAndActive() == true) {
+//            return@async true
+//        }
+//        return@async retryIO(remoteHost.maxNumberOfRetries) {
+//            val result = try {
+//                if (isActive) {
+//                    val result = session.connect()
+//                    connectionCount++
+//                    newConnectionCb?.invoke(result)
+//                    session.awaitSocketClose()
+//                    result is Open
+//                } else {
+//                    newConnectionCb?.invoke(ConnectionFailure(CancellationException("Client cancelled")))
+//                    false
+//                }
+//            } catch (e: Exception) {
+//                newConnectionCb?.invoke(ConnectionFailure(e))
+//                false
+//            }
+//            result
+//        }
+        return@async true
     }
 
     suspend fun <T : Any> subscribe(

@@ -1,9 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.*
-import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
@@ -13,9 +11,7 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
-import mqtt.wire.data.readMqttFilter
 import mqtt.wire.data.topic.Filter
-import mqtt.wire.data.writeMqttFilter
 
 /**
  * 3.8 SUBSCRIBE - Subscribe request
@@ -29,10 +25,7 @@ import mqtt.wire.data.writeMqttFilter
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
 @Parcelize
-data class
-SubscribeRequest(
-    override val packetIdentifier: Int,
-                            val subscriptions: List<Subscription>) :
+data class SubscribeRequest(override val packetIdentifier: Int, val subscriptions: List<Subscription>) :
     ControlPacketV4(ISubscribeRequest.controlPacketValue, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
     constructor(packetIdentifier: UShort, topic: Filter, qos: QualityOfService)
@@ -42,20 +35,15 @@ SubscribeRequest(
     constructor(packetIdentifier: UShort, topics: List<Filter>, qos: List<QualityOfService>)
             : this(packetIdentifier.toInt(), subscriptions = Subscription.from(topics, qos))
 
-    @IgnoredOnParcel
-    private val payloadSubs by lazy { Subscription.writeMany(subscriptions) }
-
-    @IgnoredOnParcel
-    override val variableHeaderPacket = buildPacket {
-        writeUShort(packetIdentifier.toUShort())
-    }
-
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }
 
-    override fun payloadPacket(sendDefaults: Boolean) = payloadSubs
     override fun payload(writeBuffer: WriteBuffer) = Subscription.writeMany(subscriptions, writeBuffer)
+
+    override fun remainingLength(buffer: WriteBuffer) =
+        UShort.SIZE_BYTES.toUInt() + Subscription.sizeMany(subscriptions, buffer)
+
     override fun expectedResponse(): SubscribeAcknowledgement {
         val returnCodes = subscriptions.map {
             when (it.maximumQos) {
@@ -70,11 +58,6 @@ SubscribeRequest(
     override fun getTopics() = subscriptions.map { it.topicFilter }
 
     companion object {
-        fun from(buffer: ByteReadPacket): SubscribeRequest {
-            val packetIdentifier = buffer.readUShort().toInt()
-            val subscriptions = Subscription.fromMany(buffer)
-            return SubscribeRequest(packetIdentifier, subscriptions)
-        }
 
         fun from(buffer: ReadBuffer, remaining: UInt): SubscribeRequest {
             val packetIdentifier = buffer.readUnsignedShort().toInt()
@@ -93,24 +76,8 @@ data class Subscription(val topicFilter: Filter,
                          */
                         val maximumQos: QualityOfService = AT_LEAST_ONCE
 ) : Parcelable {
-    @IgnoredOnParcel
-    val packet by lazy {
-        val qosInt = maximumQos.integerValue
-        buildPacket {
-            writeMqttFilter(topicFilter)
-            writeByte(qosInt)
-        }
-    }
 
     companion object {
-        fun fromMany(buffer: ByteReadPacket): List<Subscription> {
-            val subscriptions = ArrayList<Subscription>()
-            while (buffer.remaining != 0.toLong()) {
-                subscriptions.add(from(buffer))
-            }
-            return subscriptions
-        }
-
         fun fromMany(buffer: ReadBuffer, remaining: UInt): List<Subscription> {
             val subscriptions = ArrayList<Subscription>()
             var bytesRead = 0
@@ -120,15 +87,6 @@ data class Subscription(val topicFilter: Filter,
                 subscriptions.add(result.second)
             }
             return subscriptions
-        }
-
-        fun from(buffer: ByteReadPacket): Subscription {
-            val topicFilter = buffer.readMqttFilter()
-            val subOptionsInt = buffer.readUByte().toInt()
-            val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
-            val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
-            val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
-            return Subscription(topicFilter, qos)
         }
 
         fun from(buffer: ReadBuffer): Pair<UInt, Subscription> {
@@ -154,10 +112,12 @@ data class Subscription(val topicFilter: Filter,
             return subscriptions
         }
 
-        fun writeMany(subscriptions: Collection<Subscription>) = buildPacket {
+        fun sizeMany(subscriptions: Collection<Subscription>, writeBuffer: WriteBuffer): UInt {
+            var size = 0u
             subscriptions.forEach {
-                writePacket(it.packet)
+                size += writeBuffer.mqttUtf8Size(it.topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
             }
+            return size
         }
 
         fun writeMany(subscriptions: Collection<Subscription>, writeBuffer: WriteBuffer) {

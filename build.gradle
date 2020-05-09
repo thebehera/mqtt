@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.3.61'
+    ext.kotlin_version = '1.3.71'
 
     repositories {
         google()
@@ -7,16 +7,29 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.5.3'
+        classpath 'com.android.tools.build:gradle:3.6.2'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
-
 ext {
     kotlinx_io_version = '0.1.16'
-    ktor_version = '1.2.5'
-    coroutines_version = '1.3.3'
+    ktor_version = '1.3.2'
+    coroutines_version = '1.3.5'
     room_version = '2.2.2'
+}
+if (System.getenv("ANDROID_HOME")  && JavaVersion.current().ordinal() != JavaVersion.VERSION_1_8.ordinal()) {
+    def stdout = new ByteArrayOutputStream()
+    exec{
+        commandLine "which", "java"
+        standardOutput = stdout
+    }
+    throw new GradleException("*******Java 8 is required with Android!**********\n Please set to java 8 and ensure that it's the default" +
+            " The current version is set to " + JavaVersion.current().getMajorVersion() + " located at @ $stdout\n" +
+            "If you are are seeing this error from the IntelliJ, click 'File' -> 'Project Structure' -> 'Platform Settings', 'SDKs' tab, then ensure that only Java 1.8, Android SDK and Kotlin SDK are in the list. Ensure everything in this project sturcture dialog is set to 1.8\n" +
+            "If you are missing Java 8, or are using the gradle wrapper install it using:\n" +
+            "Install Java 8 through SDKMan at https://sdkman.io/install")
+} else if (!System.getenv("ANDROID_HOME")) {
+    project.logger.warn("Android SDK not found, builds and tests skipped! Please install the Android SDK from: https://developer.android.com/studio/index.html#command-tools and set your ANDROID_HOME env value.")
 }
 allprojects {
     repositories {
@@ -39,6 +52,16 @@ allprojects {
             if(task.name.contains("jsBrowserTest")) {
                 task.enabled = false
             }
+        }
+    }
+}
+gradleEnterprise {
+    buildScan {
+        if (System.getenv("CI")) {
+            termsOfServiceUrl = "https://gradle.com/terms-of-service"
+            termsOfServiceAgree = "yes"
+            publishOnFailure()
+            tag "CI"
         }
     }
 }

@@ -1,8 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -14,14 +13,14 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.variable.property.*
+import mqtt.wire5.control.packet.format.variable.property.Property
+import mqtt.wire5.control.packet.format.variable.property.ReasonString
+import mqtt.wire5.control.packet.format.variable.property.UserProperty
+import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
 @Parcelize
 data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS)) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { reasonCodes.forEach { writeUByte(it.byte) } }
+
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(buffer: WriteBuffer): UInt {
         val variableSize = variable.size(buffer)
@@ -50,14 +49,6 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
-        @IgnoredOnParcel
-        val packet by lazy {
-            buildPacket {
-                writeUShort(packetIdentifier.toUShort())
-                writePacket(properties.packet)
-            }
-        }
-
         fun size(writeBuffer: WriteBuffer) =
             UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
                 writeBuffer
@@ -101,26 +92,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            @IgnoredOnParcel val packet by lazy {
-                val propertiesPacket = buildPacket {
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
-
+            @IgnoredOnParcel
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {
@@ -171,12 +143,6 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort()
-                val props = Properties.from(buffer.readPropertiesLegacy())
-                return VariableHeader(packetIdentifier.toInt(), props)
-            }
-
             fun from(buffer: ReadBuffer): Pair<UInt, VariableHeader> {
                 val packetIdentifier = buffer.readUnsignedShort()
                 val sized = buffer.readPropertiesSized()
@@ -190,28 +156,6 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): UnsubscribeAcknowledgment {
-            val variableHeader = VariableHeader.from(buffer)
-            val list = mutableListOf<ReasonCode>()
-            while (buffer.remaining > 0) {
-                val reasonCodeByte = buffer.readUByte()
-                list += when (reasonCodeByte) {
-                    SUCCESS.byte -> SUCCESS
-                    NO_SUBSCRIPTIONS_EXISTED.byte -> NO_SUBSCRIPTIONS_EXISTED
-                    UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
-                    IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
-                    NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
-                    TOPIC_FILTER_INVALID.byte -> TOPIC_FILTER_INVALID
-                    PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
-                    else -> throw MalformedPacketException(
-                        "Invalid reason code $reasonCodeByte " +
-                                "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477478"
-                    )
-                }
-            }
-            return UnsubscribeAcknowledgment(variableHeader, list)
-        }
-
         fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeAcknowledgment {
             val variableHeader = VariableHeader.from(buffer)
             val list = mutableListOf<ReasonCode>()

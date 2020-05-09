@@ -2,10 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUShort
-import kotlinx.io.core.writeUShort
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -16,12 +12,8 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
-import mqtt.wire.data.readMqttUtf8String
-import mqtt.wire.data.writeMqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
-import mqtt.wire5.control.packet.format.variable.property.readPropertiesLegacy
 import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
 /**
@@ -31,10 +23,8 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 @Parcelize
 data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<MqttUtf8String>)
     : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet
+
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
     override fun remainingLength(buffer: WriteBuffer): UInt {
         val variableSize = variable.size(buffer)
         var payloadSize = 0u
@@ -64,14 +54,6 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) : Parcelable {
-        @IgnoredOnParcel
-        val packet by lazy {
-            buildPacket {
-                writeUShort(packetIdentifier.toUShort())
-                writePacket(properties.packet)
-            }
-        }
-
         fun size(writeBuffer: WriteBuffer) =
             UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
                 writeBuffer
@@ -104,23 +86,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
                  */
                 val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            @IgnoredOnParcel val packet by lazy {
-                val propertiesPacket = buildPacket {
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
-
+            @IgnoredOnParcel
             val props by lazy {
                 val props = ArrayList<Property>(userProperty.size)
                 if (userProperty.isNotEmpty()) {
@@ -159,12 +125,6 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort().toInt()
-                val props = Properties.from(buffer.readPropertiesLegacy())
-                return VariableHeader(packetIdentifier, props)
-            }
-
             fun from(buffer: ReadBuffer): Pair<UInt, VariableHeader> {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
                 val sized = buffer.readPropertiesSized()
@@ -178,15 +138,6 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): UnsubscribeRequest {
-            val header = VariableHeader.from(buffer)
-            val topics = mutableSetOf<MqttUtf8String>()
-            while (buffer.remaining > 0) {
-                topics += buffer.readMqttUtf8String()
-            }
-            return UnsubscribeRequest(header, topics)
-        }
-
         fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeRequest {
             val header = VariableHeader.from(buffer)
             val topics = mutableSetOf<MqttUtf8String>()

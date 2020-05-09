@@ -36,7 +36,7 @@ class PublishReceivedTests {
     fun defaultAndNonDefaultSuccessDeserialization() {
         val pubrec = PublishReceived(VariableHeader(packetIdentifier))
         val bufferNonDefaults = allocateNewBuffer(6u, limits)
-        bufferNonDefaults.write(0b01010000)
+        bufferNonDefaults.write(0b01010000.toByte())
         bufferNonDefaults.writeVariableByteInteger(4u)
         bufferNonDefaults.write(packetIdentifier.toUShort())
         bufferNonDefaults.write(0.toUByte())

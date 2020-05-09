@@ -2,7 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -16,8 +15,10 @@ import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
 import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.variable.property.*
+import mqtt.wire5.control.packet.format.variable.property.Property
+import mqtt.wire5.control.packet.format.variable.property.ReasonString
+import mqtt.wire5.control.packet.format.variable.property.UserProperty
+import mqtt.wire5.control.packet.format.variable.property.readProperties
 
 /**
  * 3.6 PUBREL – Publish release (QoS 2 delivery part 2)
@@ -27,14 +28,12 @@ import mqtt.wire5.control.packet.format.variable.property.*
 @Parcelize
 data class PublishRelease(val variable: VariableHeader)
     : ControlPacketV5(6, DirectionOfFlow.BIDIRECTIONAL, 0b10), IPublishRelease {
-
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier.toInt()))
 
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet()
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
     override fun expectedResponse() = PublishComplete(packetIdentifier.toUShort())
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
 
     /**
      * 3.6.2 PUBREL Variable Header
@@ -73,18 +72,16 @@ data class PublishRelease(val variable: VariableHeader)
             }
         }
 
-        fun packet(sendDefaults: Boolean = false): ByteReadPacket {
+        fun size(buffer: WriteBuffer): UInt {
             val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
                     && properties.userProperty.isEmpty()
                     && properties.reasonString == null)
-
-            return buildPacket {
-                writeUShort(packetIdentifier.toUShort())
-                if (!canOmitReasonCodeAndProperties || sendDefaults) {
-                    writeUByte(reasonCode.byte)
-                    writePacket(properties.packet())
-                }
+            var size = UShort.SIZE_BYTES.toUInt()
+            if (!canOmitReasonCodeAndProperties) {
+                val propsSize = properties.size(buffer)
+                size += UByte.SIZE_BYTES.toUInt() + buffer.variableByteIntegerSize(propsSize) + propsSize
             }
+            return size
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
@@ -127,26 +124,7 @@ data class PublishRelease(val variable: VariableHeader)
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            fun packet(): ByteReadPacket {
-                val propertiesPacket = buildPacket {
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                return buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
-
+            @IgnoredOnParcel
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {
@@ -196,27 +174,6 @@ data class PublishRelease(val variable: VariableHeader)
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort().toInt()
-                val remaining = buffer.remaining.toInt()
-                return if (remaining == 0) {
-                    VariableHeader(packetIdentifier)
-                } else {
-                    val reasonCodeByte = buffer.readUByte()
-                    val reasonCode = when (reasonCodeByte) {
-                        SUCCESS.byte -> SUCCESS
-                        PACKET_IDENTIFIER_NOT_FOUND.byte -> PACKET_IDENTIFIER_NOT_FOUND
-                        else -> throw MalformedPacketException(
-                            "Invalid reason code $reasonCodeByte" +
-                                    "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477444"
-                        )
-                    }
-                    val propsData = buffer.readPropertiesLegacy()
-                    val props = Properties.from(propsData)
-                    VariableHeader(packetIdentifier, reasonCode, props)
-                }
-            }
-
             fun from(buffer: ReadBuffer, remaining: UInt): VariableHeader {
                 val packetIdentifier = buffer.readUnsignedShort().toInt()
                 return if (remaining == 2u) {
@@ -240,7 +197,6 @@ data class PublishRelease(val variable: VariableHeader)
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket) = PublishRelease(VariableHeader.from(buffer))
         fun from(buffer: ReadBuffer, remainingLength: UInt) =
             PublishRelease(VariableHeader.from(buffer, remainingLength))
     }

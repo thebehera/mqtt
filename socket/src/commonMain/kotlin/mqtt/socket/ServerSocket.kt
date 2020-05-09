@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket
 
 import mqtt.buffer.SuspendCloseable

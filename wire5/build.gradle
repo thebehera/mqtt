@@ -1,41 +1,43 @@
 plugins {
     id 'kotlin-multiplatform'
-    id 'com.android.library'
 }
-apply plugin: 'kotlin-android-extensions'
-androidExtensions {
-    experimental = true
-}
-android {
-    compileSdkVersion 29
-    defaultConfig {
-        minSdkVersion 15
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    apply plugin: 'com.android.library'
+    apply plugin: 'kotlin-android-extensions'
+    androidExtensions {
+        experimental = true
     }
-    buildTypes {
-        release {
-            minifyEnabled true
-            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    android {
+        compileSdkVersion 29
+        defaultConfig {
+            minSdkVersion 15
         }
-    }
-    packagingOptions {
-        exclude 'META-INF/*.kotlin_module'
-        exclude 'io/ktor/http/cio/internals/*.kotlin_metadata'
-        exclude 'io/ktor/client/features/websocket/*.kotlin_metadata'
-        exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
-        exclude 'io/ktor/http/cio/*.kotlin_metadata'
-    }
-    sourceSets {
-        main {
-            manifest.srcFile 'src/androidMain/AndroidManifest.xml'
-            java.srcDirs = ['src/androidMain/kotlin']
-            res.srcDirs = ['src/androidMain/res']
+        buildTypes {
+            release {
+                minifyEnabled true
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            }
         }
-        androidTest {
-            java.srcDirs = ['src/androidTest/kotlin']
-            res.srcDirs = ['src/androidTest/res']
+        packagingOptions {
+            exclude 'META-INF/*.kotlin_module'
+            exclude 'io/ktor/http/cio/internals/*.kotlin_metadata'
+            exclude 'io/ktor/client/features/websocket/*.kotlin_metadata'
+            exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
+            exclude 'io/ktor/http/cio/*.kotlin_metadata'
         }
-    }
+        sourceSets {
+            main {
+                manifest.srcFile 'src/androidMain/AndroidManifest.xml'
+                java.srcDirs = ['src/androidMain/kotlin']
+                res.srcDirs = ['src/androidMain/res']
+            }
+            androidTest {
+                java.srcDirs = ['src/androidTest/kotlin']
+                res.srcDirs = ['src/androidTest/res']
+            }
+        }
 
+    }
 }
 configurations {
     compileClasspath
@@ -48,7 +50,9 @@ repositories {
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    android()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     ios("iOS")
     macosX64("macos")
     linuxX64("linux")
@@ -73,7 +77,6 @@ kotlin {
                 implementation kotlin('stdlib-common')
                 implementation project(':buffer')
                 implementation project(':wire-core')
-                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
         commonTest {
@@ -85,7 +88,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         jvmTest {
@@ -94,25 +96,25 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        androidMain {
-            dependencies {
-                implementation "androidx.room:room-common:$room_version"
-                implementation project(':wire-core')
-                implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependencies {
+                    implementation "androidx.room:room-common:$room_version"
+                    implementation project(':wire-core')
+                    implementation kotlin('stdlib-jdk7')
+                }
             }
-        }
-        androidTest {
-            dependencies {
-                implementation kotlin('test')
-                implementation kotlin('test-junit')
+            androidTest {
+                dependencies {
+                    implementation kotlin('test')
+                    implementation kotlin('test-junit')
+                }
             }
         }
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
                 implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
@@ -127,7 +129,8 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs += [
-                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
                 ]
             }
         }
@@ -136,6 +139,8 @@ kotlin {
 configurations {
     compileClasspath
 }
-dependencies {
-    implementation project(':wire-core')
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    dependencies {
+        implementation project(':wire-core')
+    }
 }

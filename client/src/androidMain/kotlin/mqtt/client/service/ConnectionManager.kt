@@ -8,7 +8,9 @@ import mqtt.connection.IRemoteHost
 import mqtt.connection.Initializing
 import mqtt.connection.MqttConnectionStateUpdated
 import mqtt.wire.control.packet.ControlPacket
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 class ConnectionManager(
     val remoteHost: IRemoteHost, queuedObjectCollection: QueuedObjectCollection,
     val cb: ((ControlPacket, Int) -> Unit)? = null

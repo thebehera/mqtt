@@ -10,21 +10,22 @@ apply from: "../gradle/android.gradle"
 
 kotlin {
 //    jvm()
-    android()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+        jvm()
+    } else {
+        jvm()
+    }
     sourceSets {
         commonMain {
             dependencies {
-                implementation kotlin('stdlib-common')
+                implementation kotlin('stdlib')
                 compileOnly project(":wire4")
                 compileOnly project(":wire5")
                 api project(":wire-core")
-                implementation project(":time")
                 implementation project(":buffer")
                 implementation project(":socket")
-                implementation "io.ktor:ktor-client-core:$ktor_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
-                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
-                implementation "io.ktor:ktor-client-websocket:1.2.0-alpha-2"
             }
         }
         commonTest {
@@ -34,51 +35,69 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        androidMain {
+        commonJvm {
             dependencies {
-                implementation project(":android_roomdb_core")
-                implementation "androidx.room:room-runtime:$room_version"
-                implementation "androidx.room:room-ktx:$room_version"
-                implementation "androidx.room:room-common:$room_version"
                 implementation kotlin('stdlib-jdk7')
                 implementation project(":buffer")
                 implementation project(":socket")
                 implementation project(":wire-core")
-                implementation "io.ktor:ktor-client-cio:$ktor_version"
-                implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
                 implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$ktx_lifecycle_version"
             }
         }
-        androidTest {
+        commonJvmTest {
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
             }
         }
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependsOn commonJvm
+                dependencies {
+                    implementation project(":android_roomdb_core")
+                    implementation "androidx.room:room-runtime:$room_version"
+                    implementation "androidx.room:room-ktx:$room_version"
+                    implementation "androidx.room:room-common:$room_version"
+
+                }
+            }
+            androidTest {
+                dependsOn commonJvmTest
+            }
+        }
+        jvmMain {
+            dependsOn commonJvm
+            dependencies {
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:$coroutines_version"
+            }
+        }
+        jvmTest {
+            dependsOn commonJvmTest
+        }
     }
     targets.all {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs += [
-                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.time.ExperimentalTime"
                 ]
             }
         }
     }
 }
 
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    dependencies {
+        implementation project(":android_roomdb_core")
+        implementation "androidx.room:room-runtime:$room_version"
+        implementation "androidx.room:room-ktx:$room_version"
+        api "androidx.room:room-common:$room_version"
 
-dependencies {
-    implementation project(":android_roomdb_core")
-    implementation "io.ktor:ktor-client-cio:$ktor_version"
-    implementation "io.ktor:ktor-client-core-jvm:$ktor_version"
-    implementation "androidx.room:room-runtime:$room_version"
-    implementation "androidx.room:room-ktx:$room_version"
-    api "androidx.room:room-common:$room_version"
-
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+    }
 }
 
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"

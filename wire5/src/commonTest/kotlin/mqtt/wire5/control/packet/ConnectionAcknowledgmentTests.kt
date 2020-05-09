@@ -1,8 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.toByteArray
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
@@ -40,7 +39,7 @@ class ConnectionAcknowledgmentTests {
         buffer.write(0b00100000.toUByte())
         buffer.writeVariableByteInteger(3u)
         // variable header
-        buffer.write(0)
+        buffer.write(0.toByte())
         buffer.write(SUCCESS.byte)
         buffer.writeVariableByteInteger(0u)
         buffer.resetForRead()
@@ -613,7 +612,7 @@ class ConnectionAcknowledgmentTests {
             VariableHeader(
                 properties = Properties(
                     authentication =
-                    Authentication(MqttUtf8String("yolo"), ByteArrayWrapper("yolo".toByteArray()))
+                    Authentication(MqttUtf8String("yolo"), ByteArrayWrapper(byteArrayOf(1, 2, 3, 4)))
                 )
             )
         )
@@ -622,7 +621,7 @@ class ConnectionAcknowledgmentTests {
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         assertEquals(expected.header.properties.authentication?.method?.getValueOrThrow().toString(), "yolo")
-        assertEquals(expected.header.properties.authentication?.data, ByteArrayWrapper("yolo".toByteArray()))
+        assertEquals(expected.header.properties.authentication?.data, ByteArrayWrapper(byteArrayOf(1, 2, 3, 4)))
     }
 
     @Test
@@ -644,7 +643,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun authenticationDataMultipleTimesThrowsProtocolError() {
-        val obj1 = AuthenticationData(ByteArrayWrapper("yolo".toByteArray()))
+        val obj1 = AuthenticationData(ByteArrayWrapper(byteArrayOf(1, 2, 3, 4)))
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
@@ -672,7 +671,7 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun connectionReasonByteOnVariableHeaderIsInvalidThrowsMalformedPacketException() {
         val buffer = allocateNewBuffer(2u, limits)
-        buffer.write(1)
+        buffer.write(1.toByte())
         buffer.write(SERVER_SHUTTING_DOWN.byte)
         buffer.resetForRead()
         try {

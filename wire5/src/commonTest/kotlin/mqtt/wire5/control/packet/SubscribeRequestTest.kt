@@ -126,13 +126,6 @@ class SubscribeRequestTest {
     }
 
     @Test
-    fun subscriptionPayloadSize() {
-        val request = SubscribeRequest(0.toUShort(), listOf("a/b", "c/d"),
-                listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        assertEquals(12.toUInt(), request.payloadPacketSize)
-    }
-
-    @Test
     fun reasonString() {
         val buffer = allocateNewBuffer(19u, limits)
         val actual = SubscribeRequest(

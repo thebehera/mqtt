@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "DEPRECATION")
 
 package mqtt.android_app
 
@@ -16,7 +16,9 @@ import mqtt.client.RemoteHost
 import mqtt.client.persistence.PersistableRemoteHostV4
 import mqtt.wire4.control.packet.ConnectionRequest
 import java.util.*
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {

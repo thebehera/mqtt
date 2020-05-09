@@ -278,11 +278,14 @@ class PublishMessageTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = PublishMessage(variable = VariableHeader("t", properties = props)).serialize()
-        val requestRead = ControlPacketV5.from(request.copy()) as PublishMessage
+        val request = PublishMessage(variable = VariableHeader("t", properties = props))
+        val buffer = allocateNewBuffer(100u, limits)
+        request.serialize(buffer)
+        buffer.resetForRead()
+        val requestRead = ControlPacketV5.from(buffer) as PublishMessage
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow(), "key")
-        assertEquals(value.getValueOrThrow(), "value")
+        assertEquals("key", key.getValueOrThrow().toString())
+        assertEquals("value", value.getValueOrThrow().toString())
     }
 
     @Test

@@ -1,12 +1,13 @@
 plugins {
     id 'kotlin-multiplatform'
-    id 'com.android.library'
 }
-apply plugin: 'kotlin-android-extensions'
-androidExtensions {
-    experimental = true
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    apply plugin: 'kotlin-android-extensions'
+    androidExtensions {
+        experimental = true
+    }
+    apply from: "../gradle/android.gradle"
 }
-apply from: "../gradle/android.gradle"
 configurations {
     compileClasspath
 }
@@ -32,7 +33,9 @@ kotlin {
             }
         }
     }
-    android()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     ios("iOS")
     macosX64("macos")
     linuxX64("linux")
@@ -43,7 +46,6 @@ kotlin {
                 implementation kotlin('stdlib-common')
                 implementation project(':buffer')
                 api project(':wire-core')
-                implementation "org.jetbrains.kotlinx:kotlinx-io:$kotlinx_io_version"
             }
         }
         commonTest {
@@ -55,7 +57,6 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
             }
         }
         jvmTest {
@@ -64,25 +65,25 @@ kotlin {
                 implementation kotlin('test-junit')
             }
         }
-        androidMain {
-            dependencies {
-                implementation "androidx.room:room-common:$room_version"
-                implementation project(':wire-core')
-                implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-io-jvm:$kotlinx_io_version"
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependencies {
+                    implementation "androidx.room:room-common:$room_version"
+                    implementation project(':wire-core')
+                    implementation kotlin('stdlib-jdk7')
+                }
             }
-        }
-        androidTest {
-            dependencies {
-                implementation kotlin('test')
-                implementation kotlin('test-junit')
+            androidTest {
+                dependencies {
+                    implementation kotlin('test')
+                    implementation kotlin('test-junit')
+                }
             }
         }
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
                 implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-io-js:$kotlinx_io_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
@@ -97,12 +98,15 @@ kotlin {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs += [
-                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes"
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi"
                 ]
             }
         }
     }
 }
-dependencies {
-    implementation project(':wire-core')
+if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    dependencies {
+        implementation project(':wire-core')
+    }
 }

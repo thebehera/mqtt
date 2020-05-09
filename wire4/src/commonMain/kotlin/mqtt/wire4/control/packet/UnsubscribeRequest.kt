@@ -1,22 +1,14 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
-import kotlinx.io.core.ByteReadPacket
-import kotlinx.io.core.buildPacket
-import kotlinx.io.core.readUShort
-import kotlinx.io.core.writeUShort
-import mqtt.IgnoredOnParcel
 import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.readMqttUtf8String
-import mqtt.wire.data.writeMqttUtf8String
 
 /**
  * 3.10 UNSUBSCRIBE – Unsubscribe request
@@ -27,11 +19,20 @@ data class UnsubscribeRequest(
     val packetIdentifier: Int,
     val topics: List<MqttUtf8String>)
     : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = buildPacket { writeUShort(packetIdentifier.toUShort()) }
-    override fun payloadPacket(sendDefaults: Boolean) = buildPacket { topics.forEach { writeMqttUtf8String(it) } }
+
+    override fun remainingLength(buffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + payloadSize(buffer)
+
+
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
+    }
+
+    fun payloadSize(writeBuffer: WriteBuffer): UInt {
+        var size = 0u
+        topics.forEach {
+            size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(it.value)
+        }
+        return size
     }
 
     override fun payload(writeBuffer: WriteBuffer) {
@@ -45,15 +46,6 @@ data class UnsubscribeRequest(
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket): UnsubscribeRequest {
-            val packetIdentifier = buffer.readUShort()
-            val topics = mutableListOf<MqttUtf8String>()
-            while (buffer.remaining > 0) {
-                topics += buffer.readMqttUtf8String()
-            }
-            return UnsubscribeRequest(packetIdentifier.toInt(), topics)
-        }
-
         fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeRequest {
             val packetIdentifier = buffer.readUnsignedShort()
             val topics = mutableListOf<MqttUtf8String>()

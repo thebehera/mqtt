@@ -28,6 +28,7 @@ fun classSpec(
     )
     superclass(ClassName("mqtt.client.service", "AbstractMqttServiceViewModel"))
 
+    addAnnotation(ClassName("kotlin.time", "ExperimentalTime"))
     addSuperclassConstructorParameter("app")
     addSuperclassConstructorParameter("%T", ClassName(packageName, mqttDbProviderGeneratorFilename))
     addFunction(subscribeSpec(classNameToPublishAnnotations))

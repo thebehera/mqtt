@@ -1,8 +1,8 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+
 package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -15,10 +15,7 @@ import kotlin.time.seconds
 
 const val clientCount = 100L
 
-@ExperimentalUnsignedTypes
-@ExperimentalCoroutinesApi
-@ExperimentalTime
-@InternalCoroutinesApi
+@OptIn(ExperimentalTime::class)
 class SocketTests {
     private val connectTimeout = 30.seconds
     private val writeTimeout = 100.milliseconds
@@ -188,7 +185,6 @@ class SocketTests {
         }
     }
 
-    @InternalCoroutinesApi
     private suspend fun stressTest(
         scope: CoroutineScope,
         serverL: ServerLaunched?,
@@ -205,24 +201,24 @@ class SocketTests {
                 val clientPort = client.localPort()!!
                 assertNotNull(serverLaunched.server.connections[clientPort])
                 client.close()
-                    serverLaunched.server.closeClient(clientPort)
-                    assertNull(serverLaunched.server.connections[clientPort])
-                } catch (e: Throwable) {
-                    println("Failed to validate client #$it")
-                    throw e
-                } finally {
-                    if (validateCloseWaitAgressive) {
-                        checkPort(serverLaunched.server)
-                    }
+                serverLaunched.server.closeClient(clientPort)
+                assertNull(serverLaunched.server.connections[clientPort])
+            } catch (e: Throwable) {
+                println("Failed to validate client #$it")
+                throw e
+            } finally {
+                if (validateCloseWaitAgressive) {
+                    checkPort(serverLaunched.server)
                 }
             }
-            serverLaunched.mutex.lock()
-            if (validateCloseWait) {
-                checkPort(serverLaunched.server)
-            }
-            serverLaunched.serverSocket.close()
-            assertEquals(clientCount, serverLaunched.count.toLong())
         }
+        serverLaunched.mutex.lock()
+        if (validateCloseWait) {
+            checkPort(serverLaunched.server)
+        }
+        serverLaunched.serverSocket.close()
+        assertEquals(clientCount, serverLaunched.count.toLong())
+    }
 
 
     private suspend fun stressTestOpenConnections(
@@ -241,23 +237,23 @@ class SocketTests {
         }
         assertEquals(clientCount, clients.count().toLong())
         assertEquals(clientCount, serverLaunched.server.connections.count().toLong())
-            clients.forEach {
-                val port = it.localPort()!!
-                assertTrue(it.isOpen())
-                it.close()
-                serverLaunched.server.closeClient(port)
-                if (validateCloseWaitAgressive) {
-                    checkPort(serverLaunched.server)
-                }
-            }
-            assertEquals(0, serverLaunched.server.connections.count().toLong())
-            serverLaunched.mutex.lock()
-            if (validateCloseWait) {
+        clients.forEach {
+            val port = it.localPort()!!
+            assertTrue(it.isOpen())
+            it.close()
+            serverLaunched.server.closeClient(port)
+            if (validateCloseWaitAgressive) {
                 checkPort(serverLaunched.server)
             }
-            serverLaunched.serverSocket.close()
-            assertEquals(clientCount, serverLaunched.count.toLong())
         }
+        assertEquals(0, serverLaunched.server.connections.count().toLong())
+        serverLaunched.mutex.lock()
+        if (validateCloseWait) {
+            checkPort(serverLaunched.server)
+        }
+        serverLaunched.serverSocket.close()
+        assertEquals(clientCount, serverLaunched.count.toLong())
+    }
 
     private fun checkPort(server: Server) {
         val stats = readStats(server.serverSocket.port()!!, "CLOSE_WAIT")

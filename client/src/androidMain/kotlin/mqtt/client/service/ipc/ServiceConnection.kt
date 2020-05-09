@@ -12,7 +12,9 @@ import mqtt.client.persistence.MqttSubscription
 import mqtt.client.service.REGISTER_CLIENT
 import mqtt.client.service.UNREGISTER_CLIENT
 import mqtt.connection.IRemoteHost
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 class ClientToServiceConnection(
     context: Context, serviceClass: Class<out Service>,
     dbProvider: MqttConnectionsDatabaseDescriptor

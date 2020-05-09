@@ -1,8 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
-import kotlinx.io.core.*
 import mqtt.IgnoredOnParcel
 import mqtt.Parcelable
 import mqtt.Parcelize
@@ -15,8 +14,10 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
-import mqtt.wire.data.VariableByteInteger
-import mqtt.wire5.control.packet.format.variable.property.*
+import mqtt.wire5.control.packet.format.variable.property.Property
+import mqtt.wire5.control.packet.format.variable.property.ReasonString
+import mqtt.wire5.control.packet.format.variable.property.UserProperty
+import mqtt.wire5.control.packet.format.variable.property.readProperties
 
 /**
  * 3.4 PUBACK – Publish acknowledgement
@@ -26,13 +27,11 @@ import mqtt.wire5.control.packet.format.variable.property.*
 @Parcelize
 data class PublishAcknowledgment(val variable: VariableHeader)
     : ControlPacketV5(4, DirectionOfFlow.BIDIRECTIONAL), IPublishAcknowledgment {
-
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier.toInt()))
 
-    @IgnoredOnParcel
-    override val variableHeaderPacket: ByteReadPacket = variable.packet()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
 
     @Parcelize
     data class VariableHeader(
@@ -76,18 +75,16 @@ data class PublishAcknowledgment(val variable: VariableHeader)
             }
         }
 
-        fun packet(sendDefaults: Boolean = false): ByteReadPacket {
+        fun size(buffer: WriteBuffer): UInt {
             val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
                     && properties.userProperty.isEmpty()
                     && properties.reasonString == null)
-
-            return buildPacket {
-                writeUShort(packetIdentifier.toUShort())
-                if (!canOmitReasonCodeAndProperties || sendDefaults) {
-                    writeUByte(reasonCode.byte)
-                    writePacket(properties.packet())
-                }
+            var size = UShort.SIZE_BYTES.toUInt()
+            if (!canOmitReasonCodeAndProperties) {
+                val propsSize = properties.size(buffer)
+                size += UByte.SIZE_BYTES.toUInt() + buffer.variableByteIntegerSize(propsSize) + propsSize
             }
+            return size
         }
 
         @Parcelize
@@ -120,26 +117,7 @@ data class PublishAcknowledgment(val variable: VariableHeader)
              */
             val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
         ) : Parcelable {
-            fun packet(): ByteReadPacket {
-                val propertiesPacket = buildPacket {
-                    if (reasonString != null) {
-                        ReasonString(reasonString).write(this)
-                    }
-                    if (userProperty.isNotEmpty()) {
-                        for (keyValueProperty in userProperty) {
-                            val key = keyValueProperty.first
-                            val value = keyValueProperty.second
-                            UserProperty(key, value).write(this)
-                        }
-                    }
-                }
-                val propertyLength = propertiesPacket.remaining
-                return buildPacket {
-                    writePacket(VariableByteInteger(propertyLength.toUInt()).encodedValue())
-                    writePacket(propertiesPacket)
-                }
-            }
-
+            @IgnoredOnParcel
             val props by lazy {
                 val list = ArrayList<Property>(1 + userProperty.count())
                 if (reasonString != null) {
@@ -192,33 +170,6 @@ data class PublishAcknowledgment(val variable: VariableHeader)
         }
 
         companion object {
-            fun from(buffer: ByteReadPacket): VariableHeader {
-                val packetIdentifier = buffer.readUShort()
-                val remaining = buffer.remaining.toInt()
-                if (remaining == 0) {
-                    return VariableHeader(packetIdentifier.toInt())
-                } else {
-                    val reasonCodeByte = buffer.readUByte()
-                    val reasonCode = when (reasonCodeByte) {
-                        SUCCESS.byte -> SUCCESS
-                        NO_MATCHING_SUBSCRIBERS.byte -> NO_MATCHING_SUBSCRIBERS
-                        UNSPECIFIED_ERROR.byte -> UNSPECIFIED_ERROR
-                        IMPLEMENTATION_SPECIFIC_ERROR.byte -> IMPLEMENTATION_SPECIFIC_ERROR
-                        NOT_AUTHORIZED.byte -> NOT_AUTHORIZED
-                        TOPIC_NAME_INVALID.byte -> TOPIC_NAME_INVALID
-                        PACKET_IDENTIFIER_IN_USE.byte -> PACKET_IDENTIFIER_IN_USE
-                        QUOTA_EXCEEDED.byte -> QUOTA_EXCEEDED
-                        PAYLOAD_FORMAT_INVALID.byte -> PAYLOAD_FORMAT_INVALID
-                        else -> throw MalformedPacketException(
-                            "Invalid reason code $reasonCodeByte" +
-                                    "see: https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477424"
-                        )
-                    }
-                    val propsData = buffer.readPropertiesLegacy()
-                    val props = Properties.from(propsData)
-                    return VariableHeader(packetIdentifier.toInt(), reasonCode, props)
-                }
-            }
 
             fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader {
                 val packetIdentifier = buffer.readUnsignedShort()
@@ -250,7 +201,6 @@ data class PublishAcknowledgment(val variable: VariableHeader)
     }
 
     companion object {
-        fun from(buffer: ByteReadPacket) = PublishAcknowledgment(VariableHeader.from(buffer))
         fun from(buffer: ReadBuffer, remainingLength: UInt) =
             PublishAcknowledgment(VariableHeader.from(buffer, remainingLength))
     }

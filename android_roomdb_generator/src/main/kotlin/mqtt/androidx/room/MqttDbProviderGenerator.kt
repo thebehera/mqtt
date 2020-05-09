@@ -25,6 +25,7 @@ fun classSpec(
 ) =
     with(TypeSpec.objectBuilder(ClassName(generatedRoomDbClassName.packageName, mqttDbProviderGeneratorFilename))) {
         addAnnotation(ClassName("kotlinx.android.parcel", "Parcelize"))
+        addAnnotation(ClassName("kotlin.time", "ExperimentalTime"))
         superclass(
             ClassName("mqtt.client.persistence", "MqttDatabaseDescriptor")
                 .parameterizedBy(generatedRoomDbClassName)

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket.nio.util
 
 import kotlinx.coroutines.Dispatchers
@@ -9,7 +11,6 @@ import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.NetworkChannel
 import java.nio.channels.SocketChannel
 import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
 

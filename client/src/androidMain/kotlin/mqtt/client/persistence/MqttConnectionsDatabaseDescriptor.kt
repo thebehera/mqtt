@@ -7,7 +7,9 @@ import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
+import kotlin.time.ExperimentalTime
 
+@ExperimentalTime
 interface MqttConnectionsDatabaseDescriptor : Parcelable {
     fun getDb(context: Context): MqttRoomDatabase
     fun getPersistence(
