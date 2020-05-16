@@ -9,7 +9,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.BANNED
 import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.*
@@ -24,7 +23,7 @@ class AuthenticationExchangeTests {
     @Test
     fun serializationByteVerification() {
         val buffer = allocateNewBuffer(11u, limits)
-        val props = Properties(MqttUtf8String("test"))
+        val props = Properties("test")
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
         buffer.resetForRead()
@@ -52,7 +51,7 @@ class AuthenticationExchangeTests {
         buffer.resetForRead()
         val actual = ControlPacketV5.from(buffer) as AuthenticationExchange
         assertEquals(SUCCESS, actual.variable.reasonCode)
-        assertEquals("test", actual.variable.properties.method.value.toString())
+        assertEquals("test", actual.variable.properties.method.toString())
         assertNull(actual.variable.properties.data)
         assertNull(actual.variable.properties.reasonString)
         assertEquals(0, actual.variable.properties.userProperty.count())
@@ -61,7 +60,7 @@ class AuthenticationExchangeTests {
     @Test
     fun serializeDeserialize() {
         val buffer = allocateNewBuffer(11u, limits)
-        val props = Properties(MqttUtf8String("test"))
+        val props = Properties("test".toCharSequenceBuffer())
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
         buffer.resetForRead()
@@ -73,7 +72,7 @@ class AuthenticationExchangeTests {
     @Test
     fun serializeDeserializeInvalid() {
         try {
-            VariableHeader(BANNED, Properties(MqttUtf8String("test")))
+            VariableHeader(BANNED, Properties("test"))
             fail()
         } catch (e: MalformedPacketException) {
         }
@@ -82,18 +81,18 @@ class AuthenticationExchangeTests {
     @Test
     fun reasonString() {
         val buffer = allocateNewBuffer(15u, limits)
-        val props = Properties(MqttUtf8String("2"), reasonString = MqttUtf8String("yolo"))
+        val props = Properties("2", reasonString = "yolo")
         val header = VariableHeader(SUCCESS, properties = props)
-        val actual = AuthenticationExchange(header)
-        actual.serialize(buffer)
+        val expected = AuthenticationExchange(header)
+        expected.serialize(buffer)
         buffer.resetForRead()
-        val expected = ControlPacketV5.from(buffer) as AuthenticationExchange
-        assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        val actual = ControlPacketV5.from(buffer) as AuthenticationExchange
+        assertEquals("yolo", actual.variable.properties.reasonString.toString())
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
-        val obj1 = ReasonString(MqttUtf8String("yolo"))
+        val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(20u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
@@ -112,14 +111,14 @@ class AuthenticationExchangeTests {
     fun variableHeaderPropertyByteValidation() {
         val props = Properties.from(
             setOf(
-                AuthenticationMethod(MqttUtf8String("2")),
-                UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
+                AuthenticationMethod("2"),
+                UserProperty("key", "value")
             )
         )
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -143,14 +142,14 @@ class AuthenticationExchangeTests {
     fun variableHeaderPropertyUserProperty() {
         val props = Properties.from(
             setOf(
-                AuthenticationMethod(MqttUtf8String("2")),
-                UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
+                AuthenticationMethod("2"),
+                UserProperty("key", "value")
             )
         )
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -159,13 +158,13 @@ class AuthenticationExchangeTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as AuthenticationExchange
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow().toString(), "key")
-        assertEquals(value.getValueOrThrow().toString(), "value")
+        assertEquals(key.toString(), "key")
+        assertEquals(value.toString(), "value")
     }
 
     @Test
     fun authMethodMultipleTimesThrowsProtocolError() {
-        val obj1 = AuthenticationMethod(MqttUtf8String("yolo"))
+        val obj1 = AuthenticationMethod("yolo")
         val buffer1 = allocateNewBuffer(20u, limits)
         val remainingLength = 2u * obj1.size(buffer1) + 1u
         buffer1.writeVariableByteInteger(remainingLength)
@@ -180,7 +179,7 @@ class AuthenticationExchangeTests {
 
     @Test
     fun authDataMultipleTimesThrowsProtocolError() {
-        val method = AuthenticationMethod(MqttUtf8String("yolo"))
+        val method = AuthenticationMethod("yolo")
         val obj1 = AuthenticationData(ByteArrayWrapper(byteArrayOf(1, 2, 3)))
         val buffer1 = allocateNewBuffer(20u, limits)
         buffer1.writeVariableByteInteger(19u)
@@ -197,7 +196,7 @@ class AuthenticationExchangeTests {
     @Test
     fun invalidReasonCode() {
         try {
-            VariableHeader(BANNED, Properties(MqttUtf8String("test")))
+            VariableHeader(BANNED, Properties("test"))
             fail()
         } catch (e: MalformedPacketException) {
         }

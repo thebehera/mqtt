@@ -13,7 +13,6 @@ import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.SubscribeAcknowledgement.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
@@ -81,27 +80,27 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
              * 3.9.2.1.2 Reason String
              *
              * 31 (0x1F) Byte, Identifier of the Reason String.
-                 *
-                 * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
-                 * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the Client.
-                 *
-                 * The Server uses this value to give additional information to the Client. The Server MUST NOT send this
-                 * Property if it would increase the size of the SUBACK packet beyond the Maximum Packet Size specified by
-                 * the Client [MQTT-3.9.2-1]. It is a Protocol Error to include the Reason String more than once.
-                 */
-                val reasonString: MqttUtf8String? = null,
-                /**
-                 * 3.4.2.2.3 User Property
-                 *
-                 * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by UTF-8 String Pair. This property can be used to provide additional diagnostic or
-                 * other information. The sender MUST NOT send this property if it would increase the size of the
-                 * PUBACK packet beyond the Maximum Packet Size specified by the receiver [MQTT-3.4.2-3]. The User
-                 * Property is allowed to appear multiple times to represent multiple name, value pairs. The same
-                 * name is allowed to appear more than once.
-                 */
-                val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+             *
+             * Followed by the UTF-8 Encoded String representing the reason associated with this response. This
+             * Reason String is a human readable string designed for diagnostics and SHOULD NOT be parsed by the Client.
+             *
+             * The Server uses this value to give additional information to the Client. The Server MUST NOT send this
+             * Property if it would increase the size of the SUBACK packet beyond the Maximum Packet Size specified by
+             * the Client [MQTT-3.9.2-1]. It is a Protocol Error to include the Reason String more than once.
+             */
+            val reasonString: CharSequence? = null,
+            /**
+             * 3.4.2.2.3 User Property
+             *
+             * 38 (0x26) Byte, Identifier of the User Property.
+             *
+             * Followed by UTF-8 String Pair. This property can be used to provide additional diagnostic or
+             * other information. The sender MUST NOT send this property if it would increase the size of the
+             * PUBACK packet beyond the Maximum Packet Size specified by the receiver [MQTT-3.4.2-3]. The User
+             * Property is allowed to appear multiple times to represent multiple name, value pairs. The same
+             * name is allowed to appear more than once.
+             */
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) : Parcelable {
             @IgnoredOnParcel
             val props by lazy {
@@ -132,14 +131,16 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var reasonString: MqttUtf8String? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var reasonString: CharSequence? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476")
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }

@@ -12,7 +12,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IDisconnectNotification
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -81,7 +80,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
              * beyond the Maximum Packet Size specified by the receiver [MQTT-3.14.2-3]. It is a Protocol Error
              * to include the Reason String more than once.
              */
-            val reasonString: MqttUtf8String? = null,
+            val reasonString: CharSequence? = null,
             /**
              * 3.14.2.2.4 User Property
              *
@@ -93,7 +92,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
              * is allowed to appear multiple times to represent multiple name, value pairs. The same name is
              * allowed to appear more than once.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList(),
             /**
              * 3.14.2.2.5 Server Reference
              *
@@ -107,7 +106,7 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
              *
              * Refer to section 4.11 Server Redirection for information about how Server Reference is used.
              */
-            val serverReference: MqttUtf8String? = null
+            val serverReference: CharSequence? = null
         ) : Parcelable {
             @IgnoredOnParcel
             val props by lazy {
@@ -145,15 +144,17 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var sessionExpiryIntervalSeconds: Long? = null
-                    var reasonString: MqttUtf8String? = null
-                    var userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
-                    var serverReference: MqttUtf8String? = null
+                    var reasonString: CharSequence? = null
+                    var userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
+                    var serverReference: CharSequence? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is SessionExpiryInterval -> {
                                 if (sessionExpiryIntervalSeconds != null) {
-                                    throw ProtocolError("Session Expiry Interval added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477382")
+                                    throw ProtocolError(
+                                        "Session Expiry Interval added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477382"
+                                    )
                                 }
                                 sessionExpiryIntervalSeconds = it.seconds
                             }

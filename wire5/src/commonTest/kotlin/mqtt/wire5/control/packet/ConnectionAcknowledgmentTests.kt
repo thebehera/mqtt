@@ -8,7 +8,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties
@@ -300,19 +299,19 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun assignedClientIdentifier() {
         val actual = ConnectionAcknowledgment(
-            VariableHeader(properties = Properties(assignedClientIdentifier = MqttUtf8String("yolo")))
+            VariableHeader(properties = Properties(assignedClientIdentifier = "yolo".toCharSequenceBuffer()))
         )
         val buffer = allocateNewBuffer(12u, limits)
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.assignedClientIdentifier, MqttUtf8String("yolo"))
+        assertEquals(expected.header.properties.assignedClientIdentifier, "yolo".toCharSequenceBuffer())
         assertEquals(expected, actual)
     }
 
     @Test
     fun assignedClientIdentifierMultipleTimesThrowsProtocolError() {
-        val obj1 = AssignedClientIdentifier(MqttUtf8String("yolo"))
+        val obj1 = AssignedClientIdentifier("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
@@ -359,19 +358,19 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun reasonString() {
         val actual = ConnectionAcknowledgment(
-            VariableHeader(properties = Properties(reasonString = MqttUtf8String("yolo")))
+            VariableHeader(properties = Properties(reasonString = "yolo".toCharSequenceBuffer()))
         )
         val buffer = allocateNewBuffer(12u, limits)
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected.header.properties.reasonString, "yolo".toCharSequenceBuffer())
         assertEquals(expected, actual)
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
-        val obj1 = ReasonString(MqttUtf8String("yolo"))
+        val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
@@ -388,11 +387,11 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = Properties.from(setOf(UserProperty("key", "value")))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -402,8 +401,8 @@ class ConnectionAcknowledgmentTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
         val (key, value) = requestRead.header.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow().toString(), "key")
-        assertEquals(value.getValueOrThrow().toString(), "value")
+        assertEquals(key.toString(), "key")
+        assertEquals(value.toString(), "value")
     }
 
     @Test
@@ -550,18 +549,18 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun responseInformation() {
         val actual = ConnectionAcknowledgment(
-            VariableHeader(properties = Properties(responseInformation = MqttUtf8String("yolo")))
+            VariableHeader(properties = Properties(responseInformation = "yolo"))
         )
         val buffer = allocateNewBuffer(12u, limits)
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.responseInformation, MqttUtf8String("yolo"))
+        assertEquals(expected.header.properties.responseInformation, "yolo".toCharSequenceBuffer())
     }
 
     @Test
     fun responseInformationMultipleTimesThrowsProtocolError() {
-        val obj1 = ResponseInformation(MqttUtf8String("yolo"))
+        val obj1 = ResponseInformation("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
@@ -579,18 +578,18 @@ class ConnectionAcknowledgmentTests {
     @Test
     fun serverReference() {
         val actual = ConnectionAcknowledgment(
-            VariableHeader(properties = Properties(serverReference = MqttUtf8String("yolo")))
+            VariableHeader(properties = Properties(serverReference = "yolo"))
         )
         val buffer = allocateNewBuffer(12u, limits)
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.serverReference, MqttUtf8String("yolo"))
+        assertEquals(expected.header.properties.serverReference, "yolo".toCharSequenceBuffer())
     }
 
     @Test
     fun serverReferenceMultipleTimesThrowsProtocolError() {
-        val obj1 = ServerReference(MqttUtf8String("yolo"))
+        val obj1 = ServerReference("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)
@@ -612,7 +611,7 @@ class ConnectionAcknowledgmentTests {
             VariableHeader(
                 properties = Properties(
                     authentication =
-                    Authentication(MqttUtf8String("yolo"), ByteArrayWrapper(byteArrayOf(1, 2, 3, 4)))
+                    Authentication("yolo", ByteArrayWrapper(byteArrayOf(1, 2, 3, 4)))
                 )
             )
         )
@@ -620,13 +619,13 @@ class ConnectionAcknowledgmentTests {
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as ConnectionAcknowledgment
-        assertEquals(expected.header.properties.authentication?.method?.getValueOrThrow().toString(), "yolo")
+        assertEquals(expected.header.properties.authentication?.method?.toString(), "yolo")
         assertEquals(expected.header.properties.authentication?.data, ByteArrayWrapper(byteArrayOf(1, 2, 3, 4)))
     }
 
     @Test
     fun authenticationMethodMultipleTimesThrowsProtocolError() {
-        val obj1 = AuthenticationMethod(MqttUtf8String("yolo"))
+        val obj1 = AuthenticationMethod("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         val size = obj1.size(buffer) + obj2.size(buffer)

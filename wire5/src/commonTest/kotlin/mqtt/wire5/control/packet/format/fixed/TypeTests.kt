@@ -4,7 +4,6 @@ package mqtt.wire5.control.packet.format.fixed
 
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
@@ -58,7 +57,14 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBSCRIBE() =
-            assertEquals(10, UnsubscribeRequest(UnsubscribeRequest.VariableHeader(packetIdentifier), setOf(MqttUtf8String("yolo"))).controlPacketValue, controlPacketSpectMatchError)
+        assertEquals(
+            10,
+            UnsubscribeRequest(
+                UnsubscribeRequest.VariableHeader(packetIdentifier),
+                setOf("yolo")
+            ).controlPacketValue,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketTypeValueMatchesSpecForUNSUBACK() =
@@ -78,7 +84,16 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeValueMatchesSpecForAUTH() =
-            assertEquals(15, AuthenticationExchange(AuthenticationExchange.VariableHeader(SUCCESS, AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("yolo")))).controlPacketValue, controlPacketSpectMatchError)
+        assertEquals(
+            15,
+            AuthenticationExchange(
+                AuthenticationExchange.VariableHeader(
+                    SUCCESS,
+                    AuthenticationExchange.VariableHeader.Properties("yolo")
+                )
+            ).controlPacketValue,
+            controlPacketSpectMatchError
+        )
 
 
     // Control packet types direction of flow matching spec
@@ -122,7 +137,11 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBSCRIBE() =
-            assertEquals(CLIENT_TO_SERVER, UnsubscribeRequest(UnsubscribeRequest.VariableHeader(packetIdentifier), setOf(MqttUtf8String("yolo"))).direction, controlPacketSpectMatchError)
+        assertEquals(
+            CLIENT_TO_SERVER,
+            UnsubscribeRequest(UnsubscribeRequest.VariableHeader(packetIdentifier), setOf("yolo")).direction,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketTypeDirectionOfFlowUNSUBACK() =
@@ -142,5 +161,14 @@ class TypeTests {
 
     @Test
     fun controlPacketTypeDirectionOfFlowAUTH() =
-            assertEquals(BIDIRECTIONAL, AuthenticationExchange(AuthenticationExchange.VariableHeader(SUCCESS, AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("yolo")))).direction, controlPacketSpectMatchError)
+        assertEquals(
+            BIDIRECTIONAL,
+            AuthenticationExchange(
+                AuthenticationExchange.VariableHeader(
+                    SUCCESS,
+                    AuthenticationExchange.VariableHeader.Properties("yolo")
+                )
+            ).direction,
+            controlPacketSpectMatchError
+        )
 }

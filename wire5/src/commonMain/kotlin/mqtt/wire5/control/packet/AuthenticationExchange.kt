@@ -12,7 +12,6 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -77,10 +76,10 @@ data class AuthenticationExchange(val variable: VariableHeader)
 
         @Parcelize
         data class Properties(
-            val method: MqttUtf8String,
+            val method: CharSequence,
             val data: ByteArrayWrapper? = null,
-            val reasonString: MqttUtf8String? = null,
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+            val reasonString: CharSequence? = null,
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) : Parcelable {
 
             fun size(writeBuffer: WriteBuffer): UInt {
@@ -114,16 +113,18 @@ data class AuthenticationExchange(val variable: VariableHeader)
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var method: MqttUtf8String? = null
-                    var reasonString: MqttUtf8String? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var method: CharSequence? = null
+                    var reasonString: CharSequence? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     var data: ByteArrayWrapper? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is AuthenticationMethod -> {
                                 if (method != null) {
-                                    throw ProtocolError("Auth Method added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477382")
+                                    throw ProtocolError(
+                                        "Auth Method added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477382"
+                                    )
                                 }
                                 method = it.value
                             }

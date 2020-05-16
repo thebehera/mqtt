@@ -12,7 +12,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -379,7 +378,7 @@ data class PublishMessage(
              * Data, the receiver of the Request Message should also include this Correlation Data as a
              * property in the PUBLISH packet of the Response Message.
              */
-            val responseTopic: MqttUtf8String? = null,
+            val responseTopic: CharSequence? = null,
             /**
              * 3.3.2.3.6 Correlation Data
              *
@@ -427,7 +426,7 @@ data class PublishMessage(
              * whose meaning and interpretation are known only by the application programs responsible for
              * sending and receiving them.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList(),
             /**
              * 3.3.2.3.8 Subscription Identifier
              *
@@ -467,7 +466,7 @@ data class PublishMessage(
              * Figure 3-9 shows an example of a PUBLISH packet with the Topic Name set to “a/b”, the Packet
              * Identifier set to 10, and having no properties.
              */
-            val contentType: MqttUtf8String? = null
+            val contentType: CharSequence? = null
         ) : Parcelable {
 
             init {
@@ -531,11 +530,11 @@ data class PublishMessage(
                     var payloadFormatIndicator: Boolean? = null
                     var messageExpiryInterval: Long? = null
                     var topicAlias: Int? = null
-                    var responseTopic: MqttUtf8String? = null
+                    var responseTopic: CharSequence? = null
                     var coorelationData: ByteArrayWrapper? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     val subscriptionIdentifier = LinkedHashSet<Long>()
-                    var contentType: MqttUtf8String? = null
+                    var contentType: CharSequence? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is PayloadFormatIndicator -> {
@@ -611,7 +610,7 @@ data class PublishMessage(
             fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
                 val result = buffer.readMqttUtf8StringNotValidatedSized()
                 var size = result.first
-                val topicName = MqttUtf8String(result.second)
+                val topicName = result.second
                 val packetIdentifier = if (isQos0) {
                     null
                 } else {
@@ -622,7 +621,7 @@ data class PublishMessage(
                 size += 1u
                 size += propertiesSized.first
                 val props = Properties.from(propertiesSized.second)
-                return Pair(size, VariableHeader(topicName.value, packetIdentifier, props))
+                return Pair(size, VariableHeader(topicName, packetIdentifier, props))
             }
         }
     }

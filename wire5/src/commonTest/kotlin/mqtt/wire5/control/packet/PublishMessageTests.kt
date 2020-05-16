@@ -6,7 +6,6 @@ import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
@@ -207,7 +206,7 @@ class PublishMessageTests {
 
     @Test
     fun responseTopic() {
-        val props = VariableHeader.Properties(responseTopic = MqttUtf8String("t/as"))
+        val props = VariableHeader.Properties(responseTopic = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage(variable = variableHeader)
@@ -221,12 +220,12 @@ class PublishMessageTests {
         assertEquals("t/as", buffer.readMqttUtf8StringNotValidated().toString(), "response topic value")
         buffer.resetForRead()
         val publish = ControlPacketV5.from(buffer) as PublishMessage
-        assertEquals("t/as", publish.variable.properties.responseTopic?.getValueOrThrow().toString())
+        assertEquals("t/as", publish.variable.properties.responseTopic?.toString())
     }
 
     @Test
     fun responseTopicDuplicateThrowsProtocolError() {
-        val obj1 = ResponseTopic(MqttUtf8String("t/as"))
+        val obj1 = ResponseTopic("t/as")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
@@ -270,11 +269,11 @@ class PublishMessageTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = VariableHeader.Properties.from(setOf(UserProperty("key", "value")))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -284,8 +283,8 @@ class PublishMessageTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as PublishMessage
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals("key", key.getValueOrThrow().toString())
-        assertEquals("value", value.getValueOrThrow().toString())
+        assertEquals("key", key.toString())
+        assertEquals("value", value.toString())
     }
 
     @Test
@@ -313,19 +312,19 @@ class PublishMessageTests {
 
     @Test
     fun contentType() {
-        val props = VariableHeader.Properties(contentType = MqttUtf8String("t/as"))
+        val props = VariableHeader.Properties(contentType = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
         val publish = ControlPacketV5.from(buffer) as PublishMessage
-        assertEquals("t/as", publish.variable.properties.contentType?.getValueOrThrow().toString())
+        assertEquals("t/as", publish.variable.properties.contentType?.toString())
     }
 
     @Test
     fun contentTypeDuplicateThrowsProtocolError() {
-        val obj1 = ContentType(MqttUtf8String("t/as"))
+        val obj1 = ContentType("t/as")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))

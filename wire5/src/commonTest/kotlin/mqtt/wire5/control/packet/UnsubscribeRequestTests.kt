@@ -3,7 +3,6 @@
 package mqtt.wire5.control.packet
 
 import mqtt.buffer.allocateNewBuffer
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.UnsubscribeRequest.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import kotlin.test.Test
@@ -16,7 +15,7 @@ class UnsubscribeRequestTests {
     @Test
     fun basicTest() {
         val buffer = allocateNewBuffer(11u, limits)
-        val unsub = UnsubscribeRequest(VariableHeader(packetIdentifier), setOf(MqttUtf8String("yolo")))
+        val unsub = UnsubscribeRequest(VariableHeader(packetIdentifier), setOf("yolo".toCharSequenceBuffer()))
         unsub.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b10100010.toByte(), buffer.readByte(), "fixed header byte 1")
@@ -30,28 +29,28 @@ class UnsubscribeRequestTests {
         assertEquals("yolo", buffer.readMqttUtf8StringNotValidated().toString(), "payload topic")
         buffer.resetForRead()
         val result = ControlPacketV5.from(buffer) as UnsubscribeRequest
-        assertEquals("yolo", result.topics.first().getValueOrThrow().toString())
+        assertEquals("yolo", result.topics.first().toString())
         assertEquals(unsub, result)
     }
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = VariableHeader.Properties.from(setOf(UserProperty("key", "value")))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
         val request =
-            UnsubscribeRequest(VariableHeader(packetIdentifier, properties = props), setOf(MqttUtf8String("test")))
+            UnsubscribeRequest(VariableHeader(packetIdentifier, properties = props), setOf("test"))
         val buffer = allocateNewBuffer(24u, limits)
         request.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as UnsubscribeRequest
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals("key", key.getValueOrThrow().toString())
-        assertEquals("value", value.getValueOrThrow().toString())
+        assertEquals("key", key.toString())
+        assertEquals("value", value.toString())
     }
 }
