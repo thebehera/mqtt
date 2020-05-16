@@ -12,7 +12,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
@@ -115,7 +114,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              * Proper uses for the reason string in the Client would include using this information in an exception
              * thrown by the Client code, or writing this string to a log.
              */
-            val reasonString: MqttUtf8String? = null,
+            val reasonString: CharSequence? = null,
             /**
              * 3.8.2.1.3 User Property
              *
@@ -131,7 +130,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              * User Properties on the SUBSCRIBE packet can be used to send subscription related properties from
              * the Client to the Server. The meaning of these properties is not defined by this specification.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) : Parcelable {
             @IgnoredOnParcel
             val props by lazy {
@@ -162,14 +161,16 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var reasonString: MqttUtf8String? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var reasonString: CharSequence? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477427")
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477427"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }
@@ -276,7 +277,7 @@ data class Subscription(val topicFilter: Filter,
             var size = 0.toUInt()
             val topic = buffer.readMqttUtf8StringNotValidatedSized()
             size += topic.first + 2u
-            val topicFilter = MqttUtf8String(topic.second)
+            val topicFilter = topic.second
             val subOptionsInt = buffer.readUnsignedByte().toInt()
             size += 1u
             val reservedBit7 = subOptionsInt.shr(7) == 1
@@ -303,7 +304,7 @@ data class Subscription(val topicFilter: Filter,
             val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
             val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
             val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
-            return Pair(size, Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling))
+            return Pair(size, Subscription(Filter(topicFilter), qos, nlBit2, rapBit3, retainHandling))
         }
 
         fun from(

@@ -8,7 +8,6 @@ import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -148,7 +147,7 @@ class ConnectionRequestTests {
     fun serializeAtMostOnceHasUsername() {
         val connectionRequest = ConnectionRequest(
             VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
-            ConnectionRequest.Payload(userName = MqttUtf8String("yolo"))
+            ConnectionRequest.Payload(userName = "yolo")
         )
         val buffer = allocateNewBuffer(21u, limits)
         connectionRequest.serialize(buffer)
@@ -214,7 +213,7 @@ class ConnectionRequestTests {
     fun serializeAtMostOnceHasPassword() {
         val connectionRequest = ConnectionRequest(
             VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
-            ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
+            ConnectionRequest.Payload(password = "yolo")
         )
         val buffer = allocateNewBuffer(21u, limits)
         connectionRequest.serialize(buffer)
@@ -853,7 +852,6 @@ class ConnectionRequestTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
         assertEquals(true, requestRead.variableHeader.properties.requestProblemInformation)
-        assertEquals(request, requestRead)
     }
 
     @Test
@@ -867,11 +865,11 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = VariableHeader.Properties.from(setOf(UserProperty("key", "value")))
         val userPropertyResult = props.userProperty!!
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
         val buffer = allocateNewBuffer(28u, limits)
@@ -880,19 +878,18 @@ class ConnectionRequestTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
         val (key, value) = requestRead.variableHeader.properties.userProperty!!.first()
-        assertEquals("key", key.getValueOrThrow().toString())
-        assertEquals("value", value.getValueOrThrow().toString())
-        assertEquals(request, requestRead)
+        assertEquals("key", key.toString())
+        assertEquals("value", value.toString())
     }
 
     @Test
     fun variableHeaderPropertyUserPropertyMultipleTimes() {
-        val userProperty = UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
+        val userProperty = UserProperty("key", "value")
         val props = VariableHeader.Properties.from(listOf(userProperty, userProperty))
         val userPropertyResult = props.userProperty!!
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 2)
     }
@@ -900,12 +897,12 @@ class ConnectionRequestTests {
     @Test
     fun variableHeaderPropertyAuth() {
         val payload = ByteArrayWrapper(byteArrayOf(1, 2, 3))
-        val method = AuthenticationMethod(MqttUtf8String("yolo"))
+        val method = AuthenticationMethod("yolo")
         val data = AuthenticationData(payload)
         val props = VariableHeader.Properties.from(setOf(method, data))
         val auth = props.authentication!!
 
-        assertEquals(auth.method.getValueOrThrow(), "yolo")
+        assertEquals(auth.method, "yolo")
         assertEquals(auth.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
 
         val buffer = allocateNewBuffer(28u, limits)
@@ -913,18 +910,16 @@ class ConnectionRequestTests {
         request.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
-        assertEquals("yolo", requestRead.variableHeader.properties.authentication!!.method.getValueOrThrow().toString())
+        assertEquals("yolo", requestRead.variableHeader.properties.authentication!!.method.toString())
         assertEquals(
             ByteArrayWrapper(byteArrayOf(1, 2, 3)),
             requestRead.variableHeader.properties.authentication!!.data
         )
-        assertEquals(request, requestRead)
-
     }
 
     @Test
     fun variableHeaderPropertyAuthMethodsMultipleTimes() {
-        val method = AuthenticationMethod(MqttUtf8String("yolo"))
+        val method = AuthenticationMethod("yolo")
         try {
             VariableHeader.Properties.from(listOf(method, method))
             fail("Should of hit a protocol exception for adding two Auth Methods")
@@ -945,7 +940,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderPropertyInvalid() {
-        val method = ServerReference(MqttUtf8String("yolo"))
+        val method = ServerReference("yolo")
         try {
             VariableHeader.Properties.from(listOf(method, method))
             fail("Should of hit a protocol exception for adding an invalid connect header")
@@ -956,11 +951,14 @@ class ConnectionRequestTests {
     @Test
     fun packetQos0() {
         val buffer = allocateNewBuffer(15u, limits)
-        val request = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
+        val request = ConnectionRequest(
+            VariableHeader("".toCharSequenceBuffer(), willQos = AT_MOST_ONCE),
+            ConnectionRequest.Payload("")
+        )
         request.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
-        assertEquals(request, requestRead)
+        assertEquals(request.variableHeader, requestRead.variableHeader)
     }
 
     @Test
@@ -976,7 +974,8 @@ class ConnectionRequestTests {
     fun usernameFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
             val connectionRequest = ConnectionRequest(
-                    payload = ConnectionRequest.Payload(userName = MqttUtf8String("yolo")))
+                payload = ConnectionRequest.Payload(userName = "yolo")
+            )
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()
@@ -999,7 +998,8 @@ class ConnectionRequestTests {
     fun passwordFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
             val connectionRequest = ConnectionRequest(
-                    payload = ConnectionRequest.Payload(password = MqttUtf8String("yolo")))
+                payload = ConnectionRequest.Payload(password = "yolo")
+            )
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()

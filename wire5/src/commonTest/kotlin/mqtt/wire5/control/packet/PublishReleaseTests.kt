@@ -6,7 +6,6 @@ import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.RECEIVE_MAXIMUM_EXCEEDED
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.PublishRelease.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -63,7 +62,7 @@ class PublishReleaseTests {
         val expected = PublishRelease(
             VariableHeader(
                 packetIdentifier,
-                properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+                properties = VariableHeader.Properties(reasonString = "yolo".toCharSequenceBuffer())
             )
         )
         val buffer = allocateNewBuffer(13u, limits)
@@ -78,13 +77,13 @@ class PublishReleaseTests {
         assertEquals("yolo", buffer.readMqttUtf8StringNotValidated().toString(), "reason string")
         buffer.resetForRead()
         val pubrelResult = ControlPacketV5.from(buffer) as PublishRelease
-        assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected.variable.properties.reasonString.toString(), "yolo")
         assertEquals(expected, pubrelResult)
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
-        val obj1 = ReasonString(MqttUtf8String("yolo"))
+        val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
@@ -97,11 +96,11 @@ class PublishReleaseTests {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = VariableHeader.Properties.from(setOf(UserProperty("key", "value")))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -111,8 +110,8 @@ class PublishReleaseTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as PublishRelease
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals(key.getValueOrThrow().toString(), "key")
-        assertEquals(value.getValueOrThrow().toString(), "value")
+        assertEquals(key.toString(), "key")
+        assertEquals(value.toString(), "value")
     }
 
 }

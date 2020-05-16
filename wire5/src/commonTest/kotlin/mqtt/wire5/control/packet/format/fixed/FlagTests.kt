@@ -5,7 +5,6 @@ package mqtt.wire5.control.packet.format.fixed
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
@@ -215,7 +214,14 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForAUTH() =
-            assertEquals(AuthenticationExchange(AuthenticationExchange.VariableHeader(SUCCESS, AuthenticationExchange.VariableHeader.Properties(MqttUtf8String("yolo")))).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            AuthenticationExchange(
+                AuthenticationExchange.VariableHeader(
+                    SUCCESS,
+                    AuthenticationExchange.VariableHeader.Properties("yolo")
+                )
+            ).flags, 0b0, controlPacketSpectMatchError
+        )
 
     @Test
     fun emptyFlagBitsTest() {

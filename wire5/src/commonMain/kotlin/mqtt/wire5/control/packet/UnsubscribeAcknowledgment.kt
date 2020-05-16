@@ -12,7 +12,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -78,7 +77,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
              * specified by the Client [MQTT-3.11.2-1]. It is a Protocol Error to include the Reason String more
              * than once.
              */
-            val reasonString: MqttUtf8String? = null,
+            val reasonString: CharSequence? = null,
             /**
              * 3.11.2.1.3 User Property
              *
@@ -90,7 +89,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
              * Property is allowed to appear multiple times to represent multiple name, value pairs. The same
              * name is allowed to appear more than once.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) : Parcelable {
             @IgnoredOnParcel
             val props by lazy {
@@ -121,15 +120,16 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var reasonString: MqttUtf8String? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var reasonString: CharSequence? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
                                 if (reasonString != null) {
                                     throw ProtocolError(
                                         "Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476")
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477476"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }

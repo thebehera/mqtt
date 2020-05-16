@@ -8,7 +8,6 @@ import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.Type
 
@@ -70,15 +69,15 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
             MessageExpiryInterval(readUnsignedInt().toLong())
         }
         0x03 -> {
-            ContentType(MqttUtf8String(readMqttUtf8StringNotValidated()))
+            ContentType(readMqttUtf8StringNotValidated())
         }
-        0x08 -> ResponseTopic(MqttUtf8String(readMqttUtf8StringNotValidated()))
+        0x08 -> ResponseTopic(readMqttUtf8StringNotValidated())
         0x09 -> CorrelationData(ByteArrayWrapper(readByteArray(readUnsignedShort().toUInt())))
         0x0B -> SubscriptionIdentifier(readVariableByteInteger().toLong())
         0x11 -> SessionExpiryInterval(readUnsignedInt().toLong())
-        0x12 -> AssignedClientIdentifier(MqttUtf8String(readMqttUtf8StringNotValidated()))
+        0x12 -> AssignedClientIdentifier(readMqttUtf8StringNotValidated())
         0x13 -> ServerKeepAlive(readUnsignedShort().toInt())
-        0x15 -> AuthenticationMethod(MqttUtf8String(readMqttUtf8StringNotValidated()))
+        0x15 -> AuthenticationMethod(readMqttUtf8StringNotValidated())
         0x16 -> AuthenticationData(ByteArrayWrapper(readByteArray(readUnsignedShort().toUInt())))
         0x17 -> {
             val uByteAsInt = readByte().toInt()
@@ -101,17 +100,17 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
             }
             RequestResponseInformation(uByteAsInt == 1)
         }
-        0x1A -> ResponseInformation(MqttUtf8String(readMqttUtf8StringNotValidated()))
-        0x1C -> ServerReference(MqttUtf8String(readMqttUtf8StringNotValidated()))
-        0x1F -> ReasonString(MqttUtf8String(readMqttUtf8StringNotValidated()))
+        0x1A -> ResponseInformation(readMqttUtf8StringNotValidated())
+        0x1C -> ServerReference(readMqttUtf8StringNotValidated())
+        0x1F -> ReasonString(readMqttUtf8StringNotValidated())
         0x21 -> ReceiveMaximum(readUnsignedShort().toInt())
         0x22 -> TopicAlias(readUnsignedShort().toInt())
         0x23 -> TopicAliasMaximum(readUnsignedShort().toInt())
         0x24 -> MaximumQos(if (readByte() == 1.toByte()) QualityOfService.AT_LEAST_ONCE else QualityOfService.AT_MOST_ONCE) // Should not be present for 2
         0x25 -> RetainAvailable(readByte() == 1.toByte())
         0x26 -> UserProperty(
-            MqttUtf8String(readMqttUtf8StringNotValidated()),
-            MqttUtf8String(readMqttUtf8StringNotValidated())
+            readMqttUtf8StringNotValidated(),
+            readMqttUtf8StringNotValidated()
         )
         0x27 -> MaximumPacketSize(readUnsignedInt().toLong())
         0x28 -> WildcardSubscriptionAvailable(readByte() == 1.toByte())

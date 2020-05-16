@@ -4,7 +4,6 @@ package mqtt.wire5.control.packet
 
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import mqtt.wire.data.topic.Filter
@@ -131,18 +130,18 @@ class SubscribeRequestTest {
         val actual = SubscribeRequest(
             VariableHeader(
                 packetIdentifier.toInt(),
-                properties = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+                properties = VariableHeader.Properties(reasonString = "yolo")
             ), setOf(Subscription(Filter("test")))
         )
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as SubscribeRequest
-        assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected.variable.properties.reasonString.toString(), "yolo")
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
-        val obj1 = ReasonString(MqttUtf8String("yolo"))
+        val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
@@ -155,11 +154,11 @@ class SubscribeRequestTest {
 
     @Test
     fun variableHeaderPropertyUserProperty() {
-        val props = VariableHeader.Properties.from(setOf(UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))))
+        val props = VariableHeader.Properties.from(setOf(UserProperty("key", "value")))
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -172,8 +171,8 @@ class SubscribeRequestTest {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as SubscribeRequest
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals("key", key.getValueOrThrow().toString())
-        assertEquals("value", value.getValueOrThrow().toString())
+        assertEquals("key", key.toString())
+        assertEquals("value", value.toString())
     }
 
 
