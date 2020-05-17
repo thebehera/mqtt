@@ -1,10 +1,6 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
-
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -38,7 +34,6 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#S4_13_Errors>
  *     Section 4.13 - Handling Errors</a>
  */
-@Parcelize
 data class ConnectionRequest<WillPayload : Any>(
     /**
      * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
@@ -50,23 +45,12 @@ data class ConnectionRequest<WillPayload : Any>(
     val variableHeader: VariableHeader = VariableHeader(),
     val payload: Payload<WillPayload> = Payload()
 ) : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
-    @IgnoredOnParcel
     override val clientIdentifier = payload.clientId
-
-    @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
-
-    @IgnoredOnParcel
     override val cleanStart: Boolean = variableHeader.cleanStart
-
-    @IgnoredOnParcel
     override val username = payload.userName
-
-    @IgnoredOnParcel
     override val protocolName = variableHeader.protocolName
-
-    @IgnoredOnParcel
     override val protocolVersion = variableHeader.protocolVersion.toInt()
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
@@ -108,8 +92,6 @@ data class ConnectionRequest<WillPayload : Any>(
     }
 
     override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
-
-    @Parcelize
     data class VariableHeader(
         /**
          * 3.1.2.1 Protocol Name
@@ -313,7 +295,7 @@ data class ConnectionRequest<WillPayload : Any>(
          *     3.1.2.11 CONNECT Properties</a>
          */
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         fun validateOrGetWarning(): MqttWarning? {
             if (!willFlag && willRetain) {
                 return MqttWarning(
@@ -324,7 +306,6 @@ data class ConnectionRequest<WillPayload : Any>(
             return null
         }
 
-        @Parcelize
         data class Properties(
             /**
              * 3.1.2.11.2 Session Expiry Interval
@@ -563,7 +544,7 @@ data class ConnectionRequest<WillPayload : Any>(
              * @see Authentication.data
              */
             val authentication: Authentication? = null
-        ) : Parcelable {
+        ) {
 
             init {
                 if (maximumPacketSize == 0L) {
@@ -571,7 +552,6 @@ data class ConnectionRequest<WillPayload : Any>(
                 }
             }
 
-            @IgnoredOnParcel
             val props by lazy {
                 val userPropertyCount = userProperty?.count() ?: 0
                 val list = ArrayList<Property>(8 + userPropertyCount)
@@ -808,7 +788,6 @@ data class ConnectionRequest<WillPayload : Any>(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477358">
      *     3.1.3 CONNECT Payload</a>
      */
-    @Parcelize
     data class Payload<WillPayload : Any>(
         /**
          * 3.1.3.1 Client Identifier (ClientID)
@@ -900,8 +879,7 @@ data class ConnectionRequest<WillPayload : Any>(
          *     3.1.3.6 Password</a>
          */
         val password: CharSequence? = null
-    ) : Parcelable {
-        @Parcelize
+    ) {
         data class WillProperties(
             /**
              * 3.1.3.2.2 Will Delay Interval
@@ -1035,8 +1013,7 @@ data class ConnectionRequest<WillPayload : Any>(
              *     3.1.3.2.8 User Property</a>
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val properties = ArrayList<Property>(6 + userProperty.count())
                 if (willDelayIntervalSeconds != 0L) {

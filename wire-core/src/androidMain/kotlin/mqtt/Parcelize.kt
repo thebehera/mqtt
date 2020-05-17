@@ -1,11 +1,9 @@
 package mqtt
 
-actual typealias Parcelize = kotlinx.android.parcel.Parcelize
-actual typealias RawValue = kotlinx.android.parcel.RawValue
-actual typealias Parcelable = android.os.Parcelable
+actual annotation class Parcelize actual constructor()
+actual annotation class RawValue actual constructor()
+actual interface Parcelable
 
-actual typealias Ignore = androidx.room.Ignore
-actual typealias Embedded = androidx.room.Embedded
-
-
-actual typealias IgnoredOnParcel = kotlinx.android.parcel.IgnoredOnParcel
+actual annotation class Ignore
+actual annotation class IgnoredOnParcel
+actual annotation class Embedded

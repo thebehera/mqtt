@@ -2,8 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -23,7 +21,6 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * Bits 3,2,1 and 0 of the Fixed Header of the AUTH packet are reserved and MUST all be set to 0. The Client or Server
  * MUST treat any other value as malformed and close the Network Connection [MQTT-3.15.1-1].
  */
-@Parcelize
 data class AuthenticationExchange(val variable: VariableHeader)
     : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
 
@@ -39,26 +36,25 @@ data class AuthenticationExchange(val variable: VariableHeader)
      * The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no
      * Properties. In this case the AUTH has a Remaining Length of 0.
      */
-    @Parcelize
     data class VariableHeader(
         /**
-             * 3.15.2.1 Authenticate Reason Code
-             *
-             * Byte 0 in the Variable Header is the Authenticate Reason Code. The values for the one byte unsigned
-             * Authenticate Reason Code field are shown below. The sender of the AUTH Packet MUST use one of the
-             * Authenticate Reason Codes [MQTT-3.15.2-1].
-             *
-             * Value |Hex|Reason Code name|Sent by|Description
-             *
-             * 0|0x00|Success|Server|Authentication is successful
-             *
-             * 24|0x18|Continue authentication|Client or Server|Continue the authentication with another step
-             *
-             * 25|0x19|Re-authenticate|Client
-             */
-            val reasonCode: ReasonCode = SUCCESS,
+         * 3.15.2.1 Authenticate Reason Code
+         *
+         * Byte 0 in the Variable Header is the Authenticate Reason Code. The values for the one byte unsigned
+         * Authenticate Reason Code field are shown below. The sender of the AUTH Packet MUST use one of the
+         * Authenticate Reason Codes [MQTT-3.15.2-1].
+         *
+         * Value |Hex|Reason Code name|Sent by|Description
+         *
+         * 0|0x00|Success|Server|Authentication is successful
+         *
+         * 24|0x18|Continue authentication|Client or Server|Continue the authentication with another step
+         *
+         * 25|0x19|Re-authenticate|Client
+         */
+        val reasonCode: ReasonCode = SUCCESS,
         val properties: Properties
-    ) : Parcelable {
+    ) {
         init {
             // throw if reason code doesnt exist
             getReasonCode(reasonCode.byte)
@@ -74,12 +70,11 @@ data class AuthenticationExchange(val variable: VariableHeader)
             properties.serialize(writeBuffer)
         }
 
-        @Parcelize
         data class Properties(
             val authentication: Authentication?,
             val reasonString: CharSequence? = null,
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
+        ) {
 
             fun size(writeBuffer: WriteBuffer): UInt {
                 val authMethod = if (authentication != null) AuthenticationMethod(authentication.method) else null

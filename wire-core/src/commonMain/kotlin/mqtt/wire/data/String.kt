@@ -2,8 +2,6 @@
 
 package mqtt.wire.data
 
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.wire.MalformedPacketException
 
 fun String.validateMqttUTF8String(): Boolean {
@@ -34,9 +32,7 @@ private val shouldNotIncludeCharRange2 by lazy { '\u007F'..'\u009F' }
  * http://www.unicode.org/faq/private_use.html#pua2
  */
 private val privateUseCharRange by lazy { '\uE000'..'\uF8FF' }
-
-@Parcelize
-data class MqttUtf8String(val value: CharSequence) : Parcelable {
+data class MqttUtf8String(val value: CharSequence) {
     fun getValueOrThrow(includeWarnings: Boolean = true): CharSequence {
         val ex = exception
         if (ex != null) {

@@ -1,8 +1,7 @@
 package mqtt.persistence
 
-import mqtt.Parcelable
 import mqtt.connection.IRemoteHost
 
-interface PersistableConnectionManager : Parcelable {
+interface PersistableConnectionManager {
     fun addOrUpdateConnection(remoteHost: IRemoteHost)
 }

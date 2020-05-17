@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -28,15 +25,10 @@ typealias CONNACK = ConnectionAcknowledgment
  * SHOULD close the Network Connection. A "reasonable" amount of time depends on the type of application and the
  * communications infrastructure.
  */
-@Parcelize
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
-
-    @IgnoredOnParcel
     override val isSuccessful: Boolean = header.connectReason == SUCCESS
-    @IgnoredOnParcel
     override val connectionReason: String = header.connectReason.name
-    @IgnoredOnParcel
     override val sessionPresent: Boolean = header.sessionPresent
     override fun variableHeader(writeBuffer: WriteBuffer) = header.serialize(writeBuffer)
     override fun remainingLength(buffer: WriteBuffer) = header.size(buffer)
@@ -49,7 +41,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Properties">
      *     Section 2.2.2</a>
      */
-    @Parcelize
     data class VariableHeader(
             /**
              * 3.2.2.1.1 Session Present
@@ -105,8 +96,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              */
             val connectReason: ReasonCode = SUCCESS,
             val properties: Properties = Properties()
-    ) : Parcelable {
-        @Parcelize
+    ) {
         data class Properties(
             /**
              * 3.2.2.3.2 Session Expiry Interval
@@ -384,8 +374,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              */
             val serverReference: CharSequence? = null,
             val authentication: Authentication? = null
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(16 + userProperty.size)
                 if (sessionExpiryIntervalSeconds != null) {
@@ -456,7 +445,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 props.forEach { size += it.size(writeBuffer) }
                 return size + writeBuffer.variableByteIntegerSize(size)
             }
-            
+
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var sessionExpiryIntervalSeconds: Long? = null

@@ -2,7 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.*
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -28,28 +27,19 @@ import mqtt.wire.data.QualityOfService
  * topic, Will Message, User Name and Password. All but the Client identifier are optional and their presence is
  * determined based on flags in the variable header.
  */
-@Parcelize
 data class ConnectionRequest<WillPayload : Any>(
     /**
      * The variable header for the CONNECT Packet consists of four fields in the following order:  Protocol Name,
      * Protocol Level, Connect Flags, and Keep Alive.
      */
-    @Embedded val variableHeader: VariableHeader = VariableHeader(),
-    @Embedded val payload: Payload<WillPayload> = Payload()
+    val variableHeader: VariableHeader = VariableHeader(),
+    val payload: Payload<WillPayload> = Payload()
 ) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
-    @Ignore
-    @IgnoredOnParcel
     override val username = payload.userName?.getValueOrThrow()
 
-    @Ignore
-    @IgnoredOnParcel
     override val clientIdentifier = payload.clientId.getValueOrThrow()
 
-    @Ignore
-    @IgnoredOnParcel
     override val protocolName = variableHeader.protocolName.getValueOrThrow()
-    @Ignore
-    @IgnoredOnParcel
     override val protocolVersion = variableHeader.protocolLevel.toInt()
     constructor(
         clientId: String,
@@ -86,12 +76,8 @@ data class ConnectionRequest<WillPayload : Any>(
 
     override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
 
-    @Ignore
-    @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
 
-    @Ignore
-    @IgnoredOnParcel
     override val cleanStart: Boolean = variableHeader.cleanSession
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
@@ -119,8 +105,6 @@ data class ConnectionRequest<WillPayload : Any>(
         }
         return null
     }
-
-    @Parcelize
     data class VariableHeader(
         /**
          * 3.1.2.1 Protocol Name
@@ -344,11 +328,13 @@ data class ConnectionRequest<WillPayload : Any>(
          *
          */
         val keepAliveSeconds: Int = UShort.MAX_VALUE.toInt()
-    ) : Parcelable {
+    ) {
         fun validateOrGetWarning(): MqttWarning? {
             if (!willFlag && willRetain) {
-                return MqttWarning("[MQTT-3.1.2-13]", "If the Will Flag is set" +
-                        " to 0, then Will Retain MUST be set to 0")
+                return MqttWarning(
+                    "[MQTT-3.1.2-13]", "If the Will Flag is set" +
+                            " to 0, then Will Retain MUST be set to 0"
+                )
             }
             return null
         }
@@ -417,7 +403,6 @@ data class ConnectionRequest<WillPayload : Any>(
      * the flags in the variable header. These fields, if present, MUST appear in the order Client Identifier,
      * Will Topic, Will Message, User Name, Password [MQTT-3.1.3-1].
      */
-    @Parcelize
     data class Payload<WillPayload : Any>(
         /**
          * 3.1.3.1 Client Identifier (ClientID)
@@ -488,12 +473,12 @@ data class ConnectionRequest<WillPayload : Any>(
         /**
          * 3.1.3.5 Password
          *
-             * If the Password Flag is set to 1, this is the next field in the payload. The Password field contains 0
-             * to 65535 bytes of binary data prefixed with a two byte length field which indicates the number of bytes
-             * used by the binary data (it does not include the two bytes taken up by the length field itself).
-             */
-            val password: MqttUtf8String? = null
-    ) : Parcelable {
+         * If the Password Flag is set to 1, this is the next field in the payload. The Password field contains 0
+         * to 65535 bytes of binary data prefixed with a two byte length field which indicates the number of bytes
+         * used by the binary data (it does not include the two bytes taken up by the length field itself).
+         */
+        val password: MqttUtf8String? = null
+    ) {
 
         fun size(writeBuffer: WriteBuffer): UInt {
             var size = 2u + writeBuffer.mqttUtf8Size(clientId.value)

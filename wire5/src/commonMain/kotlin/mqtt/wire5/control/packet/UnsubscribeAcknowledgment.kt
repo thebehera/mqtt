@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -17,7 +14,6 @@ import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
-@Parcelize
 data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS)) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
@@ -43,11 +39,10 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
      * UNSUBSCRIBE Packet that is being acknowledged, and Properties. The rules for encoding Properties are described
      * in section 2.2.2.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         fun size(writeBuffer: WriteBuffer) =
             UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
                 writeBuffer
@@ -61,7 +56,6 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
         /**
          * 3.9.2.1 SUBACK Properties
          */
-        @Parcelize
         data class Properties(
             /**
              * 3.11.2.1.2 Reason String
@@ -90,8 +84,7 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
              * name is allowed to appear more than once.
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {

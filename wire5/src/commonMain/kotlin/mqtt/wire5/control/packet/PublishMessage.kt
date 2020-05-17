@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -21,7 +18,6 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * Creates an MQTT PUBLISH
  *
  */
-@Parcelize
 data class PublishMessage(
         val fixed: FixedHeader = FixedHeader(),
         val variable: VariableHeader,
@@ -42,8 +38,6 @@ data class PublishMessage(
         dup: Boolean = false,
         retain: Boolean = false
     ) : this(FixedHeader(dup, qos, retain), VariableHeader(topic, packetIdentifier = packetIdentifier.toInt()))
-
-    @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
@@ -51,8 +45,6 @@ data class PublishMessage(
     }
 
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.byteArray.size.toUInt()
-
-    @IgnoredOnParcel
     override val topic = variable.topicName
 
     override fun expectedResponse() = when (fixed.qos) {
@@ -64,8 +56,6 @@ data class PublishMessage(
         }
         else -> null
     }
-
-    @Parcelize
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -175,8 +165,8 @@ data class PublishMessage(
          * subscriber will receive the most recent state.
          */
         val retain: Boolean = false
-    ) : Parcelable {
-        @IgnoredOnParcel val flags by lazy {
+    ) {
+        val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
             val retainInt = if (retain) 0b1 else 0b0
@@ -208,12 +198,11 @@ data class PublishMessage(
      * The Variable Header of the PUBLISH Packet contains the following fields in the order: Topic Name, Packet
      * Identifier, and Properties. The rules for encoding Properties are described in section 2.2.2.
      */
-    @Parcelize
     data class VariableHeader(
         val topicName: CharSequence,
         val packetIdentifier: Int? = null,
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
 
         init {
             if (properties.topicAlias == 0) {
@@ -264,8 +253,6 @@ data class PublishMessage(
             result = 31 * result + properties.hashCode()
             return result
         }
-
-        @Parcelize
         data class Properties(
             /**
              * 3.3.2.3.2 Payload Format Indicator
@@ -467,7 +454,7 @@ data class PublishMessage(
              * Identifier set to 10, and having no properties.
              */
             val contentType: CharSequence? = null
-        ) : Parcelable {
+        ) {
 
             init {
                 if (topicAlias == 0) {
@@ -477,7 +464,7 @@ data class PublishMessage(
                     )
                 }
             }
-            @IgnoredOnParcel
+
             val props by lazy {
                 val list = ArrayList<Property>(7 + userProperty.count())
                 if (payloadFormatIndicator) {

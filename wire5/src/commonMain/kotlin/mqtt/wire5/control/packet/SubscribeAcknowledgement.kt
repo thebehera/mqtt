@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -27,7 +24,6 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
  * A SUBACK packet contains a list of Reason Codes, that specify the maximum QoS level that was granted or the
  * error which was found for each Subscription that was requested by the SUBSCRIBE.
  */
-@Parcelize
 data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: List<ReasonCode>)
     : ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
     constructor(packetIdentifier: UShort, properties: Properties = Properties(), payload: ReasonCode = SUCCESS)
@@ -36,10 +32,11 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
     constructor(packetIdentifier: UShort, payload: ReasonCode = SUCCESS, properties: Properties = Properties())
             : this(VariableHeader(packetIdentifier.toInt(), properties), listOf(payload))
 
-    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier.toInt()
+    override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.forEach { writeBuffer.write(it.byte) }
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.size.toUInt()
+
     init {
         payload.forEach {
             if (!validSubscribeCodes.contains(it)) {
@@ -54,11 +51,10 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
      * The Variable Header of the SUBACK Packet contains the following fields in the order: the Packet Identifier from
      * the SUBSCRIBE Packet that is being acknowledged, and Properties.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
             properties.serialize(writeBuffer)
@@ -74,7 +70,6 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
         /**
          * 3.9.2.1 SUBACK Properties
          */
-        @Parcelize
         data class Properties(
             /**
              * 3.9.2.1.2 Reason String
@@ -101,8 +96,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
              * name is allowed to appear more than once.
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {

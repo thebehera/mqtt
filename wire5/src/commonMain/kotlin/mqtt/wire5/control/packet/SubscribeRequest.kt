@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -32,7 +29,6 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
  * Bits 3,2,1 and 0 of the Fixed Header of the SUBSCRIBE packet are reserved and MUST be set to 0,0,1 and 0
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
-@Parcelize
 data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set<Subscription>) :
     ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
@@ -56,8 +52,6 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         VariableHeader(packetIdentifier.toInt(), props),
         Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList)
     )
-
-    @IgnoredOnParcel
     override val packetIdentifier = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
@@ -81,19 +75,20 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
      *
      * Figure 3-19 shows an example of a SUBSCRIBE variable header with a Packet Identifier of 10 and no properties.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         val properties: Properties = Properties()
-    ) : Parcelable {
-        fun size(writeBuffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(writeBuffer)
+    ) {
+        fun size(writeBuffer: WriteBuffer) =
+            UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
+                writeBuffer
+            )
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
             properties.serialize(writeBuffer)
         }
 
-        @Parcelize
         data class Properties(
             /**
              * 3.2.2.3.9 Reason String
@@ -131,8 +126,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              * the Client to the Server. The meaning of these properties is not defined by this specification.
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {
@@ -207,8 +201,6 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         }
     }
 }
-
-@Parcelize
 data class Subscription(val topicFilter: Filter,
                         /**
                          * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
@@ -247,7 +239,7 @@ data class Subscription(val topicFilter: Filter,
                          * It is a Protocol Error to send a Retain Handling value of 3.
                          */
                         val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
-) : Parcelable {
+) {
 
     fun serialize(writeBuffer: WriteBuffer) {
         writeBuffer.writeUtf8String(topicFilter.topicFilter)

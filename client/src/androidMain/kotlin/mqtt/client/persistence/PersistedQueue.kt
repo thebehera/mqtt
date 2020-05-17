@@ -1,14 +1,11 @@
 package mqtt.client.persistence
 
-import android.os.Parcelable
 import androidx.room.*
-import mqtt.Parcelize
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.data.QualityOfService
 
-@Entity(primaryKeys = ["connectionIdentifier", "packetIdentifier"])
-@TypeConverters(MqttV4TypeConverters::class)
-@Parcelize
+//@Entity(primaryKeys = ["connectionIdentifier", "packetIdentifier"])
+//@TypeConverters(MqttV4TypeConverters::class)
 data class MqttQueue(
     val queuedType: String,
     val queuedRowId: Long,
@@ -18,18 +15,17 @@ data class MqttQueue(
     val bytesTransmitted: Int = 0,
     val packetIdentifier: Int = 0,
     val acknowledged: Boolean = false
-) : Parcelable
+)
 
-@Entity(primaryKeys = ["connectionIdentifier", "packetIdentifier"])
-@TypeConverters(MqttV4TypeConverters::class)
-@Parcelize
+//@Entity(primaryKeys = ["connectionIdentifier", "packetIdentifier"])
+//@TypeConverters(MqttV4TypeConverters::class)
 data class MqttPublishQueue(
     val connectionIdentifier: Int,
     val packetIdentifier: Int = 0,
     val topic: String,
     val dup: Boolean = false,
     val retain: Boolean = false
-) : Parcelable
+)
 
 @Dao
 interface PersistedMqttQueueDao {

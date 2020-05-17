@@ -2,7 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.control.packet.IPublishComplete
@@ -13,7 +12,6 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  *
  * The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
  */
-@Parcelize
 data class PublishComplete(override val packetIdentifier: Int)
     : ControlPacketV4(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
     override fun variableHeader(writeBuffer: WriteBuffer) {

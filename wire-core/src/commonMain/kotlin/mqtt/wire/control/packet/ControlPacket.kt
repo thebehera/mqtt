@@ -2,12 +2,11 @@
 
 package mqtt.wire.control.packet
 
-import mqtt.Parcelable
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
-interface ControlPacket : Parcelable {
+interface ControlPacket {
     val controlPacketValue: Byte
     val direction: DirectionOfFlow
     val flags: Byte get() = 0b0

@@ -1,15 +1,12 @@
 package mqtt.connection
 
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.wire.control.packet.IConnectionRequest
 
-interface IMqttConnectionStateUpdated : Parcelable {
+interface IMqttConnectionStateUpdated {
     val remoteHostConnectionIdentifier: Int
     val state: ConnectionState
 }
 
-@Parcelize
 data class MqttConnectionStateUpdated(
     override val remoteHostConnectionIdentifier: Int,
     override val state: ConnectionState
@@ -18,12 +15,12 @@ data class MqttConnectionStateUpdated(
             : this(remote.connectionIdentifier(), acknowledgment)
 }
 
-interface IRemoteHost : Parcelable {
-    interface IWebsocketParameters : Parcelable {
+interface IRemoteHost {
+    interface IWebsocketParameters {
         val isEnabled: Boolean
     }
 
-    interface ISecurityParameters : Parcelable {
+    interface ISecurityParameters {
         val isTransportLayerSecurityEnabled: Boolean
         val acceptAllCertificates: Boolean
     }
