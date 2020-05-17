@@ -23,17 +23,6 @@ data class PublishMessage<T : Any>(
     val payload: GenericType<T>? = null
 ) : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
-    /**
-     * Build a QOS 1 or 2 publish message
-     */
-    constructor(
-        topic: String, qos: QualityOfService,
-        packetIdentifier: UShort,
-        dup: Boolean = false,
-        retain: Boolean = false
-    )
-            : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic).topic, packetIdentifier.toInt()), null)
-
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS of 0 with a packet identifier")
@@ -226,7 +215,7 @@ data class PublishMessage<T : Any>(
             if (variableHeader.packetIdentifier != null) {
                 variableSize += 2u
             }
-            val deserialized = buffer.readGenericType(T::class)
+            val deserialized = buffer.readGenericType(T::class, variableHeader.topicName)
             val genericType = if (deserialized != null) {
                 GenericType(deserialized, T::class)
             } else {
