@@ -41,16 +41,16 @@ typealias CONNECT = ConnectionRequest
  */
 @Parcelize
 data class ConnectionRequest(
-        /**
-         * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
-         * and the Payload. The content of the Variable Header varies depending on the packet type. The Packet
-         * Identifier field of Variable Header is common in several packet types.
-         * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#_Properties">MQTT
-         * Properties section 2.2.2.</a>
-         */
-        val variableHeader: VariableHeader = VariableHeader(),
-        val payload: Payload = Payload())
-    : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    /**
+     * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
+     * and the Payload. The content of the Variable Header varies depending on the packet type. The Packet
+     * Identifier field of Variable Header is common in several packet types.
+     * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#_Properties">MQTT
+     * Properties section 2.2.2.</a>
+     */
+    val variableHeader: VariableHeader = VariableHeader(),
+    val payload: Payload = Payload()
+) : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     @IgnoredOnParcel
     override val clientIdentifier = payload.clientId
 
@@ -88,8 +88,10 @@ data class ConnectionRequest(
             )
         }
         if (!variableHeader.hasUserName && payload.userName != null) {
-            return MqttWarning("[MQTT-3.1.2-16]", "If the User Name Flag is set " +
-                    "to 0, a User Name MUST NOT be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-16]", "If the User Name Flag is set " +
+                        "to 0, a User Name MUST NOT be present in the Payload"
+            )
         }
         if (variableHeader.hasPassword && payload.password == null) {
             return MqttWarning(
@@ -671,15 +673,19 @@ data class ConnectionRequest(
                             }
                             is TopicAliasMaximum -> {
                                 if (topicAliasMaximum != null) {
-                                    throw ProtocolError("Topic Alias Maximum added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477351")
+                                    throw ProtocolError(
+                                        "Topic Alias Maximum added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477351"
+                                    )
                                 }
                                 topicAliasMaximum = it.highestValueSupported
                             }
                             is RequestResponseInformation -> {
                                 if (requestResponseInformation != null) {
-                                    throw ProtocolError("Request Response Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352")
+                                    throw ProtocolError(
+                                        "Request Response Information added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477352"
+                                    )
                                 }
                                 requestResponseInformation = it.requestServerToReturnInfoInConnack
                             }
@@ -704,8 +710,10 @@ data class ConnectionRequest(
                             }
                             is AuthenticationData -> {
                                 if (authenticationData != null) {
-                                    throw ProtocolError("Authentication Data added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477356")
+                                    throw ProtocolError(
+                                        "Authentication Data added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477356"
+                                    )
                                 }
                                 authenticationData = it.data
                             }
@@ -720,8 +728,16 @@ data class ConnectionRequest(
                         null
                     }
                     val finalUserProperty = if (userProperty.isEmpty()) null else userProperty
-                    return Properties(sessionExpiryIntervalSeconds, receiveMaximum, maximumPacketSize,
-                        topicAliasMaximum, requestResponseInformation, requestProblemInformation, finalUserProperty, auth)
+                    return Properties(
+                        sessionExpiryIntervalSeconds,
+                        receiveMaximum,
+                        maximumPacketSize,
+                        topicAliasMaximum,
+                        requestResponseInformation,
+                        requestProblemInformation,
+                        finalUserProperty,
+                        auth
+                    )
                 }
             }
         }
@@ -796,25 +812,25 @@ data class ConnectionRequest(
     @Parcelize
     data class Payload(
         /**
-             * 3.1.3.1 Client Identifier (ClientID)
-             * The Client Identifier (ClientID) identifies the Client to the Server. Each Client connecting to the
-             * Server has a unique ClientID. The ClientID MUST be used by Clients and by Servers to identify state
-             * that they hold relating to this MQTT Session between the Client and the Server [MQTT-3.1.3-2]. Refer
-             * to section 4.1 for more information about Session State.
-             *
-             * The ClientID MUST be present and is the first field in the CONNECT packet Payload [MQTT-3.1.3-3].
-             *
-             * The ClientID MUST be a UTF-8 Encoded String as defined in section 1.5.4 [MQTT-3.1.3-4].
-             *
-             * The Server MUST allow ClientID’s which are between 1 and 23 UTF-8 encoded bytes in length, and that
-             * contain only the characters
-             *
-             * "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" [MQTT-3.1.3-5].
-             *
-             * The Server MAY allow ClientID’s that contain more than 23 encoded bytes. The Server MAY allow
-             * ClientID’s that contain characters not included in the list given above.
-             *
-             * A Server MAY allow a Client to supply a ClientID that has a length of zero bytes, however if it does
+         * 3.1.3.1 Client Identifier (ClientID)
+         * The Client Identifier (ClientID) identifies the Client to the Server. Each Client connecting to the
+         * Server has a unique ClientID. The ClientID MUST be used by Clients and by Servers to identify state
+         * that they hold relating to this MQTT Session between the Client and the Server [MQTT-3.1.3-2]. Refer
+         * to section 4.1 for more information about Session State.
+         *
+         * The ClientID MUST be present and is the first field in the CONNECT packet Payload [MQTT-3.1.3-3].
+         *
+         * The ClientID MUST be a UTF-8 Encoded String as defined in section 1.5.4 [MQTT-3.1.3-4].
+         *
+         * The Server MUST allow ClientID’s which are between 1 and 23 UTF-8 encoded bytes in length, and that
+         * contain only the characters
+         *
+         * "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" [MQTT-3.1.3-5].
+         *
+         * The Server MAY allow ClientID’s that contain more than 23 encoded bytes. The Server MAY allow
+         * ClientID’s that contain characters not included in the list given above.
+         *
+         * A Server MAY allow a Client to supply a ClientID that has a length of zero bytes, however if it does
          * so the Server MUST treat this as a special case and assign a unique ClientID to that Client
          * [MQTT-3.1.3-6]. It MUST then process the CONNECT packet as if the Client had provided that unique
          * ClientID, and MUST return the Assigned Client Identifier in the CONNACK packet [MQTT-3.1.3-7].
@@ -897,16 +913,16 @@ data class ConnectionRequest(
              * Error to include the Will Delay Interval more than once. If the Will Delay Interval is absent, the
              * default value is 0 and there is no delay before the Will Message is published.
              *
-                 * The Server delays publishing the Client’s Will Message until the Will Delay Interval has passed or
-                 * the Session ends, whichever happens first. If a new Network Connection to this Session is made
-                 * before the Will Delay Interval has passed, the Server MUST NOT send the Will Message [MQTT-3.1.3-9].
-                 *
-                 * Non-normative comment
-                 *
-                 * One use of this is to avoid publishing Will Messages if there is a temporary network disconnection
-                 * and the Client succeeds in reconnecting and continuing its Session before the Will Message is
-                 * published.
-                 *
+             * The Server delays publishing the Client’s Will Message until the Will Delay Interval has passed or
+             * the Session ends, whichever happens first. If a new Network Connection to this Session is made
+             * before the Will Delay Interval has passed, the Server MUST NOT send the Will Message [MQTT-3.1.3-9].
+             *
+             * Non-normative comment
+             *
+             * One use of this is to avoid publishing Will Messages if there is a temporary network disconnection
+             * and the Client succeeds in reconnecting and continuing its Session before the Will Message is
+             * published.
+             *
              * Non-normative comment
              *
              * If a Network Connection uses a Client Identifier of an existing Network Connection to the Server,
@@ -928,19 +944,19 @@ data class ConnectionRequest(
              * ·         0 (0x00) Byte Indicates that the Will Message is unspecified bytes, which is equivalent to not sending a Payload Format Indicator.
              *
              * ·         1 (0x01) Byte Indicates that the Will Message is UTF-8 Encoded Character Data. The UTF-8 data in the Payload MUST be well-formed UTF-8 as defined by the Unicode specification [Unicode] and restated in RFC 3629 [RFC3629].
-                 *
-                 * It is a Protocol Error to include the Payload Format Indicator more than once. The Server MAY
-                 * validate that the Will Message is of the format indicated, and if it is not send a CONNACK with
-                 * the Reason Code of 0x99 (Payload format invalid) as described in section 4.13.
-                 * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363">
-                 *     3.1.3.2.3 Payload Format Indicator</a>
-                 */
-                val payloadFormatIndicator: Boolean = false,
+             *
+             * It is a Protocol Error to include the Payload Format Indicator more than once. The Server MAY
+             * validate that the Will Message is of the format indicated, and if it is not send a CONNACK with
+             * the Reason Code of 0x99 (Payload format invalid) as described in section 4.13.
+             * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363">
+             *     3.1.3.2.3 Payload Format Indicator</a>
+             */
+            val payloadFormatIndicator: Boolean = false,
             /**
-                 * 3.1.3.2.4 Message Expiry Interval
-                 *
-                 * 2 (0x02) Byte, Identifier of the Message Expiry Interval.
-                 *
+             * 3.1.3.2.4 Message Expiry Interval
+             *
+             * 2 (0x02) Byte, Identifier of the Message Expiry Interval.
+             *
              * Followed by the Four Byte Integer representing the Message Expiry Interval. It is a Protocol Error
              * to include the Message Expiry Interval more than once.
              *
@@ -1000,15 +1016,15 @@ data class ConnectionRequest(
              */
             val correlationData: ByteArrayWrapper? = null,
             /**
-                 * 3.1.3.2.8 User Property
-                 *
-                 * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by a UTF-8 String Pair. The User Property is allowed to appear multiple times to represent
-                 * multiple name, value pairs. The same name is allowed to appear more than once.
-                 *
-                 * The Server MUST maintain the order of User Properties when publishing the Will Message
-                 * [MQTT-3.1.3-10].
+             * 3.1.3.2.8 User Property
+             *
+             * 38 (0x26) Byte, Identifier of the User Property.
+             *
+             * Followed by a UTF-8 String Pair. The User Property is allowed to appear multiple times to represent
+             * multiple name, value pairs. The same name is allowed to appear more than once.
+             *
+             * The Server MUST maintain the order of User Properties when publishing the Will Message
+             * [MQTT-3.1.3-10].
              *
              * Non-normative comment
              *
@@ -1087,36 +1103,46 @@ data class ConnectionRequest(
                             }
                             is PayloadFormatIndicator -> {
                                 if (payloadFormatIndicator != null) {
-                                    throw ProtocolError("Payload Format Indicator added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363")
+                                    throw ProtocolError(
+                                        "Payload Format Indicator added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
+                                    )
                                 }
                                 payloadFormatIndicator = it.willMessageIsUtf8
                             }
                             is MessageExpiryInterval -> {
                                 if (messageExpiryIntervalSeconds != null) {
-                                    throw ProtocolError("Message Expiry Interval added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363")
+                                    throw ProtocolError(
+                                        "Message Expiry Interval added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
+                                    )
                                 }
                                 messageExpiryIntervalSeconds = it.seconds.toLong()
                             }
                             is ContentType -> {
                                 if (contentType != null) {
-                                    throw ProtocolError("Content Type added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477365")
+                                    throw ProtocolError(
+                                        "Content Type added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477365"
+                                    )
                                 }
                                 contentType = it.value
                             }
                             is ResponseTopic -> {
                                 if (responseTopic != null) {
-                                    throw ProtocolError("Response Topic added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477366")
+                                    throw ProtocolError(
+                                        "Response Topic added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477366"
+                                    )
                                 }
                                 responseTopic = it.value
                             }
                             is CorrelationData -> {
                                 if (correlationData != null) {
-                                    throw ProtocolError("Coorelation data added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477367")
+                                    throw ProtocolError(
+                                        "Coorelation data added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477367"
+                                    )
                                 }
                                 correlationData = it.data
                             }
