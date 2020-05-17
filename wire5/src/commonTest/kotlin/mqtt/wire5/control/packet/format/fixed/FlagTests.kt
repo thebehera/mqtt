@@ -5,11 +5,13 @@ package mqtt.wire5.control.packet.format.fixed
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
+import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
+import mqtt.wire5.control.packet.format.variable.property.Authentication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -218,7 +220,12 @@ class FlagTests {
             AuthenticationExchange(
                 AuthenticationExchange.VariableHeader(
                     SUCCESS,
-                    AuthenticationExchange.VariableHeader.Properties("yolo")
+                    AuthenticationExchange.VariableHeader.Properties(
+                        Authentication(
+                            "yolo",
+                            ByteArrayWrapper(byteArrayOf())
+                        )
+                    )
                 )
             ).flags, 0b0, controlPacketSpectMatchError
         )

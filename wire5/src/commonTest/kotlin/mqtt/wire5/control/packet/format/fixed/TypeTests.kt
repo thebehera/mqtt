@@ -4,9 +4,11 @@ package mqtt.wire5.control.packet.format.fixed
 
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
+import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
+import mqtt.wire5.control.packet.format.variable.property.Authentication
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -89,7 +91,12 @@ class TypeTests {
             AuthenticationExchange(
                 AuthenticationExchange.VariableHeader(
                     SUCCESS,
-                    AuthenticationExchange.VariableHeader.Properties("yolo")
+                    AuthenticationExchange.VariableHeader.Properties(
+                        Authentication(
+                            "yolo",
+                            ByteArrayWrapper(byteArrayOf())
+                        )
+                    )
                 )
             ).controlPacketValue,
             controlPacketSpectMatchError
@@ -166,7 +173,12 @@ class TypeTests {
             AuthenticationExchange(
                 AuthenticationExchange.VariableHeader(
                     SUCCESS,
-                    AuthenticationExchange.VariableHeader.Properties("yolo")
+                    AuthenticationExchange.VariableHeader.Properties(
+                        Authentication(
+                            "yolo",
+                            ByteArrayWrapper(byteArrayOf())
+                        )
+                    )
                 )
             ).direction,
             controlPacketSpectMatchError

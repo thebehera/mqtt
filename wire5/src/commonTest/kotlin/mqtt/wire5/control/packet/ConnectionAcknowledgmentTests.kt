@@ -11,7 +11,6 @@ import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties
-import mqtt.wire5.control.packet.ConnectionAcknowledgment.VariableHeader.Properties.Authentication
 import mqtt.wire5.control.packet.format.variable.property.*
 import kotlin.test.*
 

@@ -76,18 +76,17 @@ data class AuthenticationExchange(val variable: VariableHeader)
 
         @Parcelize
         data class Properties(
-            val method: CharSequence,
-            val data: ByteArrayWrapper? = null,
+            val authentication: Authentication?,
             val reasonString: CharSequence? = null,
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) : Parcelable {
 
             fun size(writeBuffer: WriteBuffer): UInt {
-                val authMethod = AuthenticationMethod(method)
-                val authData = if (data != null) AuthenticationData(data) else null
+                val authMethod = if (authentication != null) AuthenticationMethod(authentication.method) else null
+                val authData = if (authentication != null) AuthenticationData(authentication.data) else null
                 val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
                 val props = userProperty.map { UserProperty(it.first, it.second) }
-                var size = authMethod.size(writeBuffer)
+                var size = authMethod?.size(writeBuffer) ?: 0u
                 size += authData?.size(writeBuffer) ?: 0.toUInt()
                 size += authReasonString?.size(writeBuffer) ?: 0.toUInt()
                 props.forEach {
@@ -97,13 +96,13 @@ data class AuthenticationExchange(val variable: VariableHeader)
             }
 
             fun serialize(writeBuffer: WriteBuffer) {
-                val authMethod = AuthenticationMethod(method)
-                val authData = if (data != null) AuthenticationData(data) else null
+                val authMethod = if (authentication != null) AuthenticationMethod(authentication.method) else null
+                val authData = if (authentication != null) AuthenticationData(authentication.data) else null
                 val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
                 val props = userProperty.map { UserProperty(it.first, it.second) }
                 var size = size(writeBuffer)
                 writeBuffer.writeVariableByteInteger(size)
-                authMethod.write(writeBuffer)
+                authMethod?.write(writeBuffer)
                 authData?.write(writeBuffer)
                 authReasonString?.write(writeBuffer)
                 props.forEach {
@@ -150,7 +149,11 @@ data class AuthenticationExchange(val variable: VariableHeader)
                             else -> throw MalformedPacketException("Invalid UnsubscribeAck property type found in MQTT properties $it")
                         }
                     }
-                    return Properties(method!!, data, reasonString, userProperty)
+                    if (method != null && data != null) {
+                        return Properties(Authentication(method!!, data!!), reasonString, userProperty)
+                    } else {
+                        return Properties(null, reasonString, userProperty)
+                    }
                 }
             }
         }

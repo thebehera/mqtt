@@ -456,32 +456,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                 props.forEach { size += it.size(writeBuffer) }
                 return size + writeBuffer.variableByteIntegerSize(size)
             }
-
-            @Parcelize
-            data class Authentication(
-                /**
-                 * 3.2.2.3.17 Authentication Method
-                 *
-                 * 21 (0x15) Byte, Identifier of the Authentication Method.
-                 *
-                 * Followed by a UTF-8 Encoded String containing the name of the authentication method. It is a
-                 * Protocol Error to include the Authentication Method more than once. Refer to section 4.12 for
-                 * more information about extended authentication.
-                 */
-                val method: CharSequence,
-                /**
-                 * 3.2.2.3.18 Authentication Data
-                 *
-                 * 22 (0x16) Byte, Identifier of the Authentication Data.
-                 *
-                 * Followed by Binary Data containing authentication data. The contents of this data are defined
-                 * by the authentication method and the state of already exchanged authentication data. It is a
-                 * Protocol Error to include the Authentication Data more than once. Refer to section 4.12 for
-                 * more information about extended authentication.
-                 */
-                val data: ByteArrayWrapper
-            ) : Parcelable
-
+            
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
                     var sessionExpiryIntervalSeconds: Long? = null
