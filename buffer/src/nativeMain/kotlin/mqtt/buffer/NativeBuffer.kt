@@ -87,6 +87,7 @@ actual fun allocateNewBuffer(
     size: UInt,
     limits: BufferMemoryLimit
 ): PlatformBuffer {
+//    return NativeBuffer(IoBuffer.Pool.borrow())
     @OptIn(DangerousInternalIoApi::class)
     return NativeBuffer(Buffer(IoBuffer.Pool.borrow().memory.slice(0, size.toInt())))
 }
