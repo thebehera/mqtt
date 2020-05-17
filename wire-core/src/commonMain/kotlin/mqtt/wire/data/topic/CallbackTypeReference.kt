@@ -5,8 +5,7 @@ import mqtt.wire.control.packet.MqttSerializable
 import mqtt.wire.control.packet.findSerializer
 import kotlin.reflect.KClass
 
-data class CallbackTypeReference<T : Any>
-constructor(
+data class CallbackTypeReference<T : Any>(
     val callback: SubscriptionCallback<T>,
     val klass: KClass<T>,
     val serializer: MqttSerializable<T>? = findSerializer(klass)

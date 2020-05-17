@@ -78,7 +78,7 @@ class BufferTests {
     fun utf8String() {
         val string = "yolo swag lyfestyle"
         val platformBuffer = allocateNewBuffer(21u, limit)
-        platformBuffer.writeUtf8String(string)
+        platformBuffer.writeMqttUtf8String(string)
         platformBuffer.resetForRead()
         assertEquals(string, platformBuffer.readMqttUtf8StringNotValidated().toString())
     }

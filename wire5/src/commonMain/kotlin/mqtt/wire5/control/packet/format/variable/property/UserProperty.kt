@@ -10,10 +10,10 @@ data class UserProperty(val key: CharSequence, val value: CharSequence) : Proper
 ) {
     override fun write(buffer: WriteBuffer): UInt {
         buffer.write(identifierByte)
-        buffer.writeUtf8String(key)
-        buffer.writeUtf8String(value)
+        buffer.writeMqttUtf8String(key)
+        buffer.writeMqttUtf8String(value)
         return size(buffer)
     }
 
-    override fun size(buffer: WriteBuffer) = 5u + buffer.mqttUtf8Size(key) + buffer.mqttUtf8Size(value)
+    override fun size(buffer: WriteBuffer) = 5u + buffer.lengthUtf8String(key) + buffer.lengthUtf8String(value)
 }

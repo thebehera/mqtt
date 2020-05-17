@@ -1,9 +1,11 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "UNCHECKED_CAST", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire.data.topic
 
+import mqtt.buffer.*
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.MqttUtf8String
+import kotlin.reflect.KClass
 import kotlin.test.*
 
 class NodeTests {
@@ -211,5 +213,43 @@ class NodeTests {
     fun singleLevelWildcardNonNormativeBullet5Match3Negative() {
         val example = Node.parse("+")
         assertFalse(example.matchesTopic(Node.parse("/finance")))
+    }
+
+
+    @Test
+    fun genericSerializer() {
+        val node = Node.parse("user/log")
+        val serializer = CharSequenceSerializer() as BufferSerializer<Any>
+        node.registerPublishSerializer(serializer)
+        node.registerPublishDeserializer(CharSequenceSerializer())
+        val buffer = allocateNewBuffer(8u)
+        val expected = "yolo"
+        val generic = GenericType(expected, CharSequence::class) as GenericType<Any>
+        node.serializePublish(buffer, generic)
+        buffer.resetForRead()
+        val result = node.deserializePublish(buffer, 8u)!!
+        assertEquals(expected, result.obj.toString())
+    }
+
+    data class CharSequenceSerializer(override val kClass: KClass<CharSequence> = CharSequence::class) :
+        BufferSerializer<CharSequence>, BufferDeserializer<CharSequence> {
+        override fun size(buffer: WriteBuffer, obj: CharSequence) = 4u + buffer.lengthUtf8String(obj)
+
+        override fun serialize(buffer: WriteBuffer, obj: CharSequence): Boolean {
+            buffer.write(buffer.lengthUtf8String(obj))
+            buffer.writeUtf8(obj)
+            return true
+        }
+
+        override fun deserialize(
+            buffer: ReadBuffer,
+            length: UShort,
+            path: CharSequence?,
+            headers: Map<CharSequence, Set<CharSequence>>?
+        ): GenericType<CharSequence>? {
+            val textByteCount = buffer.readUnsignedInt()
+            val obj = buffer.readUtf8(textByteCount)
+            return GenericType(obj, CharSequence::class)
+        }
     }
 }

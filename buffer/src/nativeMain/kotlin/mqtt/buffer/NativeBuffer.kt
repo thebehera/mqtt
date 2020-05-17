@@ -25,11 +25,8 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
     override fun readUnsignedInt() = buffer.readUInt()
     override fun readLong() = buffer.readLong()
 
-    override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
-        val length = readUnsignedShort()
-        val bytes = buffer.readBytes(length.toInt())
-        val text = bytes.decodeToString()
-        return Pair(length.toUInt(), text)
+    override fun readUtf8(bytes: UInt): CharSequence {
+        return buffer.readText(max = bytes.toInt())
     }
 
     override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as NativeBuffer).buffer)
@@ -64,25 +61,23 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
         return this
     }
 
-    override fun writeUtf8String(charSequence: CharSequence): WriteBuffer {
-        buffer.writeUShort(mqttUtf8Size(charSequence).toUShort())
-        buffer.writeFully(Charsets.UTF_8.newEncoder().encodeToByteArray(charSequence))
+    override fun writeUtf8(text: CharSequence): WriteBuffer {
+        val bytes = Charsets.UTF_8.newEncoder().encodeToByteArray(text)
+        buffer.writeFully(bytes)
         return this
     }
 
-    override fun mqttUtf8Size(
+    override fun sizeUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
-    ): UInt {
-        return Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
-    }
+    ) = Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
 
-    override fun utf8StringSize(
+    override fun lengthUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
-    ) = mqttUtf8Size(inputSequence, malformedInput, unmappableCharacter)
+    ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
 
     override suspend fun close() {}
 }
@@ -92,5 +87,6 @@ actual fun allocateNewBuffer(
     size: UInt,
     limits: BufferMemoryLimit
 ): PlatformBuffer {
-    return NativeBuffer(IoBuffer.Pool.borrow())
+    @OptIn(DangerousInternalIoApi::class)
+    return NativeBuffer(Buffer(IoBuffer.Pool.borrow().memory.slice(0, size.toInt())))
 }

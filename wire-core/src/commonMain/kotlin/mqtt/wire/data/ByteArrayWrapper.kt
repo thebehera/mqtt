@@ -1,7 +1,5 @@
 package mqtt.wire.data
 
-import kotlin.reflect.KClass
-
 data class ByteArrayWrapper(val byteArray: ByteArray) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -19,4 +17,3 @@ data class ByteArrayWrapper(val byteArray: ByteArray) {
     }
 }
 
-data class GenericType<T : Any>(val obj: T, val kClass: KClass<T>)

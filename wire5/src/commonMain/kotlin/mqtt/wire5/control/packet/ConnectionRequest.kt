@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -11,7 +12,6 @@ import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.GenericType
 import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.format.variable.property.*
 
@@ -734,7 +734,7 @@ data class ConnectionRequest<WillPayload : Any>(
             val wFlag = if (willFlag) 0b100 else 0
             val cleanStart = if (cleanStart) 0b10 else 0
             val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            writeBuffer.writeUtf8String(protocolName)
+            writeBuffer.writeMqttUtf8String(protocolName)
             writeBuffer.write(protocolVersion.toUByte())
             writeBuffer.write(flags)
             writeBuffer.write(keepAliveSeconds.toUShort())
@@ -742,7 +742,7 @@ data class ConnectionRequest<WillPayload : Any>(
         }
 
         fun size(writeBuffer: WriteBuffer): UInt {
-            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(protocolName)
+            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(protocolName)
             size += (2u * UByte.SIZE_BYTES.toUInt()) + UShort.SIZE_BYTES.toUInt()
             val propsSize = properties.size(writeBuffer)
             size += propsSize + writeBuffer.variableByteIntegerSize(propsSize)
@@ -1141,26 +1141,26 @@ data class ConnectionRequest<WillPayload : Any>(
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
-            writeBuffer.writeUtf8String(clientId)
+            writeBuffer.writeMqttUtf8String(clientId)
             willProperties?.serialize(writeBuffer)
             if (willTopic != null) {
-                writeBuffer.writeUtf8String(willTopic)
+                writeBuffer.writeMqttUtf8String(willTopic)
             }
             if (willPayload != null) {
                 writeBuffer.writeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                writeBuffer.writeUtf8String(userName)
+                writeBuffer.writeMqttUtf8String(userName)
             }
             if (password != null) {
-                writeBuffer.writeUtf8String(password)
+                writeBuffer.writeMqttUtf8String(password)
             }
         }
 
         fun size(writeBuffer: WriteBuffer): UInt {
-            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(clientId)
+            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(clientId)
             if (willTopic != null) {
-                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(willTopic)
+                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(willTopic)
             }
             if (willProperties != null) {
                 val willPropertiesSize = willProperties.size(writeBuffer)
@@ -1170,10 +1170,10 @@ data class ConnectionRequest<WillPayload : Any>(
                 size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(userName)
+                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(userName)
             }
             if (password != null) {
-                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(password)
+                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(password)
             }
             return size
         }
@@ -1196,7 +1196,10 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    GenericType(buffer.readGenericType(WillPayload::class)!!, WillPayload::class)
+                    GenericType(
+                        buffer.readGenericType(WillPayload::class, buffer.readUnsignedShort())!!,
+                        WillPayload::class
+                    )
                 } else {
                     null
                 }

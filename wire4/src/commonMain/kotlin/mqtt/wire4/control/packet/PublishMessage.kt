@@ -2,12 +2,12 @@
 
 package mqtt.wire4.control.packet
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.GenericType
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
@@ -188,7 +188,7 @@ data class PublishMessage<T : Any>(
     ) {
 
         fun serialize(writeBuffer: WriteBuffer) {
-            writeBuffer.writeUtf8String(topicName)
+            writeBuffer.writeMqttUtf8String(topicName)
             if (packetIdentifier != null) {
                 writeBuffer.write(packetIdentifier.toUShort())
             }
@@ -208,14 +208,15 @@ data class PublishMessage<T : Any>(
     companion object {
 
         @Suppress("UNUSED_PARAMETER")
-        inline fun <reified T : Any> from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<T> {
+        inline fun <reified T : Any> from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            var variableSize = 2u + buffer.utf8StringSize(variableHeader.topicName)
+            var variableSize = 2u + buffer.sizeUtf8String(variableHeader.topicName)
             if (variableHeader.packetIdentifier != null) {
                 variableSize += 2u
             }
-            val deserialized = buffer.readGenericType(T::class, variableHeader.topicName)
+            val deserialized =
+                buffer.readGenericType(T::class, (remainingLength - variableSize).toUShort(), variableHeader.topicName)
             val genericType = if (deserialized != null) {
                 GenericType(deserialized, T::class)
             } else {

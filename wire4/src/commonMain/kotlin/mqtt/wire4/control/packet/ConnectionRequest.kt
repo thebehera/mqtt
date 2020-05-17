@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -9,7 +10,6 @@ import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.GenericType
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 
@@ -334,13 +334,13 @@ data class ConnectionRequest<WillPayload : Any>(
             val wFlag = if (willFlag) 0b100 else 0
             val cleanStart = if (cleanSession) 0b10 else 0
             val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            writeBuffer.writeUtf8String(protocolName.value)
+            writeBuffer.writeMqttUtf8String(protocolName.value)
             writeBuffer.write(protocolLevel.toUByte())
             writeBuffer.write(flags)
             writeBuffer.write(keepAliveSeconds.toUShort())
         }
 
-        fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(protocolName.value) + 6u
+        fun size(writeBuffer: WriteBuffer) = writeBuffer.lengthUtf8String(protocolName.value) + 6u
 
         companion object {
 
@@ -463,37 +463,36 @@ data class ConnectionRequest<WillPayload : Any>(
     ) {
 
         fun size(writeBuffer: WriteBuffer): UInt {
-            var size = 2u + writeBuffer.mqttUtf8Size(clientId.value)
+            var size = 2u + writeBuffer.lengthUtf8String(clientId.value)
             if (willTopic != null) {
-                size += 2u + writeBuffer.mqttUtf8Size(willTopic.value)
+                size += 2u + writeBuffer.lengthUtf8String(willTopic.value)
             }
             if (willPayload != null) {
                 size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                size += 2u + writeBuffer.mqttUtf8Size(userName.value)
+                size += 2u + writeBuffer.lengthUtf8String(userName.value)
             }
             if (password != null) {
-                size += 2u + writeBuffer.mqttUtf8Size(password.value)
+                size += 2u + writeBuffer.lengthUtf8String(password.value)
             }
             return size
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
-            writeBuffer.writeUtf8String(clientId.value)
+            writeBuffer.writeMqttUtf8String(clientId.value)
             if (willTopic != null) {
-                writeBuffer.writeUtf8String(willTopic.value)
+                writeBuffer.writeMqttUtf8String(willTopic.value)
             }
             if (willPayload != null) {
                 writeBuffer.writeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                writeBuffer.writeUtf8String(userName.value)
+                writeBuffer.writeMqttUtf8String(userName.value)
             }
             if (password != null) {
-                writeBuffer.writeUtf8String(password.value)
+                writeBuffer.writeMqttUtf8String(password.value)
             }
-
         }
 
         companion object {
@@ -509,7 +508,9 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    GenericType(buffer.readGenericType(WillPayload::class)!!, WillPayload::class)
+                    GenericType(
+                        buffer.readGenericType(WillPayload::class, buffer.readUnsignedShort())!!, WillPayload::class
+                    )
                 } else {
                     null
                 }

@@ -112,14 +112,14 @@ data class Subscription(
         fun sizeMany(subscriptions: Collection<Subscription>, writeBuffer: WriteBuffer): UInt {
             var size = 0u
             subscriptions.forEach {
-                size += writeBuffer.mqttUtf8Size(it.topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
+                size += writeBuffer.lengthUtf8String(it.topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
             }
             return size
         }
 
         fun writeMany(subscriptions: Collection<Subscription>, writeBuffer: WriteBuffer) {
             subscriptions.forEach {
-                writeBuffer.writeUtf8String(it.topicFilter.topicFilter)
+                writeBuffer.writeMqttUtf8String(it.topicFilter.topicFilter)
                 writeBuffer.write(it.maximumQos.integerValue)
             }
         }

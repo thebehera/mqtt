@@ -235,7 +235,7 @@ data class PublishMessage(
         }
 
         fun serialize(buffer: WriteBuffer) {
-            buffer.writeUtf8String(topicName)
+            buffer.writeMqttUtf8String(topicName)
             if (packetIdentifier != null) {
                 buffer.write(packetIdentifier.toUShort())
             }
@@ -243,7 +243,7 @@ data class PublishMessage(
         }
 
         fun size(buffer: WriteBuffer): UInt {
-            var size = UShort.SIZE_BYTES.toUInt() + buffer.mqttUtf8Size(topicName)
+            var size = UShort.SIZE_BYTES.toUInt() + buffer.lengthUtf8String(topicName)
             if (packetIdentifier != null) {
                 size += UShort.SIZE_BYTES.toUInt()
             }
