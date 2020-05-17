@@ -19,9 +19,4 @@ data class ByteArrayWrapper(val byteArray: ByteArray) {
     }
 }
 
-data class GenericType<T : Any>(val obj: T, val kClass: KClass<T>) {
-
-    companion object {
-        inline fun <reified T : Any> create(obj: T): GenericType<T> = GenericType(obj, T::class)
-    }
-}
+data class GenericType<T : Any>(val obj: T, val kClass: KClass<T>)

@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS", "KDocUnresolvedReference")
 
 package mqtt.wire5.control.packet
 
@@ -607,7 +607,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     var topicAliasMaximum: Int? = null
                     var requestResponseInformation: Boolean? = null
                     var requestProblemInformation: Boolean? = null
-                    var userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     var authenticationMethod: CharSequence? = null
                     var authenticationData: ByteArrayWrapper? = null
                     keyValuePairs?.forEach {
@@ -1065,7 +1065,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     var contentType: CharSequence? = null
                     var responseTopic: CharSequence? = null
                     var correlationData: ByteArrayWrapper? = null
-                    var userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     val properties = buffer.readProperties() ?: return WillProperties()
                     properties.forEach {
                         when (it) {
@@ -1094,7 +1094,7 @@ data class ConnectionRequest<WillPayload : Any>(
                                                 "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477363"
                                     )
                                 }
-                                messageExpiryIntervalSeconds = it.seconds.toLong()
+                                messageExpiryIntervalSeconds = it.seconds
                             }
                             is ContentType -> {
                                 if (contentType != null) {
@@ -1196,7 +1196,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    GenericType.create(buffer.readGenericType(WillPayload::class))
+                    GenericType(buffer.readGenericType(WillPayload::class)!!, WillPayload::class)
                 } else {
                     null
                 }

@@ -509,7 +509,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    GenericType.create(buffer.readGenericType(WillPayload::class))
+                    GenericType(buffer.readGenericType(WillPayload::class)!!, WillPayload::class)
                 } else {
                     null
                 }
