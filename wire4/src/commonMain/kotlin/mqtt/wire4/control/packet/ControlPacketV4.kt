@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "KDocUnresolvedReference")
 
 package mqtt.wire4.control.packet
 
@@ -26,18 +26,28 @@ abstract class ControlPacketV4(
 
     companion object {
 
-        fun from(buffer: ReadBuffer): ControlPacketV4 {
+        inline fun <reified WillPayload : Any> fromTyped(buffer: ReadBuffer): ControlPacketV4 {
             val byte1 = buffer.readUnsignedByte()
             val remainingLength = buffer.readVariableByteInteger()
-            return from(buffer, byte1, remainingLength)
+            return fromTyped<WillPayload>(buffer, byte1, remainingLength)
         }
 
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): ControlPacketV4 {
+        fun from(buffer: ReadBuffer) = fromTyped<Unit>(buffer)
+
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) =
+            fromTyped<UInt>(buffer, byte1, remainingLength)
+
+
+        inline fun <reified WillPayload : Any> fromTyped(
+            buffer: ReadBuffer,
+            byte1: UByte,
+            remainingLength: UInt
+        ): ControlPacketV4 {
             val byte1AsUInt = byte1.toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()
             return when (packetValue) {
                 0 -> Reserved
-                1 -> ConnectionRequest.from(buffer)
+                1 -> ConnectionRequest.from<WillPayload>(buffer)
                 2 -> ConnectionAcknowledgment.from(buffer)
                 3 -> PublishMessage.from(buffer, byte1, remainingLength)
                 4 -> PublishAcknowledgment.from(buffer)
