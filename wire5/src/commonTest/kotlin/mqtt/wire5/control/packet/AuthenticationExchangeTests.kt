@@ -12,7 +12,10 @@ import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.*
-import kotlin.test.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.fail
 
 val limits = object : BufferMemoryLimit {
     override fun isTooLargeForMemory(size: UInt) = false
@@ -22,45 +25,25 @@ class AuthenticationExchangeTests {
 
     @Test
     fun serializationByteVerification() {
-        val buffer = allocateNewBuffer(11u, limits)
-        val props = Properties("test")
+        val buffer = allocateNewBuffer(14u, limits)
+        val props = Properties(Authentication("test", ByteArrayWrapper(byteArrayOf())))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
         buffer.resetForRead()
         // fixed header
         assertEquals(0b11110000.toUByte(), buffer.readUnsignedByte(), "byte1 fixed header")
-        assertEquals(9u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
+        assertEquals(12u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
         // variable header
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
-        assertEquals(7u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(10u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
         assertEquals("test", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
     }
 
     @Test
-    fun deserializationByteVerification() {
-        val buffer = allocateNewBuffer(11u, limits)
-        // Fill buffer
-        buffer.write(0b11110000.toUByte()) // byte 1 fixed header
-        buffer.writeVariableByteInteger(9u) // remaining length fixed header
-        // Fill Buffer variable header
-        buffer.write(SUCCESS.byte) // byte0 variable header reason code
-        buffer.writeVariableByteInteger(5u) // property length
-        buffer.write(0x15.toUByte()) // identifier of the authentication method
-        buffer.writeUtf8String("test") // authentication method value
-        buffer.resetForRead()
-        val actual = ControlPacketV5.from(buffer) as AuthenticationExchange
-        assertEquals(SUCCESS, actual.variable.reasonCode)
-        assertEquals("test", actual.variable.properties.method.toString())
-        assertNull(actual.variable.properties.data)
-        assertNull(actual.variable.properties.reasonString)
-        assertEquals(0, actual.variable.properties.userProperty.count())
-    }
-
-    @Test
     fun serializeDeserialize() {
-        val buffer = allocateNewBuffer(11u, limits)
-        val props = Properties("test".toCharSequenceBuffer())
+        val buffer = allocateNewBuffer(14u, limits)
+        val props = Properties(Authentication("test".toCharSequenceBuffer(), ByteArrayWrapper(byteArrayOf())))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
         buffer.resetForRead()
@@ -72,7 +55,7 @@ class AuthenticationExchangeTests {
     @Test
     fun serializeDeserializeInvalid() {
         try {
-            VariableHeader(BANNED, Properties("test"))
+            VariableHeader(BANNED, Properties(Authentication("test", ByteArrayWrapper(byteArrayOf()))))
             fail()
         } catch (e: MalformedPacketException) {
         }
@@ -80,8 +63,11 @@ class AuthenticationExchangeTests {
 
     @Test
     fun reasonString() {
-        val buffer = allocateNewBuffer(15u, limits)
-        val props = Properties("2", reasonString = "yolo")
+        val buffer = allocateNewBuffer(18u, limits)
+        val props = Properties(
+            Authentication("2".toCharSequenceBuffer(), ByteArrayWrapper(byteArrayOf())),
+            reasonString = "yolo"
+        )
         val header = VariableHeader(SUCCESS, properties = props)
         val expected = AuthenticationExchange(header)
         expected.serialize(buffer)
@@ -122,17 +108,15 @@ class AuthenticationExchangeTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val buffer = allocateNewBuffer(21u, limits)
+        val buffer = allocateNewBuffer(17u, limits)
         AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize(buffer)
         buffer.resetForRead()
         // fixed header
         assertEquals(0b11110000.toUByte(), buffer.readUnsignedByte(), "byte1 fixed header")
-        assertEquals(19u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
+        assertEquals(15u, buffer.readVariableByteInteger(), "byte2 fixed header remaining length")
         // variable header
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
-        assertEquals(17u, buffer.readVariableByteInteger(), "property length")
-        assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
-        assertEquals("2", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
+        assertEquals(13u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x26.toUByte(), buffer.readUnsignedByte(), "user property flag")
         assertEquals("key", buffer.readMqttUtf8StringNotValidated().toString(), "user property key")
         assertEquals("value", buffer.readMqttUtf8StringNotValidated().toString(), "user property value")
@@ -196,7 +180,7 @@ class AuthenticationExchangeTests {
     @Test
     fun invalidReasonCode() {
         try {
-            VariableHeader(BANNED, Properties("test"))
+            VariableHeader(BANNED, Properties(Authentication("test", ByteArrayWrapper(byteArrayOf()))))
             fail()
         } catch (e: MalformedPacketException) {
         }
