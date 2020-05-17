@@ -1,6 +1,7 @@
 package mqtt.buffer
 
 import kotlin.experimental.and
+import kotlin.reflect.KClass
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
@@ -13,6 +14,8 @@ interface ReadBuffer {
     fun readLong(): Long
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence>
+    fun <T : Any> readGenericType(type: KClass<T>): T =
+        throw UnsupportedOperationException("Generic type not implemented")
 
     fun readVariableByteInteger(): UInt {
         var digit: Byte

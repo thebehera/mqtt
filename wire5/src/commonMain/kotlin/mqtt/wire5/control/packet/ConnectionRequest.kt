@@ -14,10 +14,9 @@ import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.GenericType
 import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.format.variable.property.*
-
-typealias CONNECT = ConnectionRequest
 
 /**
  * 3.1 CONNECT – Connection Request
@@ -40,7 +39,7 @@ typealias CONNECT = ConnectionRequest
  *     Section 4.13 - Handling Errors</a>
  */
 @Parcelize
-data class ConnectionRequest(
+data class ConnectionRequest<WillPayload : Any>(
     /**
      * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
      * and the Payload. The content of the Variable Header varies depending on the packet type. The Packet
@@ -49,7 +48,7 @@ data class ConnectionRequest(
      * Properties section 2.2.2.</a>
      */
     val variableHeader: VariableHeader = VariableHeader(),
-    val payload: Payload = Payload()
+    val payload: Payload<WillPayload> = Payload()
 ) : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     @IgnoredOnParcel
     override val clientIdentifier = payload.clientId
@@ -810,7 +809,7 @@ data class ConnectionRequest(
      *     3.1.3 CONNECT Payload</a>
      */
     @Parcelize
-    data class Payload(
+    data class Payload<WillPayload : Any>(
         /**
          * 3.1.3.1 Client Identifier (ClientID)
          * The Client Identifier (ClientID) identifies the Client to the Server. Each Client connecting to the
@@ -881,7 +880,7 @@ data class ConnectionRequest(
          * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477359">
          *     3.1.3.4 Will Payload</a>
          */
-        val willPayload: ByteArrayWrapper? = null,
+        val willPayload: GenericType<WillPayload>? = null,
         /**
          * 3.1.3.5 User Name
          *
@@ -1170,9 +1169,7 @@ data class ConnectionRequest(
                 writeBuffer.writeUtf8String(willTopic)
             }
             if (willPayload != null) {
-                val payload = willPayload.byteArray
-                writeBuffer.write(payload.size.toUShort())
-                writeBuffer.write(payload)
+                writeBuffer.writeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
                 writeBuffer.writeUtf8String(userName)
@@ -1202,7 +1199,10 @@ data class ConnectionRequest(
 
         companion object {
 
-            fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload {
+            inline fun <reified WillPayload : Any> from(
+                buffer: ReadBuffer,
+                variableHeader: VariableHeader
+            ): Payload<WillPayload> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willProperties = if (variableHeader.willFlag) {
                     WillProperties.from(buffer)
@@ -1215,8 +1215,7 @@ data class ConnectionRequest(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    val size = buffer.readUnsignedShort()
-                    ByteArrayWrapper(buffer.readByteArray(size.toUInt()))
+                    GenericType.create(buffer.readGenericType(WillPayload::class))
                 } else {
                     null
                 }
@@ -1236,9 +1235,15 @@ data class ConnectionRequest(
     }
 
     companion object {
-        fun from(buffer: ReadBuffer): ConnectionRequest {
+        fun from(buffer: ReadBuffer): ConnectionRequest<Unit> {
             val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from(buffer, variableHeader)
+            val payload = Payload.from<Unit>(buffer, variableHeader)
+            return ConnectionRequest(variableHeader, payload)
+        }
+
+        inline fun <reified WillPayload : Any> fromInline(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
+            val variableHeader = VariableHeader.from(buffer)
+            val payload = Payload.from<WillPayload>(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
         }
     }

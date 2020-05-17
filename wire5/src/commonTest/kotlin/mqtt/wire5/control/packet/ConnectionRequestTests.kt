@@ -19,7 +19,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeDefaults() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(15u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -81,7 +81,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeAtMostOnce() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE))
         val buffer = allocateNewBuffer(15u, limits)
         assertEquals(11u, connectionRequest.variableHeader.size(buffer), "variable header size")
         assertEquals(2u, connectionRequest.payload.size(buffer), "payload size")
@@ -145,7 +145,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeAtMostOnceHasUsername() {
-        val connectionRequest = ConnectionRequest(
+        val connectionRequest = ConnectionRequest<Unit>(
             VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
             ConnectionRequest.Payload(userName = "yolo")
         )
@@ -211,7 +211,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeAtMostOnceHasPassword() {
-        val connectionRequest = ConnectionRequest(
+        val connectionRequest = ConnectionRequest<Unit>(
             VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
             ConnectionRequest.Payload(password = "yolo")
         )
@@ -284,7 +284,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeAtMostOnceHasWillRetain() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willRetain = true))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE, willRetain = true))
         val buffer = allocateNewBuffer(15u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -346,7 +346,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeExactlyOnce() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
         val buffer = allocateNewBuffer(15u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -408,7 +408,7 @@ class ConnectionRequestTests {
 
     @Test
     fun serializeAtMostOnceWillFlagTrue() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
         val buffer = allocateNewBuffer(15u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -470,7 +470,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasCleanStart() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, cleanStart = true))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE, cleanStart = true))
         val buffer = allocateNewBuffer(15u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -533,7 +533,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderKeepAliveMax() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 4))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(keepAliveSeconds = 4))
         val buffer = allocateNewBuffer(15u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -596,7 +596,7 @@ class ConnectionRequestTests {
     @Test
     fun sessionExpiry() {
         val props = VariableHeader.Properties(sessionExpiryIntervalSeconds = 1L)
-        val connectionRequest = ConnectionRequest(VariableHeader(properties = props))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(properties = props))
         val buffer = allocateNewBuffer(20u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -678,10 +678,10 @@ class ConnectionRequestTests {
         val props = VariableHeader.Properties.from(setOf(ReceiveMaximum(5)))
         assertEquals(props.receiveMaximum, 5)
         val buffer = allocateNewBuffer(18u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals(requestRead.variableHeader.properties.receiveMaximum, 5)
     }
 
@@ -717,10 +717,10 @@ class ConnectionRequestTests {
         val props = VariableHeader.Properties.from(setOf(MaximumPacketSize(5)))
         assertEquals(props.maximumPacketSize, 5)
         val buffer = allocateNewBuffer(20u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals(requestRead.variableHeader.properties.maximumPacketSize, 5)
     }
 
@@ -747,10 +747,10 @@ class ConnectionRequestTests {
         val props = VariableHeader.Properties.from(setOf(TopicAliasMaximum(5)))
         assertEquals(props.topicAliasMaximum, 5)
         val buffer = allocateNewBuffer(18u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals(requestRead.variableHeader.properties.topicAliasMaximum, 5)
     }
 
@@ -768,10 +768,10 @@ class ConnectionRequestTests {
         val props = VariableHeader.Properties.from(setOf(RequestResponseInformation(true)))
         assertEquals(props.requestResponseInformation, true)
         val buffer = allocateNewBuffer(18u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals(requestRead.variableHeader.properties.requestResponseInformation, true)
     }
 
@@ -790,7 +790,7 @@ class ConnectionRequestTests {
         assertEquals(props.requestProblemInformation, true)
 
         val buffer = allocateNewBuffer(17u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00010000, buffer.readByte(), "invalid byte 1 on the CONNECT fixed header")
@@ -850,7 +850,7 @@ class ConnectionRequestTests {
         assertEquals(1, buffer.readByte(), "incorrect request problem info flag")
         assertEquals("", buffer.readMqttUtf8StringNotValidated().toString(), "client id")
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals(true, requestRead.variableHeader.properties.requestProblemInformation)
     }
 
@@ -873,10 +873,10 @@ class ConnectionRequestTests {
         }
         assertEquals(userPropertyResult.size, 1)
         val buffer = allocateNewBuffer(28u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         val (key, value) = requestRead.variableHeader.properties.userProperty!!.first()
         assertEquals("key", key.toString())
         assertEquals("value", value.toString())
@@ -906,10 +906,10 @@ class ConnectionRequestTests {
         assertEquals(auth.data, ByteArrayWrapper(byteArrayOf(1, 2, 3)))
 
         val buffer = allocateNewBuffer(28u, limits)
-        val request = ConnectionRequest(VariableHeader(properties = props))
+        val request = ConnectionRequest<Unit>(VariableHeader(properties = props))
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals("yolo", requestRead.variableHeader.properties.authentication!!.method.toString())
         assertEquals(
             ByteArrayWrapper(byteArrayOf(1, 2, 3)),
@@ -951,13 +951,13 @@ class ConnectionRequestTests {
     @Test
     fun packetQos0() {
         val buffer = allocateNewBuffer(15u, limits)
-        val request = ConnectionRequest(
+        val request = ConnectionRequest<Unit>(
             VariableHeader("".toCharSequenceBuffer(), willQos = AT_MOST_ONCE),
             ConnectionRequest.Payload("")
         )
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest
+        val requestRead = ControlPacketV5.from(buffer) as ConnectionRequest<*>
         assertEquals(request.variableHeader, requestRead.variableHeader)
     }
 
@@ -973,7 +973,7 @@ class ConnectionRequestTests {
     @Test
     fun usernameFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
-            val connectionRequest = ConnectionRequest(
+            val connectionRequest = ConnectionRequest<Unit>(
                 payload = ConnectionRequest.Payload(userName = "yolo")
             )
             val warning = connectionRequest.validateOrGetWarning()
@@ -986,7 +986,7 @@ class ConnectionRequestTests {
     @Test
     fun usernameFlagMatchesPayloadFailureCaseWithFlagNoUsername() {
         try {
-            val connectionRequest = ConnectionRequest(VariableHeader(hasUserName = true))
+            val connectionRequest = ConnectionRequest<Unit>(VariableHeader(hasUserName = true))
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()
@@ -997,7 +997,7 @@ class ConnectionRequestTests {
     @Test
     fun passwordFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
-            val connectionRequest = ConnectionRequest(
+            val connectionRequest = ConnectionRequest<Unit>(
                 payload = ConnectionRequest.Payload(password = "yolo")
             )
             val warning = connectionRequest.validateOrGetWarning()
@@ -1010,7 +1010,7 @@ class ConnectionRequestTests {
     @Test
     fun passwordFlagMatchesPayloadFailureCaseWithFlagNoUsername() {
         try {
-            val connectionRequest = ConnectionRequest(VariableHeader(hasPassword = true))
+            val connectionRequest = ConnectionRequest<Unit>(VariableHeader(hasPassword = true))
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()
