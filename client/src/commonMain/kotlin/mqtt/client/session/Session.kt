@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "UNUSED_PARAMETER", "UNUSED_VARIABLE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "UNUSED_PARAMETER", "UNUSED_VARIABLE", "RedundantSuspendModifier")
 
 package mqtt.client.session
 
@@ -13,7 +13,6 @@ import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.topic.SubscriptionCallback
-import mqtt.wire4.control.packet.PublishMessage
 import mqtt.wire4.control.packet.SubscribeRequest
 import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.KClass
@@ -85,11 +84,11 @@ class ClientSession(
         topic: String, qos: QualityOfService,
         packetIdentifier: UShort
     ) {
-        if (remoteHost.request.protocolVersion == 5) {
-            send(mqtt.wire5.control.packet.PublishMessage(topic, qos, packetIdentifier))
-        } else {
-            send(PublishMessage(topic, qos, packetIdentifier))
-        }
+//        if (remoteHost.request.protocolVersion == 5) {
+//            send(mqtt.wire5.control.packet.PublishMessage(topic, qos, packetIdentifier))
+//        } else {
+//            send(PublishMessage(topic, qos, packetIdentifier))
+//        }
     }
 
     suspend inline fun <reified T : Any> publish(

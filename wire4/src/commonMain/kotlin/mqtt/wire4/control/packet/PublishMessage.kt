@@ -7,7 +7,7 @@ import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.GenericType
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
@@ -17,12 +17,11 @@ import mqtt.wire.data.topic.Name
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-data class PublishMessage(
+data class PublishMessage<T : Any>(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
-    val payload: ByteArrayWrapper? = null
+    val payload: GenericType<T>? = null
 ) : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
-
 
     /**
      * Build a QOS 1 or 2 publish message
@@ -47,8 +46,9 @@ data class PublishMessage(
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
-        val array = payload?.byteArray ?: return
-        writeBuffer.write(array)
+        if (payload != null) {
+            writeBuffer.writeGenericType(payload.obj, payload.kClass)
+        }
     }
 
     override fun expectedResponse() = when {
@@ -218,19 +218,21 @@ data class PublishMessage(
 
     companion object {
 
-
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
+        @Suppress("UNUSED_PARAMETER")
+        inline fun <reified T : Any> from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<T> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             var variableSize = 2u + buffer.utf8StringSize(variableHeader.topicName)
             if (variableHeader.packetIdentifier != null) {
                 variableSize += 2u
             }
-            return PublishMessage(
-                fixedHeader,
-                variableHeader,
-                ByteArrayWrapper(buffer.readByteArray(remainingLength - variableSize.toUInt()))
-            )
+            val deserialized = buffer.readGenericType(T::class)
+            val genericType = if (deserialized != null) {
+                GenericType(deserialized, T::class)
+            } else {
+                null
+            }
+            return PublishMessage(fixedHeader, variableHeader, genericType)
         }
     }
 

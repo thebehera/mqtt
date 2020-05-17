@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire4.control.packet
 
@@ -32,7 +32,7 @@ class PublishMessageTests {
         val fixed = FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
         val variable = VariableHeader(("t"), 2)
         try {
-            PublishMessage(fixed, variable)
+            PublishMessage<Unit>(fixed, variable)
             fail()
         } catch (e: IllegalArgumentException) {
         }
@@ -43,7 +43,7 @@ class PublishMessageTests {
         val fixed = FixedHeader(qos = QualityOfService.AT_LEAST_ONCE)
         val variable = VariableHeader(("t"))
         try {
-            PublishMessage(fixed, variable)
+            PublishMessage<Unit>(fixed, variable)
             fail()
         } catch (e: IllegalArgumentException) {
         }
@@ -54,7 +54,7 @@ class PublishMessageTests {
         val fixed = FixedHeader(qos = QualityOfService.EXACTLY_ONCE)
         val variable = VariableHeader(("t"))
         try {
-            PublishMessage(fixed, variable)
+            PublishMessage<Unit>(fixed, variable)
             fail()
         } catch (e: IllegalArgumentException) {
         }

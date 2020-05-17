@@ -21,24 +21,23 @@ abstract class ControlPacketV4(
     override val flags: Byte = 0b0
 ) : ControlPacket {
     override val mqttVersion: Byte = 4
-
     override val controlPacketReader = ControlPacketV4Reader
 
     companion object {
 
-        inline fun <reified WillPayload : Any> fromTyped(buffer: ReadBuffer): ControlPacketV4 {
+        inline fun <reified WillPayload : Any, reified PublishPayload : Any> fromTyped(buffer: ReadBuffer): ControlPacketV4 {
             val byte1 = buffer.readUnsignedByte()
             val remainingLength = buffer.readVariableByteInteger()
-            return fromTyped<WillPayload>(buffer, byte1, remainingLength)
+            return fromTyped<WillPayload, PublishPayload>(buffer, byte1, remainingLength)
         }
 
-        fun from(buffer: ReadBuffer) = fromTyped<Unit>(buffer)
+        fun from(buffer: ReadBuffer) = fromTyped<Unit, Unit>(buffer)
 
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) =
-            fromTyped<UInt>(buffer, byte1, remainingLength)
+            fromTyped<Unit, Unit>(buffer, byte1, remainingLength)
 
 
-        inline fun <reified WillPayload : Any> fromTyped(
+        inline fun <reified WillPayload : Any, reified PublishPayload : Any> fromTyped(
             buffer: ReadBuffer,
             byte1: UByte,
             remainingLength: UInt
@@ -49,7 +48,7 @@ abstract class ControlPacketV4(
                 0 -> Reserved
                 1 -> ConnectionRequest.from<WillPayload>(buffer)
                 2 -> ConnectionAcknowledgment.from(buffer)
-                3 -> PublishMessage.from(buffer, byte1, remainingLength)
+                3 -> PublishMessage.from<PublishPayload>(buffer, byte1, remainingLength)
                 4 -> PublishAcknowledgment.from(buffer)
                 5 -> PublishReceived.from(buffer)
                 6 -> PublishRelease.from(buffer)
