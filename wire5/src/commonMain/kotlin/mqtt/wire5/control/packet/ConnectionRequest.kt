@@ -1216,13 +1216,7 @@ data class ConnectionRequest<WillPayload : Any>(
     }
 
     companion object {
-        fun from(buffer: ReadBuffer): ConnectionRequest<Unit> {
-            val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from<Unit>(buffer, variableHeader)
-            return ConnectionRequest(variableHeader, payload)
-        }
-
-        inline fun <reified WillPayload : Any> fromInline(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
+        inline fun <reified WillPayload : Any> from(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
             val variableHeader = VariableHeader.from(buffer)
             val payload = Payload.from<WillPayload>(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
