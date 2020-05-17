@@ -41,6 +41,7 @@ data class ConnectionRequest<WillPayload : Any>(
 
     override val protocolName = variableHeader.protocolName.getValueOrThrow()
     override val protocolVersion = variableHeader.protocolLevel.toInt()
+
     constructor(
         clientId: String,
         username: String? = null,
@@ -53,15 +54,15 @@ data class ConnectionRequest<WillPayload : Any>(
         keepAliveSeconds: UShort = UShort.MAX_VALUE
     ) :
             this(
-                    VariableHeader(
-                            hasUserName = username != null,
-                            hasPassword = password != null,
-                            willFlag = willTopic != null && willPayload != null,
-                            willQos = willQos,
-                            willRetain = willRetain,
-                            cleanSession = cleanSession,
-                        keepAliveSeconds = keepAliveSeconds.toInt()
-                    ),
+                VariableHeader(
+                    hasUserName = username != null,
+                    hasPassword = password != null,
+                    willFlag = willTopic != null && willPayload != null,
+                    willQos = willQos,
+                    willRetain = willRetain,
+                    cleanSession = cleanSession,
+                    keepAliveSeconds = keepAliveSeconds.toInt()
+                ),
                 Payload(
                     clientId = MqttUtf8String(clientId),
                     willTopic = if (willTopic != null && willPayload != null) MqttUtf8String(willTopic) else null,
@@ -82,29 +83,41 @@ data class ConnectionRequest<WillPayload : Any>(
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
         if (variableHeader.willFlag &&
-                (payload.willPayload == null || payload.willTopic == null)) {
-            return MqttWarning("[MQTT-3.1.2-9]", "If the Will Flag is set to " +
-                    "1, the Will QoS and Will Retain fields in the Connect Flags will be used by the Server, " +
-                    "and the Will Properties, Will Topic and Will Message fields MUST be present in the Payload.")
+            (payload.willPayload == null || payload.willTopic == null)
+        ) {
+            return MqttWarning(
+                "[MQTT-3.1.2-9]", "If the Will Flag is set to " +
+                        "1, the Will QoS and Will Retain fields in the Connect Flags will be used by the Server, " +
+                        "and the Will Properties, Will Topic and Will Message fields MUST be present in the Payload."
+            )
         }
         if (variableHeader.hasUserName && payload.userName == null) {
-            return MqttWarning("[MQTT-3.1.2-17]", "If the User Name Flag is set" +
-                    " to 1, a User Name MUST be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-17]", "If the User Name Flag is set" +
+                        " to 1, a User Name MUST be present in the Payload"
+            )
         }
         if (!variableHeader.hasUserName && payload.userName != null) {
-            return MqttWarning("[MQTT-3.1.2-16]", "If the User Name Flag is set " +
-                    "to 0, a User Name MUST NOT be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-16]", "If the User Name Flag is set " +
+                        "to 0, a User Name MUST NOT be present in the Payload"
+            )
         }
         if (variableHeader.hasPassword && payload.password == null) {
-            return MqttWarning("[MQTT-3.1.2-19]", "If the Password Flag is set" +
-                    " to 1, a Password MUST be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-19]", "If the Password Flag is set" +
+                        " to 1, a Password MUST be present in the Payload"
+            )
         }
         if (!variableHeader.hasPassword && payload.password != null) {
-            return MqttWarning("[MQTT-3.1.2-18]", "If the Password Flag is set " +
-                    "to 0, a Password MUST NOT be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-18]", "If the Password Flag is set " +
+                        "to 0, a Password MUST NOT be present in the Payload"
+            )
         }
         return null
     }
+
     data class VariableHeader(
         /**
          * 3.1.2.1 Protocol Name
@@ -415,41 +428,41 @@ data class ConnectionRequest<WillPayload : Any>(
          * payload [MQTT-3.1.3-3].
          *
          * The ClientId MUST be a UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-4].
-             *
-             * The Server MUST allow ClientIds which are between 1 and 23 UTF-8 encoded bytes in length, and that
-             * contain only the characters
-             *
-             * "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" [MQTT-3.1.3-5].
-             *
-             * The Server MAY allow ClientId’s that contain more than 23 encoded bytes. The Server MAY allow
-             * ClientId’s that contain characters not included in the list given above.
-             *
-             * A Server MAY allow a Client to supply a ClientId that has a length of zero bytes, however if it does
-             * so the Server MUST treat this as a special case and assign a unique ClientId to that Client. It MUST
-             * then process the CONNECT packet as if the Client had provided that unique ClientId [MQTT-3.1.3-6].
-             *
-             * If the Client supplies a zero-byte ClientId, the Client MUST also set CleanSession to 1 [MQTT-3.1.3-7].
-             *
-             * If the Client supplies a zero-byte ClientId with CleanSession set to 0, the Server MUST respond to the
-             * CONNECT Packet with a CONNACK return code 0x02 (Identifier rejected) and then close the Network
-             * Connection [MQTT-3.1.3-8].
-             *
-             * If the Server rejects the ClientId it MUST respond to the CONNECT Packet with a CONNACK return code
-             * 0x02 (Identifier rejected) and then close the Network Connection [MQTT-3.1.3-9].
-             *
-             * Non normative comment
-             *
-             * A Client implementation could provide a convenience method to generate a random ClientId. Use of such a
-             * method should be actively discouraged when the CleanSession is set to 0.
-             */
-            val clientId: MqttUtf8String = MqttUtf8String(""),
+         *
+         * The Server MUST allow ClientIds which are between 1 and 23 UTF-8 encoded bytes in length, and that
+         * contain only the characters
+         *
+         * "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" [MQTT-3.1.3-5].
+         *
+         * The Server MAY allow ClientId’s that contain more than 23 encoded bytes. The Server MAY allow
+         * ClientId’s that contain characters not included in the list given above.
+         *
+         * A Server MAY allow a Client to supply a ClientId that has a length of zero bytes, however if it does
+         * so the Server MUST treat this as a special case and assign a unique ClientId to that Client. It MUST
+         * then process the CONNECT packet as if the Client had provided that unique ClientId [MQTT-3.1.3-6].
+         *
+         * If the Client supplies a zero-byte ClientId, the Client MUST also set CleanSession to 1 [MQTT-3.1.3-7].
+         *
+         * If the Client supplies a zero-byte ClientId with CleanSession set to 0, the Server MUST respond to the
+         * CONNECT Packet with a CONNACK return code 0x02 (Identifier rejected) and then close the Network
+         * Connection [MQTT-3.1.3-8].
+         *
+         * If the Server rejects the ClientId it MUST respond to the CONNECT Packet with a CONNACK return code
+         * 0x02 (Identifier rejected) and then close the Network Connection [MQTT-3.1.3-9].
+         *
+         * Non normative comment
+         *
+         * A Client implementation could provide a convenience method to generate a random ClientId. Use of such a
+         * method should be actively discouraged when the CleanSession is set to 0.
+         */
+        val clientId: MqttUtf8String = MqttUtf8String(""),
         /**
-             * 3.1.3.2 Will Topic
-             *
-             * If the Will Flag is set to 1, the Will Topic is the next field in the payload. The Will Topic MUST be a
-             * UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-10].
-             */
-            val willTopic: MqttUtf8String? = null,
+         * 3.1.3.2 Will Topic
+         *
+         * If the Will Flag is set to 1, the Will Topic is the next field in the payload. The Will Topic MUST be a
+         * UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-10].
+         */
+        val willTopic: MqttUtf8String? = null,
         /**
          * 3.1.3.3 Will Message
          * If the Will Flag is set to 1 the Will Message is the next field in the payload. The Will Message defines

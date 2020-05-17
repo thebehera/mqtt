@@ -111,6 +111,7 @@ fun Node.addName(other: Name): Node {
     this += node
     return node
 }
+
 operator fun Node.plusAssign(other: Node) {
     for ((topicLevel, newChildNode) in other.children) {
         val originalChild = children[topicLevel]

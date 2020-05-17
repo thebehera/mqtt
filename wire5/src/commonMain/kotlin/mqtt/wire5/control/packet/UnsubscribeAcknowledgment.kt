@@ -14,7 +14,10 @@ import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 
-data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCodes: List<ReasonCode> = listOf(SUCCESS)) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
+data class UnsubscribeAcknowledgment(
+    val variable: VariableHeader,
+    val reasonCodes: List<ReasonCode> = listOf(SUCCESS)
+) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(buffer: WriteBuffer): UInt {
@@ -174,11 +177,13 @@ data class UnsubscribeAcknowledgment(val variable: VariableHeader, val reasonCod
 }
 
 private val validSubscribeCodes by lazy {
-    setOf(SUCCESS,
-            NO_SUBSCRIPTIONS_EXISTED,
-            UNSPECIFIED_ERROR,
-            IMPLEMENTATION_SPECIFIC_ERROR,
-            NOT_AUTHORIZED,
-            TOPIC_FILTER_INVALID,
-            PACKET_IDENTIFIER_IN_USE)
+    setOf(
+        SUCCESS,
+        NO_SUBSCRIPTIONS_EXISTED,
+        UNSPECIFIED_ERROR,
+        IMPLEMENTATION_SPECIFIC_ERROR,
+        NOT_AUTHORIZED,
+        TOPIC_FILTER_INVALID,
+        PACKET_IDENTIFIER_IN_USE
+    )
 }

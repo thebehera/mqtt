@@ -24,8 +24,8 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
  * A SUBACK packet contains a list of Reason Codes, that specify the maximum QoS level that was granted or the
  * error which was found for each Subscription that was requested by the SUBSCRIBE.
  */
-data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: List<ReasonCode>)
-    : ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
+data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: List<ReasonCode>) :
+    ControlPacketV5(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
     constructor(packetIdentifier: UShort, properties: Properties = Properties(), payload: ReasonCode = SUCCESS)
             : this(VariableHeader(packetIdentifier.toInt(), properties), listOf(payload))
 
@@ -195,16 +195,18 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
 }
 
 private val validSubscribeCodes by lazy {
-    setOf(GRANTED_QOS_0,
-            GRANTED_QOS_1,
-            GRANTED_QOS_2,
-            UNSPECIFIED_ERROR,
-            IMPLEMENTATION_SPECIFIC_ERROR,
-            NOT_AUTHORIZED,
-            TOPIC_FILTER_INVALID,
-            PACKET_IDENTIFIER_IN_USE,
-            QUOTA_EXCEEDED,
-            SHARED_SUBSCRIPTIONS_NOT_SUPPORTED,
-            SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
-            WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED)
+    setOf(
+        GRANTED_QOS_0,
+        GRANTED_QOS_1,
+        GRANTED_QOS_2,
+        UNSPECIFIED_ERROR,
+        IMPLEMENTATION_SPECIFIC_ERROR,
+        NOT_AUTHORIZED,
+        TOPIC_FILTER_INVALID,
+        PACKET_IDENTIFIER_IN_USE,
+        QUOTA_EXCEEDED,
+        SHARED_SUBSCRIPTIONS_NOT_SUPPORTED,
+        SUBSCRIPTION_IDENTIFIERS_NOT_SUPPORTED,
+        WILDCARD_SUBSCRIPTIONS_NOT_SUPPORTED
+    )
 }

@@ -24,7 +24,7 @@ class FlagTests {
     // Control packet types flagBits.matchesEmptyBits() matching spec
     @Test
     fun controlPacketFlagsMatchSpecForCONNECT() =
-            assertEquals(ConnectionRequest<Unit>().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionRequest<Unit>().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun byte1CONNECT() =
@@ -32,7 +32,7 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForCONNACK() =
-            assertEquals(ConnectionAcknowledgment().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionAcknowledgment().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_Retain_false() {
@@ -85,18 +85,24 @@ class FlagTests {
         val fixed = FixedHeader(dup = false, qos = AT_LEAST_ONCE, retain = false)
         val variable = VariableHeader("t", packetIdentifier = packetIdentifier)
         val detailed = PublishMessage(fixed, variable)
-        assertEquals(detailed.controlPacketValue, 0x03,
-                "Invalid Byte 1 in the fixed header: Control Packet Value")
+        assertEquals(
+            detailed.controlPacketValue, 0x03,
+            "Invalid Byte 1 in the fixed header: Control Packet Value"
+        )
         val buffer = allocateNewBuffer(8u, limits)
         detailed.serialize(buffer)
         buffer.resetForRead()
         val byteAsUInt = buffer.readByte().toUInt()
 
-        assertEquals(byteAsUInt.shr(4), 0x03.toUInt(),
-                "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times")
+        assertEquals(
+            byteAsUInt.shr(4), 0x03.toUInt(),
+            "Invalid Byte 1 in the fixed header: Control Packet Value serialize shift right 4 times"
+        )
         val expectedFlagMatch = byteAsUInt.shl(4).toByte().toInt().shr(4).toByte()
-        assertEquals(expectedFlagMatch, 0b0010,
-                "Invalid Byte 1 in the fixed header: Flags dont match")
+        assertEquals(
+            expectedFlagMatch, 0b0010,
+            "Invalid Byte 1 in the fixed header: Flags dont match"
+        )
         assertEquals(expected, detailed.flags, controlPacketSpectMatchError)
     }
 
@@ -172,47 +178,88 @@ class FlagTests {
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBACK() =
-            assertEquals(PublishAcknowledgment(PublishAcknowledgment.VariableHeader(packetIdentifier)).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            PublishAcknowledgment(PublishAcknowledgment.VariableHeader(packetIdentifier)).flags,
+            0b0,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREC() =
-            assertEquals(PublishReceived(PublishReceived.VariableHeader(packetIdentifier)).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            PublishReceived(PublishReceived.VariableHeader(packetIdentifier)).flags,
+            0b0,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBREL() =
-            assertEquals(PublishRelease(PublishRelease.VariableHeader(packetIdentifier)).flags, 0b10, controlPacketSpectMatchError)
+        assertEquals(
+            PublishRelease(PublishRelease.VariableHeader(packetIdentifier)).flags,
+            0b10,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBCOMP() =
-            assertEquals(PublishComplete(PublishComplete.VariableHeader(packetIdentifier)).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            PublishComplete(PublishComplete.VariableHeader(packetIdentifier)).flags,
+            0b0,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBSCRIBE() =
-            assertEquals(0b10, SubscribeRequest(SubscribeRequest.VariableHeader(packetIdentifier), setOf(Subscription(Filter("yolo")))).flags, controlPacketSpectMatchError)
+        assertEquals(
+            0b10,
+            SubscribeRequest(
+                SubscribeRequest.VariableHeader(packetIdentifier),
+                setOf(Subscription(Filter("yolo")))
+            ).flags,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForSUBACK() =
-            assertEquals(SubscribeAcknowledgement(packetIdentifier.toUShort(), GRANTED_QOS_0).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            SubscribeAcknowledgement(packetIdentifier.toUShort(), GRANTED_QOS_0).flags,
+            0b0,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBSCRIBE() =
-            assertEquals(UnsubscribeAcknowledgment(UnsubscribeAcknowledgment.VariableHeader(packetIdentifier), listOf(GRANTED_QOS_1)).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            UnsubscribeAcknowledgment(
+                UnsubscribeAcknowledgment.VariableHeader(packetIdentifier),
+                listOf(GRANTED_QOS_1)
+            ).flags, 0b0, controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForUNSUBACK() =
-            assertEquals(UnsubscribeAcknowledgment(UnsubscribeAcknowledgment.VariableHeader(packetIdentifier), listOf(GRANTED_QOS_1)).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            UnsubscribeAcknowledgment(
+                UnsubscribeAcknowledgment.VariableHeader(packetIdentifier),
+                listOf(GRANTED_QOS_1)
+            ).flags, 0b0, controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGREQ() =
-            assertEquals(PingRequest.flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(PingRequest.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPINGRESP() =
-            assertEquals(PingResponse.flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(PingResponse.flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForDISCONNECT() =
-            assertEquals(DisconnectNotification(DisconnectNotification.VariableHeader(NORMAL_DISCONNECTION)).flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(
+            DisconnectNotification(DisconnectNotification.VariableHeader(NORMAL_DISCONNECTION)).flags,
+            0b0,
+            controlPacketSpectMatchError
+        )
 
     @Test
     fun controlPacketFlagsMatchSpecForAUTH() =

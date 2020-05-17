@@ -25,8 +25,8 @@ typealias CONNACK = ConnectionAcknowledgment
  * SHOULD close the Network Connection. A "reasonable" amount of time depends on the type of application and the
  * communications infrastructure.
  */
-data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
-    : ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
+data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader()) :
+    ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
     override val isSuccessful: Boolean = header.connectReason == SUCCESS
     override val connectionReason: String = header.connectReason.name
     override val sessionPresent: Boolean = header.sessionPresent
@@ -42,60 +42,60 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
      *     Section 2.2.2</a>
      */
     data class VariableHeader(
-            /**
-             * 3.2.2.1.1 Session Present
-             *
-             * Position: bit 0 of the Connect Acknowledge Flags.
-             *
-             * The Session Present flag informs the Client whether the Server is using Session State from a previous
-             * connection for this ClientID. This allows the Client and Server to have a consistent view of the
-             * Session State.
-             *
-             * If the Server accepts a connection with Clean Start set to 1, the Server MUST set Session Present to 0
-             * in the CONNACK packet in addition to setting a 0x00 (Success) Reason Code in the CONNACK
-             * packet [MQTT-3.2.2-2].
-             *
-             * If the Server accepts a connection with Clean Start set to 0 and the Server has Session State for the
-             * ClientID, it MUST set Session Present to 1 in the CONNACK packet, otherwise it MUST set Session Present
-             * to 0 in the CONNACK packet. In both cases it MUST set a 0x00 (Success) Reason Code in the CONNACK
-             * packet [MQTT-3.2.2-3].
-             *
-             * If the value of Session Present received by the Client from the Server is not as expected, the Client
-             * proceeds as follows:
-             *
-             * ·         If the Client does not have Session State and receives Session Present set to 1 it MUST close
-             * the Network Connection [MQTT-3.2.2-4]. If it wishes to restart with a new Session the Client can
-             * reconnect using Clean Start set to 1.
-             *
-             * ·         If the Client does have Session State and receives Session Present set to 0 it MUST discard
-             * its Session State if it continues with the Network Connection [MQTT-3.2.2-5].
-             *
-             * If a Server sends a CONNACK packet containing a non-zero Reason Code it MUST set Session Present to
-             * 0 [MQTT-3.2.2-6].
-             */
-            val sessionPresent: Boolean = false,
-            /**
-             * 3.2.2.2 Connect Reason Code
-             *
-             * Byte 2 in the Variable Header is the Connect Reason Code.
-             *
-             * The values the Connect Reason Code are shown below. If a well formed CONNECT packet is received by the
-             * Server, but the Server is unable to complete the Connection the Server MAY send a CONNACK packet
-             * containing the appropriate Connect Reason code from this table. If a Server sends a CONNACK packet
-             * containing a Reason code of 128 or greater it MUST then close the Network Connection [MQTT-3.2.2-7].
-             * The Server sending the CONNACK packet MUST use one of the Connect Reason Code valuesT-3.2.2-8].
-             *
-             * Non-normative comment
-             *
-             * Reason Code 0x80 (Unspecified error) may be used where the Server knows the reason for the failure but
-             * does not wish to reveal it to the Client, or when none of the other Reason Code values applies.
-             *
-             * The Server may choose to close the Network Connection without sending a CONNACK to enhance security
-             * in the case where an error is found on the CONNECT. For instance, when on a public network and
-             * the connection has not been authorized it might be unwise to indicate that this is an MQTT Server.
-             */
-            val connectReason: ReasonCode = SUCCESS,
-            val properties: Properties = Properties()
+        /**
+         * 3.2.2.1.1 Session Present
+         *
+         * Position: bit 0 of the Connect Acknowledge Flags.
+         *
+         * The Session Present flag informs the Client whether the Server is using Session State from a previous
+         * connection for this ClientID. This allows the Client and Server to have a consistent view of the
+         * Session State.
+         *
+         * If the Server accepts a connection with Clean Start set to 1, the Server MUST set Session Present to 0
+         * in the CONNACK packet in addition to setting a 0x00 (Success) Reason Code in the CONNACK
+         * packet [MQTT-3.2.2-2].
+         *
+         * If the Server accepts a connection with Clean Start set to 0 and the Server has Session State for the
+         * ClientID, it MUST set Session Present to 1 in the CONNACK packet, otherwise it MUST set Session Present
+         * to 0 in the CONNACK packet. In both cases it MUST set a 0x00 (Success) Reason Code in the CONNACK
+         * packet [MQTT-3.2.2-3].
+         *
+         * If the value of Session Present received by the Client from the Server is not as expected, the Client
+         * proceeds as follows:
+         *
+         * ·         If the Client does not have Session State and receives Session Present set to 1 it MUST close
+         * the Network Connection [MQTT-3.2.2-4]. If it wishes to restart with a new Session the Client can
+         * reconnect using Clean Start set to 1.
+         *
+         * ·         If the Client does have Session State and receives Session Present set to 0 it MUST discard
+         * its Session State if it continues with the Network Connection [MQTT-3.2.2-5].
+         *
+         * If a Server sends a CONNACK packet containing a non-zero Reason Code it MUST set Session Present to
+         * 0 [MQTT-3.2.2-6].
+         */
+        val sessionPresent: Boolean = false,
+        /**
+         * 3.2.2.2 Connect Reason Code
+         *
+         * Byte 2 in the Variable Header is the Connect Reason Code.
+         *
+         * The values the Connect Reason Code are shown below. If a well formed CONNECT packet is received by the
+         * Server, but the Server is unable to complete the Connection the Server MAY send a CONNACK packet
+         * containing the appropriate Connect Reason code from this table. If a Server sends a CONNACK packet
+         * containing a Reason code of 128 or greater it MUST then close the Network Connection [MQTT-3.2.2-7].
+         * The Server sending the CONNACK packet MUST use one of the Connect Reason Code valuesT-3.2.2-8].
+         *
+         * Non-normative comment
+         *
+         * Reason Code 0x80 (Unspecified error) may be used where the Server knows the reason for the failure but
+         * does not wish to reveal it to the Client, or when none of the other Reason Code values applies.
+         *
+         * The Server may choose to close the Network Connection without sending a CONNACK to enhance security
+         * in the case where an error is found on the CONNECT. For instance, when on a public network and
+         * the connection has not been authorized it might be unwise to indicate that this is an MQTT Server.
+         */
+        val connectReason: ReasonCode = SUCCESS,
+        val properties: Properties = Properties()
     ) {
         data class Properties(
             /**
@@ -138,57 +138,57 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              * a Maximum QoS of 2.
              *
              * If a Server does not support QoS 1 or QoS 2 PUBLISH packets it MUST send a Maximum QoS in the
-                 * CONNACK packet specifying the highest QoS it supports [MQTT-3.2.2-9]. A Server that does not support
-                 * QoS 1 or QoS 2 PUBLISH packets MUST still accept SUBSCRIBE packets containing a Requested QoS of 0,
-                 * 1 or 2 [MQTT-3.2.2-10].
-                 *
-                 * If a Client receives a Maximum QoS from a Server, it MUST NOT send PUBLISH packets at a QoS level
-                 * exceeding the Maximum QoS level specified [MQTT-3.2.2-11]. It is a Protocol Error if the Server
-                 * receives a PUBLISH packet with a QoS greater than the Maximum QoS it specified. In this case use
-                 * DISCONNECT with Reason Code 0x9B (QoS not supported) as described in section 4.13 Handling errors.
-                 *
-                 * If a Server receives a CONNECT packet containing a Will QoS that exceeds its capabilities, it MUST
-                 * reject the connection. It SHOULD use a CONNACK packet with Reason Code 0x9B (QoS not supported) as
-                 * described in section 4.13 Handling errors, and MUST close the Network Connection [MQTT-3.2.2-12].
-                 *
-                 * Non-normative comment
-                 *
-                 * A Client does not need to support QoS 1 or QoS 2 PUBLISH packets. If this is the case, the Client
-                 * simply restricts the maximum QoS field in any SUBSCRIBE commands it sends to a value it can support.
-                 */
-                val maximumQos: QualityOfService = QualityOfService.EXACTLY_ONCE,
+             * CONNACK packet specifying the highest QoS it supports [MQTT-3.2.2-9]. A Server that does not support
+             * QoS 1 or QoS 2 PUBLISH packets MUST still accept SUBSCRIBE packets containing a Requested QoS of 0,
+             * 1 or 2 [MQTT-3.2.2-10].
+             *
+             * If a Client receives a Maximum QoS from a Server, it MUST NOT send PUBLISH packets at a QoS level
+             * exceeding the Maximum QoS level specified [MQTT-3.2.2-11]. It is a Protocol Error if the Server
+             * receives a PUBLISH packet with a QoS greater than the Maximum QoS it specified. In this case use
+             * DISCONNECT with Reason Code 0x9B (QoS not supported) as described in section 4.13 Handling errors.
+             *
+             * If a Server receives a CONNECT packet containing a Will QoS that exceeds its capabilities, it MUST
+             * reject the connection. It SHOULD use a CONNACK packet with Reason Code 0x9B (QoS not supported) as
+             * described in section 4.13 Handling errors, and MUST close the Network Connection [MQTT-3.2.2-12].
+             *
+             * Non-normative comment
+             *
+             * A Client does not need to support QoS 1 or QoS 2 PUBLISH packets. If this is the case, the Client
+             * simply restricts the maximum QoS field in any SUBSCRIBE commands it sends to a value it can support.
+             */
+            val maximumQos: QualityOfService = QualityOfService.EXACTLY_ONCE,
             /**
-                 * 3.2.2.3.5 Retain Available
-                 *
-                 * 37 (0x25) Byte, Identifier of Retain Available.
-                 *
-                 * Followed by a Byte field. If present, this byte declares whether the Server supports retained
-                 * messages. A value of 0 means that retained messages are not supported. A value of 1 means retained
-                 * messages are supported. If not present, then retained messages are supported. It is a Protocol Error
-                 * to include Retain Available more than once or to use a value other than 0 or 1.
-                 *
-                 * If a Server receives a CONNECT packet containing a Will Message with the Will Retain set to 1, and
-                 * it does not support retained messages, the Server MUST reject the connection request. It SHOULD
-                 * send CONNACK with Reason Code 0x9A (Retain not supported) and then it MUST close the Network
-                 * Connection [MQTT-3.2.2-13].
-                 *
-                 * A Client receiving Retain Available set to 0 from the Server MUST NOT send a PUBLISH packet with
-                 * the RETAIN flag set to 1 [MQTT-3.2.2-14]. If the Server receives such a packet, this is a Protocol
-                 * Error. The Server SHOULD send a DISCONNECT with Reason Code of 0x9A (Retain not supported) as
-                 * described in section 4.13.
-                 */
-                val retainAvailable: Boolean = true,
+             * 3.2.2.3.5 Retain Available
+             *
+             * 37 (0x25) Byte, Identifier of Retain Available.
+             *
+             * Followed by a Byte field. If present, this byte declares whether the Server supports retained
+             * messages. A value of 0 means that retained messages are not supported. A value of 1 means retained
+             * messages are supported. If not present, then retained messages are supported. It is a Protocol Error
+             * to include Retain Available more than once or to use a value other than 0 or 1.
+             *
+             * If a Server receives a CONNECT packet containing a Will Message with the Will Retain set to 1, and
+             * it does not support retained messages, the Server MUST reject the connection request. It SHOULD
+             * send CONNACK with Reason Code 0x9A (Retain not supported) and then it MUST close the Network
+             * Connection [MQTT-3.2.2-13].
+             *
+             * A Client receiving Retain Available set to 0 from the Server MUST NOT send a PUBLISH packet with
+             * the RETAIN flag set to 1 [MQTT-3.2.2-14]. If the Server receives such a packet, this is a Protocol
+             * Error. The Server SHOULD send a DISCONNECT with Reason Code of 0x9A (Retain not supported) as
+             * described in section 4.13.
+             */
+            val retainAvailable: Boolean = true,
             /**
-                 * 3.2.2.3.6 Maximum Packet Size
-                 *
-                 * 39 (0x27) Byte, Identifier of the Maximum Packet Size.
-                 *
-                 * Followed by a Four Byte Integer representing the Maximum Packet Size the Server is willing to
-                 * accept. If the Maximum Packet Size is not present, there is no limit on the packet size imposed
-                 * beyond the limitations in the protocol as a result of the remaining length encoding and the protocol
-                 * header sizes.
-                 *
-                 * It is a Protocol Error to include the Maximum Packet Size more than once, or for the value to be
+             * 3.2.2.3.6 Maximum Packet Size
+             *
+             * 39 (0x27) Byte, Identifier of the Maximum Packet Size.
+             *
+             * Followed by a Four Byte Integer representing the Maximum Packet Size the Server is willing to
+             * accept. If the Maximum Packet Size is not present, there is no limit on the packet size imposed
+             * beyond the limitations in the protocol as a result of the remaining length encoding and the protocol
+             * header sizes.
+             *
+             * It is a Protocol Error to include the Maximum Packet Size more than once, or for the value to be
              * set to zero.
              *
              * The packet size is the total number of bytes in an MQTT Control Packet, as defined in section
@@ -276,54 +276,54 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              * means Wildcard Subscriptions are supported. If not present, then Wildcard Subscriptions are
              * supported. It is a Protocol Error to include the Wildcard Subscription Available more than
              * once or to send a value other than 0 or 1.
-                 *
-                 * If the Server receives a SUBSCRIBE packet containing a Wildcard Subscription and it does not
-                 * support Wildcard Subscriptions, this is a Protocol Error. The Server uses DISCONNECT with Reason
-                 * Code 0xA2 (Wildcard Subscriptions not supported) as described in section 4.13.
-                 *
-                 * If a Server supports Wildcard Subscriptions, it can still reject a particular subscribe request
-                 * containing a Wildcard Subscription. In this case the Server MAY send a SUBACK Control Packet with
-                 * a Reason Code 0xA2 (Wildcard Subscriptions not supported).
-                 */
-                val supportsWildcardSubscriptions: Boolean = true,
+             *
+             * If the Server receives a SUBSCRIBE packet containing a Wildcard Subscription and it does not
+             * support Wildcard Subscriptions, this is a Protocol Error. The Server uses DISCONNECT with Reason
+             * Code 0xA2 (Wildcard Subscriptions not supported) as described in section 4.13.
+             *
+             * If a Server supports Wildcard Subscriptions, it can still reject a particular subscribe request
+             * containing a Wildcard Subscription. In this case the Server MAY send a SUBACK Control Packet with
+             * a Reason Code 0xA2 (Wildcard Subscriptions not supported).
+             */
+            val supportsWildcardSubscriptions: Boolean = true,
             /**
-                 * 3.2.2.3.12 Subscription Identifiers Available
-                 *
-                 * 41 (0x29) Byte, Identifier of Subscription Identifier Available.
-                 *
-                 * Followed by a Byte field. If present, this byte declares whether the Server supports Subscription
-                 * Identifiers. A value is 0 means that Subscription Identifiers are not supported. A value of 1 means
-                 * Subscription Identifiers are supported. If not present, then Subscription Identifiers are supported.
-                 * It is a Protocol Error to include the Subscription Identifier Available more than once, or to send
-                 * a value other than 0 or 1.
-                 *
-                 * If the Server receives a SUBSCRIBE packet containing Subscription Identifier and it does not
-                 * support Subscription Identifiers, this is a Protocol Error. The Server uses DISCONNECT with Reason
-                 * Code of 0xA1 (Subscription Identifiers not supported) as described in section 4.13.
-                 */
-                val subscriptionIdentifiersAvailable: Boolean = true,
+             * 3.2.2.3.12 Subscription Identifiers Available
+             *
+             * 41 (0x29) Byte, Identifier of Subscription Identifier Available.
+             *
+             * Followed by a Byte field. If present, this byte declares whether the Server supports Subscription
+             * Identifiers. A value is 0 means that Subscription Identifiers are not supported. A value of 1 means
+             * Subscription Identifiers are supported. If not present, then Subscription Identifiers are supported.
+             * It is a Protocol Error to include the Subscription Identifier Available more than once, or to send
+             * a value other than 0 or 1.
+             *
+             * If the Server receives a SUBSCRIBE packet containing Subscription Identifier and it does not
+             * support Subscription Identifiers, this is a Protocol Error. The Server uses DISCONNECT with Reason
+             * Code of 0xA1 (Subscription Identifiers not supported) as described in section 4.13.
+             */
+            val subscriptionIdentifiersAvailable: Boolean = true,
             /**
-                 * 3.2.2.3.13 Shared Subscription Available
-                 *
-                 * 42 (0x2A) Byte, Identifier of Shared Subscription Available.
-                 *
-                 * Followed by a Byte field. If present, this byte declares whether the Server supports Shared
-                 * Subscriptions. A value is 0 means that Shared Subscriptions are not supported. A value of 1
-                 * means Shared Subscriptions are supported. If not present, then Shared Subscriptions are supported.
-                 * It is a Protocol Error to include the Shared Subscription Available more than once or to send a
-                 * value other than 0 or 1.
-                 *
-                 * If the Server receives a SUBSCRIBE packet containing Shared Subscriptions and it does not support
-                 * Shared Subscriptions, this is a Protocol Error. The Server uses DISCONNECT with Reason Code 0x9E
-                 * (Shared Subscriptions not supported) as described in section 4.13.
-                 */
-                val sharedSubscriptionAvailable: Boolean = true,
+             * 3.2.2.3.13 Shared Subscription Available
+             *
+             * 42 (0x2A) Byte, Identifier of Shared Subscription Available.
+             *
+             * Followed by a Byte field. If present, this byte declares whether the Server supports Shared
+             * Subscriptions. A value is 0 means that Shared Subscriptions are not supported. A value of 1
+             * means Shared Subscriptions are supported. If not present, then Shared Subscriptions are supported.
+             * It is a Protocol Error to include the Shared Subscription Available more than once or to send a
+             * value other than 0 or 1.
+             *
+             * If the Server receives a SUBSCRIBE packet containing Shared Subscriptions and it does not support
+             * Shared Subscriptions, this is a Protocol Error. The Server uses DISCONNECT with Reason Code 0x9E
+             * (Shared Subscriptions not supported) as described in section 4.13.
+             */
+            val sharedSubscriptionAvailable: Boolean = true,
             /**
-                 * 3.2.2.3.14 Server Keep Alive
-                 *
-                 * 19 (0x13) Byte, Identifier of the Server Keep Alive.
-                 *
-                 * Followed by a Two Byte Integer with the Keep Alive time assigned by the Server. If the Server
+             * 3.2.2.3.14 Server Keep Alive
+             *
+             * 19 (0x13) Byte, Identifier of the Server Keep Alive.
+             *
+             * Followed by a Two Byte Integer with the Keep Alive time assigned by the Server. If the Server
              * sends a Server Keep Alive on the CONNACK packet, the Client MUST use this value instead of the
              * Keep Alive value the Client sent on CONNECT [MQTT-3.2.2-21]. If the Server does not send the
              * Server Keep Alive, the Server MUST use the Keep Alive value set by the Client on CONNECT
@@ -493,15 +493,19 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                             }
                             is MaximumQos -> {
                                 if (maximumQos != null) {
-                                    throw ProtocolError("Maximum QoS added multiple times see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477384")
+                                    throw ProtocolError(
+                                        "Maximum QoS added multiple times see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477384"
+                                    )
                                 }
                                 maximumQos = it.qos
                             }
                             is RetainAvailable -> {
                                 if (retainAvailable != null) {
-                                    throw ProtocolError("Retain Available added multiple times see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477385")
+                                    throw ProtocolError(
+                                        "Retain Available added multiple times see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477385"
+                                    )
                                 }
                                 retainAvailable = it.serverSupported
                             }
@@ -522,79 +526,101 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                             }
                             is AssignedClientIdentifier -> {
                                 if (assignedClientIdentifier != null) {
-                                    throw ProtocolError("Assigned Client Identifier added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477387")
+                                    throw ProtocolError(
+                                        "Assigned Client Identifier added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477387"
+                                    )
                                 }
                                 assignedClientIdentifier = it.value
                             }
                             is TopicAliasMaximum -> {
                                 if (topicAliasMaximum != null) {
-                                    throw ProtocolError("Topic Alias Maximum added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477388")
+                                    throw ProtocolError(
+                                        "Topic Alias Maximum added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477388"
+                                    )
                                 }
                                 topicAliasMaximum = it.highestValueSupported
                             }
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477389")
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477389"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
                             is WildcardSubscriptionAvailable -> {
                                 if (supportsWildcardSubscriptions != null) {
-                                    throw ProtocolError("Wildcard Subscription Available added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477391")
+                                    throw ProtocolError(
+                                        "Wildcard Subscription Available added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477391"
+                                    )
                                 }
                                 supportsWildcardSubscriptions = it.serverSupported
                             }
                             is SubscriptionIdentifierAvailable -> {
                                 if (subscriptionIdentifiersAvailable != null) {
-                                    throw ProtocolError("Subscription Identifier Available added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477392")
+                                    throw ProtocolError(
+                                        "Subscription Identifier Available added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477392"
+                                    )
                                 }
                                 subscriptionIdentifiersAvailable = it.serverSupported
                             }
                             is SharedSubscriptionAvailable -> {
                                 if (sharedSubscriptionAvailable != null) {
-                                    throw ProtocolError("Shared Subscription Available added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477393")
+                                    throw ProtocolError(
+                                        "Shared Subscription Available added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477393"
+                                    )
                                 }
                                 sharedSubscriptionAvailable = it.serverSupported
                             }
                             is ServerKeepAlive -> {
                                 if (serverKeepAlive != null) {
-                                    throw ProtocolError("Server Keep Alive added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477394")
+                                    throw ProtocolError(
+                                        "Server Keep Alive added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477394"
+                                    )
                                 }
                                 serverKeepAlive = it.seconds
                             }
                             is ResponseInformation -> {
                                 if (responseInformation != null) {
-                                    throw ProtocolError("Response Information added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477395")
+                                    throw ProtocolError(
+                                        "Response Information added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477395"
+                                    )
                                 }
                                 responseInformation = it.requestResponseInformationInConnack
                             }
                             is ServerReference -> {
                                 if (serverReference != null) {
-                                    throw ProtocolError("Server Reference added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396")
+                                    throw ProtocolError(
+                                        "Server Reference added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477396"
+                                    )
                                 }
                                 serverReference = it.otherServer
                             }
                             is AuthenticationMethod -> {
                                 if (authenticationMethod != null) {
-                                    throw ProtocolError("Authentication Method added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477397")
+                                    throw ProtocolError(
+                                        "Authentication Method added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477397"
+                                    )
                                 }
                                 authenticationMethod = it.value
                             }
                             is AuthenticationData -> {
                                 if (authenticationData != null) {
-                                    throw ProtocolError("Authentication Data added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477398")
+                                    throw ProtocolError(
+                                        "Authentication Data added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477398"
+                                    )
                                 }
                                 authenticationData = it.data
                             }
@@ -658,27 +684,27 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
 
 val connackConnectReason by lazy {
     mapOf(
-            Pair(SUCCESS.byte, SUCCESS),
-            Pair(UNSPECIFIED_ERROR.byte, UNSPECIFIED_ERROR),
-            Pair(MALFORMED_PACKET.byte, MALFORMED_PACKET),
-            Pair(PROTOCOL_ERROR.byte, PROTOCOL_ERROR),
-            Pair(IMPLEMENTATION_SPECIFIC_ERROR.byte, IMPLEMENTATION_SPECIFIC_ERROR),
-            Pair(UNSUPPORTED_PROTOCOL_VERSION.byte, UNSUPPORTED_PROTOCOL_VERSION),
-            Pair(CLIENT_IDENTIFIER_NOT_VALID.byte, CLIENT_IDENTIFIER_NOT_VALID),
-            Pair(BAD_USER_NAME_OR_PASSWORD.byte, BAD_USER_NAME_OR_PASSWORD),
-            Pair(NOT_AUTHORIZED.byte, NOT_AUTHORIZED),
-            Pair(SERVER_UNAVAILABLE.byte, SERVER_UNAVAILABLE),
-            Pair(SERVER_BUSY.byte, SERVER_BUSY),
-            Pair(BANNED.byte, BANNED),
-            Pair(BAD_AUTHENTICATION_METHOD.byte, BAD_AUTHENTICATION_METHOD),
-            Pair(TOPIC_NAME_INVALID.byte, TOPIC_NAME_INVALID),
-            Pair(PACKET_TOO_LARGE.byte, PACKET_TOO_LARGE),
-            Pair(QUOTA_EXCEEDED.byte, QUOTA_EXCEEDED),
-            Pair(PAYLOAD_FORMAT_INVALID.byte, PAYLOAD_FORMAT_INVALID),
-            Pair(RETAIN_NOT_SUPPORTED.byte, RETAIN_NOT_SUPPORTED),
-            Pair(QOS_NOT_SUPPORTED.byte, QOS_NOT_SUPPORTED),
-            Pair(USE_ANOTHER_SERVER.byte, USE_ANOTHER_SERVER),
-            Pair(SERVER_MOVED.byte, SERVER_MOVED),
-            Pair(CONNECTION_RATE_EXCEEDED.byte, CONNECTION_RATE_EXCEEDED)
+        Pair(SUCCESS.byte, SUCCESS),
+        Pair(UNSPECIFIED_ERROR.byte, UNSPECIFIED_ERROR),
+        Pair(MALFORMED_PACKET.byte, MALFORMED_PACKET),
+        Pair(PROTOCOL_ERROR.byte, PROTOCOL_ERROR),
+        Pair(IMPLEMENTATION_SPECIFIC_ERROR.byte, IMPLEMENTATION_SPECIFIC_ERROR),
+        Pair(UNSUPPORTED_PROTOCOL_VERSION.byte, UNSUPPORTED_PROTOCOL_VERSION),
+        Pair(CLIENT_IDENTIFIER_NOT_VALID.byte, CLIENT_IDENTIFIER_NOT_VALID),
+        Pair(BAD_USER_NAME_OR_PASSWORD.byte, BAD_USER_NAME_OR_PASSWORD),
+        Pair(NOT_AUTHORIZED.byte, NOT_AUTHORIZED),
+        Pair(SERVER_UNAVAILABLE.byte, SERVER_UNAVAILABLE),
+        Pair(SERVER_BUSY.byte, SERVER_BUSY),
+        Pair(BANNED.byte, BANNED),
+        Pair(BAD_AUTHENTICATION_METHOD.byte, BAD_AUTHENTICATION_METHOD),
+        Pair(TOPIC_NAME_INVALID.byte, TOPIC_NAME_INVALID),
+        Pair(PACKET_TOO_LARGE.byte, PACKET_TOO_LARGE),
+        Pair(QUOTA_EXCEEDED.byte, QUOTA_EXCEEDED),
+        Pair(PAYLOAD_FORMAT_INVALID.byte, PAYLOAD_FORMAT_INVALID),
+        Pair(RETAIN_NOT_SUPPORTED.byte, RETAIN_NOT_SUPPORTED),
+        Pair(QOS_NOT_SUPPORTED.byte, QOS_NOT_SUPPORTED),
+        Pair(USE_ANOTHER_SERVER.byte, USE_ANOTHER_SERVER),
+        Pair(SERVER_MOVED.byte, SERVER_MOVED),
+        Pair(CONNECTION_RATE_EXCEEDED.byte, CONNECTION_RATE_EXCEEDED)
     )
 }

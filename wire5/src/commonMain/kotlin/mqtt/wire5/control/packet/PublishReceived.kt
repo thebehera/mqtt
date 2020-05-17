@@ -20,8 +20,8 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * A PUBREC packet is the response to a PUBLISH packet with QoS 2. It is the second packet of the QoS 2 protocol exchange.
  */
-data class PublishReceived(val variable: VariableHeader)
-    : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL), IPublishReceived {
+data class PublishReceived(val variable: VariableHeader) : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL),
+    IPublishReceived {
     override fun expectedResponse() = PublishRelease(variable.packetIdentifier.toUShort())
     override val packetIdentifier: Int = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
@@ -76,6 +76,7 @@ data class PublishReceived(val variable: VariableHeader)
                 properties.serialize(writeBuffer)
             }
         }
+
         data class Properties(
             /**
              * 3.5.2.2.2 Reason String

@@ -277,8 +277,10 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasWillRetainCheckWarning() {
-        assertNotNull(VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
-                "should of provided an warning")
+        assertNotNull(
+            VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
+            "should of provided an warning"
+        )
     }
 
 

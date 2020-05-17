@@ -9,6 +9,7 @@ import mqtt.wire.data.MqttUtf8String
 data class TopicLevelNode(val value: TopicLevel) {
     val children: MutableMap<CharSequence, TopicLevelNode> = mutableMapOf()
     var parent: TopicLevelNode? = null
+
     /**
      * Is this topic level a wildcard
      */
@@ -156,6 +157,7 @@ data class TopicLevelNode(val value: TopicLevel) {
 
     companion object {
         private const val TOPIC_LEVEL_SEPERATOR = '/'
+
         /**
          * Convert an MQTT UTF8 Compliant string into a topic level node structure
          */

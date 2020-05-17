@@ -15,8 +15,8 @@ import mqtt.wire.data.MqttUtf8String
  */
 data class UnsubscribeRequest(
     val packetIdentifier: Int,
-    val topics: List<MqttUtf8String>)
-    : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
+    val topics: List<MqttUtf8String>
+) : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
 
     override fun remainingLength(buffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + payloadSize(buffer)
 

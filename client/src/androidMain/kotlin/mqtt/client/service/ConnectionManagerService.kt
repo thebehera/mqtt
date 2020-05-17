@@ -36,7 +36,7 @@ class ConnectionManagerService : CoroutineService() {
 
     private val boundClients by lazy {
         BoundClientsObserver(newClientCb) { messageFromBoundClient ->
-            messageFromBoundClient.data?.classLoader = classLoader
+            messageFromBoundClient.data.classLoader = classLoader
             handleMessage(messageFromBoundClient)
         }
     }
@@ -95,7 +95,7 @@ class ConnectionManagerService : CoroutineService() {
 
                 }
             }
-            else -> when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
+            else -> when (val data = msg.data.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
 //                is PersistableRemoteHostV4 -> launch {
 //                    Log.i("RAHUL", "Handle msg")
 //                    connect(data)
@@ -124,7 +124,9 @@ class ConnectionManagerService : CoroutineService() {
             if (controlPacket is IConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
             } else if (controlPacket is ISubscribeAcknowledgement) {
-                connectionManagers[remoteHostId]?.client?.session?.state?.subscriptionAcknowledgementReceived(controlPacket)
+                connectionManagers[remoteHostId]?.client.session.state.subscriptionAcknowledgementReceived(
+                    controlPacket
+                )
             } else {
                 val msg = Message.obtain()
                 msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.position

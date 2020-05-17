@@ -19,9 +19,10 @@ import mqtt.wire5.control.packet.format.variable.property.*
  *
  */
 data class PublishMessage(
-        val fixed: FixedHeader = FixedHeader(),
-        val variable: VariableHeader,
-        val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf())) :
+    val fixed: FixedHeader = FixedHeader(),
+    val variable: VariableHeader,
+    val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf())
+) :
     ControlPacketV5(IPublishMessage.controlPacketValue, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
@@ -38,6 +39,7 @@ data class PublishMessage(
         dup: Boolean = false,
         retain: Boolean = false
     ) : this(FixedHeader(dup, qos, retain), VariableHeader(topic, packetIdentifier = packetIdentifier.toInt()))
+
     override val qualityOfService: QualityOfService = fixed.qos
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
@@ -56,6 +58,7 @@ data class PublishMessage(
         }
         else -> null
     }
+
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -180,10 +183,12 @@ data class PublishMessage(
                 val qosBit2 = byte1Int.shl(5).toUByte().toInt().shr(7) == 1
                 val qosBit1 = byte1Int.shl(6).toUByte().toInt().shr(7) == 1
                 if (qosBit2 && qosBit1) {
-                    throw MalformedPacketException("A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
-                            " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
-                            "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
-                            " section 4.13.")
+                    throw MalformedPacketException(
+                        "A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
+                                " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
+                                "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
+                                " section 4.13."
+                    )
                 }
                 val qos = QualityOfService.fromBooleans(qosBit2, qosBit1)
                 val retain = byte1Int.shl(7).toUByte().toInt().shr(7) == 1
@@ -253,6 +258,7 @@ data class PublishMessage(
             result = 31 * result + properties.hashCode()
             return result
         }
+
         data class Properties(
             /**
              * 3.3.2.3.2 Payload Format Indicator
@@ -553,15 +559,19 @@ data class PublishMessage(
                             }
                             is ResponseTopic -> {
                                 if (responseTopic != null) {
-                                    throw ProtocolError("Response Topic found twice see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477414")
+                                    throw ProtocolError(
+                                        "Response Topic found twice see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477414"
+                                    )
                                 }
                                 responseTopic = it.value
                             }
                             is CorrelationData -> {
                                 if (coorelationData != null) {
-                                    throw ProtocolError("Correlation Data found twice see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477415")
+                                    throw ProtocolError(
+                                        "Correlation Data found twice see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477415"
+                                    )
                                 }
                                 coorelationData = it.data
                             }
@@ -577,17 +587,21 @@ data class PublishMessage(
                             }
                             is ContentType -> {
                                 if (contentType != null) {
-                                    throw ProtocolError("Content Type found twice see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477417")
+                                    throw ProtocolError(
+                                        "Content Type found twice see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477417"
+                                    )
                                 }
                                 contentType = it.value
                             }
                             else -> throw MalformedPacketException("Invalid property type found in MQTT properties $it")
                         }
                     }
-                    return Properties(payloadFormatIndicator ?: false,
+                    return Properties(
+                        payloadFormatIndicator ?: false,
                         messageExpiryInterval, topicAlias, responseTopic, coorelationData, userProperty,
-                        subscriptionIdentifier, contentType)
+                        subscriptionIdentifier, contentType
+                    )
                 }
             }
         }
@@ -619,7 +633,8 @@ data class PublishMessage(
             val fixedHeader = FixedHeader.fromByte(byte1)
             val fixedHeaderSize = 1u + buffer.variableByteSize(remainingLength)
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first - fixedHeaderSize))
+            val payloadBytes =
+                ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first - fixedHeaderSize))
             return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
         }
     }
