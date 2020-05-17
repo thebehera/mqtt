@@ -145,7 +145,7 @@ class PublishAcknowledgementTest {
         val buffer = allocateNewBuffer(13u, limits)
         expected.serialize(buffer)
         buffer.resetForRead()
-        val actual = ControlPacketV5.from(buffer) as PublishAcknowledgment
+//        val actual = ControlPacketV5.from(buffer) as PublishAcknowledgment
         assertEquals(expected.variable.properties.reasonString.toString(), "yolo")
     }
 

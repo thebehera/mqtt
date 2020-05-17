@@ -50,7 +50,7 @@ class DisconnectTests {
         val buffer = allocateNewBuffer(11u, limits)
         expected.serialize(buffer)
         buffer.resetForRead()
-        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
+//        val actual = ControlPacketV5.from(buffer) as DisconnectNotification
         assertEquals(expected.variable.properties.reasonString.toString(), "yolo")
     }
 

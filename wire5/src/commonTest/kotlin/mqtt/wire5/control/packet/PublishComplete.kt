@@ -67,7 +67,7 @@ class PublishCompleteTests {
         val buffer = allocateNewBuffer(13u, limits)
         expected.serialize(buffer)
         buffer.resetForRead()
-        val actual = ControlPacketV5.from(buffer) as PublishComplete
+//        val actual = ControlPacketV5.from(buffer) as PublishComplete
         assertEquals(expected.variable.properties.reasonString.toString(), "yolo")
     }
 
