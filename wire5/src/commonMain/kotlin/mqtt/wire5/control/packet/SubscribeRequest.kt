@@ -245,7 +245,7 @@ data class Subscription(
 ) {
 
     fun serialize(writeBuffer: WriteBuffer) {
-        writeBuffer.writeUtf8String(topicFilter.topicFilter)
+        writeBuffer.writeMqttUtf8String(topicFilter.topicFilter)
         val qosInt = maximumQos.integerValue
         val nlShifted = (if (noLocal) 1 else 0).shl(2)
         val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
@@ -255,7 +255,7 @@ data class Subscription(
     }
 
     fun size(writeBuffer: WriteBuffer) =
-        writeBuffer.mqttUtf8Size(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
+        writeBuffer.lengthUtf8String(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
 
     companion object {
         fun fromMany(buffer: ReadBuffer, remainingLength: UInt): Set<Subscription> {

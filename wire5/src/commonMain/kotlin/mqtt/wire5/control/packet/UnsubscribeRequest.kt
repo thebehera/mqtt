@@ -23,11 +23,11 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Char
     override fun remainingLength(buffer: WriteBuffer): UInt {
         val variableSize = variable.size(buffer)
         var payloadSize = 0u
-        topics.forEach { payloadSize += UShort.SIZE_BYTES.toUInt() + buffer.mqttUtf8Size(it) }
+        topics.forEach { payloadSize += UShort.SIZE_BYTES.toUInt() + buffer.lengthUtf8String(it) }
         return variableSize + payloadSize
     }
 
-    override fun payload(writeBuffer: WriteBuffer) = topics.forEach { writeBuffer.writeUtf8String(it) }
+    override fun payload(writeBuffer: WriteBuffer) = topics.forEach { writeBuffer.writeMqttUtf8String(it) }
 
     constructor(packetIdentifier: Int, topics: Set<CharSequence>) : this(VariableHeader(packetIdentifier), topics)
 

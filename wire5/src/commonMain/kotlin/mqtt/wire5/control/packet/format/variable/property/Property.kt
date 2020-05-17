@@ -42,12 +42,12 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
     }
 
     fun size(bytePacketBuilder: WriteBuffer, string: CharSequence) =
-        bytePacketBuilder.mqttUtf8Size(string) + UShort.SIZE_BYTES.toUInt() + 1u
+        bytePacketBuilder.lengthUtf8String(string) + UShort.SIZE_BYTES.toUInt() + 1u
 
     fun write(bytePacketBuilder: WriteBuffer, string: CharSequence): UInt {
         bytePacketBuilder.write(identifierByte)
-        val size = bytePacketBuilder.mqttUtf8Size(string)
-        bytePacketBuilder.writeUtf8String(string)
+        val size = bytePacketBuilder.lengthUtf8String(string)
+        bytePacketBuilder.writeMqttUtf8String(string)
         return size
     }
 

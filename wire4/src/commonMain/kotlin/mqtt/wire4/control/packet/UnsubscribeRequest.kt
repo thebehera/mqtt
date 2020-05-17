@@ -28,13 +28,13 @@ data class UnsubscribeRequest(
     fun payloadSize(writeBuffer: WriteBuffer): UInt {
         var size = 0u
         topics.forEach {
-            size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(it.value)
+            size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(it.value)
         }
         return size
     }
 
     override fun payload(writeBuffer: WriteBuffer) {
-        topics.forEach { writeBuffer.writeUtf8String(it.value) }
+        topics.forEach { writeBuffer.writeMqttUtf8String(it.value) }
     }
 
     init {

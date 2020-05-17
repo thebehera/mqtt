@@ -12,7 +12,14 @@ interface WriteBuffer {
     fun write(uShort: UShort): WriteBuffer
     fun write(uInt: UInt): WriteBuffer
     fun write(long: Long): WriteBuffer
-    fun writeUtf8String(charSequence: CharSequence): WriteBuffer
+    fun writeUtf8(text: CharSequence): WriteBuffer
+
+    fun writeMqttUtf8String(charSequence: CharSequence): WriteBuffer {
+        val size = lengthUtf8String(charSequence).toUShort()
+        write(size)
+        writeUtf8(charSequence)
+        return this
+    }
 
     fun <T : Any> writeGenericType(obj: T, type: KClass<T>): WriteBuffer {
         GenericSerialization.serialize(this, obj, type)
@@ -39,7 +46,7 @@ interface WriteBuffer {
         return this
     }
 
-    fun mqttUtf8Size(
+    fun lengthUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence? = null,
         unmappableCharacter: CharSequence? = null
