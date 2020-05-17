@@ -32,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         val clientService = ViewModelProviders.of(this).get(MqttServiceViewModelGenerated::class.java)
         val remoteHost = PersistableRemoteHostV4(
             BuildConfig.IPV4[0],
-            ConnectionRequest(
+            ConnectionRequest<Unit>(
                 clientId,
                 keepAliveSeconds = 300.toUShort()
             ),

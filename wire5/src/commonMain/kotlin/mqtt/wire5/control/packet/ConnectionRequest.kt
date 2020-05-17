@@ -1188,6 +1188,9 @@ data class ConnectionRequest<WillPayload : Any>(
                 val willPropertiesSize = willProperties.size(writeBuffer)
                 size += writeBuffer.variableByteIntegerSize(willPropertiesSize) + willPropertiesSize
             }
+            if (willPayload != null) {
+                size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
+            }
             if (userName != null) {
                 size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(userName)
             }

@@ -55,6 +55,8 @@ interface WriteBuffer {
         return numBytes.toUInt()
     }
 
+    fun <WillPayload : Any> sizeGenericType(obj: WillPayload, kClass: KClass<WillPayload>): UInt = 0u
+
 //    fun <T> write(serializationStrategy: MqttSerializationStrategy<T>): WriteBuffer
     // mqtt 5
     // fun write(property:Property)
