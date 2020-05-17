@@ -13,9 +13,13 @@ interface WriteBuffer {
     fun write(uInt: UInt): WriteBuffer
     fun write(long: Long): WriteBuffer
     fun writeUtf8String(charSequence: CharSequence): WriteBuffer
-    fun <T : Any> writeGenericType(obj: T, type: KClass<*>): WriteBuffer {
+
+    fun <T : Any> writeGenericType(obj: T, type: KClass<T>): WriteBuffer {
+        GenericSerialization.serialize(this, obj, type)
         return this
     }
+
+    fun <T : Any> sizeGenericType(obj: T, kClass: KClass<T>) = GenericSerialization.size(this, obj, kClass)
 
     fun writeVariableByteInteger(uInt: UInt): WriteBuffer {
         if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
@@ -55,7 +59,6 @@ interface WriteBuffer {
         return numBytes.toUInt()
     }
 
-    fun <WillPayload : Any> sizeGenericType(obj: WillPayload, kClass: KClass<WillPayload>): UInt = 0u
 
 //    fun <T> write(serializationStrategy: MqttSerializationStrategy<T>): WriteBuffer
     // mqtt 5

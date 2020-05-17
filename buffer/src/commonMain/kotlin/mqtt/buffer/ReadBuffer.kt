@@ -14,8 +14,7 @@ interface ReadBuffer {
     fun readLong(): Long
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence>
-    fun <T : Any> readGenericType(type: KClass<T>): T =
-        throw UnsupportedOperationException("Generic type not implemented")
+    fun <T : Any> readGenericType(type: KClass<T>) = GenericSerialization.deserialize(type, this)
 
     fun readVariableByteInteger(): UInt {
         var digit: Byte

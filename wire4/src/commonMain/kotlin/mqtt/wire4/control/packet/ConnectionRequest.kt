@@ -41,37 +41,6 @@ data class ConnectionRequest<WillPayload : Any>(
 
     override val protocolName = variableHeader.protocolName.getValueOrThrow()
     override val protocolVersion = variableHeader.protocolLevel.toInt()
-
-    constructor(
-        clientId: String,
-        username: String? = null,
-        password: String? = null,
-        willRetain: Boolean = false,
-        willQos: QualityOfService = QualityOfService.AT_MOST_ONCE,
-        willTopic: String? = null,
-        willPayload: GenericType<WillPayload>? = null,
-        cleanSession: Boolean = false,
-        keepAliveSeconds: UShort = UShort.MAX_VALUE
-    ) :
-            this(
-                VariableHeader(
-                    hasUserName = username != null,
-                    hasPassword = password != null,
-                    willFlag = willTopic != null && willPayload != null,
-                    willQos = willQos,
-                    willRetain = willRetain,
-                    cleanSession = cleanSession,
-                    keepAliveSeconds = keepAliveSeconds.toInt()
-                ),
-                Payload(
-                    clientId = MqttUtf8String(clientId),
-                    willTopic = if (willTopic != null && willPayload != null) MqttUtf8String(willTopic) else null,
-                    willPayload = willPayload,
-                    userName = if (username != null) MqttUtf8String(username) else null,
-                    password = if (password != null) MqttUtf8String(password) else null
-                )
-            )
-
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
 
@@ -561,13 +530,7 @@ data class ConnectionRequest<WillPayload : Any>(
 
     companion object {
 
-        fun from(buffer: ReadBuffer): ConnectionRequest<Unit> {
-            val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from<Unit>(buffer, variableHeader)
-            return ConnectionRequest(variableHeader, payload)
-        }
-
-        inline fun <reified WillPayload : Any> fromInline(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
+        inline fun <reified WillPayload : Any> from(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
             val variableHeader = VariableHeader.from(buffer)
             val payload = Payload.from<WillPayload>(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
