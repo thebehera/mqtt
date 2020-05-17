@@ -30,10 +30,15 @@ object GenericSerialization {
         deserializerMap[T::class] = deserializer
     }
 
-    fun <T : Any> deserialize(type: KClass<T>, readBuffer: ReadBuffer): T? {
+    fun <T : Any> deserialize(
+        type: KClass<T>,
+        readBuffer: ReadBuffer,
+        path: CharSequence? = null,
+        headers: List<Pair<CharSequence, CharSequence>>? = null
+    ): T? {
         if (type == Unit::class) {
             return null
         }
-        return deserializerMap.get<T>(type).deserialize(readBuffer)
+        return deserializerMap.get<T>(type).deserialize(readBuffer, path, headers)
     }
 }
