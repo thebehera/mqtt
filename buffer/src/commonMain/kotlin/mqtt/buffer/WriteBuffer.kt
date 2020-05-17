@@ -1,6 +1,7 @@
 package mqtt.buffer
 
 import kotlin.experimental.or
+import kotlin.reflect.KClass
 
 @ExperimentalUnsignedTypes
 interface WriteBuffer {
@@ -12,6 +13,10 @@ interface WriteBuffer {
     fun write(uInt: UInt): WriteBuffer
     fun write(long: Long): WriteBuffer
     fun writeUtf8String(charSequence: CharSequence): WriteBuffer
+    fun <T : Any> writeGenericType(obj: T, type: KClass<T>): WriteBuffer {
+        return this
+    }
+
     fun writeVariableByteInteger(uInt: UInt): WriteBuffer {
         if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
             throw MalformedInvalidVariableByteInteger(uInt)
