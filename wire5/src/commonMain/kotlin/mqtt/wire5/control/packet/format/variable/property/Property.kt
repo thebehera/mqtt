@@ -33,6 +33,7 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         bytePacketBuilder.write(number)
         return 5u
     }
+
     fun size(bytePacketBuilder: WriteBuffer, number: UShort) = 3u
     fun write(bytePacketBuilder: WriteBuffer, number: UShort): UInt {
         bytePacketBuilder.write(identifierByte)
@@ -49,6 +50,7 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         bytePacketBuilder.writeUtf8String(string)
         return size
     }
+
     fun write(bytePacketBuilder: WriteBuffer, data: ByteArrayWrapper): UInt {
         bytePacketBuilder.write(identifierByte)
         bytePacketBuilder.write(data.byteArray.size.toUShort())

@@ -17,6 +17,7 @@ import kotlin.test.assertFailsWith
 
 class SubscribeRequestTest {
     private val packetIdentifier = 2.toUShort()
+
     @Test
     fun simpleTest() {
         val subscribeRequest = SubscribeRequest(2.toUShort(), "test", AT_LEAST_ONCE)

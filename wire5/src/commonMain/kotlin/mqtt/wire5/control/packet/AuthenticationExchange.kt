@@ -21,8 +21,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * Bits 3,2,1 and 0 of the Fixed Header of the AUTH packet are reserved and MUST all be set to 0. The Client or Server
  * MUST treat any other value as malformed and close the Network Connection [MQTT-3.15.1-1].
  */
-data class AuthenticationExchange(val variable: VariableHeader)
-    : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
+data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
 
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)

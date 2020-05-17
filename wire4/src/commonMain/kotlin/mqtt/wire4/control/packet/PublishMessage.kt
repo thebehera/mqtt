@@ -21,17 +21,17 @@ data class PublishMessage(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
     val payload: ByteArrayWrapper? = null
-)
-    : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
+) : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
 
     /**
      * Build a QOS 1 or 2 publish message
      */
-    constructor(topic: String, qos: QualityOfService,
-                packetIdentifier: UShort,
-                dup: Boolean = false,
-                retain: Boolean = false
+    constructor(
+        topic: String, qos: QualityOfService,
+        packetIdentifier: UShort,
+        dup: Boolean = false,
+        retain: Boolean = false
     )
             : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic).topic, packetIdentifier.toInt()), null)
 
@@ -42,6 +42,7 @@ data class PublishMessage(
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS >0 and no packet identifier")
         }
     }
+
     override val qualityOfService: QualityOfService = fixed.qos
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
@@ -59,7 +60,9 @@ data class PublishMessage(
         }
         else -> null
     }
+
     override val topic: CharSequence = variable.topicName
+
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -154,10 +157,12 @@ data class PublishMessage(
                 val qosBit2 = byte1Int.shl(5).toUByte().toInt().shr(7) == 1
                 val qosBit1 = byte1Int.shl(6).toUByte().toInt().shr(7) == 1
                 if (qosBit2 && qosBit1) {
-                    throw MalformedPacketException("A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
-                            " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
-                            "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
-                            " section 4.13.")
+                    throw MalformedPacketException(
+                        "A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
+                                " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
+                                "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
+                                " section 4.13."
+                    )
                 }
                 val qos = QualityOfService.fromBooleans(qosBit2, qosBit1)
                 val retain = byte1Int.shl(7).toUByte().toInt().shr(7) == 1
@@ -173,8 +178,8 @@ data class PublishMessage(
      */
     data class VariableHeader(
         /**
-             * The Topic Name identifies the information channel to which payload data is published.
-             *
+         * The Topic Name identifies the information channel to which payload data is published.
+         *
          * The Topic Name MUST be present as the first field in the PUBLISH Packet Variable header. It MUST be a
          * UTF-8 encoded string [MQTT-3.3.2-1] as defined in section 1.5.3.
          *

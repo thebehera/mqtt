@@ -37,6 +37,7 @@ enum class ReasonCode(val byte: UByte) {
     SESSION_TAKE_OVER(0x8E.toUByte()),
     TOPIC_FILTER_INVALID(0x8F.toUByte()),
     TOPIC_NAME_INVALID(0x90.toUByte()),
+
     /**
      * the response to this is either to try to fix the state, or to reset the Session state by connecting using Clean
      * Start set to 1, or to decide if the Client or Server implementations are defective.

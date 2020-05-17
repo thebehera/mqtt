@@ -20,8 +20,8 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * A PUBACK packet is the response to a PUBLISH packet with QoS 1.
  */
-data class PublishAcknowledgment(val variable: VariableHeader)
-    : ControlPacketV5(4, DirectionOfFlow.BIDIRECTIONAL), IPublishAcknowledgment {
+data class PublishAcknowledgment(val variable: VariableHeader) : ControlPacketV5(4, DirectionOfFlow.BIDIRECTIONAL),
+    IPublishAcknowledgment {
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier.toInt()))
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
@@ -79,6 +79,7 @@ data class PublishAcknowledgment(val variable: VariableHeader)
             }
             return size
         }
+
         data class Properties(
             /**
              * 3.4.2.2.2 Reason String

@@ -14,12 +14,15 @@ import mqtt.wire.control.packet.ControlPacket
  * @param controlPacketValue Value defined under [MQTT 2.1.2]
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
  */
-abstract class ControlPacketV5(override val controlPacketValue: Byte,
-                               override val direction: mqtt.wire.control.packet.format.fixed.DirectionOfFlow,
-                               override val flags: Byte = 0b0) : ControlPacket {
+abstract class ControlPacketV5(
+    override val controlPacketValue: Byte,
+    override val direction: mqtt.wire.control.packet.format.fixed.DirectionOfFlow,
+    override val flags: Byte = 0b0
+) : ControlPacket {
     override val mqttVersion: Byte = 5
 
     override val controlPacketReader = ControlPacketV5Reader
+
     companion object {
 
         fun from(buffer: ReadBuffer): ControlPacketV5 {

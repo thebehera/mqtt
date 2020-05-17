@@ -46,7 +46,7 @@ class PublishReleaseTests {
         assertEquals(pubrel, pubrelResult)
 
     }
-    
+
     @Test
     fun invalidReasonCodeThrowsProtocolError() {
         try {

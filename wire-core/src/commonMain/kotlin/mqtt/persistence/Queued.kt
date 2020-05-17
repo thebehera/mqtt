@@ -9,6 +9,7 @@ interface IQueuedMessage {
     val childTableName: String
     val childRowId: Long
     val priority: Double
+
     // Null until first attempt to deque
     val messageId: Int?
 }

@@ -265,8 +265,10 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasWillRetainCheckWarning() {
-        assertNotNull(VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
-                "should of provided an warning")
+        assertNotNull(
+            VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
+            "should of provided an warning"
+        )
     }
 
 
@@ -337,7 +339,11 @@ class ConnectionRequestTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(
+            willQos,
+            QualityOfService.AT_MOST_ONCE,
+            "invalid byte 8 qos on the CONNECT variable header for willQos flag"
+        )
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -374,7 +380,11 @@ class ConnectionRequestTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.EXACTLY_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(
+            willQos,
+            QualityOfService.EXACTLY_ONCE,
+            "invalid byte 8 qos on the CONNECT variable header for willQos flag"
+        )
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1

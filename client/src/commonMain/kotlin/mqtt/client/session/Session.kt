@@ -81,8 +81,9 @@ class ClientSession(
 //        this.transport = null
     }
 
-    suspend fun publish(topic: String, qos: QualityOfService,
-                        packetIdentifier: UShort
+    suspend fun publish(
+        topic: String, qos: QualityOfService,
+        packetIdentifier: UShort
     ) {
         if (remoteHost.request.protocolVersion == 5) {
             send(mqtt.wire5.control.packet.PublishMessage(topic, qos, packetIdentifier))

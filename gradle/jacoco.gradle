@@ -8,7 +8,7 @@ project.afterEvaluate {
     def testTaskName = "jvmTestClasses"
 
     // Create gradle task
-    task "testCommonUnitTestCoverage" (type:JacocoReport, dependsOn: "$testTaskName") {
+    task "testCommonUnitTestCoverage"(type: JacocoReport, dependsOn: "$testTaskName") {
         group = "Reporting"
         description = "Generate Jacoco coverage reports on the common module build."
 

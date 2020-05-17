@@ -183,8 +183,12 @@ class PublishMessageTests {
         } catch (e: ProtocolError) {
         }
         assertFails {
-            PublishMessage(variable = VariableHeader(properties = VariableHeader.Properties(topicAlias = 0),
-                topicName = "yolo"))
+            PublishMessage(
+                variable = VariableHeader(
+                    properties = VariableHeader.Properties(topicAlias = 0),
+                    topicName = "yolo"
+                )
+            )
         }
     }
 
@@ -241,19 +245,19 @@ class PublishMessageTests {
 
     @Test
     fun correlationData() {
-        val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper(byteArrayOf(1,2,4,5)))
+        val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
         val publish = ControlPacketV5.from(buffer) as PublishMessage
-        assertEquals(ByteArrayWrapper(byteArrayOf(1,2,4,5)), publish.variable.properties.coorelationData)
+        assertEquals(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)), publish.variable.properties.coorelationData)
     }
 
     @Test
     fun correlationDataDuplicateThrowsProtocolError() {
-        val obj1 = CorrelationData(ByteArrayWrapper(byteArrayOf(1,2,4,5)))
+        val obj1 = CorrelationData(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))

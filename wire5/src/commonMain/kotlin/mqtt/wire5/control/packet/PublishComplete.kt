@@ -22,7 +22,7 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  * The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
  */
 data class PublishComplete(val variable: VariableHeader) :
-        ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
+    ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
     constructor(packetIdentifier: UShort, reasonCode: ReasonCode = SUCCESS)
             : this(VariableHeader(packetIdentifier.toInt(), reasonCode))
 
@@ -89,6 +89,7 @@ data class PublishComplete(val variable: VariableHeader) :
                 properties.serialize(buffer)
             }
         }
+
         data class Properties(
             /**
              * 3.7.2.2.2 Reason String

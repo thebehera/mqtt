@@ -23,7 +23,7 @@ def dryRun = prop("dryRun", "false")
 
 task preparePublishNpm(type: Copy, dependsOn: [compileKotlinJs]) {
     from(npmTemplateDir) {
-        expand (project.properties + [kotlinDependency: "\"kotlin\": \"$kotlin_version\""])
+        expand(project.properties + [kotlinDependency: "\"kotlin\": \"$kotlin_version\""])
     }
     from("$buildDir/classes/kotlin/main")
     into npmDeployDir

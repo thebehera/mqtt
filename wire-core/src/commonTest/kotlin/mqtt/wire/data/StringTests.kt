@@ -1,6 +1,7 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
 package mqtt.wire.data
+
 import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertFalse

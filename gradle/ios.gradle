@@ -13,7 +13,7 @@ task iOSTest {
         }
     }
 }
-iOSTest.onlyIf {System.getProperty("os.name").toLowerCase().contains("mac")}
+iOSTest.onlyIf { System.getProperty("os.name").toLowerCase().contains("mac") }
 
 task CI {}
 String osName = System.getProperty("os.name").toLowerCase()
