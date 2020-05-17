@@ -87,7 +87,6 @@ class PublishCompleteTests {
         }
     }
 
-
     @Test
     fun variableHeaderPropertyUserProperty() {
         val props = VariableHeader.Properties.from(
