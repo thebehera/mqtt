@@ -6,12 +6,12 @@ repositories {
     jcenter()
 }
 apply from: "../gradle/experimental.gradle"
-apply from: "../gradle/android.gradle"
+//apply from: "../gradle/android.gradle"
 
 kotlin {
 //    jvm()
     if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-        android()
+//        android()
         jvm()
     } else {
         jvm()
@@ -90,14 +90,14 @@ kotlin {
 }
 
 if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-    dependencies {
-//        implementation project(":android_roomdb_core")
-        implementation "androidx.room:room-runtime:$room_version"
-        implementation "androidx.room:room-ktx:$room_version"
-        api "androidx.room:room-common:$room_version"
-
-        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
-    }
+//    dependencies {
+////        implementation project(":android_roomdb_core")
+//        implementation "androidx.room:room-runtime:$room_version"
+//        implementation "androidx.room:room-ktx:$room_version"
+//        api "androidx.room:room-common:$room_version"
+//
+//        implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+//    }
 }
 
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
