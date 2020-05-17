@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -24,12 +21,11 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * A PUBREL packet is the response to a PUBREC packet. It is the third packet of the QoS 2 protocol exchange.
  */
-@Parcelize
 data class PublishRelease(val variable: VariableHeader)
     : ControlPacketV5(6, DirectionOfFlow.BIDIRECTIONAL, 0b10), IPublishRelease {
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier.toInt()))
 
-    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier
     override fun expectedResponse() = PublishComplete(packetIdentifier.toUShort())
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
@@ -41,7 +37,6 @@ data class PublishRelease(val variable: VariableHeader)
      * the PUBREC packet that is being acknowledged, PUBREL Reason Code, and Properties. The rules for encoding
      * Properties are described in section 2.2.2.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         /**
@@ -59,7 +54,7 @@ data class PublishRelease(val variable: VariableHeader)
          * 3.4.2.2 PUBREL Properties
          */
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         init {
             when (reasonCode.byte.toInt()) {
                 0, 0x92 -> {
@@ -93,8 +88,6 @@ data class PublishRelease(val variable: VariableHeader)
                 properties.serialize(writeBuffer)
             }
         }
-
-        @Parcelize
         data class Properties(
             /**
              * 3.6.2.2.2 Reason String
@@ -122,8 +115,7 @@ data class PublishRelease(val variable: VariableHeader)
              * is allowed to appear more than once.
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {

@@ -1,10 +1,7 @@
 package mqtt.wire5.control.packet.format.variable.property
 
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.wire.data.ByteArrayWrapper
 
-@Parcelize
 data class Authentication(
     /**
      * 3.1.2.11.9 Authentication Method
@@ -39,4 +36,4 @@ data class Authentication(
      * more information about extended authentication.
      */
     val data: ByteArrayWrapper
-) : Parcelable
+)

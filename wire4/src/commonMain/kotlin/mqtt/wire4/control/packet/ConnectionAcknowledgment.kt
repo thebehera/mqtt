@@ -2,9 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -23,17 +20,10 @@ typealias CONNACK = ConnectionAcknowledgment
  * SHOULD close the Network Connection. A "reasonable" amount of time depends on the type of application and the
  * communications infrastructure.
  */
-@Parcelize
 data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader())
     : ControlPacketV4(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
-
-    @IgnoredOnParcel
     override val sessionPresent: Boolean = header.sessionPresent
-
-    @IgnoredOnParcel
     override val isSuccessful: Boolean = header.connectReason == CONNECTION_ACCEPTED
-
-    @IgnoredOnParcel
     override val connectionReason: String = header.connectReason.name
 
     override fun variableHeader(writeBuffer: WriteBuffer) = header.serialize(writeBuffer)
@@ -46,7 +36,6 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Properties">
      *     Section 2.2.2</a>
      */
-    @Parcelize
     data class VariableHeader(
             /**
              * 3.2.2.2 Session Present
@@ -96,7 +85,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              * the connection has not been authorized it might be unwise to indicate that this is an MQTT Server.
              */
             val connectReason: ReturnCode = CONNECTION_ACCEPTED
-    ) : Parcelable {
+    ) {
 
         enum class ReturnCode(val value: UByte) {
             CONNECTION_ACCEPTED(0.toUByte()),

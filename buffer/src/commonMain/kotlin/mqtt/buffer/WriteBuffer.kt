@@ -13,7 +13,7 @@ interface WriteBuffer {
     fun write(uInt: UInt): WriteBuffer
     fun write(long: Long): WriteBuffer
     fun writeUtf8String(charSequence: CharSequence): WriteBuffer
-    fun <T : Any> writeGenericType(obj: T, type: KClass<T>): WriteBuffer {
+    fun <T : Any> writeGenericType(obj: T, type: KClass<*>): WriteBuffer {
         return this
     }
 

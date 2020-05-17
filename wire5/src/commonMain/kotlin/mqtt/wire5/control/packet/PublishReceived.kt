@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -23,15 +20,12 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * A PUBREC packet is the response to a PUBLISH packet with QoS 2. It is the second packet of the QoS 2 protocol exchange.
  */
-@Parcelize
 data class PublishReceived(val variable: VariableHeader)
     : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL), IPublishReceived {
     override fun expectedResponse() = PublishRelease(variable.packetIdentifier.toUShort())
-    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
-
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         /**
@@ -48,7 +42,7 @@ data class PublishReceived(val variable: VariableHeader)
          * 3.4.2.2 PUBACK Properties
          */
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         init {
             when (reasonCode.byte.toInt()) {
                 0, 0x10, 0x80, 0x83, 0x87, 0x90, 0x91, 0x97, 0x99 -> {
@@ -82,8 +76,6 @@ data class PublishReceived(val variable: VariableHeader)
                 properties.serialize(writeBuffer)
             }
         }
-
-        @Parcelize
         data class Properties(
             /**
              * 3.5.2.2.2 Reason String
@@ -111,8 +103,7 @@ data class PublishReceived(val variable: VariableHeader)
              * allowed to appear more than once.
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {

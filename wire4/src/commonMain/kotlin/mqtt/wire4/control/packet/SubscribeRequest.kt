@@ -2,8 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.control.packet.ISubscribeRequest
@@ -24,7 +22,6 @@ import mqtt.wire.data.topic.Filter
  * Bits 3,2,1 and 0 of the Fixed Header of the SUBSCRIBE packet are reserved and MUST be set to 0,0,1 and 0
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
-@Parcelize
 data class SubscribeRequest(override val packetIdentifier: Int, val subscriptions: List<Subscription>) :
     ControlPacketV4(ISubscribeRequest.controlPacketValue, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
@@ -67,15 +64,15 @@ data class SubscribeRequest(override val packetIdentifier: Int, val subscription
     }
 }
 
-@Parcelize
-data class Subscription(val topicFilter: Filter,
-                        /**
-                         * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
-                         * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
-                         * Error if the Maximum QoS field has the value 3.
-                         */
-                        val maximumQos: QualityOfService = AT_LEAST_ONCE
-) : Parcelable {
+data class Subscription(
+    val topicFilter: Filter,
+    /**
+     * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
+     * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
+     * Error if the Maximum QoS field has the value 3.
+     */
+    val maximumQos: QualityOfService = AT_LEAST_ONCE
+) {
 
     companion object {
         fun fromMany(buffer: ReadBuffer, remaining: UInt): List<Subscription> {

@@ -2,9 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -20,7 +17,6 @@ import mqtt.wire.data.topic.Name
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-@Parcelize
 data class PublishMessage(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
@@ -46,8 +42,6 @@ data class PublishMessage(
             throw IllegalArgumentException("Cannot allocate a publish message with a QoS >0 and no packet identifier")
         }
     }
-
-    @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
@@ -65,11 +59,7 @@ data class PublishMessage(
         }
         else -> null
     }
-
-    @IgnoredOnParcel
     override val topic: CharSequence = variable.topicName
-
-    @Parcelize
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -149,8 +139,7 @@ data class PublishMessage(
          * subscriber will receive the most recent state.
          */
         val retain: Boolean = false
-    ) : Parcelable {
-        @IgnoredOnParcel
+    ) {
         val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
@@ -182,7 +171,6 @@ data class PublishMessage(
      *
      * The variable header contains the following fields in the order: Topic Name, Packet Identifier.
      */
-    @Parcelize
     data class VariableHeader(
         /**
              * The Topic Name identifies the information channel to which payload data is published.
@@ -203,7 +191,7 @@ data class PublishMessage(
          * 2.3.1 provides more information about Packet Identifiers.
          */
         val packetIdentifier: Int? = null
-    ) : Parcelable {
+    ) {
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.writeUtf8String(topicName)

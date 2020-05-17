@@ -2,7 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.ProtocolError
@@ -14,7 +13,6 @@ import mqtt.wire.data.MqttUtf8String
  * 3.10 UNSUBSCRIBE – Unsubscribe request
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
-@Parcelize
 data class UnsubscribeRequest(
     val packetIdentifier: Int,
     val topics: List<MqttUtf8String>)

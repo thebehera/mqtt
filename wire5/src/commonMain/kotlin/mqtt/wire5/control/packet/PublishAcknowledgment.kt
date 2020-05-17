@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -23,16 +20,13 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * A PUBACK packet is the response to a PUBLISH packet with QoS 1.
  */
-@Parcelize
 data class PublishAcknowledgment(val variable: VariableHeader)
     : ControlPacketV5(4, DirectionOfFlow.BIDIRECTIONAL), IPublishAcknowledgment {
     constructor(packetIdentifier: UShort) : this(VariableHeader(packetIdentifier.toInt()))
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    @IgnoredOnParcel override val packetIdentifier: Int = variable.packetIdentifier
+    override val packetIdentifier: Int = variable.packetIdentifier
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
-
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         /**
@@ -51,7 +45,7 @@ data class PublishAcknowledgment(val variable: VariableHeader)
          * 3.4.2.2 PUBACK Properties
          */
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         init {
             when (reasonCode.byte.toInt()) {
                 0, 0x10, 0x80, 0x83, 0x87, 0x90, 0x91, 0x97, 0x99 -> {
@@ -85,8 +79,6 @@ data class PublishAcknowledgment(val variable: VariableHeader)
             }
             return size
         }
-
-        @Parcelize
         data class Properties(
             /**
              * 3.4.2.2.2 Reason String
@@ -115,8 +107,7 @@ data class PublishAcknowledgment(val variable: VariableHeader)
              * name is allowed to appear more than once.
              */
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+        ) {
             val props by lazy {
                 val list = ArrayList<Property>(1 + userProperty.count())
                 if (reasonString != null) {
