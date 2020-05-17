@@ -10,11 +10,9 @@ import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.ByteArrayWrapper
+import mqtt.wire.data.GenericType
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
-
-typealias CONNECT = ConnectionRequest
 
 /**
  * 3.1 CONNECT – Client requests a connection to a Server
@@ -31,15 +29,14 @@ typealias CONNECT = ConnectionRequest
  * determined based on flags in the variable header.
  */
 @Parcelize
-data class ConnectionRequest(
+data class ConnectionRequest<WillPayload : Any>(
     /**
      * The variable header for the CONNECT Packet consists of four fields in the following order:  Protocol Name,
      * Protocol Level, Connect Flags, and Keep Alive.
      */
     @Embedded val variableHeader: VariableHeader = VariableHeader(),
-    @Embedded val payload: Payload = Payload()
-)
-    : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    @Embedded val payload: Payload<WillPayload> = Payload()
+) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     @Ignore
     @IgnoredOnParcel
     override val username = payload.userName?.getValueOrThrow()
@@ -55,15 +52,16 @@ data class ConnectionRequest(
     @IgnoredOnParcel
     override val protocolVersion = variableHeader.protocolLevel.toInt()
     constructor(
-            clientId: String,
-            username: String? = null,
-            password: String? = null,
-            willRetain: Boolean = false,
-            willQos: QualityOfService = QualityOfService.AT_MOST_ONCE,
-            willTopic: String? = null,
-            willPayload: ByteArrayWrapper? = null,
-            cleanSession: Boolean = false,
-            keepAliveSeconds: UShort = UShort.MAX_VALUE) :
+        clientId: String,
+        username: String? = null,
+        password: String? = null,
+        willRetain: Boolean = false,
+        willQos: QualityOfService = QualityOfService.AT_MOST_ONCE,
+        willTopic: String? = null,
+        willPayload: GenericType<WillPayload>? = null,
+        cleanSession: Boolean = false,
+        keepAliveSeconds: UShort = UShort.MAX_VALUE
+    ) :
             this(
                     VariableHeader(
                             hasUserName = username != null,
@@ -77,7 +75,7 @@ data class ConnectionRequest(
                 Payload(
                     clientId = MqttUtf8String(clientId),
                     willTopic = if (willTopic != null && willPayload != null) MqttUtf8String(willTopic) else null,
-                    willPayload = if (willTopic != null && willPayload != null) willPayload else null,
+                    willPayload = willPayload,
                     userName = if (username != null) MqttUtf8String(username) else null,
                     password = if (password != null) MqttUtf8String(password) else null
                 )
@@ -420,18 +418,18 @@ data class ConnectionRequest(
      * Will Topic, Will Message, User Name, Password [MQTT-3.1.3-1].
      */
     @Parcelize
-    data class Payload(
-            /**
-             * 3.1.3.1 Client Identifier (ClientID)
-             *
-             * The Client Identifier (ClientId) identifies the Client to the Server. Each Client connecting to the
-             * Server has a unique ClientId. The ClientId MUST be used by Clients and by Servers to identify state
-             * that they hold relating to this MQTT Session between the Client and the Server [MQTT-3.1.3-2].
-             *
-             * The Client Identifier (ClientId) MUST be present and MUST be the first field in the CONNECT packet
-             * payload [MQTT-3.1.3-3].
-             *
-             * The ClientId MUST be a UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-4].
+    data class Payload<WillPayload : Any>(
+        /**
+         * 3.1.3.1 Client Identifier (ClientID)
+         *
+         * The Client Identifier (ClientId) identifies the Client to the Server. Each Client connecting to the
+         * Server has a unique ClientId. The ClientId MUST be used by Clients and by Servers to identify state
+         * that they hold relating to this MQTT Session between the Client and the Server [MQTT-3.1.3-2].
+         *
+         * The Client Identifier (ClientId) MUST be present and MUST be the first field in the CONNECT packet
+         * payload [MQTT-3.1.3-3].
+         *
+         * The ClientId MUST be a UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-4].
              *
              * The Server MUST allow ClientIds which are between 1 and 23 UTF-8 encoded bytes in length, and that
              * contain only the characters
@@ -460,36 +458,36 @@ data class ConnectionRequest(
              * method should be actively discouraged when the CleanSession is set to 0.
              */
             val clientId: MqttUtf8String = MqttUtf8String(""),
-            /**
+        /**
              * 3.1.3.2 Will Topic
              *
              * If the Will Flag is set to 1, the Will Topic is the next field in the payload. The Will Topic MUST be a
              * UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-10].
              */
             val willTopic: MqttUtf8String? = null,
-            /**
-             * 3.1.3.3 Will Message
-             * If the Will Flag is set to 1 the Will Message is the next field in the payload. The Will Message defines
-             * the Application Message that is to be published to the Will Topic as described in Section 3.1.2.5. This
-             * field consists of a two byte length followed by the payload for the Will Message expressed as a sequence
-             * of zero or more bytes. The length gives the number of bytes in the data that follows and does not
-             * include the 2 bytes taken up by the length itself.
-             *
-             * When the Will Message is published to the Will Topic its payload consists only of the data portion of
-             * this field, not the first two length bytes.
-             */
-            val willPayload: ByteArrayWrapper? = null,
-            /**
-             * 3.1.3.4 User Name
-             *
-             * If the User Name Flag is set to 1, this is the next field in the payload. The User Name MUST be a UTF-8
-             * encoded string as defined in Section 1.5.3 [MQTT-3.1.3-11]. It can be used by the Server for
-             * authentication and authorization.
-             */
-            val userName: MqttUtf8String? = null,
-            /**
-             * 3.1.3.5 Password
-             *
+        /**
+         * 3.1.3.3 Will Message
+         * If the Will Flag is set to 1 the Will Message is the next field in the payload. The Will Message defines
+         * the Application Message that is to be published to the Will Topic as described in Section 3.1.2.5. This
+         * field consists of a two byte length followed by the payload for the Will Message expressed as a sequence
+         * of zero or more bytes. The length gives the number of bytes in the data that follows and does not
+         * include the 2 bytes taken up by the length itself.
+         *
+         * When the Will Message is published to the Will Topic its payload consists only of the data portion of
+         * this field, not the first two length bytes.
+         */
+        val willPayload: GenericType<WillPayload>? = null,
+        /**
+         * 3.1.3.4 User Name
+         *
+         * If the User Name Flag is set to 1, this is the next field in the payload. The User Name MUST be a UTF-8
+         * encoded string as defined in Section 1.5.3 [MQTT-3.1.3-11]. It can be used by the Server for
+         * authentication and authorization.
+         */
+        val userName: MqttUtf8String? = null,
+        /**
+         * 3.1.3.5 Password
+         *
              * If the Password Flag is set to 1, this is the next field in the payload. The Password field contains 0
              * to 65535 bytes of binary data prefixed with a two byte length field which indicates the number of bytes
              * used by the binary data (it does not include the two bytes taken up by the length field itself).
@@ -503,8 +501,7 @@ data class ConnectionRequest(
                 size += 2u + writeBuffer.mqttUtf8Size(willTopic.value)
             }
             if (willPayload != null) {
-                val payload = willPayload.byteArray
-                size += 2u + payload.size.toUInt()
+                size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
                 size += 2u + writeBuffer.mqttUtf8Size(userName.value)
@@ -521,9 +518,7 @@ data class ConnectionRequest(
                 writeBuffer.writeUtf8String(willTopic.value)
             }
             if (willPayload != null) {
-                val payload = willPayload.byteArray
-                writeBuffer.write(payload.size.toUShort())
-                writeBuffer.write(payload)
+                writeBuffer.writeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
                 writeBuffer.writeUtf8String(userName.value)
@@ -536,7 +531,10 @@ data class ConnectionRequest(
 
         companion object {
 
-            fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload {
+            inline fun <reified WillPayload : Any> from(
+                buffer: ReadBuffer,
+                variableHeader: VariableHeader
+            ): Payload<WillPayload> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willTopic = if (variableHeader.willFlag) {
                     MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
@@ -544,8 +542,7 @@ data class ConnectionRequest(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    val size = buffer.readUnsignedShort()
-                    ByteArrayWrapper(buffer.readByteArray(size.toUInt()))
+                    GenericType.create(buffer.readGenericType(WillPayload::class))
                 } else {
                     null
                 }
@@ -566,9 +563,15 @@ data class ConnectionRequest(
 
     companion object {
 
-        fun from(buffer: ReadBuffer): ConnectionRequest {
+        fun from(buffer: ReadBuffer): ConnectionRequest<Unit> {
             val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from(buffer, variableHeader)
+            val payload = Payload.from<Unit>(buffer, variableHeader)
+            return ConnectionRequest(variableHeader, payload)
+        }
+
+        inline fun <reified WillPayload : Any> fromInline(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
+            val variableHeader = VariableHeader.from(buffer)
+            val payload = Payload.from<WillPayload>(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
         }
     }
