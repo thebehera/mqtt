@@ -6,7 +6,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-class ServerNew (val host: String, val port: UShort, val process: ServerProcessAbs) {
+class TCPServer (val host: String, val port: UShort, val process: ServerProcess) {
     private lateinit var serverSocket : ServerSocket
 
     suspend fun startServer() {
@@ -45,7 +45,8 @@ class ServerNew (val host: String, val port: UShort, val process: ServerProcessA
                 emit(client)
             }
         } catch (e: Exception) {
-            println("listen exception: $e ${e.message}")
+            if (! e.toString().equals("java.nio.channels.AsynchronousCloseException"))
+                println("listen exception: $e, ${e.message}")
         }
         close()
     }

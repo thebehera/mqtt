@@ -13,7 +13,7 @@ import kotlin.time.measureTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
-class NewSocketTests {
+class `SocketTests-2` {
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
@@ -25,13 +25,13 @@ class NewSocketTests {
     @Test
     fun oneServerOneClient() = block {
         var port : UShort = 0u
-        lateinit var server : ServerNew
+        lateinit var server : TCPServer
         lateinit var client: ClientToServerSocket
 
-        val serverProcess = TestServerProcess()
+        val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-1"
         serverProcess.clientResponse = "Client-"
-        server = ServerNew ("localhost", port, serverProcess)
+        server = TCPServer ("localhost", port, serverProcess)
         launchServer (this, port, server)
 
         port = server.getListenPort()
@@ -46,18 +46,18 @@ class NewSocketTests {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-//    @Test
+ //   @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
         val clientCount = 5000
-        val serverProcess = TestServerProcess()
+        val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-1"
         serverProcess.clientResponse = "Client-"
-        val server = ServerNew("localhost", port, serverProcess)
+        val server = TCPServer("localhost", port, serverProcess)
         launchServer(this, port, server)
         port = server.getListenPort()
 
-        var closedConnections = 0
+        var closedConnections = 1
         val doneMutex = Mutex(true)
         repeat(clientCount) { i ->
             val client = asyncClientSocket()
@@ -76,12 +76,12 @@ class NewSocketTests {
                 }
             }
         }
-        val timeTook = measureTime {
-            withTimeout(5000) {
+ //       val timeTook = measureTime {
+ //           withTimeout(5000) {
                 doneMutex.lock()
-            }
-        }
-        println("Took $timeTook for $clientCount connections")
+ //           }
+ //       }
+ //       println("Took $timeTook for $clientCount connections")
     }
 
     @ExperimentalUnsignedTypes
@@ -121,7 +121,7 @@ class NewSocketTests {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-    private suspend fun launchServer(scope: CoroutineScope, port: UShort, server: ServerNew) {
+    private suspend fun launchServer(scope: CoroutineScope, port: UShort, server: TCPServer) {
         server.startServer()
         assertNotEquals(server.getListenPort(), port, "Server listen port is diferent")
         scope.launch {

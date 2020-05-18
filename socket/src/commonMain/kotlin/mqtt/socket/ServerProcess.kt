@@ -5,6 +5,8 @@ import kotlin.time.ExperimentalTime
 
 interface ServerProcess {
     @ExperimentalTime
-    suspend fun process (socket : ClientSocket)
+    suspend fun serverSideProcess ()
+    @ExperimentalTime
+    suspend fun startProcessing (socket : ClientSocket)
     suspend fun close()
 }
