@@ -1,6 +1,5 @@
 package mqtt.socket
 
-import kotlinx.coroutines.delay
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.assertEquals
@@ -8,7 +7,7 @@ import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 
-class TestServerProcess : ServerProcessAbs() {
+class TestServerProcess : TCPServerProcess() {
     public lateinit var name: String
     public lateinit var clientResponse: String
     @ExperimentalTime
