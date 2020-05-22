@@ -46,42 +46,86 @@ class `SocketTests-2` {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
- //   @Test
+    @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
-        val clientCount = 5000
+        val clientCount = 50
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
-        serverProcess.name = "Server-1"
+        serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
         val server = TCPServer("localhost", port, serverProcess)
         launchServer(this, port, server)
         port = server.getListenPort()
 
-        var closedConnections = 1
         val doneMutex = Mutex(true)
         repeat(clientCount) { i ->
-            val client = asyncClientSocket()
-            initiateClient(client, port)
-            launch (Dispatchers.Default){
-                clientMessage(client, "Client-$i", "Client-$i:Server-1")
-                launch {
-                    println("b==> $i")
-                    client.close()
-                    closedConnections++
-                    if (closedConnections >= clientCount) {
-                        server.close()
-                        assertEquals(0, readStats(port, "CLOSE_WAIT").count(), "sockets found in close_wait state")
-                        doneMutex.unlock()
-                    }
-                }
+            launch (Dispatchers.Default) {
+                clientSetup(port, port, i, clientCount, doneMutex)
             }
         }
- //       val timeTook = measureTime {
- //           withTimeout(5000) {
-                doneMutex.lock()
- //           }
- //       }
- //       println("Took $timeTook for $clientCount connections")
+        doneMutex.lock()
+        server.close()
+        assertEquals(0, readStats(port, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+        doneMutex.unlock()
+    }
+
+    @ExperimentalUnsignedTypes
+    @ExperimentalTime
+    @Test
+    fun twoServerMultiClient() = block {
+        var port0: UShort = 0u
+        var port1: UShort = 0u
+        val clientCount = 100
+        val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
+        serverProcess.name = "Server-x"
+        serverProcess.clientResponse = "Client-"
+
+        val server0 = TCPServer("localhost", port0, serverProcess)
+        val server1 = TCPServer("localhost", port1, serverProcess)
+        launchServer(this, port0, server0)
+        launchServer(this, port1, server1)
+        port0 = server0.getListenPort()
+        port1 = server1.getListenPort()
+
+        val doneMutex = Mutex(true)
+        closeCounter.counter = 0
+        repeat(clientCount) { i ->
+            launch (Dispatchers.Default){
+                clientSetup(port0, port1, i, clientCount, doneMutex)
+            }
+        }
+        doneMutex.lock()
+        server0.close()
+        server1.close()
+        assertEquals(0, readStats(port0, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+        assertEquals(0, readStats(port1, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+        doneMutex.unlock()
+    }
+
+    companion object closeCounter {
+        var counter: Int = 0
+        private val mux: Mutex = Mutex()
+        suspend fun increment() {
+            mux.lock()
+            counter++
+            mux.unlock()
+        }
+    }
+    @ExperimentalTime
+    private suspend fun clientSetup(port0: UShort, port1: UShort, counter: Int, clientCount:Int, mut: Mutex) {
+        val xx:String = "Client-" + "$counter"
+        val client = asyncClientSocket()
+
+        if (counter % 2 == 0)
+            initiateClient(client, port0)
+        else
+            initiateClient(client, port1)
+        clientMessage(client, xx, "$xx:Server-x")
+        client.close()
+        closeCounter.increment()
+        if (closeCounter.counter >= clientCount)
+            mut.unlock()
+
     }
 
     @ExperimentalUnsignedTypes
@@ -95,11 +139,12 @@ class `SocketTests-2` {
             wbuffer.writeUtf8String(sendMsg)
             socket.write(wbuffer, timeout)
             socket.read(rbuffer, timeout)
-            println("a==>$sendMsg")
             val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+            println("=> $sendMsg, $respMsg, $str")
             assertEquals(respMsg, str, "Excepted message not received.")
         } catch (e: Exception) {
-            println("NewSocketTest.clientMessage.exception: $sendMsg")
+            assertTrue("".equals("clientMessage.exception: ${e.message}"))
+ //           println("clientMessage.exception: $sendMsg, ${e.message}")
         }
     }
 
@@ -115,7 +160,8 @@ class `SocketTests-2` {
             //println("client port #: ${client!!.localPort()}, ${client!!.remotePort()}")
             assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
         } catch (e: Exception) {
-            println("NewSocketTest.initiateClient.exception: $port")
+            assertTrue("".equals("initiateClient.exception: ${e.message}"))
+//            println("initiateClient.exception: $port, ${e.message}")
         }
     }
 

@@ -23,7 +23,8 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     suspend fun getClientConnection() {
 
         listen().collect {
-            process.startProcessing(it)
+            val x: ServerProcess = process.newInstance()
+            x.startProcessing(it)
         }
     }
 

@@ -14,8 +14,8 @@ enum class ServerAction {USHORT, CONNECT_DISCONNECT, MQTTSTRING}
 class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     @ExperimentalTime
     private val timeout = 10000.milliseconds
-    public lateinit var name: String
-    public lateinit var clientResponse: String
+    public var name: String = ""
+    public var clientResponse: String = ""
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
@@ -68,17 +68,29 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         try {
             assertTrue(socket.isOpen(), "Client socket is not open")
 
-            assertEquals(socket.read(rbuffer, timeout), clientResponse.length + 3, "message read length not correct")
+            //assertEquals(socket.read(rbuffer, timeout), clientResponse.length + 3, "message read length not correct")
+
+            val ret: Int = socket.read(rbuffer, timeout)
 
             var str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+            assertEquals(ret, str.length + 2, "message read length not correct")
+ //           println("==> $ret,, $str, $rbuffer")
             assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
 
             wbuffer.writeUtf8String(str + ":" + name)
 
             assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
         } catch (e: Exception) {
-            println("TestServerProcess.serverSideProcess.exception:")
+            println("TestServerProcess.serverSideProcess.exception: $e, ${e.message}")
         }
+    }
+
+    override suspend fun newInstance(): ServerProcess {
+        val x: ServerProcessTest = ServerProcessTest(action)
+        x.name = this.name
+        x.clientResponse = this.clientResponse
+
+        return x
     }
 
     @ExperimentalTime

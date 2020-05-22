@@ -5,13 +5,15 @@ import kotlin.time.ExperimentalTime
 
 abstract class TCPServerProcess : ServerProcess {
     @ExperimentalTime
-    protected lateinit var socket: ClientSocket
+  protected lateinit var socket: ClientSocket
 
     @ExperimentalTime
     abstract override suspend fun serverSideProcess()
 
+    abstract override suspend fun newInstance(): ServerProcess
+
     @ExperimentalTime
-    override suspend fun startProcessing (socket : ClientSocket) {
+    override suspend fun startProcessing(socket: ClientSocket) {
         try {
             this.socket = socket
             serverSideProcess()
