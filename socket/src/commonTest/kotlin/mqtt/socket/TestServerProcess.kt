@@ -20,6 +20,10 @@ class TestServerProcess : TCPServerProcess() {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
+    override suspend fun newInstance(): ServerProcess {
+        return TestServerProcess()
+    }
+
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     override suspend fun serverSideProcess() {
