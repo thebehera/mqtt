@@ -26,7 +26,7 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
     override fun readLong() = buffer.readLong()
 
     override fun readUtf8(bytes: UInt): CharSequence {
-        return buffer.readText(max = bytes.toInt())
+        return buffer.readBytes(bytes.toInt()).decodeToString()
     }
 
     override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as NativeBuffer).buffer)

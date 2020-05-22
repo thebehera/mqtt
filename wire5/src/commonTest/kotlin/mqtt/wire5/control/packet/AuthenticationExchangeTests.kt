@@ -37,7 +37,8 @@ class AuthenticationExchangeTests {
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "byte0 variable header reason code")
         assertEquals(10u, buffer.readVariableByteInteger(), "property length")
         assertEquals(0x15.toUByte(), buffer.readUnsignedByte(), "identifier of the authentication method")
-        assertEquals("test", buffer.readMqttUtf8StringNotValidated().toString(), "authentication method value")
+        assertEquals(4u, buffer.readUnsignedShort())
+        assertEquals("test", buffer.readUtf8(4u).toString(), "authentication method value")
     }
 
     @Test
