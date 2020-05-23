@@ -21,8 +21,8 @@ interface WriteBuffer {
         return this
     }
 
-    fun <T : Any> writeGenericType(obj: T, type: KClass<T>): WriteBuffer {
-        GenericSerialization.serialize(this, obj, type)
+    fun writeGenericType(genericType: GenericType<*>): WriteBuffer {
+        GenericSerialization.serialize(this, genericType)
         return this
     }
 

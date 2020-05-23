@@ -8,7 +8,6 @@ import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Name
@@ -36,9 +35,11 @@ data class PublishMessage<T : Any>(
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
         if (payload != null) {
-            writeBuffer.writeGenericType(payload.obj, payload.kClass)
+            writeBuffer.writeGenericType(payload)
         }
     }
+
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payloadSize(buffer)
 
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
@@ -194,21 +195,37 @@ data class PublishMessage<T : Any>(
             }
         }
 
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = writeBuffer.lengthUtf8String(topicName) + UShort.SIZE_BYTES.toUInt()
+            if (packetIdentifier != null) {
+                size += 2u
+            }
+            return size
+        }
+
         companion object {
             fun from(buffer: ReadBuffer, isQos0: Boolean): VariableHeader {
-                val topicName = MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
                 // Intention NullPointerException. This should fail the validation and immediately bail out
-                val topicNameValidated = Name(topicName.getValueOrThrow()).validateTopic()!!
+                val topicNameValidated =
+                    Name(buffer.readMqttUtf8StringNotValidated()).validateTopic()!!.getAllBottomLevelChildren().first()
                 val packetIdentifier = if (isQos0) null else buffer.readUnsignedShort()
                 return VariableHeader(topicNameValidated.getCurrentPath(), packetIdentifier?.toInt())
             }
         }
     }
 
+    fun payloadSize(writeBuffer: WriteBuffer): UInt {
+        if (payload != null) {
+            return writeBuffer.sizeGenericType(payload.obj, payload.kClass)
+        }
+        return 0u
+    }
+
+
     companion object {
 
         @Suppress("UNUSED_PARAMETER")
-        inline fun <reified T : Any> from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
+        inline fun <reified T : Any> from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<T> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             var variableSize = 2u + buffer.sizeUtf8String(variableHeader.topicName)
@@ -223,6 +240,32 @@ data class PublishMessage<T : Any>(
                 null
             }
             return PublishMessage(fixedHeader, variableHeader, genericType)
+        }
+
+        fun build(
+            dup: Boolean = false,
+            qos: QualityOfService = AT_MOST_ONCE,
+            retain: Boolean = false,
+            topicName: CharSequence = "",
+            packetIdentifier: Int? = null
+        ) = buildTyped<Unit>(dup, qos, retain, topicName, packetIdentifier)
+
+        inline fun <reified T : Any> buildTyped(
+            dup: Boolean = false,
+            qos: QualityOfService = AT_MOST_ONCE,
+            retain: Boolean = false,
+            topicName: CharSequence = "",
+            packetIdentifier: Int? = null,
+            payload: T? = null
+        ): PublishMessage<T> {
+            val fixed = FixedHeader(dup, qos, retain)
+            val variable = VariableHeader(topicName, packetIdentifier)
+            val typedPayload = if (payload != null) {
+                GenericType(payload, T::class)
+            } else {
+                null
+            }
+            return PublishMessage(fixed, variable, typedPayload)
         }
     }
 

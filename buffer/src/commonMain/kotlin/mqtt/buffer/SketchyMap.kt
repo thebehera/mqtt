@@ -11,7 +11,7 @@ class SketchyBufferSerializerMap {
         return map[kClass]!! as BufferSerializer<T>
     }
 
-    operator fun <T : Any> set(serializerType: KClass<T>, value: BufferSerializer<T>) {
+    operator fun <C : T, T : Any> set(serializerType: KClass<C>, value: BufferSerializer<T>) {
         map[serializerType] = value as BufferSerializer<Any>
     }
 }
@@ -23,7 +23,7 @@ class SketchyBufferDeserializerMap {
         return map[kClass]!! as BufferDeserializer<T>
     }
 
-    operator fun <T : Any> set(serializerType: KClass<T>, value: BufferDeserializer<T>) {
+    operator fun <C : T, T : Any> set(serializerType: KClass<C>, value: BufferDeserializer<T>) {
         map[serializerType] = value as BufferDeserializer<Any>
     }
 }

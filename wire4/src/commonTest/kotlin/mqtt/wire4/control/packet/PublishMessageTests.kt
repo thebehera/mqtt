@@ -8,6 +8,7 @@ import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.PublishMessage.FixedHeader
 import mqtt.wire4.control.packet.PublishMessage.VariableHeader
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.fail
 
 class PublishMessageTests {
@@ -58,5 +59,29 @@ class PublishMessageTests {
             fail()
         } catch (e: IllegalArgumentException) {
         }
+    }
+
+    @Test
+    fun genericSerialization() {
+        val publishMessage = PublishMessage.buildTyped(topicName = "user/log", payload = "yolo")
+        val buffer = allocateNewBuffer(16u)
+        publishMessage.serialize(buffer)
+        buffer.resetForRead()
+        val byte1 = buffer.readUnsignedByte()
+        val remainingLength = buffer.readVariableByteInteger()
+        val result = PublishMessage.from<String>(buffer, byte1, remainingLength)
+        assertEquals(publishMessage, result)
+    }
+
+    @Test
+    fun nullGenericSerialization() {
+        val publishMessage = PublishMessage.build(topicName = "user/log")
+        val buffer = allocateNewBuffer(12u)
+        publishMessage.serialize(buffer)
+        buffer.resetForRead()
+        val byte1 = buffer.readUnsignedByte()
+        val remainingLength = buffer.readVariableByteInteger()
+        val result = PublishMessage.from<Unit>(buffer, byte1, remainingLength)
+        assertEquals(publishMessage, result)
     }
 }

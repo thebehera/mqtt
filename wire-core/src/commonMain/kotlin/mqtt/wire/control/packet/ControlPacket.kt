@@ -20,7 +20,8 @@ interface ControlPacket {
         val localFlagsByte = flags.toUByte().toInt()
         val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
         writeBuffer.write(byte1)
-        writeBuffer.writeVariableByteInteger(remainingLength(writeBuffer))
+        val remaining = remainingLength(writeBuffer)
+        writeBuffer.writeVariableByteInteger(remaining)
     }
 
     fun variableHeader(writeBuffer: WriteBuffer) {}
