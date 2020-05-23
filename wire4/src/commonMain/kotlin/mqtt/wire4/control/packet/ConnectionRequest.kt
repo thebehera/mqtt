@@ -485,7 +485,7 @@ data class ConnectionRequest<WillPayload : Any>(
                 writeBuffer.writeMqttUtf8String(willTopic.value)
             }
             if (willPayload != null) {
-                writeBuffer.writeGenericType(willPayload.obj, willPayload.kClass)
+                writeBuffer.writeGenericType(willPayload)
             }
             if (userName != null) {
                 writeBuffer.writeMqttUtf8String(userName.value)
