@@ -410,7 +410,7 @@ data class PublishMessage<ApplicationMessage : Any>(
              *
              * Refer to section 4.10 for more information about Request / Response
              */
-            val coorelationData: ByteArrayWrapper? = null,
+            val correlationData: ByteArrayWrapper? = null,
             /**
              * 3.3.2.3.7 User Property
              *
@@ -495,8 +495,8 @@ data class PublishMessage<ApplicationMessage : Any>(
                 if (responseTopic != null) {
                     list += ResponseTopic(responseTopic)
                 }
-                if (coorelationData != null) {
-                    list += CorrelationData(coorelationData)
+                if (correlationData != null) {
+                    list += CorrelationData(correlationData)
                 }
                 if (userProperty.isNotEmpty()) {
                     for (keyValueProperty in userProperty) {

@@ -245,14 +245,14 @@ class PublishMessageTests {
 
     @Test
     fun correlationData() {
-        val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
+        val props = VariableHeader.Properties(correlationData = ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
         val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
-        assertEquals(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)), publish.variable.properties.coorelationData)
+        assertEquals(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)), publish.variable.properties.correlationData)
     }
 
     @Test
