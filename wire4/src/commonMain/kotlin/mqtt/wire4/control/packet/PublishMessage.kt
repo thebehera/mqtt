@@ -16,10 +16,10 @@ import mqtt.wire.data.topic.Name
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-data class PublishMessage<T : Any>(
+data class PublishMessage<ApplicationMessage : Any>(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
-    val payload: GenericType<T>? = null
+    val payload: GenericType<ApplicationMessage>? = null
 ) : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
     init {
