@@ -2,8 +2,6 @@
 
 package mqtt.wire.data.topic
 
-import mqtt.buffer.GenericType
-import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.MqttUtf8String
 import kotlin.test.*
@@ -214,19 +212,4 @@ class NodeTests {
         val example = Node.parse("+")
         assertFalse(example.matchesTopic(Node.parse("/finance")))
     }
-
-
-    @Test
-    fun genericSerializer() {
-        val node = Node.parse("user/log")
-        val buffer = allocateNewBuffer(4u)
-        val expected = "yolo"
-        val generic = GenericType(expected, CharSequence::class) as GenericType<Any>
-        node.serializePublish(buffer, generic)
-        buffer.resetForRead()
-        val result = node.deserializePublish(buffer, 4u)!!
-        assertEquals(expected, result.obj.toString())
-    }
-
-
 }
