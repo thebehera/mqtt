@@ -47,7 +47,7 @@ abstract class ControlPacketV5(
                 0 -> Reserved
                 1 -> ConnectionRequest.from<WillPayload>(buffer)
                 2 -> ConnectionAcknowledgment.from(buffer, remainingLength)
-                3 -> PublishMessage.from(buffer, byte1, remainingLength)
+                3 -> PublishMessage.from<PublishPayload>(buffer, byte1, remainingLength)
                 4 -> PublishAcknowledgment.from(buffer, remainingLength)
                 5 -> PublishReceived.from(buffer, remainingLength)
                 6 -> PublishRelease.from(buffer, remainingLength)

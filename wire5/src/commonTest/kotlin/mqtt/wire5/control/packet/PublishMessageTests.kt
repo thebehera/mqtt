@@ -17,7 +17,7 @@ class PublishMessageTests {
     @Test
     fun serialize() {
         val buffer = allocateNewBuffer(8u, limits)
-        val expected = PublishMessage("", QualityOfService.AT_LEAST_ONCE, 1u)
+        val expected = PublishMessage<Unit>("", QualityOfService.AT_LEAST_ONCE, 1u)
         expected.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110010, buffer.readByte(), "fixed header byte 1")
@@ -26,7 +26,7 @@ class PublishMessageTests {
         assertEquals(1u, buffer.readUnsignedShort(), "packet identifier")
         assertEquals(0, buffer.readProperties()?.count() ?: 0, "properties")
         buffer.resetForRead()
-        val actual = ControlPacketV5.from(buffer) as PublishMessage
+        val actual = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals(expected, actual)
     }
 
@@ -39,7 +39,7 @@ class PublishMessageTests {
         buffer.writeVariableByteInteger(remainingLength)
         buffer.resetForRead()
         try {
-            ControlPacketV5.from(buffer)
+            ControlPacketV5.from(buffer) as PublishMessage<*>
             fail()
         } catch (e: MalformedPacketException) {
         }
@@ -48,7 +48,7 @@ class PublishMessageTests {
     @Test
     fun payloadFormatIndicatorDefault() {
         val buffer = allocateNewBuffer(6u, limits)
-        val expected = PublishMessage(variable = VariableHeader("t"))
+        val expected = PublishMessage<Unit>(variable = VariableHeader("t"))
         expected.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
@@ -56,7 +56,7 @@ class PublishMessageTests {
         assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
         assertEquals(0, buffer.readProperties()?.count() ?: 0, "properties")
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertFalse(publish.variable.properties.payloadFormatIndicator)
     }
 
@@ -65,7 +65,7 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(true)
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(8u, limits)
-        val expected = PublishMessage(variable = variableHeader)
+        val expected = PublishMessage<Unit>(variable = variableHeader)
         expected.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
@@ -78,7 +78,7 @@ class PublishMessageTests {
             (propertiesActual?.first() as PayloadFormatIndicator).willMessageIsUtf8
         )
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertTrue(publish.variable.properties.payloadFormatIndicator)
     }
 
@@ -87,7 +87,7 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(false)
         val buffer = allocateNewBuffer(6u, limits)
         val variableHeader = VariableHeader("t", properties = props)
-        val expected = PublishMessage(variable = variableHeader)
+        val expected = PublishMessage<Unit>(variable = variableHeader)
         expected.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
@@ -97,7 +97,7 @@ class PublishMessageTests {
         assertEquals(0, propertiesActual?.count() ?: 0, "properties")
         assertNull((propertiesActual?.firstOrNull() as? PayloadFormatIndicator)?.willMessageIsUtf8)
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertFalse(publish.variable.properties.payloadFormatIndicator)
     }
 
@@ -122,7 +122,7 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(messageExpiryInterval = 2)
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(11u, limits)
-        val msg = PublishMessage(variable = variableHeader)
+        val msg = PublishMessage<Unit>(variable = variableHeader)
         msg.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
@@ -135,7 +135,7 @@ class PublishMessageTests {
             (propertiesActual?.firstOrNull() as? MessageExpiryInterval)?.seconds
         )
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals(2, publish.variable.properties.messageExpiryInterval)
     }
 
@@ -159,7 +159,7 @@ class PublishMessageTests {
     fun topicAlias() {
         val props = VariableHeader.Properties(topicAlias = 2)
         val variableHeader = VariableHeader("t", properties = props)
-        val expected = PublishMessage(variable = variableHeader)
+        val expected = PublishMessage<Unit>(variable = variableHeader)
         val buffer = allocateNewBuffer(9u, limits)
         expected.serialize(buffer)
         buffer.resetForRead()
@@ -170,7 +170,7 @@ class PublishMessageTests {
         assertEquals(1, propertiesActual?.count() ?: 0, "properties")
         assertEquals(2, (propertiesActual?.firstOrNull() as? TopicAlias)?.value)
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals(expected, publish)
     }
 
@@ -183,7 +183,7 @@ class PublishMessageTests {
         } catch (e: ProtocolError) {
         }
         assertFails {
-            PublishMessage(
+            PublishMessage<Unit>(
                 variable = VariableHeader(
                     properties = VariableHeader.Properties(topicAlias = 0),
                     topicName = "yolo"
@@ -213,7 +213,7 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(responseTopic = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
-        val actual = PublishMessage(variable = variableHeader)
+        val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
@@ -223,7 +223,7 @@ class PublishMessageTests {
         assertEquals(0x08, buffer.readByte(), "property identifier response topic")
         assertEquals("t/as", buffer.readMqttUtf8StringNotValidated().toString(), "response topic value")
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals("t/as", publish.variable.properties.responseTopic?.toString())
     }
 
@@ -248,10 +248,10 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(coorelationData = ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
-        val actual = PublishMessage(variable = variableHeader)
+        val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)), publish.variable.properties.coorelationData)
     }
 
@@ -281,11 +281,11 @@ class PublishMessageTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val request = PublishMessage(variable = VariableHeader("t", properties = props))
+        val request = PublishMessage<Unit>(variable = VariableHeader("t", properties = props))
         val buffer = allocateNewBuffer(100u, limits)
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as PublishMessage
+        val requestRead = ControlPacketV5.from(buffer) as PublishMessage<*>
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals("key", key.toString())
         assertEquals("value", value.toString())
@@ -296,10 +296,10 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(subscriptionIdentifier = setOf(2))
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(8u, limits)
-        val actual = PublishMessage(variable = variableHeader)
+        val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals(2, publish.variable.properties.subscriptionIdentifier.first())
     }
 
@@ -319,10 +319,10 @@ class PublishMessageTests {
         val props = VariableHeader.Properties(contentType = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
-        val actual = PublishMessage(variable = variableHeader)
+        val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
-        val publish = ControlPacketV5.from(buffer) as PublishMessage
+        val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
         assertEquals("t/as", publish.variable.properties.contentType?.toString())
     }
 
@@ -353,7 +353,7 @@ class PublishMessageTests {
         val fixed = FixedHeader(qos = QualityOfService.AT_MOST_ONCE)
         val variable = VariableHeader("t", 2)
         try {
-            PublishMessage(fixed, variable)
+            PublishMessage<Unit>(fixed, variable)
             fail()
         } catch (e: IllegalArgumentException) {
         }
@@ -364,7 +364,7 @@ class PublishMessageTests {
         val fixed = FixedHeader(qos = QualityOfService.AT_LEAST_ONCE)
         val variable = VariableHeader("t")
         try {
-            PublishMessage(fixed, variable)
+            PublishMessage<Unit>(fixed, variable)
             fail()
         } catch (e: IllegalArgumentException) {
         }
@@ -375,7 +375,7 @@ class PublishMessageTests {
         val fixed = FixedHeader(qos = QualityOfService.EXACTLY_ONCE)
         val variable = VariableHeader("t")
         try {
-            PublishMessage(fixed, variable)
+            PublishMessage<Unit>(fixed, variable)
             fail()
         } catch (e: IllegalArgumentException) {
         }

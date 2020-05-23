@@ -30,7 +30,7 @@ class TypeTests {
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBLISH() {
         val variable = VariableHeader("t")
-        assertEquals(3, PublishMessage(variable = variable).controlPacketValue, controlPacketSpectMatchError)
+        assertEquals(3, PublishMessage<Unit>(variable = variable).controlPacketValue, controlPacketSpectMatchError)
     }
 
     @Test
@@ -153,7 +153,7 @@ class TypeTests {
     @Test
     fun controlPacketTypeDirectionOfFlowPUBLISH() {
         val variable = VariableHeader("t")
-        assertEquals(BIDIRECTIONAL, PublishMessage(variable = variable).direction, controlPacketSpectMatchError)
+        assertEquals(BIDIRECTIONAL, PublishMessage<Unit>(variable = variable).direction, controlPacketSpectMatchError)
     }
 
     @Test
