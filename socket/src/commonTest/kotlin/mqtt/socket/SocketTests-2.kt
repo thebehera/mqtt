@@ -49,7 +49,7 @@ class `SocketTests-2` {
     @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
-        val clientCount = 50
+        val clientCount = 20
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
@@ -75,7 +75,7 @@ class `SocketTests-2` {
     fun twoServerMultiClient() = block {
         var port0: UShort = 0u
         var port1: UShort = 0u
-        val clientCount = 100
+        val clientCount = 50
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
@@ -123,7 +123,7 @@ class `SocketTests-2` {
         clientMessage(client, xx, "$xx:Server-x")
         client.close()
         closeCounter.increment()
-        if (closeCounter.counter >= clientCount)
+        if (closeCounter.counter >= clientCount && mut.isLocked)
             mut.unlock()
 
     }
@@ -140,7 +140,7 @@ class `SocketTests-2` {
             socket.write(wbuffer, timeout)
             socket.read(rbuffer, timeout)
             val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
-            println("=> $sendMsg, $respMsg, $str")
+//            println("=> $sendMsg, $respMsg, $str")
             assertEquals(respMsg, str, "Excepted message not received.")
         } catch (e: Exception) {
             assertTrue("".equals("clientMessage.exception: ${e.message}"))
