@@ -2,9 +2,7 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.GenericType
-import mqtt.buffer.ReadBuffer
-import mqtt.buffer.WriteBuffer
+import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
@@ -12,6 +10,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
+import kotlin.reflect.KClass
 
 /**
  * 3.1 CONNECT – Client requests a connection to a Server
@@ -497,10 +496,10 @@ data class ConnectionRequest<WillPayload : Any>(
 
         companion object {
 
-            inline fun <reified WillPayload : Any> from(
+            fun from(
                 buffer: ReadBuffer,
                 variableHeader: VariableHeader
-            ): Payload<WillPayload> {
+            ): Payload<*> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willTopic = if (variableHeader.willFlag) {
                     MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
@@ -508,9 +507,22 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    GenericType(
-                        buffer.readGenericType(WillPayload::class, buffer.readUnsignedShort())!!, WillPayload::class
+                    val length = buffer.readUnsignedShort()
+                    val headers = HashMap<CharSequence, HashSet<CharSequence>>()
+                    headers.add("${variableHeader.protocolName.value} Control Packet Value", "1")
+                    headers.add("Protocol Name", variableHeader.protocolName.value)
+                    headers.add("Protocol Level", variableHeader.protocolLevel.toString())
+                    headers.add(
+                        "${variableHeader.protocolName.value} Will Retain",
+                        variableHeader.willRetain.toString()
                     )
+                    headers.add("${variableHeader.protocolName.value} Will QoS", variableHeader.willQos.toString())
+                    headers.add("${variableHeader.protocolName.value} Will Topic", willTopic!!.value)
+                    val params =
+                        DeserializationParameters(buffer, length, ConnectionRequest.toString(), headers = headers)
+                    val obj = buffer.readGenericType(params)!!
+                    val kClass = obj::class as KClass<Any>
+                    GenericType(obj, kClass)
                 } else {
                     null
                 }
@@ -531,9 +543,9 @@ data class ConnectionRequest<WillPayload : Any>(
 
     companion object {
 
-        inline fun <reified WillPayload : Any> from(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
+        fun from(buffer: ReadBuffer): ConnectionRequest<*> {
             val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from<WillPayload>(buffer, variableHeader)
+            val payload = Payload.from(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
         }
     }

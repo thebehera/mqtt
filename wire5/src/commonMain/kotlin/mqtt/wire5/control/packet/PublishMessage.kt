@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.buffer.DeserializationParameters
 import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
@@ -9,7 +10,6 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -216,7 +216,7 @@ data class PublishMessage<ApplicationMessage : Any>(
     data class VariableHeader(
         val topicName: CharSequence,
         val packetIdentifier: Int? = null,
-        val properties: Properties = Properties()
+        val properties: Properties<Any> = Properties()
     ) {
 
         init {
@@ -269,7 +269,7 @@ data class PublishMessage<ApplicationMessage : Any>(
             return result
         }
 
-        data class Properties(
+        data class Properties<CorrelationData : Any>(
             /**
              * 3.3.2.3.2 Payload Format Indicator
              *
@@ -410,7 +410,7 @@ data class PublishMessage<ApplicationMessage : Any>(
              *
              * Refer to section 4.10 for more information about Request / Response
              */
-            val correlationData: ByteArrayWrapper? = null,
+            val correlationData: GenericType<CorrelationData>? = null,
             /**
              * 3.3.2.3.7 User Property
              *
@@ -529,12 +529,12 @@ data class PublishMessage<ApplicationMessage : Any>(
             }
 
             companion object {
-                fun from(keyValuePairs: Collection<Property>?): Properties {
+                fun from(keyValuePairs: Collection<Property>?): Properties<*> {
                     var payloadFormatIndicator: Boolean? = null
                     var messageExpiryInterval: Long? = null
                     var topicAlias: Int? = null
                     var responseTopic: CharSequence? = null
-                    var coorelationData: ByteArrayWrapper? = null
+                    var correlationData: GenericType<*>? = null
                     val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     val subscriptionIdentifier = LinkedHashSet<Long>()
                     var contentType: CharSequence? = null
@@ -576,14 +576,14 @@ data class PublishMessage<ApplicationMessage : Any>(
                                 }
                                 responseTopic = it.value
                             }
-                            is CorrelationData -> {
-                                if (coorelationData != null) {
+                            is CorrelationData<*> -> {
+                                if (correlationData != null) {
                                     throw ProtocolError(
                                         "Correlation Data found twice see:" +
                                                 "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477415"
                                     )
                                 }
-                                coorelationData = it.data
+                                correlationData = it.genericType
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
                             is SubscriptionIdentifier -> {
@@ -609,7 +609,7 @@ data class PublishMessage<ApplicationMessage : Any>(
                     }
                     return Properties(
                         payloadFormatIndicator ?: false,
-                        messageExpiryInterval, topicAlias, responseTopic, coorelationData, userProperty,
+                        messageExpiryInterval, topicAlias, responseTopic, correlationData, userProperty,
                         subscriptionIdentifier, contentType
                     )
                 }
@@ -640,13 +640,22 @@ data class PublishMessage<ApplicationMessage : Any>(
     companion object {
 
         @Suppress("UNUSED_PARAMETER")
-        inline fun <reified T : Any> from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<T> {
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             val variableHeader = variableHeaderSized.second
             val variableSize = variableHeaderSized.first
+
+            val properties = HashMap<Int, Any>()
+
+            val deserializationParameters = DeserializationParameters(
+                buffer,
+                (remainingLength - variableSize).toUShort(),
+                variableHeader.topicName,
+
+                )
             val deserialized =
-                buffer.readGenericType(T::class, (remainingLength - variableSize).toUShort(), variableHeader.topicName)
+                buffer.readGenericType((remainingLength - variableSize).toUShort(), variableHeader.topicName)
             val genericType = if (deserialized != null) {
                 GenericType(deserialized, T::class)
             } else {

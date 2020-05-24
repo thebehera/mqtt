@@ -3,10 +3,19 @@
 package mqtt.buffer
 
 interface BufferDeserializer<T : Any> {
-    fun deserialize(
-        buffer: ReadBuffer,
-        length: UShort = 0u,
-        path: CharSequence? = null,
-        headers: Map<CharSequence, Set<CharSequence>>? = null
-    ): GenericType<T>?
+    fun deserialize(params: DeserializationParameters): GenericType<T>?
+}
+
+data class DeserializationParameters(
+    val buffer: ReadBuffer,
+    val length: UShort = 0u,
+    val path: CharSequence = "",
+    val properties: Map<Int, Any> = emptyMap(),
+    val headers: Map<CharSequence, Set<CharSequence>> = emptyMap()
+)
+
+fun HashMap<CharSequence, HashSet<CharSequence>>.add(k: CharSequence, v: CharSequence) {
+    val set = get(k) ?: HashSet()
+    set += v
+    put(k, set)
 }

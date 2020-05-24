@@ -242,6 +242,23 @@ data class PublishMessage<ApplicationMessage : Any>(
             return PublishMessage(fixedHeader, variableHeader, genericType)
         }
 
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
+            val fixedHeader = FixedHeader.fromByte(byte1)
+            val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
+            var variableSize = 2u + buffer.sizeUtf8String(variableHeader.topicName)
+            if (variableHeader.packetIdentifier != null) {
+                variableSize += 2u
+            }
+            val deserialized =
+                buffer.readGenericType((remainingLength - variableSize).toUShort(), variableHeader.topicName)
+            val genericType = if (deserialized != null) {
+                GenericType(deserialized, T::class)
+            } else {
+                null
+            }
+            return PublishMessage(fixedHeader, variableHeader, genericType)
+        }
+
         fun build(
             dup: Boolean = false,
             qos: QualityOfService = AT_MOST_ONCE,
