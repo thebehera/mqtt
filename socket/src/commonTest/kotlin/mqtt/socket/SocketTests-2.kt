@@ -46,7 +46,7 @@ class `SocketTests-2` {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-//    @Test
+    @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
         val clientCount = 4
@@ -58,6 +58,7 @@ class `SocketTests-2` {
         port = server.getListenPort()
 
         val doneMutex = Mutex(true)
+        closeCounter.counter = 0
         repeat(clientCount) { i ->
             launch (Dispatchers.Default) {
                 clientSetup(port, port, i, clientCount, doneMutex)
