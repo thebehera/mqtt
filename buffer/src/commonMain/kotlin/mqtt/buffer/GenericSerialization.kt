@@ -36,17 +36,10 @@ object GenericSerialization {
         deserializerMap[T::class] = deserializer
     }
 
-    fun <T : Any> deserialize(
-        type: KClass<T>,
-        readBuffer: ReadBuffer,
-        length: UShort,
-        path: CharSequence = "",
-        headers: Map<CharSequence, Set<CharSequence>> = emptyMap()
-    ): T? {
-        if (type == Unit::class) {
-            return null
-        }
-        return deserializerMap.get<T>(type).deserialize(readBuffer, length, path, headers)?.obj
+    fun deserialize(deserializationParameters: DeserializationParameters): Any? {
+        //TODO: Finish this topic matching to the deserializer
+//        return deserializerMap.get<T>(type).deserialize(readBuffer, length, path, headers)?.obj
+        return null
     }
 }
 
@@ -59,13 +52,8 @@ object CharSequenceSerializer : BufferSerializer<CharSequence>, BufferDeserializ
         return true
     }
 
-    override fun deserialize(
-        buffer: ReadBuffer,
-        length: UShort,
-        path: CharSequence?,
-        headers: Map<CharSequence, Set<CharSequence>>?
-    ): GenericType<CharSequence>? {
-        val obj = buffer.readUtf8(length.toUInt())
+    override fun deserialize(parameters: DeserializationParameters): GenericType<CharSequence>? {
+        val obj = parameters.buffer.readUtf8(parameters.length.toUInt())
         return GenericType(obj, CharSequence::class)
     }
 }

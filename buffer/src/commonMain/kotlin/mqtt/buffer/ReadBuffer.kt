@@ -1,7 +1,6 @@
 package mqtt.buffer
 
 import kotlin.experimental.and
-import kotlin.reflect.KClass
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
@@ -21,12 +20,8 @@ interface ReadBuffer {
         return Pair(length, decoded)
     }
 
-    fun <T : Any> readGenericType(
-        type: KClass<T>,
-        length: UShort,
-        path: CharSequence = "",
-        headers: Map<CharSequence, Set<CharSequence>> = emptyMap()
-    ) = GenericSerialization.deserialize(type, this, length, path, headers)
+    fun readGenericType(deserializationParameters: DeserializationParameters) =
+        GenericSerialization.deserialize(deserializationParameters)
 
     fun readVariableByteInteger(): UInt {
         var digit: Byte

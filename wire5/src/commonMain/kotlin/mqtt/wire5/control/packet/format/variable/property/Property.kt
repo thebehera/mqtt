@@ -61,6 +61,16 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
     fun size(bytePacketBuilder: WriteBuffer, data: ByteArrayWrapper) = 3u + data.byteArray.size.toUInt()
 }
 
+fun Collection<Property?>.addTo(map: HashMap<Int, Any>) {
+    forEach {
+        map.addProperty(it)
+    }
+}
+
+fun HashMap<Int, Any>.addProperty(property: Property?) {
+    property ?: return
+    put(property.identifierByte.toInt(), property)
+}
 
 fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
     val property = when (readByte().toInt()) {
@@ -74,7 +84,7 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
             ContentType(readMqttUtf8StringNotValidated())
         }
         0x08 -> ResponseTopic(readMqttUtf8StringNotValidated())
-        0x09 -> CorrelationData(ByteArrayWrapper(readByteArray(readUnsignedShort().toUInt())))
+        0x09 -> CorrelationData(readGenericType())
         0x0B -> SubscriptionIdentifier(readVariableByteInteger().toLong())
         0x11 -> SessionExpiryInterval(readUnsignedInt().toLong())
         0x12 -> AssignedClientIdentifier(readMqttUtf8StringNotValidated())
