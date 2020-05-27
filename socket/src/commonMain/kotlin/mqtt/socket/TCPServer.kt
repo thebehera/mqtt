@@ -10,7 +10,7 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     private lateinit var serverSocket : ServerSocket
 
     suspend fun startServer() {
-        val x : UShort = 0u
+        val x = 0u
         val nPort :UShort? = if (port > x)  port else null
         serverSocket = asyncServerSocket()
         if (!serverSocket.isOpen())
@@ -23,13 +23,13 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     suspend fun getClientConnection() {
 
         listen().collect {
-            val x: ServerProcess = process.newInstance()
+            val x = process.newInstance()
             x.startProcessing(it)
         }
     }
 
     suspend fun getListenPort() : UShort {
-        val x : UShort = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
+        val x = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
         return x
     }
 
