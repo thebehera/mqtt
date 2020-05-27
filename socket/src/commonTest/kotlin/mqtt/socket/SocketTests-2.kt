@@ -104,7 +104,7 @@ class `SocketTests-2` {
     }
 
     companion object closeCounter {
-        var counter: Int = 0
+        var counter = 0
         private val mux: Mutex = Mutex()
         suspend fun increment() {
             mux.lock()
@@ -141,11 +141,10 @@ class `SocketTests-2` {
             socket.write(wbuffer, timeout)
             socket.read(rbuffer, timeout)
             val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
-//            println("=> $sendMsg, $respMsg, $str")
+
             assertEquals(respMsg, str, "Excepted message not received.")
         } catch (e: Exception) {
             assertTrue("".equals("clientMessage.exception: ${e.message}"))
- //           println("clientMessage.exception: $sendMsg, ${e.message}")
         }
     }
 
@@ -158,11 +157,10 @@ class `SocketTests-2` {
             socket.open(100.seconds, port, "localhost")
 
             assertEquals(socket.remotePort(), port, "Remote port is not the as in connect request.")
-            //println("client port #: ${client!!.localPort()}, ${client!!.remotePort()}")
+
             assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
         } catch (e: Exception) {
             assertTrue("".equals("initiateClient.exception: ${e.message}"))
-//            println("initiateClient.exception: $port, ${e.message}")
         }
     }
 
