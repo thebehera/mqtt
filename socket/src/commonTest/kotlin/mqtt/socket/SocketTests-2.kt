@@ -13,6 +13,7 @@ import kotlin.time.measureTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
+
 class `SocketTests-2` {
 
     @ExperimentalUnsignedTypes
@@ -114,14 +115,14 @@ class `SocketTests-2` {
     }
     @ExperimentalTime
     private suspend fun clientSetup(port0: UShort, port1: UShort, counter: Int, clientCount:Int, mut: Mutex) {
-        val xx:String = "Client-" + "$counter"
+        val responeMsg:String = "Client-" + "$counter"
         val client = asyncClientSocket()
 
         if (counter % 2 == 0)
             initiateClient(client, port0)
         else
             initiateClient(client, port1)
-        clientMessage(client, xx, "$xx:Server-x")
+        clientMessage(client, responeMsg, "$responeMsg:Server-x")
         client.close()
         closeCounter.increment()
         if (closeCounter.counter >= clientCount && mut.isLocked)
