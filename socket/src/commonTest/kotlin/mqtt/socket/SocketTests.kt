@@ -36,7 +36,7 @@ class SocketTests {
     fun nio2ConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         val clientSocket = { asyncClientSocket() }
-        stessDisconnectTest(serverSocket, clientSocket)
+        stressDisconnectTest(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
@@ -60,7 +60,7 @@ class SocketTests {
     fun nioNonBlockingConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT))}
         val clientSocket = { clientSocket(false) }
-        stessDisconnectTest(serverSocket, clientSocket)
+        stressDisconnectTest(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
@@ -84,7 +84,7 @@ class SocketTests {
     fun nioBlockingConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         val clientSocket = { clientSocket(true) }
-        stessDisconnectTest(serverSocket, clientSocket)
+        stressDisconnectTest(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
@@ -114,6 +114,7 @@ class SocketTests {
 
         val port = server.getListenPort()
         val clientToServerSocket = getClientSocket()
+        assertFalse (clientToServerSocket.isOpen())
         initiateClient(clientToServerSocket, port)
 
         val clientDoneMutex = Mutex(true)
@@ -143,7 +144,7 @@ class SocketTests {
     }
 
     @ExperimentalUnsignedTypes
-    private suspend fun stessDisconnectTest(
+    private suspend fun stressDisconnectTest(
         getServerSocket: () -> TCPServer, getClientSocket: () -> ClientToServerSocket
     ) {
         val clientDoneMutex = Mutex(locked = false)
@@ -158,6 +159,7 @@ class SocketTests {
             clientDoneMutex.lock()
             repeat (clientCount1.toInt()) {
                 val client = getClientSocket()
+                assertFalse (client.isOpen())
                 initiateClient(client, port)
                 assertTrue(client.isOpen(), "Client connection is not open")
                 client.close()
@@ -174,7 +176,7 @@ class SocketTests {
             assertFalse(server.isOpen(), "Server is still open")
 
         } catch (e: Exception) {
-            println("stessDisconnectTest.exception: ${e.message}")
+            throw e
         } finally {
             if (port > 0u)
                 checkPort(port)
@@ -195,6 +197,7 @@ class SocketTests {
             clientDoneMutex.lock()
             repeat(clientCount) {
                 val client = getClientSocket()
+                assertFalse (client.isOpen())
                 initiateClient(client, port)
                 assertTrue(client.isOpen(), "Client connection is not open")
                 clients.add(client)
