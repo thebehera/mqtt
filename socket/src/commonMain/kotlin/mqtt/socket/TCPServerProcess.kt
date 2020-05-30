@@ -18,7 +18,7 @@ abstract class TCPServerProcess : ServerProcess {
             this.socket = socket
             serverSideProcess()
         } catch (e: Exception) {
-
+            throw e
         } finally {
             close()
         }
