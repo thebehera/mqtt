@@ -40,7 +40,8 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
         try {
             while (serverSocket.isOpen()) {
                 val client = serverSocket.accept()
-                emit(client)
+                if (client != null)
+                    emit(client)
             }
         } catch (e: Exception) {
             println("listen exception: $e, ${e.message}")
