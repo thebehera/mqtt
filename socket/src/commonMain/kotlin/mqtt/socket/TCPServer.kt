@@ -23,15 +23,13 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     suspend fun getClientConnection() {
 
         listen().collect {
-            val x = process.newInstance()
-            x.startProcessing(it)
+            if (it != null) {
+                process.newInstance().startProcessing(it)
+            }
         }
     }
 
-    suspend fun getListenPort() : UShort {
-        val x = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
-        return x
-    }
+    suspend fun getListenPort() : UShort = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
 
     suspend fun close() {
         if (serverSocket.isOpen())
@@ -42,13 +40,13 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
         try {
             while (serverSocket.isOpen()) {
                 val client = serverSocket.accept()
-
                 emit(client)
             }
         } catch (e: Exception) {
-            if (! e.toString().equals("java.nio.channels.AsynchronousCloseException"))
-                println("listen exception: $e, ${e.message}")
+            println("listen exception: $e, ${e.message}")
+            throw e
+        } finally {
+            close()
         }
-        close()
     }
 }

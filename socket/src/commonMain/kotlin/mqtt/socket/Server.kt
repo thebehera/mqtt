@@ -11,7 +11,8 @@ class Server(val serverSocket: ServerSocket) {
         try {
             while (serverSocket.isOpen()) {
                 val client = serverSocket.accept()
-                connections[client.remotePort()!!] = client
+                if (client != null)
+                    connections[client.remotePort()!!] = client
                 emit(client)
             }
         } catch (e: Throwable) {

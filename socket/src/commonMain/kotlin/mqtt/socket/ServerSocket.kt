@@ -16,7 +16,7 @@ interface ServerSocket : SuspendCloseable {
         backlog: UInt = 0.toUInt()
     ): SocketOptions
 
-    suspend fun accept(): ClientSocket
+    suspend fun accept(): ClientSocket?
     fun isOpen(): Boolean
     fun port(): UShort?
 }
