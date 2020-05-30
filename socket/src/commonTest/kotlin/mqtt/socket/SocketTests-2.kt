@@ -61,9 +61,9 @@ class `SocketTests-2` {
         val doneMutex = Mutex(true)
         closeCounter.counter = 0
         repeat(clientCount) { i ->
-            launch (Dispatchers.Default) {
+ //           launch (Dispatchers.Default) {
                 clientSetup(port, port, i, clientCount, doneMutex)
-            }
+ //           }
         }
         doneMutex.lock()
         server.close()
@@ -92,9 +92,9 @@ class `SocketTests-2` {
         val doneMutex = Mutex(true)
         closeCounter.counter = 0
         repeat(clientCount) { i ->
-            launch (Dispatchers.Default){
+//            launch (Dispatchers.Default){
                 clientSetup(port0, port1, i, clientCount, doneMutex)
-            }
+//            }
         }
         doneMutex.lock()
         server0.close()
