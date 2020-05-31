@@ -2,10 +2,10 @@
 
 package mqtt.wire5.control.packet.format.fixed
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
@@ -24,15 +24,15 @@ class FlagTests {
     // Control packet types flagBits.matchesEmptyBits() matching spec
     @Test
     fun controlPacketFlagsMatchSpecForCONNECT() =
-        assertEquals(ConnectionRequest<Unit, Unit>().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionRequest<Unit, Unit, Unit>().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun byte1CONNECT() =
-        assertEquals(ConnectionRequest<Unit, Unit>().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionRequest<Unit, Unit, Unit>().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForCONNACK() =
-        assertEquals(ConnectionAcknowledgment().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionAcknowledgment<Unit>().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForPUBLISH_dup_false_Qos_AtMostOnce_Retain_false() {
@@ -270,7 +270,7 @@ class FlagTests {
                     AuthenticationExchange.VariableHeader.Properties(
                         Authentication(
                             "yolo",
-                            ByteArrayWrapper(byteArrayOf())
+                            GenericType("", CharSequence::class)
                         )
                     )
                 )

@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -10,11 +11,8 @@ import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.format.variable.property.*
-
-typealias CONNACK = ConnectionAcknowledgment
 
 /**
  * The CONNACK packet is the packet sent by the Server in response to a CONNECT packet received from a Client.
@@ -25,7 +23,7 @@ typealias CONNACK = ConnectionAcknowledgment
  * SHOULD close the Network Connection. A "reasonable" amount of time depends on the type of application and the
  * communications infrastructure.
  */
-data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader()) :
+data class ConnectionAcknowledgment<AuthenticationDataPayload : Any>(val header: VariableHeader<AuthenticationDataPayload> = VariableHeader()) :
     ControlPacketV5(2, DirectionOfFlow.SERVER_TO_CLIENT), IConnectionAcknowledgment {
     override val isSuccessful: Boolean = header.connectReason == SUCCESS
     override val connectionReason: String = header.connectReason.name
@@ -41,7 +39,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Properties">
      *     Section 2.2.2</a>
      */
-    data class VariableHeader(
+    data class VariableHeader<AuthenticationDataPayload : Any>(
         /**
          * 3.2.2.1.1 Session Present
          *
@@ -95,9 +93,9 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
          * the connection has not been authorized it might be unwise to indicate that this is an MQTT Server.
          */
         val connectReason: ReasonCode = SUCCESS,
-        val properties: Properties = Properties()
+        val properties: Properties<AuthenticationDataPayload> = Properties()
     ) {
-        data class Properties(
+        data class Properties<AuthenticationDataPayload : Any>(
             /**
              * 3.2.2.3.2 Session Expiry Interval
              *
@@ -373,7 +371,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
              * Refer to section 4.11 Server redirection for information about how Server Reference is used.
              */
             val serverReference: CharSequence? = null,
-            val authentication: Authentication? = null
+            val authentication: Authentication<AuthenticationDataPayload>? = null
         ) {
             val props by lazy {
                 val props = ArrayList<Property>(16 + userProperty.size)
@@ -447,7 +445,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
             }
 
             companion object {
-                fun from(keyValuePairs: Collection<Property>?): Properties {
+                fun from(keyValuePairs: Collection<Property>?): Properties<*> {
                     var sessionExpiryIntervalSeconds: Long? = null
                     var receiveMaximum: Int? = null
                     var maximumQos: QualityOfService? = null
@@ -456,7 +454,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     var assignedClientIdentifier: CharSequence? = null
                     var topicAliasMaximum: Int? = null
                     var reasonString: CharSequence? = null
-                    var userProperty: List<Pair<CharSequence, CharSequence>> = mutableListOf()
+                    val userProperty: MutableList<Pair<CharSequence, CharSequence>> = mutableListOf()
                     var supportsWildcardSubscriptions: Boolean? = null
                     var subscriptionIdentifiersAvailable: Boolean? = null
                     var sharedSubscriptionAvailable: Boolean? = null
@@ -464,7 +462,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     var responseInformation: CharSequence? = null
                     var serverReference: CharSequence? = null
                     var authenticationMethod: CharSequence? = null
-                    var authenticationData: ByteArrayWrapper? = null
+                    var authenticationData: GenericType<*>? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is SessionExpiryInterval -> {
@@ -615,7 +613,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                                 }
                                 authenticationMethod = it.value
                             }
-                            is AuthenticationData -> {
+                            is AuthenticationData<*> -> {
                                 if (authenticationData != null) {
                                     throw ProtocolError(
                                         "Authentication Data added multiple times see: " +
@@ -658,7 +656,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
 
         companion object {
 
-            fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader {
+            fun from(buffer: ReadBuffer, remainingLength: UInt): VariableHeader<*> {
                 val sessionPresent = buffer.readByte() == 1.toByte()
                 val connectionReasonByte = buffer.readUnsignedByte()
                 val connectionReason = connackConnectReason[connectionReasonByte]
@@ -669,7 +667,7 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
                     val properties = buffer.readProperties()
                     Properties.from(properties)
                 } else {
-                    Properties()
+                    Properties<Unit>()
                 }
                 return VariableHeader(sessionPresent, connectionReason, propeties)
             }

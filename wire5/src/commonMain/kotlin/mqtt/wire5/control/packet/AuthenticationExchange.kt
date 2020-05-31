@@ -1,7 +1,8 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire5.control.packet
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -9,7 +10,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -21,7 +21,8 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * Bits 3,2,1 and 0 of the Fixed Header of the AUTH packet are reserved and MUST all be set to 0. The Client or Server
  * MUST treat any other value as malformed and close the Network Connection [MQTT-3.15.1-1].
  */
-data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
+data class AuthenticationExchange<AuthenticationDataPayload : Any>(val variable: VariableHeader<AuthenticationDataPayload>) :
+    ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
 
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
@@ -35,7 +36,7 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
      * The Reason Code and Property Length can be omitted if the Reason Code is 0x00 (Success) and there are no
      * Properties. In this case the AUTH has a Remaining Length of 0.
      */
-    data class VariableHeader(
+    data class VariableHeader<AuthenticationDataPayload : Any>(
         /**
          * 3.15.2.1 Authenticate Reason Code
          *
@@ -52,7 +53,7 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
          * 25|0x19|Re-authenticate|Client
          */
         val reasonCode: ReasonCode = SUCCESS,
-        val properties: Properties
+        val properties: Properties<AuthenticationDataPayload>
     ) {
         init {
             // throw if reason code doesnt exist
@@ -69,8 +70,8 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
             properties.serialize(writeBuffer)
         }
 
-        data class Properties(
-            val authentication: Authentication?,
+        data class Properties<AuthenticationDataPayload : Any>(
+            val authentication: Authentication<AuthenticationDataPayload>?,
             val reasonString: CharSequence? = null,
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) {
@@ -94,7 +95,7 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
                 val authData = if (authentication != null) AuthenticationData(authentication.data) else null
                 val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
                 val props = userProperty.map { UserProperty(it.first, it.second) }
-                var size = size(writeBuffer)
+                val size = size(writeBuffer)
                 writeBuffer.writeVariableByteInteger(size)
                 authMethod?.write(writeBuffer)
                 authData?.write(writeBuffer)
@@ -105,11 +106,11 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
             }
 
             companion object {
-                fun from(keyValuePairs: Collection<Property>?): Properties {
+                fun from(keyValuePairs: Collection<Property>?): Properties<*> {
                     var method: CharSequence? = null
                     var reasonString: CharSequence? = null
                     val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
-                    var data: ByteArrayWrapper? = null
+                    var data: GenericType<*>? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is AuthenticationMethod -> {
@@ -131,7 +132,7 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
                                 reasonString = it.diagnosticInfoDontParse
                             }
                             is UserProperty -> userProperty.add(Pair(it.key, it.value))
-                            is AuthenticationData -> {
+                            is AuthenticationData<*> -> {
                                 if (data != null) {
                                     throw ProtocolError(
                                         "Server Reference added multiple times see: " +
@@ -146,14 +147,14 @@ data class AuthenticationExchange(val variable: VariableHeader) : ControlPacketV
                     if (method != null && data != null) {
                         return Properties(Authentication(method!!, data!!), reasonString, userProperty)
                     } else {
-                        return Properties(null, reasonString, userProperty)
+                        return Properties<Unit>(null, reasonString, userProperty)
                     }
                 }
             }
         }
 
         companion object {
-            fun from(buffer: ReadBuffer): VariableHeader {
+            fun from(buffer: ReadBuffer): VariableHeader<*> {
                 val reasonCodeByte = buffer.readUnsignedByte()
                 val reasonCode = getReasonCode(reasonCodeByte)
                 val props = Properties.from(buffer.readProperties())

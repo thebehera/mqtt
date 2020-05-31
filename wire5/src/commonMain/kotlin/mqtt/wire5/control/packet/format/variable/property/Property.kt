@@ -8,7 +8,6 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.Type
 
@@ -51,15 +50,6 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         bytePacketBuilder.writeMqttUtf8String(string)
         return size
     }
-
-    fun write(bytePacketBuilder: WriteBuffer, data: ByteArrayWrapper): UInt {
-        bytePacketBuilder.write(identifierByte)
-        bytePacketBuilder.write(data.byteArray.size.toUShort())
-        bytePacketBuilder.write(data.byteArray)
-        return 3u + data.byteArray.size.toUInt()
-    }
-
-    fun size(bytePacketBuilder: WriteBuffer, data: ByteArrayWrapper) = 3u + data.byteArray.size.toUInt()
 }
 
 fun Collection<Property?>.addTo(map: HashMap<Int, Any>) {
@@ -92,7 +82,7 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
         0x12 -> AssignedClientIdentifier(readMqttUtf8StringNotValidated())
         0x13 -> ServerKeepAlive(readUnsignedShort().toInt())
         0x15 -> AuthenticationMethod(readMqttUtf8StringNotValidated())
-        0x16 -> AuthenticationData(ByteArrayWrapper(readByteArray(readUnsignedShort().toUInt())))
+        0x16 -> AuthenticationData(GenericType(readUtf8(readUnsignedShort().toUInt()), CharSequence::class))
         0x17 -> {
             val uByteAsInt = readByte().toInt()
             if (!(uByteAsInt == 0 || uByteAsInt == 1)) {

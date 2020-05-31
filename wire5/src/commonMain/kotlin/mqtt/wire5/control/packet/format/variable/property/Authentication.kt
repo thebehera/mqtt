@@ -1,8 +1,8 @@
 package mqtt.wire5.control.packet.format.variable.property
 
-import mqtt.wire.data.ByteArrayWrapper
+import mqtt.buffer.GenericType
 
-data class Authentication(
+data class Authentication<T : Any>(
     /**
      * 3.1.2.11.9 Authentication Method
      *
@@ -35,5 +35,5 @@ data class Authentication(
      * The contents of this data are defined by the authentication method. Refer to section 4.12 for
      * more information about extended authentication.
      */
-    val data: ByteArrayWrapper
+    val data: GenericType<T>
 )
