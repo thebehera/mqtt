@@ -216,7 +216,7 @@ data class PublishMessage<ApplicationMessage : Any>(
     data class VariableHeader(
         val topicName: CharSequence,
         val packetIdentifier: Int? = null,
-        val properties: Properties<Any> = Properties()
+        val properties: Properties<out Any> = Properties()
     ) {
 
         init {
@@ -620,7 +620,7 @@ data class PublishMessage<ApplicationMessage : Any>(
 
             fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
                 val result = buffer.readMqttUtf8StringNotValidatedSized()
-                var size = result.first
+                var size = result.first + UShort.SIZE_BYTES.toUInt()
                 val topicName = result.second
                 val packetIdentifier = if (isQos0) {
                     null
@@ -638,29 +638,17 @@ data class PublishMessage<ApplicationMessage : Any>(
     }
 
     companion object {
-
-        @Suppress("UNUSED_PARAMETER")
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
             val variableHeader = variableHeaderSized.second
             val variableSize = variableHeaderSized.first
-
-            val properties = HashMap<Int, Any>()
-
             val deserializationParameters = DeserializationParameters(
                 buffer,
                 (remainingLength - variableSize).toUShort(),
-                variableHeader.topicName,
-
-                )
-            val deserialized =
-                buffer.readGenericType((remainingLength - variableSize).toUShort(), variableHeader.topicName)
-            val genericType = if (deserialized != null) {
-                GenericType(deserialized, T::class)
-            } else {
-                null
-            }
+                variableHeader.topicName
+            )
+            val genericType = buffer.readGenericType(deserializationParameters)
             return PublishMessage(fixedHeader, variableHeader, genericType)
         }
 

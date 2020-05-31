@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.buffer.DeserializationParameters
 import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
@@ -35,7 +36,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#S4_13_Errors>
  *     Section 4.13 - Handling Errors</a>
  */
-data class ConnectionRequest<WillPayload : Any>(
+data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
     /**
      * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
      * and the Payload. The content of the Variable Header varies depending on the packet type. The Packet
@@ -44,7 +45,7 @@ data class ConnectionRequest<WillPayload : Any>(
      * Properties section 2.2.2.</a>
      */
     val variableHeader: VariableHeader = VariableHeader(),
-    val payload: Payload<WillPayload> = Payload()
+    val payload: Payload<WillPayload, CorrelationDataPayload> = Payload()
 ) : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     override val clientIdentifier = payload.clientId
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
@@ -789,7 +790,7 @@ data class ConnectionRequest<WillPayload : Any>(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477358">
      *     3.1.3 CONNECT Payload</a>
      */
-    data class Payload<WillPayload : Any>(
+    data class Payload<WillPayload : Any, CorrelationDataPayload : Any>(
         /**
          * 3.1.3.1 Client Identifier (ClientID)
          * The Client Identifier (ClientID) identifies the Client to the Server. Each Client connecting to the
@@ -842,7 +843,7 @@ data class ConnectionRequest<WillPayload : Any>(
          * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477359">
          *     3.1.3.2 Will Properties</a>
          */
-        val willProperties: WillProperties? = null,
+        val willProperties: WillProperties<CorrelationDataPayload>? = null,
         /**
          * 3.1.3.3 Will Topic
          *
@@ -881,7 +882,7 @@ data class ConnectionRequest<WillPayload : Any>(
          */
         val password: CharSequence? = null
     ) {
-        data class WillProperties(
+        data class WillProperties<CorrelationDataPayload : Any>(
             /**
              * 3.1.3.2.2 Will Delay Interval
              *
@@ -992,7 +993,7 @@ data class ConnectionRequest<WillPayload : Any>(
              * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Request_/_Response">
              *     Section 4.10 Request Response</a>
              */
-            val correlationData: ByteArrayWrapper? = null,
+            val correlationData: GenericType<CorrelationDataPayload>? = null,
             /**
              * 3.1.3.2.8 User Property
              *
@@ -1058,15 +1059,15 @@ data class ConnectionRequest<WillPayload : Any>(
 
             companion object {
 
-                fun from(buffer: ReadBuffer): WillProperties {
+                fun from(buffer: ReadBuffer): WillProperties<*> {
                     var willDelayIntervalSeconds: Long? = null
                     var payloadFormatIndicator: Boolean? = null
                     var messageExpiryIntervalSeconds: Long? = null
                     var contentType: CharSequence? = null
                     var responseTopic: CharSequence? = null
-                    var correlationData: ByteArrayWrapper? = null
+                    var correlationData: GenericType<*>? = null
                     val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
-                    val properties = buffer.readProperties() ?: return WillProperties()
+                    val properties = buffer.readProperties() ?: return WillProperties<Unit>()
                     properties.forEach {
                         when (it) {
                             is WillDelayInterval -> {
@@ -1114,14 +1115,14 @@ data class ConnectionRequest<WillPayload : Any>(
                                 }
                                 responseTopic = it.value
                             }
-                            is CorrelationData -> {
+                            is CorrelationData<*> -> {
                                 if (correlationData != null) {
                                     throw ProtocolError(
                                         "Coorelation data added multiple times see: " +
                                                 "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477367"
                                     )
                                 }
-                                correlationData = it.data
+                                correlationData = it.genericType
                             }
                             is UserProperty -> {
                                 val key = it.key
@@ -1180,10 +1181,7 @@ data class ConnectionRequest<WillPayload : Any>(
 
         companion object {
 
-            inline fun <reified WillPayload : Any> from(
-                buffer: ReadBuffer,
-                variableHeader: VariableHeader
-            ): Payload<WillPayload> {
+            fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload<*, *> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willProperties = if (variableHeader.willFlag) {
                     WillProperties.from(buffer)
@@ -1196,10 +1194,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    GenericType(
-                        buffer.readGenericType(WillPayload::class, buffer.readUnsignedShort())!!,
-                        WillPayload::class
-                    )
+                    buffer.readGenericType(DeserializationParameters(buffer, buffer.readUnsignedShort()))
                 } else {
                     null
                 }
@@ -1219,9 +1214,9 @@ data class ConnectionRequest<WillPayload : Any>(
     }
 
     companion object {
-        inline fun <reified WillPayload : Any> from(buffer: ReadBuffer): ConnectionRequest<WillPayload> {
+        fun from(buffer: ReadBuffer): ConnectionRequest<*, *> {
             val variableHeader = VariableHeader.from(buffer)
-            val payload = Payload.from<WillPayload>(buffer, variableHeader)
+            val payload = Payload.from(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
         }
     }

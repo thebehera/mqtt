@@ -2,10 +2,10 @@
 
 package mqtt.wire5.control.packet
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.PublishMessage.FixedHeader
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
@@ -62,7 +62,7 @@ class PublishMessageTests {
 
     @Test
     fun payloadFormatIndicatorTrue() {
-        val props = VariableHeader.Properties(true)
+        val props = VariableHeader.Properties<Any>(true)
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(8u, limits)
         val expected = PublishMessage<Unit>(variable = variableHeader)
@@ -84,7 +84,7 @@ class PublishMessageTests {
 
     @Test
     fun payloadFormatIndicatorFalse() {
-        val props = VariableHeader.Properties(false)
+        val props = VariableHeader.Properties<Any>(false)
         val buffer = allocateNewBuffer(6u, limits)
         val variableHeader = VariableHeader("t", properties = props)
         val expected = PublishMessage<Unit>(variable = variableHeader)
@@ -119,7 +119,7 @@ class PublishMessageTests {
 
     @Test
     fun messageExpiryInterval() {
-        val props = VariableHeader.Properties(messageExpiryInterval = 2)
+        val props = VariableHeader.Properties<Any>(messageExpiryInterval = 2)
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(11u, limits)
         val msg = PublishMessage<Unit>(variable = variableHeader)
@@ -157,7 +157,7 @@ class PublishMessageTests {
 
     @Test
     fun topicAlias() {
-        val props = VariableHeader.Properties(topicAlias = 2)
+        val props = VariableHeader.Properties<Any>(topicAlias = 2)
         val variableHeader = VariableHeader("t", properties = props)
         val expected = PublishMessage<Unit>(variable = variableHeader)
         val buffer = allocateNewBuffer(9u, limits)
@@ -178,7 +178,7 @@ class PublishMessageTests {
     @Test
     fun topicAliasZeroValueThrowsProtocolError() {
         try {
-            VariableHeader.Properties(topicAlias = 0)
+            VariableHeader.Properties<Unit>(topicAlias = 0)
             fail()
         } catch (e: ProtocolError) {
         }
@@ -210,7 +210,7 @@ class PublishMessageTests {
 
     @Test
     fun responseTopic() {
-        val props = VariableHeader.Properties(responseTopic = "t/as")
+        val props = VariableHeader.Properties<Any>(responseTopic = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage<Unit>(variable = variableHeader)
@@ -245,19 +245,27 @@ class PublishMessageTests {
 
     @Test
     fun correlationData() {
-        val props = VariableHeader.Properties(correlationData = ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
+        val props = VariableHeader.Properties(correlationData = GenericType("yoyo", String::class))
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
+        assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
+        assertEquals(11u, buffer.readVariableByteInteger(), "fixed header remaining length")
+        assertEquals("t", buffer.readMqttUtf8StringNotValidated().toString(), "topic name")
+        assertEquals(7u, buffer.readVariableByteInteger(), "property length")
+        assertEquals(0x09, buffer.readByte(), "property identifier correlation data")
+        assertEquals(4u, buffer.readUnsignedShort(), "property binary data size for correlation data")
+        assertEquals("yoyo", buffer.readUtf8(4u).toString(), "correlation data payload")
+        buffer.resetForRead()
         val publish = ControlPacketV5.from(buffer) as PublishMessage<*>
-        assertEquals(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)), publish.variable.properties.correlationData)
+        assertEquals("yoyo", publish.variable.properties.correlationData?.obj?.toString())
     }
 
     @Test
     fun correlationDataDuplicateThrowsProtocolError() {
-        val obj1 = CorrelationData(ByteArrayWrapper(byteArrayOf(1, 2, 4, 5)))
+        val obj1 = CorrelationData(GenericType("yoyo", String::class))
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
@@ -293,7 +301,7 @@ class PublishMessageTests {
 
     @Test
     fun subscriptionIdentifier() {
-        val props = VariableHeader.Properties(subscriptionIdentifier = setOf(2))
+        val props = VariableHeader.Properties<Unit>(subscriptionIdentifier = setOf(2))
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(8u, limits)
         val actual = PublishMessage<Unit>(variable = variableHeader)
@@ -316,7 +324,7 @@ class PublishMessageTests {
 
     @Test
     fun contentType() {
-        val props = VariableHeader.Properties(contentType = "t/as")
+        val props = VariableHeader.Properties<Unit>(contentType = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
         val buffer = allocateNewBuffer(13u, limits)
         val actual = PublishMessage<Unit>(variable = variableHeader)

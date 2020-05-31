@@ -24,11 +24,11 @@ class FlagTests {
     // Control packet types flagBits.matchesEmptyBits() matching spec
     @Test
     fun controlPacketFlagsMatchSpecForCONNECT() =
-        assertEquals(ConnectionRequest<Unit>().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionRequest<Unit, Unit>().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun byte1CONNECT() =
-        assertEquals(ConnectionRequest<Unit>().flags, 0b0, controlPacketSpectMatchError)
+        assertEquals(ConnectionRequest<Unit, Unit>().flags, 0b0, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketFlagsMatchSpecForCONNACK() =

@@ -21,7 +21,7 @@ class TypeTests {
     // Control packet types controlPacketValue matching spec
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNECT() =
-        assertEquals(1, ConnectionRequest<Unit>().controlPacketValue, controlPacketSpectMatchError)
+        assertEquals(1, ConnectionRequest<Unit, Unit>().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNACK() =
@@ -144,7 +144,7 @@ class TypeTests {
     // Control packet types direction of flow matching spec
     @Test
     fun controlPacketTypeDirectionOfFlowCONNECT() =
-        assertEquals(CLIENT_TO_SERVER, ConnectionRequest<Unit>().direction, controlPacketSpectMatchError)
+        assertEquals(CLIENT_TO_SERVER, ConnectionRequest<Unit, Unit>().direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowCONNACK() =
