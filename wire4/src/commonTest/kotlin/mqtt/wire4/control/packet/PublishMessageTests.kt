@@ -82,7 +82,7 @@ class PublishMessageTests {
         buffer.resetForRead()
         val byte1 = buffer.readUnsignedByte()
         val remainingLength = buffer.readVariableByteInteger()
-        val result = PublishMessage.from<String>(buffer, byte1, remainingLength)
+        val result = PublishMessage.from(buffer, byte1, remainingLength)
         assertEquals(publishMessage, result)
     }
 
@@ -108,7 +108,7 @@ class PublishMessageTests {
         buffer.resetForRead()
         val byte1 = buffer.readUnsignedByte()
         val remainingLength = buffer.readVariableByteInteger()
-        val result = PublishMessage.from<String>(buffer, byte1, remainingLength)
+        val result = PublishMessage.from(buffer, byte1, remainingLength)
         assertEquals(publishMessage, result)
     }
 
@@ -136,7 +136,7 @@ class PublishMessageTests {
         buffer.resetForRead()
         val byte1 = buffer.readUnsignedByte()
         val remainingLength = buffer.readVariableByteInteger()
-        val result = PublishMessage.from<String>(buffer, byte1, remainingLength)
+        val result = PublishMessage.from(buffer, byte1, remainingLength)
         assertEquals(publishMessage, result)
     }
 
@@ -164,7 +164,7 @@ class PublishMessageTests {
         buffer.resetForRead()
         val byte1 = buffer.readUnsignedByte()
         val remainingLength = buffer.readVariableByteInteger()
-        val result = PublishMessage.from<String>(buffer, byte1, remainingLength)
+        val result = PublishMessage.from(buffer, byte1, remainingLength)
         assertEquals(publishMessage, result)
     }
 
@@ -190,7 +190,7 @@ class PublishMessageTests {
         buffer.resetForRead()
         val byte1 = buffer.readUnsignedByte()
         val remainingLength = buffer.readVariableByteInteger()
-        val result = PublishMessage.from<String>(buffer, byte1, remainingLength)
+        val result = PublishMessage.from(buffer, byte1, remainingLength)
         assertEquals(publishMessage, result)
     }
 
@@ -215,7 +215,7 @@ class PublishMessageTests {
         buffer.resetForRead()
         val byte1 = buffer.readUnsignedByte()
         val remainingLength = buffer.readVariableByteInteger()
-        val result = PublishMessage.from<Unit>(buffer, byte1, remainingLength)
+        val result = PublishMessage.from(buffer, byte1, remainingLength)
         assertEquals(publishMessage, result)
     }
 }

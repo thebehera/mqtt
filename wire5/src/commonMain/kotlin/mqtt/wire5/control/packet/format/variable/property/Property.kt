@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet.format.variable.property
 
+import mqtt.buffer.GenericType
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
@@ -73,7 +74,8 @@ fun HashMap<Int, Any>.addProperty(property: Property?) {
 }
 
 fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
-    val property = when (readByte().toInt()) {
+    val identifierByte = readByte().toInt()
+    val property = when (identifierByte) {
         0x01 -> {
             PayloadFormatIndicator(readByte() == 1.toByte())
         }
@@ -84,7 +86,7 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
             ContentType(readMqttUtf8StringNotValidated())
         }
         0x08 -> ResponseTopic(readMqttUtf8StringNotValidated())
-        0x09 -> CorrelationData(readGenericType())
+        0x09 -> CorrelationData(GenericType(readUtf8(readUnsignedShort().toUInt()), CharSequence::class))
         0x0B -> SubscriptionIdentifier(readVariableByteInteger().toLong())
         0x11 -> SessionExpiryInterval(readUnsignedInt().toLong())
         0x12 -> AssignedClientIdentifier(readMqttUtf8StringNotValidated())
@@ -128,7 +130,11 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
         0x28 -> WildcardSubscriptionAvailable(readByte() == 1.toByte())
         0x29 -> SubscriptionIdentifierAvailable(readByte() == 1.toByte())
         0x2A -> SharedSubscriptionAvailable(readByte() == 1.toByte())
-        else -> throw MalformedPacketException("Invalid Byte Code while reading properties")
+        else -> throw MalformedPacketException(
+            "Invalid Byte Code while reading properties $identifierByte 0x${identifierByte.toString(
+                16
+            )}"
+        )
     }
     return Pair(property, property.size(this as PlatformBuffer).toLong() + 1)
 }

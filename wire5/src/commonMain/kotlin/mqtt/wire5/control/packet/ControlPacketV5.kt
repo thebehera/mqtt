@@ -25,18 +25,17 @@ abstract class ControlPacketV5(
 
     companion object {
 
-        fun from(buffer: ReadBuffer) = fromTyped<Unit, Unit>(buffer)
+        fun from(buffer: ReadBuffer) = fromTyped(buffer)
 
-        inline fun <reified WillPayload : Any, reified PublishPayload : Any> fromTyped(buffer: ReadBuffer): ControlPacketV5 {
+        fun fromTyped(buffer: ReadBuffer): ControlPacketV5 {
             val byte1 = buffer.readUnsignedByte()
             val remainingLength = buffer.readVariableByteInteger()
-            return fromTyped<WillPayload, PublishPayload>(buffer, byte1, remainingLength)
+            return fromTyped(buffer, byte1, remainingLength)
         }
 
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) =
-            fromTyped<Unit, Unit>(buffer, byte1, remainingLength)
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) = fromTyped(buffer, byte1, remainingLength)
 
-        inline fun <reified WillPayload : Any, reified PublishPayload : Any> fromTyped(
+        fun fromTyped(
             buffer: ReadBuffer,
             byte1: UByte,
             remainingLength: UInt
@@ -45,9 +44,9 @@ abstract class ControlPacketV5(
             val packetValue = byte1AsUInt.shr(4).toInt()
             return when (packetValue) {
                 0 -> Reserved
-                1 -> ConnectionRequest.from<WillPayload>(buffer)
+                1 -> ConnectionRequest.from(buffer)
                 2 -> ConnectionAcknowledgment.from(buffer, remainingLength)
-                3 -> PublishMessage.from<PublishPayload>(buffer, byte1, remainingLength)
+                3 -> PublishMessage.from(buffer, byte1, remainingLength)
                 4 -> PublishAcknowledgment.from(buffer, remainingLength)
                 5 -> PublishReceived.from(buffer, remainingLength)
                 6 -> PublishRelease.from(buffer, remainingLength)

@@ -521,8 +521,8 @@ data class ConnectionRequest<WillPayload : Any>(
                     val params =
                         DeserializationParameters(buffer, length, ConnectionRequest.toString(), headers = headers)
                     val obj = buffer.readGenericType(params)!!
-                    val kClass = obj::class as KClass<Any>
-                    GenericType(obj, kClass)
+                    @Suppress("UNCHECKED_CAST")
+                    GenericType(obj.obj, obj.kClass as KClass<Any>)
                 } else {
                     null
                 }

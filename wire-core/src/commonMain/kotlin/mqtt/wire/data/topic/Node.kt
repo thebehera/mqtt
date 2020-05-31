@@ -2,7 +2,8 @@
 
 package mqtt.wire.data.topic
 
-import mqtt.buffer.*
+import mqtt.buffer.BufferDeserializer
+import mqtt.buffer.BufferSerializer
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
@@ -26,38 +27,6 @@ data class Node internal constructor(val level: TopicLevel) {
 
     fun handlePublish(msg: IPublishMessage) {
         callbacks.forEach { it.handleCallback(msg) }
-    }
-
-    fun <T : Any> registerPublishDeserializer(deserializer: BufferDeserializer<T>) {
-        deserializers.add(deserializer)
-
-    }
-
-    fun registerPublishSerializer(serializer: BufferSerializer<Any>) {
-        serializers.add(serializer)
-    }
-
-    fun deserializePublish(
-        buffer: ReadBuffer,
-        length: UShort,
-        headers: Map<CharSequence, Set<CharSequence>> = emptyMap()
-    ): GenericType<out Any>? {
-        val topic = toString()
-        deserializers.forEach {
-            val deserialized = it.deserialize(buffer, length, topic, headers)
-            if (deserialized != null) {
-                return deserialized
-            }
-        }
-        return null
-    }
-
-    fun serializePublish(buffer: WriteBuffer, obj: GenericType<Any>) {
-        serializers.forEach {
-            if (it.serialize(buffer, obj.obj)) {
-                return@forEach
-            }
-        }
     }
 
     override fun toString(): String {

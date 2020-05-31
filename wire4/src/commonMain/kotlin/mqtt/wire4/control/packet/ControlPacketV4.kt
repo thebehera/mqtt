@@ -46,9 +46,9 @@ abstract class ControlPacketV4(
             val packetValue = byte1AsUInt.shr(4).toInt()
             return when (packetValue) {
                 0 -> Reserved
-                1 -> ConnectionRequest.from<WillPayload>(buffer)
+                1 -> ConnectionRequest.from(buffer)
                 2 -> ConnectionAcknowledgment.from(buffer)
-                3 -> PublishMessage.from<PublishPayload>(buffer, byte1, remainingLength)
+                3 -> PublishMessage.from(buffer, byte1, remainingLength)
                 4 -> PublishAcknowledgment.from(buffer)
                 5 -> PublishReceived.from(buffer)
                 6 -> PublishRelease.from(buffer)
