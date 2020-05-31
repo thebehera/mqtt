@@ -2,9 +2,9 @@
 
 package mqtt.wire5.control.packet.format.fixed
 
+import mqtt.buffer.GenericType
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.*
 import mqtt.wire5.control.packet.PublishMessage.VariableHeader
@@ -21,11 +21,11 @@ class TypeTests {
     // Control packet types controlPacketValue matching spec
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNECT() =
-        assertEquals(1, ConnectionRequest<Unit, Unit>().controlPacketValue, controlPacketSpectMatchError)
+        assertEquals(1, ConnectionRequest<Unit, Unit, Unit>().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForCONNACK() =
-        assertEquals(2, ConnectionAcknowledgment().controlPacketValue, controlPacketSpectMatchError)
+        assertEquals(2, ConnectionAcknowledgment<Unit>().controlPacketValue, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeValueMatchesSpecForPUBLISH() {
@@ -132,7 +132,7 @@ class TypeTests {
                     AuthenticationExchange.VariableHeader.Properties(
                         Authentication(
                             "yolo",
-                            ByteArrayWrapper(byteArrayOf())
+                            GenericType("", CharSequence::class)
                         )
                     )
                 )
@@ -144,11 +144,11 @@ class TypeTests {
     // Control packet types direction of flow matching spec
     @Test
     fun controlPacketTypeDirectionOfFlowCONNECT() =
-        assertEquals(CLIENT_TO_SERVER, ConnectionRequest<Unit, Unit>().direction, controlPacketSpectMatchError)
+        assertEquals(CLIENT_TO_SERVER, ConnectionRequest<Unit, Unit, Unit>().direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowCONNACK() =
-        assertEquals(SERVER_TO_CLIENT, ConnectionAcknowledgment().direction, controlPacketSpectMatchError)
+        assertEquals(SERVER_TO_CLIENT, ConnectionAcknowledgment<Unit>().direction, controlPacketSpectMatchError)
 
     @Test
     fun controlPacketTypeDirectionOfFlowPUBLISH() {
@@ -252,7 +252,7 @@ class TypeTests {
                     AuthenticationExchange.VariableHeader.Properties(
                         Authentication(
                             "yolo",
-                            ByteArrayWrapper(byteArrayOf())
+                            GenericType("", CharSequence::class)
                         )
                     )
                 )

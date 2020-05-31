@@ -3,12 +3,12 @@
 package mqtt.wire5.control.packet
 
 import mqtt.buffer.BufferMemoryLimit
+import mqtt.buffer.GenericType
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.BANNED
 import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader
 import mqtt.wire5.control.packet.AuthenticationExchange.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.*
@@ -26,7 +26,7 @@ class AuthenticationExchangeTests {
     @Test
     fun serializationByteVerification() {
         val buffer = allocateNewBuffer(14u, limits)
-        val props = Properties(Authentication("test", ByteArrayWrapper(byteArrayOf())))
+        val props = Properties(Authentication("test", GenericType("", CharSequence::class)))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
         buffer.resetForRead()
@@ -44,11 +44,11 @@ class AuthenticationExchangeTests {
     @Test
     fun serializeDeserialize() {
         val buffer = allocateNewBuffer(14u, limits)
-        val props = Properties(Authentication("test".toCharSequenceBuffer(), ByteArrayWrapper(byteArrayOf())))
+        val props = Properties(Authentication("test".toCharSequenceBuffer(), GenericType("", CharSequence::class)))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
         buffer.resetForRead()
-        val deserialized = ControlPacketV5.from(buffer) as AuthenticationExchange
+        val deserialized = ControlPacketV5.from(buffer) as AuthenticationExchange<*>
         assertEquals(deserialized.variable.reasonCode, SUCCESS)
         assertEquals(disconnect, deserialized)
     }
@@ -56,7 +56,7 @@ class AuthenticationExchangeTests {
     @Test
     fun serializeDeserializeInvalid() {
         try {
-            VariableHeader(BANNED, Properties(Authentication("test", ByteArrayWrapper(byteArrayOf()))))
+            VariableHeader(BANNED, Properties(Authentication("test", GenericType("", CharSequence::class))))
             fail()
         } catch (e: MalformedPacketException) {
         }
@@ -66,14 +66,14 @@ class AuthenticationExchangeTests {
     fun reasonString() {
         val buffer = allocateNewBuffer(18u, limits)
         val props = Properties(
-            Authentication("2".toCharSequenceBuffer(), ByteArrayWrapper(byteArrayOf())),
+            Authentication("2".toCharSequenceBuffer(), GenericType("", CharSequence::class)),
             reasonString = "yolo"
         )
         val header = VariableHeader(SUCCESS, properties = props)
         val expected = AuthenticationExchange(header)
         expected.serialize(buffer)
         buffer.resetForRead()
-        val actual = ControlPacketV5.from(buffer) as AuthenticationExchange
+        val actual = ControlPacketV5.from(buffer) as AuthenticationExchange<*>
         assertEquals("yolo", actual.variable.properties.reasonString.toString())
     }
 
@@ -141,7 +141,7 @@ class AuthenticationExchangeTests {
         val buffer = allocateNewBuffer(21u, limits)
         AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize(buffer)
         buffer.resetForRead()
-        val requestRead = ControlPacketV5.from(buffer) as AuthenticationExchange
+        val requestRead = ControlPacketV5.from(buffer) as AuthenticationExchange<*>
         val (key, value) = requestRead.variable.properties.userProperty.first()
         assertEquals(key.toString(), "key")
         assertEquals(value.toString(), "value")
@@ -165,7 +165,7 @@ class AuthenticationExchangeTests {
     @Test
     fun authDataMultipleTimesThrowsProtocolError() {
         val method = AuthenticationMethod("yolo")
-        val obj1 = AuthenticationData(ByteArrayWrapper(byteArrayOf(1, 2, 3)))
+        val obj1 = AuthenticationData(GenericType("123", CharSequence::class))
         val buffer1 = allocateNewBuffer(20u, limits)
         buffer1.writeVariableByteInteger(19u)
         method.write(buffer1)
@@ -181,7 +181,7 @@ class AuthenticationExchangeTests {
     @Test
     fun invalidReasonCode() {
         try {
-            VariableHeader(BANNED, Properties(Authentication("test", ByteArrayWrapper(byteArrayOf()))))
+            VariableHeader(BANNED, Properties(Authentication("test", GenericType("", CharSequence::class))))
             fail()
         } catch (e: MalformedPacketException) {
         }

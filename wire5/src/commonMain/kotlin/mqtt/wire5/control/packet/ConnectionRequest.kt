@@ -12,7 +12,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire5.control.packet.format.variable.property.*
 
@@ -36,7 +35,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#S4_13_Errors>
  *     Section 4.13 - Handling Errors</a>
  */
-data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
+data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any, CorrelationDataPayload : Any>(
     /**
      * Some types of MQTT Control Packet contain a Variable Header component. It resides between the Fixed Header
      * and the Payload. The content of the Variable Header varies depending on the packet type. The Packet
@@ -44,7 +43,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
      * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/mqtt-v5.0.html#_Properties">MQTT
      * Properties section 2.2.2.</a>
      */
-    val variableHeader: VariableHeader = VariableHeader(),
+    val variableHeader: VariableHeader<AuthenticationDataPayload> = VariableHeader(),
     val payload: Payload<WillPayload, CorrelationDataPayload> = Payload()
 ) : ControlPacketV5(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     override val clientIdentifier = payload.clientId
@@ -94,7 +93,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
     }
 
     override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
-    data class VariableHeader(
+    data class VariableHeader<AuthenticationDataPayload : Any>(
         /**
          * 3.1.2.1 Protocol Name
          *
@@ -296,7 +295,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
          * @see <a href="https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477346">
          *     3.1.2.11 CONNECT Properties</a>
          */
-        val properties: Properties = Properties()
+        val properties: Properties<AuthenticationDataPayload> = Properties()
     ) {
         fun validateOrGetWarning(): MqttWarning? {
             if (!willFlag && willRetain) {
@@ -308,7 +307,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
             return null
         }
 
-        data class Properties(
+        data class Properties<AuthenticationDataPayload : Any>(
             /**
              * 3.1.2.11.2 Session Expiry Interval
              *
@@ -545,7 +544,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
              * @see Authentication.method
              * @see Authentication.data
              */
-            val authentication: Authentication? = null
+            val authentication: Authentication<AuthenticationDataPayload>? = null
         ) {
 
             init {
@@ -601,7 +600,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
             }
 
             companion object {
-                fun from(keyValuePairs: Collection<Property>?): Properties {
+                fun from(keyValuePairs: Collection<Property>?): Properties<*> {
                     var sessionExpiryIntervalSeconds: Long? = null
                     var receiveMaximum: Int? = null
                     var maximumPacketSize: Long? = null
@@ -610,7 +609,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
                     var requestProblemInformation: Boolean? = null
                     val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     var authenticationMethod: CharSequence? = null
-                    var authenticationData: ByteArrayWrapper? = null
+                    var authenticationData: GenericType<*>? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is SessionExpiryInterval -> {
@@ -689,7 +688,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
                                 }
                                 authenticationMethod = it.value
                             }
-                            is AuthenticationData -> {
+                            is AuthenticationData<*> -> {
                                 if (authenticationData != null) {
                                     throw ProtocolError(
                                         "Authentication Data added multiple times see: " +
@@ -751,7 +750,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
         }
 
         companion object {
-            fun from(buffer: ReadBuffer): VariableHeader {
+            fun from(buffer: ReadBuffer): VariableHeader<*> {
                 val protocolName = buffer.readMqttUtf8StringNotValidated()
                 val protocolVersion = buffer.readUnsignedByte().toShort()
                 val connectFlags = buffer.readUnsignedByte()
@@ -1181,7 +1180,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
 
         companion object {
 
-            fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload<*, *> {
+            fun from(buffer: ReadBuffer, variableHeader: VariableHeader<*>): Payload<*, *> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willProperties = if (variableHeader.willFlag) {
                     WillProperties.from(buffer)
@@ -1214,7 +1213,7 @@ data class ConnectionRequest<WillPayload : Any, CorrelationDataPayload : Any>(
     }
 
     companion object {
-        fun from(buffer: ReadBuffer): ConnectionRequest<*, *> {
+        fun from(buffer: ReadBuffer): ConnectionRequest<*, *, *> {
             val variableHeader = VariableHeader.from(buffer)
             val payload = Payload.from(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)
