@@ -1,72 +1,130 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAreadByteArray(bytes)GE")
 
 package mqtt.buffer
 
-import io.ktor.utils.io.bits.Memory
-import io.ktor.utils.io.charsets.Charsets
-import io.ktor.utils.io.charsets.encodeToByteArray
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.DangerousInternalIoApi
-import org.khronos.webgl.ArrayBuffer
-import org.khronos.webgl.DataView
+import org.khronos.webgl.*
+import kotlin.experimental.and
 
-@OptIn(DangerousInternalIoApi::class)
-data class JsBuffer(val buffer: Buffer) : PlatformBuffer {
+data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     override val type = BufferType.InMemory
+    private val littleEndian = false // network endian is big endian
+    private val capacity = buffer.byteLength
+    private var limit = 0
+    private var position = 0
 
-    override fun resetForRead() = buffer.resetForRead()
-    override fun resetForWrite() = buffer.resetForWrite()
 
-    override fun readByte() = buffer.readByte()
-
-    override fun readByteArray(size: UInt) = buffer.readBytes(size.toInt())
-
-    override fun readUnsignedByte() = buffer.readUByte()
-
-    override fun readUnsignedShort() = buffer.readUShort()
-
-    override fun readUnsignedInt() = buffer.readUInt()
-    override fun readLong() = buffer.readLong()
-
-    override fun readUtf8(bytes: UInt): CharSequence {
-        return buffer.readText(max = bytes.toInt())
+    override fun resetForRead() {
+        limit = position
+        position = 0
     }
 
-    override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as JsBuffer).buffer)
+    override fun resetForWrite() {
+        position = 0
+        limit = capacity
+    }
+
+    override fun readByte(): Byte {
+        val dataView = DataView(buffer.buffer, position++, 1)
+        return dataView.getInt8(0)
+    }
+
+    override fun readByteArray(size: UInt): ByteArray {
+        val byteArray = Int8Array(buffer.buffer, position, size.toInt()).unsafeCast<ByteArray>()
+        position += size.toInt()
+        return byteArray
+    }
+
+    override fun readUnsignedByte() = readByte().toUByte()
+
+    override fun readUnsignedShort(): UShort {
+        val dataView = DataView(buffer.buffer, position, UShort.SIZE_BYTES)
+        position += UShort.SIZE_BYTES
+        return dataView.getUint16(0, littleEndian).toInt().toUShort()
+    }
+
+    override fun readUnsignedInt(): UInt {
+        val dataView = DataView(buffer.buffer, position, UInt.SIZE_BYTES)
+        position += UInt.SIZE_BYTES
+        return dataView.getUint32(0, littleEndian).toUInt()
+    }
+
+    override fun readLong(): Long {
+        val long = readByteArray(Long.SIZE_BYTES.toUInt()).toLong()
+        position += ULong.SIZE_BYTES
+        return long
+    }
+
+
+    fun ByteArray.toLong(): Long {
+        var result: Long = 0
+        (0 until Long.SIZE_BYTES).forEach {
+            result = result shl Long.SIZE_BYTES
+            result = result or ((this[it] and 0xFF.toByte()).toLong())
+        }
+        return result
+    }
+
+    override fun readUtf8(bytes: UInt): CharSequence {
+        return readByteArray(bytes).decodeToString()
+    }
+
+    override fun put(buffer: PlatformBuffer) {
+        val otherBuffer = (buffer as JsBuffer)
+        val size = otherBuffer.limit - otherBuffer.position
+        this.buffer.set(otherBuffer.buffer, position)
+        position += size
+    }
 
     override fun write(byte: Byte): WriteBuffer {
-        buffer.writeByte(byte)
+        val dataView = DataView(buffer.buffer, position++, 1)
+        dataView.setInt8(0, byte)
         return this
     }
 
     override fun write(bytes: ByteArray): WriteBuffer {
-        buffer.writeFully(bytes)
+        val int8Array = bytes.unsafeCast<Int8Array>()
+        val uint8Array = Uint8Array(int8Array.buffer)
+        this.buffer.set(uint8Array, position)
+        position += uint8Array.length
         return this
     }
 
     override fun write(uByte: UByte): WriteBuffer {
-        buffer.writeUByte(uByte)
+        buffer[position++] = uByte.toByte()
         return this
     }
 
     override fun write(uShort: UShort): WriteBuffer {
-        buffer.writeUShort(uShort)
+        val dataView = DataView(buffer.buffer, position, UShort.SIZE_BYTES)
+        position += UShort.SIZE_BYTES
+        dataView.setUint16(0, uShort.toShort(), littleEndian)
         return this
     }
 
     override fun write(uInt: UInt): WriteBuffer {
-        buffer.writeUInt(uInt)
+        val dataView = DataView(buffer.buffer, position, UInt.SIZE_BYTES)
+        position += UInt.SIZE_BYTES
+        dataView.setUint32(0, uInt.toInt(), littleEndian)
         return this
     }
 
     override fun write(long: Long): WriteBuffer {
-        buffer.writeLong(long)
+        write(long.toByteArray())
         return this
     }
 
+    fun Long.toByteArray(): ByteArray {
+        var l = this
+        val result = ByteArray(8)
+        for (i in 7 downTo 0) {
+            result[i] = (l and 0xFF).toByte()
+            l = l shr 8
+        }
+        return result
+    }
+
     override fun writeUtf8(text: CharSequence): WriteBuffer {
-        val bytes = Charsets.UTF_8.newEncoder().encodeToByteArray(text)
-        buffer.writeFully(bytes)
+        write(text.toString().encodeToByteArray())
         return this
     }
 
@@ -74,7 +132,7 @@ data class JsBuffer(val buffer: Buffer) : PlatformBuffer {
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
-    ) = Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
+    ) = inputSequence.toString().encodeToByteArray().size.toUInt()
 
     override fun lengthUtf8String(
         inputSequence: CharSequence,
@@ -85,10 +143,9 @@ data class JsBuffer(val buffer: Buffer) : PlatformBuffer {
     override suspend fun close() {}
 }
 
-@OptIn(DangerousInternalIoApi::class)
 actual fun allocateNewBuffer(
     size: UInt,
     limits: BufferMemoryLimit
 ): PlatformBuffer {
-    return JsBuffer(Buffer(Memory(DataView(ArrayBuffer(size.toInt())))))
+    return JsBuffer(Uint8Array(size.toInt()))
 }
