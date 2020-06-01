@@ -18,6 +18,7 @@ matrix:
       language: sh
       before_install:
         - choco install openjdk
+        - refreshenv
         - choco install googlechrome -ignore-checksums -y
       before_cache:
         - rm -rf $HOME/.gradle/
