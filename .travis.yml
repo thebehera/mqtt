@@ -18,7 +18,7 @@ matrix:
       language: sh
       before_install:
         - choco install openjdk
-        - refreshenv
+        - cmd.exe //c "RefreshEnv.cmd & iisexpress.exe"
         - choco install googlechrome -ignore-checksums -y
       before_cache:
         - rm -rf $HOME/.gradle/
