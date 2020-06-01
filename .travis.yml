@@ -14,6 +14,17 @@ addons:
   chrome: stable
 matrix:
   include:
+    - os: windows
+      language: sh
+      before_install:
+        - choco install openjdk -params 'installdir=c:\\jdk'
+        - choco install googlechrome -ignore-checksums -y
+        - export JAVA_HOME="/C/jdk/"
+      before_cache:
+        - rm -rf $HOME/.gradle/
+    - os: osx
+      language: java
+      osx_image: xcode11.3
     - os: linux
       language: android
       dist: trusty
@@ -33,17 +44,6 @@ matrix:
       dist: xenial
       jdk:
         - openjdk10
-    - os: osx
-      language: java
-      osx_image: xcode11.3
-    - os: windows
-      language: sh
-      before_install:
-        - choco install openjdk -params 'installdir=c:\\jdk'
-        - choco install googlechrome -ignore-checksums -y
-        - export JAVA_HOME="/C/jdk/"
-      before_cache:
-        - rm -rf $HOME/.gradle/
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
