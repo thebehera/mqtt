@@ -30,22 +30,19 @@ matrix:
       dist: xenial
     - os: linux
       language: java
-      dist: precise
-    - os: linux
-      language: java
       dist: xenial
       jdk:
         - openjdk10
     - os: osx
       language: java
       osx_image: xcode11.3
-#    - os: windows
-#      language: sh
-#      before_install:
-#        - choco install openjdk -params 'installdir=c:\\java8'
-#        - export JAVA_HOME="/C/java8/"
-#      before_cache:
-#        - rm -rf $HOME/.gradle/
+    - os: windows
+      language: sh
+      before_install:
+        - choco install openjdk -params 'installdir=c:\\java8'
+        - export JAVA_HOME="/C/java8/"
+      before_cache:
+        - rm -rf $HOME/.gradle/
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
