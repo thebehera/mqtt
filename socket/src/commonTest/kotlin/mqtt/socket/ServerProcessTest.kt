@@ -1,10 +1,10 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket
 
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.assertEquals
-import kotlin.test.assertFails
-import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
@@ -14,8 +14,8 @@ enum class ServerAction {USHORT, CONNECT_DISCONNECT, MQTTSTRING}
 class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     @ExperimentalTime
     private val timeout = 10000.milliseconds
-    public var name: String = ""
-    public var clientResponse: String = ""
+    var name: String = ""
+    var clientResponse: String = ""
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
@@ -23,7 +23,7 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     }
 
     @ExperimentalTime
-    private suspend fun connectDisProcess () {
+    private suspend fun connectDisProcess() {
         val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
 
         try {
@@ -68,12 +68,12 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
             val ret = socket.read(rbuffer, timeout)
 
-            var str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+            val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
             assertEquals(ret, str.length + 2, "message read length not correct")
- //           println("==> $ret,, $str, $rbuffer")
+            //           println("==> $ret,, $str, $rbuffer")
             assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
 
-            wbuffer.writeUtf8String(str + ":" + name)
+            wbuffer.writeMqttUtf8String(str + ":" + name)
 
             assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
         } catch (e: Exception) {
@@ -82,7 +82,7 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     }
 
     override suspend fun newInstance(): ServerProcess {
-        val newProcess: ServerProcessTest = ServerProcessTest(action)
+        val newProcess = ServerProcessTest(action)
         newProcess.name = this.name
         newProcess.clientResponse = this.clientResponse
 

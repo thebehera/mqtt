@@ -1,15 +1,15 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.withTimeout
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
@@ -59,7 +59,7 @@ class `SocketTests-2` {
         port = server.getListenPort()
 
         val doneMutex = Mutex(true)
-        closeCounter.counter = 0
+        counter = 0
         repeat(clientCount) { i ->
             launch (Dispatchers.Default) {
                 clientSetup(port, port, i, clientCount, doneMutex)
@@ -90,7 +90,7 @@ class `SocketTests-2` {
         port1 = server1.getListenPort()
 
         val doneMutex = Mutex(true)
-        closeCounter.counter = 0
+        counter = 0
         repeat(clientCount) { i ->
             launch (Dispatchers.Default){
                 clientSetup(port0, port1, i, clientCount, doneMutex)
@@ -113,6 +113,7 @@ class `SocketTests-2` {
             mux.unlock()
         }
     }
+
     @ExperimentalTime
     private suspend fun clientSetup(port0: UShort, port1: UShort, counter: Int, clientCount:Int, mut: Mutex) {
         val sendMsg:String = "Client-" + "$counter"
@@ -124,7 +125,7 @@ class `SocketTests-2` {
             initiateClient(client, port1)
         clientMessage(client, sendMsg, "$sendMsg:Server-x")
         client.close()
-        closeCounter.increment()
+        increment()
         if (closeCounter.counter >= clientCount && mut.isLocked)
             mut.unlock()
 
@@ -138,7 +139,7 @@ class `SocketTests-2` {
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
         try {
-            wbuffer.writeUtf8String(sendMsg)
+            wbuffer.writeMqttUtf8String(sendMsg)
             socket.write(wbuffer, timeout)
             socket.read(rbuffer, timeout)
             val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
