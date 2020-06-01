@@ -68,8 +68,6 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
-                implementation(npm("text-encoding", "0.7.0"))
-                implementation "io.ktor:ktor-io-js:$ktor_version"
             }
         }
         jsTest {

@@ -2,8 +2,6 @@
 
 package mqtt.buffer
 
-import kotlin.random.Random
-import kotlin.random.nextUInt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -16,17 +14,17 @@ class BufferTests {
     @Test
     fun byte() {
         val platformBuffer = allocateNewBuffer(1u, limit)
-        val byte = Random.nextBytes(1).first()
+        val byte = (-1).toByte()
         platformBuffer.write(byte)
         platformBuffer.resetForRead()
-        assertEquals(byte, platformBuffer.readByte())
+        assertEquals(byte.toInt(), platformBuffer.readByte().toInt())
     }
 
     @Test
     fun byteArray() {
         val size = 200
         val platformBuffer = allocateNewBuffer(size.toUInt(), limit)
-        val bytes = Random.nextBytes(size)
+        val bytes = ByteArray(200) { -1 }
         platformBuffer.write(bytes)
         platformBuffer.resetForRead()
         val byteArray = platformBuffer.readByteArray(size.toUInt())
@@ -40,34 +38,34 @@ class BufferTests {
     @Test
     fun unsignedByte() {
         val platformBuffer = allocateNewBuffer(1u, limit)
-        val byte = Random.nextBytes(1).first().toUByte()
+        val byte = (-1).toUByte()
         platformBuffer.write(byte)
         platformBuffer.resetForRead()
-        assertEquals(byte, platformBuffer.readUnsignedByte())
+        assertEquals(byte.toInt(), platformBuffer.readUnsignedByte().toInt())
     }
 
     @Test
     fun unsignedShort() {
         val platformBuffer = allocateNewBuffer(2u, limit)
-        val uShort = Random.nextInt().toUShort()
+        val uShort = (-1).toUShort()
         platformBuffer.write(uShort)
         platformBuffer.resetForRead()
-        assertEquals(uShort, platformBuffer.readUnsignedShort())
+        assertEquals(uShort.toInt(), platformBuffer.readUnsignedShort().toInt())
     }
 
     @Test
     fun unsignedInt() {
         val platformBuffer = allocateNewBuffer(4u, limit)
-        val uInt = Random.nextUInt()
+        val uInt = (-1).toUInt()
         platformBuffer.write(uInt)
         platformBuffer.resetForRead()
-        assertEquals(uInt, platformBuffer.readUnsignedInt())
+        assertEquals(uInt.toLong(), platformBuffer.readUnsignedInt().toLong())
     }
 
     @Test
     fun long() {
-        val platformBuffer = allocateNewBuffer(8u, limit)
-        val long = Random.nextLong()
+        val platformBuffer = allocateNewBuffer(Long.SIZE_BYTES.toUInt(), limit)
+        val long = (-1).toLong()
         platformBuffer.write(long)
         platformBuffer.resetForRead()
         assertEquals(long, platformBuffer.readLong())
