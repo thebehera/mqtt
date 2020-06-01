@@ -10,18 +10,15 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     private lateinit var serverSocket : ServerSocket
 
     suspend fun startServer() {
-        val x = 0u
-        val nPort :UShort? = if (port > x)  port else null
+        val tPort :UShort? = if (port > 0u)  port else null
         serverSocket = asyncServerSocket()
         if (!serverSocket.isOpen())
-            serverSocket.bind(nPort, host)
+            serverSocket.bind(tPort, host)
     }
 
-    suspend fun isOpen() : Boolean {
-        return serverSocket.isOpen()
-    }
+    suspend fun isOpen() : Boolean = serverSocket.isOpen()
+
     suspend fun getClientConnection() {
-
         listen().collect {
             if (it != null) {
                 process.newInstance().startProcessing(it)
@@ -32,7 +29,7 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     suspend fun getListenPort() : UShort = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
 
     suspend fun close() {
-        if (serverSocket.isOpen())
+        if (isOpen())
             serverSocket.close()
     }
 
@@ -44,7 +41,6 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
                     emit(client)
             }
         } catch (e: Exception) {
-            println("listen exception: $e, ${e.message}")
             throw e
         } finally {
             close()
