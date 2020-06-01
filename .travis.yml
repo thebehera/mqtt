@@ -17,9 +17,8 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install openjdk -params 'installdir=c:\\jdk'
+        - choco install openjdk
         - choco install googlechrome -ignore-checksums -y
-        - export JAVA_HOME="/C/jdk/"
       before_cache:
         - rm -rf $HOME/.gradle/
     - os: osx
