@@ -39,8 +39,8 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install openjdk -params 'installdir=c:\\java8'
-        - export JAVA_HOME="/C/java8/"
+        - choco install openjdk -params 'installdir=c:\\jdk'
+        - export JAVA_HOME="/C/jdk/"
       before_cache:
         - rm -rf $HOME/.gradle/
 before_cache:
