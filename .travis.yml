@@ -17,8 +17,8 @@ matrix:
     - os: windows
       language: sh
       before_install:
-        - choco install openjdk
-        - cmd.exe //c "RefreshEnv.cmd & iisexpress.exe"
+        - choco install jdk8 -params 'installdir=c:\\java8'
+        - export JAVA_HOME="/C/java8/"
         - choco install googlechrome -ignore-checksums -y
       before_cache:
         - rm -rf $HOME/.gradle/
