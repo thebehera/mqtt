@@ -3,7 +3,6 @@ package mqtt.socket.nio2.util
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousServerSocketChannel
-import java.nio.channels.AsynchronousSocketChannel
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 

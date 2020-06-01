@@ -9,7 +9,8 @@ class MosquittoServer extends DefaultTask {
     }
 
 
-    @TaskAction void startServer() {
+    @TaskAction
+    void startServer() {
         ProcessBuilder pb = new ProcessBuilder()
                 .directory(configurationDirectory)
                 .command "mosquitto", "-c", configurationFileName, "-v"
@@ -24,7 +25,7 @@ class MosquittoServer extends DefaultTask {
                     for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 //                        println("[$configurationFileName] $line")
                     }
-                } catch(Exception e) {
+                } catch (Exception e) {
                 } finally {
                     reader.close()
                 }
@@ -54,7 +55,7 @@ boolean checkMosquitto() {
     try {
         pb.start().destroy()
         return true
-    } catch(Exception e) {
+    } catch (Exception e) {
         return false
     }
 }
@@ -87,8 +88,8 @@ if (checkMosquitto()) {
     }
 } else {
     logger.warn('Integration tests are disabled for the client! Reason: Failed to find mosquitto installed on the PATH. Please add it to your path.')
-    tasks.whenTaskAdded {task ->
-        if(task.name.contains("testDebugUnitTest") || task.name.contains("testReleaseUnitTest")) {
+    tasks.whenTaskAdded { task ->
+        if (task.name.contains("testDebugUnitTest") || task.name.contains("testReleaseUnitTest")) {
             task.enabled = false
         }
     }

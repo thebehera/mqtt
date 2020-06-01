@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -14,7 +11,6 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
 import mqtt.wire.control.packet.format.ReasonCode.SUCCESS
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -25,14 +21,12 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  *
  * The PUBCOMP packet is the response to a PUBREL packet. It is the fourth and final packet of the QoS 2 protocol exchange.
  */
-@Parcelize
 data class PublishComplete(val variable: VariableHeader) :
-        ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
+    ControlPacketV5(7, DirectionOfFlow.BIDIRECTIONAL), IPublishComplete {
     constructor(packetIdentifier: UShort, reasonCode: ReasonCode = SUCCESS)
             : this(VariableHeader(packetIdentifier.toInt(), reasonCode))
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    @IgnoredOnParcel
     override val packetIdentifier = variable.packetIdentifier
     override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
 
@@ -43,7 +37,6 @@ data class PublishComplete(val variable: VariableHeader) :
      * the PUBREL packet that is being acknowledged, PUBCOMP Reason Code, and Properties. The rules for encoding
      * Properties are described in section 2.2.2.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         /**
@@ -62,7 +55,7 @@ data class PublishComplete(val variable: VariableHeader) :
          * 3.4.2.2 PUBACK Properties
          */
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         init {
             when (reasonCode.byte.toInt()) {
                 0, 0x92 -> {
@@ -97,7 +90,6 @@ data class PublishComplete(val variable: VariableHeader) :
             }
         }
 
-        @Parcelize
         data class Properties(
             /**
              * 3.7.2.2.2 Reason String
@@ -113,7 +105,7 @@ data class PublishComplete(val variable: VariableHeader) :
              * specified by the receiver [MQTT-3.7.2-2]. It is a Protocol Error to include the Reason String more
              * than once.
              */
-            val reasonString: MqttUtf8String? = null,
+            val reasonString: CharSequence? = null,
             /**
              * 3.7.2.2.3 User Property
              *
@@ -125,9 +117,8 @@ data class PublishComplete(val variable: VariableHeader) :
              * is allowed to appear multiple times to represent multiple name, value pairs. The same name is
              * allowed to appear more than once.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
+        ) {
             val props by lazy {
                 val list = ArrayList<Property>(1 + userProperty.count())
                 if (reasonString != null) {
@@ -157,15 +148,16 @@ data class PublishComplete(val variable: VariableHeader) :
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var reasonString: MqttUtf8String? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var reasonString: CharSequence? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
                                 if (reasonString != null) {
                                     throw ProtocolError(
                                         "Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477427")
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477427"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }

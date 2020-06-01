@@ -36,7 +36,7 @@ class ConnectionManagerService : CoroutineService() {
 
     private val boundClients by lazy {
         BoundClientsObserver(newClientCb) { messageFromBoundClient ->
-            messageFromBoundClient.data?.classLoader = classLoader
+            messageFromBoundClient.data.classLoader = classLoader
             handleMessage(messageFromBoundClient)
         }
     }
@@ -61,7 +61,7 @@ class ConnectionManagerService : CoroutineService() {
             msg.what == BoundClientToService.QUEUE_INSERTED.position -> {
                 val bundle: Bundle = msg.data ?: return
                 val publish = NotifyPublish::class.java.canonicalName ?: return
-                val notifyPublishFromClient = bundle.getParcelable<NotifyPublish>(publish)!!
+                val notifyPublishFromClient = bundle.getSerializable(publish)!! as NotifyPublish
                 val connection = connectionManagers[notifyPublishFromClient.connectionIdentifier] ?: return
                 launch {
                     val persistence = dbProvider.getPersistence(
@@ -76,7 +76,7 @@ class ConnectionManagerService : CoroutineService() {
             msg.what == BoundClientToService.SUBSCRIBE.position -> {
                 val bundle: Bundle = msg.data ?: return
                 val subscriptionClass = MqttSubscription::class.java.canonicalName!!
-                val subscription = bundle.getParcelable<MqttSubscription>(subscriptionClass) ?: return
+                val subscription = bundle.getSerializable(subscriptionClass) as? MqttSubscription ?: return
                 val rowId = bundle.getLong("rowId")
                 val connection = connectionManagers[subscription.connectionIdentifier] ?: return
                 launch {
@@ -95,11 +95,11 @@ class ConnectionManagerService : CoroutineService() {
 
                 }
             }
-            else -> when (val data = msg.data?.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
-                is PersistableRemoteHostV4 -> launch {
-                    Log.i("RAHUL", "Handle msg")
-                    connect(data)
-                }
+            else -> when (val data = msg.data.getParcelable<Parcelable>(MESSAGE_PAYLOAD) ?: return) {
+//                is PersistableRemoteHostV4 -> launch {
+//                    Log.i("RAHUL", "Handle msg")
+//                    connect(data)
+//                }
             }
         }
     }
@@ -124,13 +124,15 @@ class ConnectionManagerService : CoroutineService() {
             if (controlPacket is IConnectionAcknowledgment) {
                 connectionChangeCallback(MqttConnectionStateUpdated(connectionParameters, Open(controlPacket)))
             } else if (controlPacket is ISubscribeAcknowledgement) {
-                connectionManagers[remoteHostId]?.client?.session?.state?.subscriptionAcknowledgementReceived(controlPacket)
+                connectionManagers[remoteHostId]?.client.session.state.subscriptionAcknowledgementReceived(
+                    controlPacket
+                )
             } else {
                 val msg = Message.obtain()
                 msg.what = ServiceToBoundClient.INCOMING_CONTROL_PACKET.position
                 msg.arg1 = remoteHostId
                 val bundle = Bundle()
-                bundle.putParcelable(MESSAGE_PAYLOAD, controlPacket)
+//                bundle.putParcelable(MESSAGE_PAYLOAD, controlPacket)
                 msg.data = bundle
                 boundClients.sendMessageToClients(msg)
             }
@@ -145,7 +147,7 @@ class ConnectionManagerService : CoroutineService() {
             msg.what = ServiceToBoundClient.OUTGOING_CONTROL_PACKET.position
             msg.arg1 = remoteHostId
             val bundle = Bundle()
-            bundle.putParcelable(MESSAGE_PAYLOAD, controlPacketSentToServer)
+//            bundle.putParcelable(MESSAGE_PAYLOAD, controlPacketSentToServer)
             msg.data = bundle
             boundClients.sendMessageToClients(msg)
         }
@@ -155,7 +157,7 @@ class ConnectionManagerService : CoroutineService() {
     fun buildConnectionChangeToClients(connectionStateUpdated: MqttConnectionStateUpdated): Message {
         val msg = Message.obtain(null, CONNECTION_STATE_CHANGED.position)
         val bundle = Bundle()
-        bundle.putParcelable(MESSAGE_PAYLOAD, connectionStateUpdated)
+//        bundle.putParcelable(MESSAGE_PAYLOAD, connectionStateUpdated)
         msg.data = bundle
         return msg
     }
@@ -179,7 +181,7 @@ class ConnectionManagerService : CoroutineService() {
                 return false
             }
             intent.setExtrasClassLoader(classLoader)
-            dbProvider = intent.getParcelableExtra(MqttConnectionsDatabaseDescriptor.TAG) ?: return false
+//            dbProvider = intent.getParcelableExtra(MqttConnectionsDatabaseDescriptor.TAG) ?: return false
             return true
         }
     }

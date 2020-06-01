@@ -2,7 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.ProtocolError
@@ -14,11 +13,10 @@ import mqtt.wire.data.MqttUtf8String
  * 3.10 UNSUBSCRIBE – Unsubscribe request
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
-@Parcelize
 data class UnsubscribeRequest(
     val packetIdentifier: Int,
-    val topics: List<MqttUtf8String>)
-    : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
+    val topics: List<MqttUtf8String>
+) : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
 
     override fun remainingLength(buffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + payloadSize(buffer)
 
@@ -30,13 +28,13 @@ data class UnsubscribeRequest(
     fun payloadSize(writeBuffer: WriteBuffer): UInt {
         var size = 0u
         topics.forEach {
-            size += UShort.SIZE_BYTES.toUInt() + writeBuffer.mqttUtf8Size(it.value)
+            size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(it.value)
         }
         return size
     }
 
     override fun payload(writeBuffer: WriteBuffer) {
-        topics.forEach { writeBuffer.writeUtf8String(it.value) }
+        topics.forEach { writeBuffer.writeMqttUtf8String(it.value) }
     }
 
     init {

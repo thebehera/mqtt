@@ -2,12 +2,10 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
-@Parcelize
 data class UnsubscribeAcknowledgment(val packetIdentifier: Int) :
     ControlPacketV4(11, DirectionOfFlow.SERVER_TO_CLIENT) {
     override fun variableHeader(writeBuffer: WriteBuffer) {

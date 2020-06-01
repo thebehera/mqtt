@@ -1,15 +1,13 @@
 package mqtt.client.persistence
 
-import androidx.room.*
-
-@Dao
+//@Dao
 interface RemoteHostDao {
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    //    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addOrUpdate(host: PersistableRemoteHostV4)
 
-    @Query("SELECT * FROM PersistableRemoteHostV4")
+    //    @Query("SELECT * FROM PersistableRemoteHostV4")
     suspend fun getAllConnections(): List<PersistableRemoteHostV4>
 
-    @Delete
+    //    @Delete
     suspend fun remove(host: PersistableRemoteHostV4)
 }

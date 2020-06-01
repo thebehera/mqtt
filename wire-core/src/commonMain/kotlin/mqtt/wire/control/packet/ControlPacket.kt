@@ -2,12 +2,11 @@
 
 package mqtt.wire.control.packet
 
-import mqtt.Parcelable
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
-interface ControlPacket : Parcelable {
+interface ControlPacket {
     val controlPacketValue: Byte
     val direction: DirectionOfFlow
     val flags: Byte get() = 0b0
@@ -21,7 +20,8 @@ interface ControlPacket : Parcelable {
         val localFlagsByte = flags.toUByte().toInt()
         val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
         writeBuffer.write(byte1)
-        writeBuffer.writeVariableByteInteger(remainingLength(writeBuffer))
+        val remaining = remainingLength(writeBuffer)
+        writeBuffer.writeVariableByteInteger(remaining)
     }
 
     fun variableHeader(writeBuffer: WriteBuffer) {}

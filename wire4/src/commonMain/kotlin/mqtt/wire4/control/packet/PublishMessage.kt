@@ -2,16 +2,13 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
+import mqtt.buffer.DeserializationParameters
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Name
@@ -20,24 +17,11 @@ import mqtt.wire.data.topic.Name
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
  * Application Message.
  */
-@Parcelize
-data class PublishMessage(
+data class PublishMessage<ApplicationMessage : Any>(
     val fixed: FixedHeader = FixedHeader(),
     val variable: VariableHeader,
-    val payload: ByteArrayWrapper? = null
-)
-    : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
-
-
-    /**
-     * Build a QOS 1 or 2 publish message
-     */
-    constructor(topic: String, qos: QualityOfService,
-                packetIdentifier: UShort,
-                dup: Boolean = false,
-                retain: Boolean = false
-    )
-            : this(FixedHeader(dup, qos, retain), VariableHeader(Name(topic).topic, packetIdentifier.toInt()), null)
+    val payload: GenericType<ApplicationMessage>? = null
+) : ControlPacketV4(3, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
 
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
@@ -47,14 +31,16 @@ data class PublishMessage(
         }
     }
 
-    @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
-        val array = payload?.byteArray ?: return
-        writeBuffer.write(array)
+        if (payload != null) {
+            writeBuffer.writeGenericType(payload)
+        }
     }
+
+    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payloadSize(buffer)
 
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
@@ -66,10 +52,8 @@ data class PublishMessage(
         else -> null
     }
 
-    @IgnoredOnParcel
     override val topic: CharSequence = variable.topicName
 
-    @Parcelize
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -149,8 +133,7 @@ data class PublishMessage(
          * subscriber will receive the most recent state.
          */
         val retain: Boolean = false
-    ) : Parcelable {
-        @IgnoredOnParcel
+    ) {
         val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
@@ -165,10 +148,12 @@ data class PublishMessage(
                 val qosBit2 = byte1Int.shl(5).toUByte().toInt().shr(7) == 1
                 val qosBit1 = byte1Int.shl(6).toUByte().toInt().shr(7) == 1
                 if (qosBit2 && qosBit1) {
-                    throw MalformedPacketException("A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
-                            " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
-                            "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
-                            " section 4.13.")
+                    throw MalformedPacketException(
+                        "A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
+                                " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
+                                "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
+                                " section 4.13."
+                    )
                 }
                 val qos = QualityOfService.fromBooleans(qosBit2, qosBit1)
                 val retain = byte1Int.shl(7).toUByte().toInt().shr(7) == 1
@@ -182,11 +167,10 @@ data class PublishMessage(
      *
      * The variable header contains the following fields in the order: Topic Name, Packet Identifier.
      */
-    @Parcelize
     data class VariableHeader(
         /**
-             * The Topic Name identifies the information channel to which payload data is published.
-             *
+         * The Topic Name identifies the information channel to which payload data is published.
+         *
          * The Topic Name MUST be present as the first field in the PUBLISH Packet Variable header. It MUST be a
          * UTF-8 encoded string [MQTT-3.3.2-1] as defined in section 1.5.3.
          *
@@ -203,41 +187,80 @@ data class PublishMessage(
          * 2.3.1 provides more information about Packet Identifiers.
          */
         val packetIdentifier: Int? = null
-    ) : Parcelable {
+    ) {
 
         fun serialize(writeBuffer: WriteBuffer) {
-            writeBuffer.writeUtf8String(topicName)
+            writeBuffer.writeMqttUtf8String(topicName)
             if (packetIdentifier != null) {
                 writeBuffer.write(packetIdentifier.toUShort())
             }
         }
 
+        fun size(writeBuffer: WriteBuffer): UInt {
+            var size = writeBuffer.lengthUtf8String(topicName) + UShort.SIZE_BYTES.toUInt()
+            if (packetIdentifier != null) {
+                size += 2u
+            }
+            return size
+        }
+
         companion object {
             fun from(buffer: ReadBuffer, isQos0: Boolean): VariableHeader {
-                val topicName = MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
                 // Intention NullPointerException. This should fail the validation and immediately bail out
-                val topicNameValidated = Name(topicName.getValueOrThrow()).validateTopic()!!
+                val topicNameValidated =
+                    Name(buffer.readMqttUtf8StringNotValidated()).validateTopic()!!.getAllBottomLevelChildren().first()
                 val packetIdentifier = if (isQos0) null else buffer.readUnsignedShort()
                 return VariableHeader(topicNameValidated.getCurrentPath(), packetIdentifier?.toInt())
             }
         }
     }
 
+    fun payloadSize(writeBuffer: WriteBuffer): UInt {
+        if (payload != null) {
+            return writeBuffer.sizeGenericType(payload.obj, payload.kClass)
+        }
+        return 0u
+    }
+
+
     companion object {
-
-
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            var variableSize = 2u + buffer.utf8StringSize(variableHeader.topicName)
+            var variableSize = 2u + buffer.sizeUtf8String(variableHeader.topicName)
             if (variableHeader.packetIdentifier != null) {
                 variableSize += 2u
             }
-            return PublishMessage(
-                fixedHeader,
-                variableHeader,
-                ByteArrayWrapper(buffer.readByteArray(remainingLength - variableSize.toUInt()))
-            )
+            val deserializationParameters =
+                DeserializationParameters(buffer, (remainingLength - variableSize).toUShort(), variableHeader.topicName)
+            val genericType = buffer.readGenericType(deserializationParameters)
+            return PublishMessage(fixedHeader, variableHeader, genericType)
+        }
+
+        fun build(
+            dup: Boolean = false,
+            qos: QualityOfService = AT_MOST_ONCE,
+            retain: Boolean = false,
+            topicName: CharSequence = "",
+            packetIdentifier: Int? = null
+        ) = buildTyped<Unit>(dup, qos, retain, topicName, packetIdentifier)
+
+        inline fun <reified T : Any> buildTyped(
+            dup: Boolean = false,
+            qos: QualityOfService = AT_MOST_ONCE,
+            retain: Boolean = false,
+            topicName: CharSequence = "",
+            packetIdentifier: Int? = null,
+            payload: T? = null
+        ): PublishMessage<T> {
+            val fixed = FixedHeader(dup, qos, retain)
+            val variable = VariableHeader(topicName, packetIdentifier)
+            val typedPayload = if (payload != null) {
+                GenericType(payload, T::class)
+            } else {
+                null
+            }
+            return PublishMessage(fixed, variable, typedPayload)
         }
     }
 

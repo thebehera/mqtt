@@ -2,16 +2,12 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
@@ -20,21 +16,20 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
  * 3.10 UNSUBSCRIBE – Unsubscribe request
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
-@Parcelize
-data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<MqttUtf8String>)
-    : ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
+data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<CharSequence>) :
+    ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(buffer: WriteBuffer): UInt {
         val variableSize = variable.size(buffer)
         var payloadSize = 0u
-        topics.forEach { payloadSize += UShort.SIZE_BYTES.toUInt() + buffer.mqttUtf8Size(it.value) }
+        topics.forEach { payloadSize += UShort.SIZE_BYTES.toUInt() + buffer.lengthUtf8String(it) }
         return variableSize + payloadSize
     }
 
-    override fun payload(writeBuffer: WriteBuffer) = topics.forEach { writeBuffer.writeUtf8String(it.value) }
+    override fun payload(writeBuffer: WriteBuffer) = topics.forEach { writeBuffer.writeMqttUtf8String(it) }
 
-    constructor(packetIdentifier: Int, topics: Set<MqttUtf8String>) : this(VariableHeader(packetIdentifier), topics)
+    constructor(packetIdentifier: Int, topics: Set<CharSequence>) : this(VariableHeader(packetIdentifier), topics)
 
     init {
         if (topics.isEmpty()) {
@@ -49,11 +44,10 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
      * and Properties. Section 2.2.1 provides more information about Packet Identifiers. The rules for encoding
      * Properties are described in section 2.2.2.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         val properties: Properties = Properties()
-    ) : Parcelable {
+    ) {
         fun size(writeBuffer: WriteBuffer) =
             UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
                 writeBuffer
@@ -67,26 +61,24 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
         /**
          * 3.10.2.1 UNSUBSCRIBE Properties
          */
-        @Parcelize
         data class Properties(
             /**
              * 3.10.2.1.2 User Property
              *
              * 38 (0x26) Byte, Identifier of the User Property.
-                 *
-                 * Followed by a UTF-8 String Pair.
-                 *
-                 * The User Property is allowed to appear multiple times to represent multiple name, value pairs. The
-                 * same name is allowed to appear more than once.
-                 *
-                 * Non-normative comment
-                 *
-                 * User Properties on the UNSUBSCRIBE packet can be used to send subscription related properties from
-                 * the Client to the Server. The meaning of these properties is not defined by this specification.
-                 */
-                val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+             *
+             * Followed by a UTF-8 String Pair.
+             *
+             * The User Property is allowed to appear multiple times to represent multiple name, value pairs. The
+             * same name is allowed to appear more than once.
+             *
+             * Non-normative comment
+             *
+             * User Properties on the UNSUBSCRIBE packet can be used to send subscription related properties from
+             * the Client to the Server. The meaning of these properties is not defined by this specification.
+             */
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(userProperty.size)
                 if (userProperty.isNotEmpty()) {
@@ -112,7 +104,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is UserProperty -> userProperty += Pair(it.key, it.value)
@@ -140,12 +132,12 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Mqtt
     companion object {
         fun from(buffer: ReadBuffer, remainingLength: UInt): UnsubscribeRequest {
             val header = VariableHeader.from(buffer)
-            val topics = mutableSetOf<MqttUtf8String>()
+            val topics = mutableSetOf<CharSequence>()
             var bytesRead = header.first
             while (bytesRead < remainingLength) {
                 val result = buffer.readMqttUtf8StringNotValidatedSized()
                 bytesRead += result.first + UShort.SIZE_BYTES.toUInt()
-                topics += MqttUtf8String(result.second)
+                topics += result.second
             }
             return UnsubscribeRequest(header.second, topics)
         }
