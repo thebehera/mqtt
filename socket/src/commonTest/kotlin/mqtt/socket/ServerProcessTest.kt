@@ -22,12 +22,8 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
-    private suspend fun ConnectProcess () {
-
-    }
-
     @ExperimentalTime
-    private suspend fun ConnectDisProcess () {
+    private suspend fun connectDisProcess () {
         val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
 
         try {
@@ -40,7 +36,7 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     }
 
     @ExperimentalTime
-    private suspend fun UShortProcess() {
+    private suspend fun uShortProcess() {
         val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         val recvData: UShort = 4.toUShort()
@@ -54,14 +50,14 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
             assertEquals(4, socket.write(serverWriteBuffer, timeout), "server send data size not correct")
             socket.close()
         } catch (e: Exception) {
-            println("ServerProcessUshort.exception: ${e.message}, $e")
+            println("uShortProcess.exception: ${e.message}, $e")
             assertEquals("Failure...", e.message)
         }
     }
 
     @ExperimentalTime
     @ExperimentalUnsignedTypes
-    private suspend fun MqttStringProcess() {
+    private suspend fun mqttStringProcess() {
         val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
@@ -70,7 +66,7 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
             //assertEquals(socket.read(rbuffer, timeout), clientResponse.length + 3, "message read length not correct")
 
-            val ret: Int = socket.read(rbuffer, timeout)
+            val ret = socket.read(rbuffer, timeout)
 
             var str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
             assertEquals(ret, str.length + 2, "message read length not correct")
@@ -81,24 +77,24 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
             assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
         } catch (e: Exception) {
-            println("TestServerProcess.serverSideProcess.exception: $e, ${e.message}")
+            println("mqttStringProcess.exception: $e, ${e.message}")
         }
     }
 
     override suspend fun newInstance(): ServerProcess {
-        val x: ServerProcessTest = ServerProcessTest(action)
-        x.name = this.name
-        x.clientResponse = this.clientResponse
+        val newProcess: ServerProcessTest = ServerProcessTest(action)
+        newProcess.name = this.name
+        newProcess.clientResponse = this.clientResponse
 
-        return x
+        return newProcess
     }
 
     @ExperimentalTime
     override suspend fun serverSideProcess() {
         when (action) {
-            ServerAction.CONNECT_DISCONNECT -> ConnectDisProcess()
-            ServerAction.MQTTSTRING -> MqttStringProcess()
-            ServerAction.USHORT -> UShortProcess()
+            ServerAction.CONNECT_DISCONNECT -> connectDisProcess()
+            ServerAction.MQTTSTRING -> mqttStringProcess()
+            ServerAction.USHORT -> uShortProcess()
         }
     }
 }
