@@ -1,5 +1,3 @@
-@file:Suppress("EXPERIMENTAL_API_USAreadByteArray(bytes)GE")
-
 package mqtt.buffer
 
 import org.khronos.webgl.*
@@ -55,7 +53,7 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     }
 
 
-    fun ByteArray.toLong(): Long {
+    private fun ByteArray.toLong(): Long {
         var result: Long = 0
         (0 until Long.SIZE_BYTES).forEach {
             result = result shl Long.SIZE_BYTES
@@ -113,7 +111,7 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
         return this
     }
 
-    fun Long.toByteArray(): ByteArray {
+    private fun Long.toByteArray(): ByteArray {
         var l = this
         val result = ByteArray(8)
         for (i in 7 downTo 0) {
