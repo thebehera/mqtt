@@ -14,14 +14,14 @@ node {
 // Configures testing for JS modules
 
 task prepareNodePackage(type: Copy) {
-   from("npm") {
-       include 'package.json'
-       expand (project.properties + [kotlinDependency: ""])
-   }
-   from("npm") {
-       exclude 'package.json'
-   }
-   into "$node.nodeModulesDir"
+    from("npm") {
+        include 'package.json'
+        expand(project.properties + [kotlinDependency: ""])
+    }
+    from("npm") {
+        exclude 'package.json'
+    }
+    into "$node.nodeModulesDir"
 }
 
 npmInstall.dependsOn prepareNodePackage

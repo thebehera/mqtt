@@ -8,6 +8,7 @@ import kotlin.test.assertEquals
 
 class UnsubscribeAcknowledgmentTests {
     private val packetIdentifier = 2
+
     @Test
     fun serializeDeserializeDefault() {
         val buffer = allocateNewBuffer(4u, limits)

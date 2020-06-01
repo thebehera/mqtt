@@ -1,4 +1,3 @@
-
 package mqtt.client.service.ipc
 
 import android.os.Handler

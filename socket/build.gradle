@@ -6,14 +6,14 @@ repositories {
     jcenter()
 }
 
-apply from: "../gradle/android.gradle"
+//apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
 
-    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-        android()
-    }
+    //if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+//        android()
+//    }
     sourceSets {
         commonMain {
             dependencies {

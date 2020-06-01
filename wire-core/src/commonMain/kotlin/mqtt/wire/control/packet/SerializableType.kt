@@ -28,7 +28,7 @@ object ByteArraySerializer : MqttSerializable<ByteArray> {
 
 object StringSerializer : MqttSerializable<String> {
     override fun serialize(obj: String, writeBuffer: WriteBuffer) {
-        writeBuffer.writeUtf8String(obj)
+        writeBuffer.writeMqttUtf8String(obj)
     }
 
     override fun deserialize(readBuffer: ReadBuffer) = readBuffer.readMqttUtf8StringNotValidated().toString()

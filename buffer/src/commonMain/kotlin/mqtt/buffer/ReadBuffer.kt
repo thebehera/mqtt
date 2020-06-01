@@ -11,8 +11,17 @@ interface ReadBuffer {
     fun readUnsignedShort(): UShort
     fun readUnsignedInt(): UInt
     fun readLong(): Long
+    fun readUtf8(bytes: UInt): CharSequence
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
-    fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence>
+
+    fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
+        val length = readUnsignedShort().toUInt()
+        val decoded = readUtf8(length)
+        return Pair(length, decoded)
+    }
+
+    fun readGenericType(deserializationParameters: DeserializationParameters) =
+        GenericSerialization.deserialize(deserializationParameters)
 
     fun readVariableByteInteger(): UInt {
         var digit: Byte
@@ -48,7 +57,7 @@ interface ReadBuffer {
         return numBytes.toUByte()
     }
 
-    fun utf8StringSize(
+    fun sizeUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence? = null,
         unmappableCharacter: CharSequence? = null

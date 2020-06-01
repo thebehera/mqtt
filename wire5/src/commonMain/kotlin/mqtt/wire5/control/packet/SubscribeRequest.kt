@@ -2,9 +2,6 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -12,7 +9,6 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire5.control.packet.RetainHandling.*
@@ -33,7 +29,6 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
  * Bits 3,2,1 and 0 of the Fixed Header of the SUBSCRIBE packet are reserved and MUST be set to 0,0,1 and 0
  * respectively. The Server MUST treat any other value as malformed and close the Network Connection [MQTT-3.8.1-1].
  */
-@Parcelize
 data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set<Subscription>) :
     ControlPacketV5(8, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), ISubscribeRequest {
 
@@ -58,13 +53,12 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         Subscription.from(topic, qos, noLocalList, retainAsPublishedList, retainHandlingList)
     )
 
-    @IgnoredOnParcel
     override val packetIdentifier = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier.toUShort(), ReasonCode.SUCCESS)
     override fun getTopics() = subscriptions.map { it.topicFilter }
-    override fun payload(writeBuffer: WriteBuffer)  = subscriptions.forEach { it.serialize(writeBuffer) }
+    override fun payload(writeBuffer: WriteBuffer) = subscriptions.forEach { it.serialize(writeBuffer) }
     override fun remainingLength(buffer: WriteBuffer): UInt {
         val variableSize = variable.size(buffer)
         val subSize = subscriptions.size(buffer)
@@ -82,19 +76,20 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
      *
      * Figure 3-19 shows an example of a SUBSCRIBE variable header with a Packet Identifier of 10 and no properties.
      */
-    @Parcelize
     data class VariableHeader(
         val packetIdentifier: Int,
         val properties: Properties = Properties()
-    ) : Parcelable {
-        fun size(writeBuffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(writeBuffer)
+    ) {
+        fun size(writeBuffer: WriteBuffer) =
+            UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
+                writeBuffer
+            )
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
             properties.serialize(writeBuffer)
         }
 
-        @Parcelize
         data class Properties(
             /**
              * 3.2.2.3.9 Reason String
@@ -115,7 +110,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              * Proper uses for the reason string in the Client would include using this information in an exception
              * thrown by the Client code, or writing this string to a log.
              */
-            val reasonString: MqttUtf8String? = null,
+            val reasonString: CharSequence? = null,
             /**
              * 3.8.2.1.3 User Property
              *
@@ -131,9 +126,8 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
              * User Properties on the SUBSCRIBE packet can be used to send subscription related properties from
              * the Client to the Server. The meaning of these properties is not defined by this specification.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList()
-        ) : Parcelable {
-            @IgnoredOnParcel
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
+        ) {
             val props by lazy {
                 val props = ArrayList<Property>(1 + userProperty.size)
                 if (reasonString != null) {
@@ -162,14 +156,16 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
 
             companion object {
                 fun from(keyValuePairs: Collection<Property>?): Properties {
-                    var reasonString: MqttUtf8String? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var reasonString: CharSequence? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     keyValuePairs?.forEach {
                         when (it) {
                             is ReasonString -> {
                                 if (reasonString != null) {
-                                    throw ProtocolError("Reason String added multiple times see: " +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477427")
+                                    throw ProtocolError(
+                                        "Reason String added multiple times see: " +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477427"
+                                    )
                                 }
                                 reasonString = it.diagnosticInfoDontParse
                             }
@@ -207,49 +203,49 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     }
 }
 
-@Parcelize
-data class Subscription(val topicFilter: Filter,
-                        /**
-                         * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
-                         * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
-                         * Error if the Maximum QoS field has the value 3.
-                         */
-                        val maximumQos: QualityOfService = QualityOfService.AT_LEAST_ONCE,
-                        /**
-                         * Bit 2 of the Subscription Options represents the No Local option. If the value is 1,
-                         * Application Messages MUST NOT be forwarded to a connection with a ClientID equal to the
-                         * ClientID of the publishing connection [MQTT-3.8.3-3]. It is a Protocol Error to set the No
-                         * Local bit to 1 on a Shared Subscription [MQTT-3.8.3-4].
-                         */
-                        val noLocal: Boolean = false,
-                        /**
-                         * Bit 3 of the Subscription Options represents the Retain As Published option. If 1,
-                         * Application Messages forwarded using this subscription keep the RETAIN flag they were
-                         * published with. If 0, Application Messages forwarded using this subscription have the
-                         * RETAIN flag set to 0. Retained messages sent when the subscription is established have
-                         * the RETAIN flag set to 1.
-                         */
-                        val retainAsPublished: Boolean = false,
-                        /**
-                         * Bits 4 and 5 of the Subscription Options represent the Retain Handling option. This option
-                         * specifies whether retained messages are sent when the subscription is established. This
-                         * does not affect the sending of retained messages at any point after the subscribe. If there
-                         * are no retained messages matching the Topic Filter, all of these values act the same. The
-                         * values are:
-                         *
-                         * 0 = Send retained messages at the time of the subscribe
-                         *
-                         * 1 = Send retained messages at subscribe only if the subscription does not currently exist
-                         *
-                         * 2 = Do not send retained messages at the time of the subscribe
-                         *
-                         * It is a Protocol Error to send a Retain Handling value of 3.
-                         */
-                        val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
-) : Parcelable {
+data class Subscription(
+    val topicFilter: Filter,
+    /**
+     * Bits 0 and 1 of the Subscription Options represent Maximum QoS field. This gives the maximum
+     * QoS level at which the Server can send Application Messages to the Client. It is a Protocol
+     * Error if the Maximum QoS field has the value 3.
+     */
+    val maximumQos: QualityOfService = QualityOfService.AT_LEAST_ONCE,
+    /**
+     * Bit 2 of the Subscription Options represents the No Local option. If the value is 1,
+     * Application Messages MUST NOT be forwarded to a connection with a ClientID equal to the
+     * ClientID of the publishing connection [MQTT-3.8.3-3]. It is a Protocol Error to set the No
+     * Local bit to 1 on a Shared Subscription [MQTT-3.8.3-4].
+     */
+    val noLocal: Boolean = false,
+    /**
+     * Bit 3 of the Subscription Options represents the Retain As Published option. If 1,
+     * Application Messages forwarded using this subscription keep the RETAIN flag they were
+     * published with. If 0, Application Messages forwarded using this subscription have the
+     * RETAIN flag set to 0. Retained messages sent when the subscription is established have
+     * the RETAIN flag set to 1.
+     */
+    val retainAsPublished: Boolean = false,
+    /**
+     * Bits 4 and 5 of the Subscription Options represent the Retain Handling option. This option
+     * specifies whether retained messages are sent when the subscription is established. This
+     * does not affect the sending of retained messages at any point after the subscribe. If there
+     * are no retained messages matching the Topic Filter, all of these values act the same. The
+     * values are:
+     *
+     * 0 = Send retained messages at the time of the subscribe
+     *
+     * 1 = Send retained messages at subscribe only if the subscription does not currently exist
+     *
+     * 2 = Do not send retained messages at the time of the subscribe
+     *
+     * It is a Protocol Error to send a Retain Handling value of 3.
+     */
+    val retainHandling: RetainHandling = SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
+) {
 
     fun serialize(writeBuffer: WriteBuffer) {
-        writeBuffer.writeUtf8String(topicFilter.topicFilter)
+        writeBuffer.writeMqttUtf8String(topicFilter.topicFilter)
         val qosInt = maximumQos.integerValue
         val nlShifted = (if (noLocal) 1 else 0).shl(2)
         val rapShifted = (if (retainAsPublished) 1 else 0).shl(3)
@@ -258,7 +254,8 @@ data class Subscription(val topicFilter: Filter,
         writeBuffer.write(combinedByte)
     }
 
-    fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
+    fun size(writeBuffer: WriteBuffer) =
+        writeBuffer.lengthUtf8String(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
 
     companion object {
         fun fromMany(buffer: ReadBuffer, remainingLength: UInt): Set<Subscription> {
@@ -276,7 +273,7 @@ data class Subscription(val topicFilter: Filter,
             var size = 0.toUInt()
             val topic = buffer.readMqttUtf8StringNotValidatedSized()
             size += topic.first + 2u
-            val topicFilter = MqttUtf8String(topic.second)
+            val topicFilter = topic.second
             val subOptionsInt = buffer.readUnsignedByte().toInt()
             size += 1u
             val reservedBit7 = subOptionsInt.shr(7) == 1
@@ -303,7 +300,7 @@ data class Subscription(val topicFilter: Filter,
             val qosBit1 = subOptionsInt.shl(6).shr(7) == 1
             val qosBit0 = subOptionsInt.shl(7).shr(7) == 1
             val qos = QualityOfService.fromBooleans(qosBit1, qosBit0)
-            return Pair(size, Subscription(Filter(topicFilter.getValueOrThrow()), qos, nlBit2, rapBit3, retainHandling))
+            return Pair(size, Subscription(Filter(topicFilter), qos, nlBit2, rapBit3, retainHandling))
         }
 
         fun from(

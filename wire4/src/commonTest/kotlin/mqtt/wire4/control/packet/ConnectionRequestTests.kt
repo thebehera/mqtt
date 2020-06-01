@@ -14,7 +14,7 @@ class ConnectionRequestTests {
 
     @Test
     fun fixedHeaderByte1() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -23,7 +23,7 @@ class ConnectionRequestTests {
 
     @Test
     fun fixedHeaderRemainingLength() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -34,7 +34,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolNameByte1() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -46,7 +46,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolNameByte2() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -60,7 +60,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolNameByte3() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -75,7 +75,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolNameByte4() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -91,7 +91,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolNameByte5() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -108,7 +108,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolNameByte6() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -126,7 +126,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderProtocolVersionByte7() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -145,7 +145,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8AllFalse() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE))
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -182,7 +182,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasUsername() {
-        val connectionRequest = ConnectionRequest(
+        val connectionRequest = ConnectionRequest<Unit>(
             VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
             ConnectionRequest.Payload(userName = MqttUtf8String("yolo"))
         )
@@ -222,7 +222,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasPassword() {
-        val connectionRequest = ConnectionRequest(
+        val connectionRequest = ConnectionRequest<Unit>(
             VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
             ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
         )
@@ -265,15 +265,17 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasWillRetainCheckWarning() {
-        assertNotNull(VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
-                "should of provided an warning")
+        assertNotNull(
+            VariableHeader(willQos = AT_MOST_ONCE, willRetain = true).validateOrGetWarning(),
+            "should of provided an warning"
+        )
     }
 
 
     @Test
     fun variableHeaderConnectFlagsByte8HasWillRetain() {
         val vh = VariableHeader(willQos = AT_MOST_ONCE, willRetain = true)
-        val connectionRequest = ConnectionRequest(vh)
+        val connectionRequest = ConnectionRequest<Unit>(vh)
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -311,7 +313,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasQos1() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -337,7 +339,11 @@ class ConnectionRequestTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(
+            willQos,
+            QualityOfService.AT_MOST_ONCE,
+            "invalid byte 8 qos on the CONNECT variable header for willQos flag"
+        )
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -348,7 +354,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasQos2() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = QualityOfService.EXACTLY_ONCE))
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -374,7 +380,11 @@ class ConnectionRequestTests {
         val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
         assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
         val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
-        assertEquals(willQos, QualityOfService.EXACTLY_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        assertEquals(
+            willQos,
+            QualityOfService.EXACTLY_ONCE,
+            "invalid byte 8 qos on the CONNECT variable header for willQos flag"
+        )
         val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
         assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
         val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
@@ -385,7 +395,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasWillFlag() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE, willFlag = true))
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -422,7 +432,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderConnectFlagsByte8HasCleanStart() {
-        val connectionRequest = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE, cleanSession = true))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE, cleanSession = true))
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -460,7 +470,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderKeepAliveDefault() {
-        val connectionRequest = ConnectionRequest()
+        val connectionRequest = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -481,7 +491,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderKeepAlive0() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = 0))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(keepAliveSeconds = 0))
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -503,7 +513,7 @@ class ConnectionRequestTests {
 
     @Test
     fun variableHeaderKeepAliveMax() {
-        val connectionRequest = ConnectionRequest(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE.toInt()))
+        val connectionRequest = ConnectionRequest<Unit>(VariableHeader(keepAliveSeconds = UShort.MAX_VALUE.toInt()))
         val buffer = allocateNewBuffer(14u, limits)
         connectionRequest.serialize(buffer)
         buffer.resetForRead()
@@ -524,17 +534,17 @@ class ConnectionRequestTests {
 
     @Test
     fun packetDefault() {
-        val request = ConnectionRequest()
+        val request = ConnectionRequest<Unit>()
         val buffer = allocateNewBuffer(14u, limits)
         request.serialize(buffer)
         buffer.resetForRead()
-        val requestDeserialized = ControlPacketV4.from(buffer) as ConnectionRequest
+        val requestDeserialized = ControlPacketV4.from(buffer)
         assertEquals(requestDeserialized, request)
     }
 
     @Test
     fun packetQos0() {
-        val request = ConnectionRequest(VariableHeader(willQos = AT_MOST_ONCE))
+        val request = ConnectionRequest<Unit>(VariableHeader(willQos = AT_MOST_ONCE))
         val buffer = allocateNewBuffer(14u, limits)
         request.serialize(buffer)
         buffer.resetForRead()
@@ -546,8 +556,9 @@ class ConnectionRequestTests {
     @Test
     fun usernameFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
-            val connectionRequest = ConnectionRequest(
-                    payload = ConnectionRequest.Payload(userName = MqttUtf8String("yolo")))
+            val connectionRequest = ConnectionRequest<Unit>(
+                payload = ConnectionRequest.Payload(userName = MqttUtf8String("yolo"))
+            )
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()
@@ -558,7 +569,7 @@ class ConnectionRequestTests {
     @Test
     fun usernameFlagMatchesPayloadFailureCaseWithFlagNoUsername() {
         try {
-            val connectionRequest = ConnectionRequest(VariableHeader(hasUserName = true))
+            val connectionRequest = ConnectionRequest<Unit>(VariableHeader(hasUserName = true))
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()
@@ -569,8 +580,9 @@ class ConnectionRequestTests {
     @Test
     fun passwordFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
-            val connectionRequest = ConnectionRequest(
-                    payload = ConnectionRequest.Payload(password = MqttUtf8String("yolo")))
+            val connectionRequest = ConnectionRequest<Unit>(
+                payload = ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
+            )
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()
@@ -581,7 +593,7 @@ class ConnectionRequestTests {
     @Test
     fun passwordFlagMatchesPayloadFailureCaseWithFlagNoUsername() {
         try {
-            val connectionRequest = ConnectionRequest(VariableHeader(hasPassword = true))
+            val connectionRequest = ConnectionRequest<Unit>(VariableHeader(hasPassword = true))
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
             fail()

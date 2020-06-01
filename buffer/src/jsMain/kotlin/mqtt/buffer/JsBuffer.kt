@@ -28,10 +28,8 @@ data class JsBuffer(val buffer: Buffer) : PlatformBuffer {
     override fun readUnsignedInt() = buffer.readUInt()
     override fun readLong() = buffer.readLong()
 
-    override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
-        val length = readUnsignedShort()
-        val text = buffer.readText(max = length.toInt())
-        return Pair(length.toUInt(), text)
+    override fun readUtf8(bytes: UInt): CharSequence {
+        return buffer.readText(max = bytes.toInt())
     }
 
     override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as JsBuffer).buffer)
@@ -66,25 +64,23 @@ data class JsBuffer(val buffer: Buffer) : PlatformBuffer {
         return this
     }
 
-    override fun writeUtf8String(charSequence: CharSequence): WriteBuffer {
-        val size = mqttUtf8Size(charSequence).toUShort()
-        buffer.writeUShort(size)
-        val bytes = Charsets.UTF_8.newEncoder().encodeToByteArray(charSequence)
+    override fun writeUtf8(text: CharSequence): WriteBuffer {
+        val bytes = Charsets.UTF_8.newEncoder().encodeToByteArray(text)
         buffer.writeFully(bytes)
         return this
     }
 
-    override fun mqttUtf8Size(
+    override fun sizeUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
     ) = Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
 
-    override fun utf8StringSize(
+    override fun lengthUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
-    ) = mqttUtf8Size(inputSequence, malformedInput, unmappableCharacter)
+    ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
 
     override suspend fun close() {}
 }

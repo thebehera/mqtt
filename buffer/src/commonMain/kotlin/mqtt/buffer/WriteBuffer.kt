@@ -1,6 +1,7 @@
 package mqtt.buffer
 
 import kotlin.experimental.or
+import kotlin.reflect.KClass
 
 @ExperimentalUnsignedTypes
 interface WriteBuffer {
@@ -11,7 +12,22 @@ interface WriteBuffer {
     fun write(uShort: UShort): WriteBuffer
     fun write(uInt: UInt): WriteBuffer
     fun write(long: Long): WriteBuffer
-    fun writeUtf8String(charSequence: CharSequence): WriteBuffer
+    fun writeUtf8(text: CharSequence): WriteBuffer
+
+    fun writeMqttUtf8String(charSequence: CharSequence): WriteBuffer {
+        val size = lengthUtf8String(charSequence).toUShort()
+        write(size)
+        writeUtf8(charSequence)
+        return this
+    }
+
+    fun writeGenericType(genericType: GenericType<*>): WriteBuffer {
+        GenericSerialization.serialize(this, genericType)
+        return this
+    }
+
+    fun <T : Any> sizeGenericType(obj: T, kClass: KClass<T>) = GenericSerialization.size(this, obj, kClass)
+
     fun writeVariableByteInteger(uInt: UInt): WriteBuffer {
         if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
             throw MalformedInvalidVariableByteInteger(uInt)
@@ -30,7 +46,7 @@ interface WriteBuffer {
         return this
     }
 
-    fun mqttUtf8Size(
+    fun lengthUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence? = null,
         unmappableCharacter: CharSequence? = null
@@ -49,6 +65,7 @@ interface WriteBuffer {
         } while (no > 0 && numBytes < 4)
         return numBytes.toUInt()
     }
+
 
 //    fun <T> write(serializationStrategy: MqttSerializationStrategy<T>): WriteBuffer
     // mqtt 5

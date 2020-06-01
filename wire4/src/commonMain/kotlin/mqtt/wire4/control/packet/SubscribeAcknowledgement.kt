@@ -2,7 +2,6 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.Parcelize
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
@@ -19,9 +18,8 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  * A SUBACK Packet contains a list of return codes, that specify the maximum QoS level that was granted in each
  * Subscription that was requested by the SUBSCRIBE.
  */
-@Parcelize
-data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payload: List<ReasonCode>)
-    : ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
+data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payload: List<ReasonCode>) :
+    ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
     override fun remainingLength(buffer: WriteBuffer) = 2u + payload.size.toUInt()
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())

@@ -2,19 +2,15 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.*
-import mqtt.buffer.ReadBuffer
-import mqtt.buffer.WriteBuffer
+import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.ByteArrayWrapper
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
-
-typealias CONNECT = ConnectionRequest
+import kotlin.reflect.KClass
 
 /**
  * 3.1 CONNECT – Client requests a connection to a Server
@@ -30,99 +26,66 @@ typealias CONNECT = ConnectionRequest
  * topic, Will Message, User Name and Password. All but the Client identifier are optional and their presence is
  * determined based on flags in the variable header.
  */
-@Parcelize
-data class ConnectionRequest(
+data class ConnectionRequest<WillPayload : Any>(
     /**
      * The variable header for the CONNECT Packet consists of four fields in the following order:  Protocol Name,
      * Protocol Level, Connect Flags, and Keep Alive.
      */
-    @Embedded val variableHeader: VariableHeader = VariableHeader(),
-    @Embedded val payload: Payload = Payload()
-)
-    : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
-    @Ignore
-    @IgnoredOnParcel
+    val variableHeader: VariableHeader = VariableHeader(),
+    val payload: Payload<WillPayload> = Payload()
+) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
     override val username = payload.userName?.getValueOrThrow()
 
-    @Ignore
-    @IgnoredOnParcel
     override val clientIdentifier = payload.clientId.getValueOrThrow()
 
-    @Ignore
-    @IgnoredOnParcel
     override val protocolName = variableHeader.protocolName.getValueOrThrow()
-    @Ignore
-    @IgnoredOnParcel
     override val protocolVersion = variableHeader.protocolLevel.toInt()
-    constructor(
-            clientId: String,
-            username: String? = null,
-            password: String? = null,
-            willRetain: Boolean = false,
-            willQos: QualityOfService = QualityOfService.AT_MOST_ONCE,
-            willTopic: String? = null,
-            willPayload: ByteArrayWrapper? = null,
-            cleanSession: Boolean = false,
-            keepAliveSeconds: UShort = UShort.MAX_VALUE) :
-            this(
-                    VariableHeader(
-                            hasUserName = username != null,
-                            hasPassword = password != null,
-                            willFlag = willTopic != null && willPayload != null,
-                            willQos = willQos,
-                            willRetain = willRetain,
-                            cleanSession = cleanSession,
-                        keepAliveSeconds = keepAliveSeconds.toInt()
-                    ),
-                Payload(
-                    clientId = MqttUtf8String(clientId),
-                    willTopic = if (willTopic != null && willPayload != null) MqttUtf8String(willTopic) else null,
-                    willPayload = if (willTopic != null && willPayload != null) willPayload else null,
-                    userName = if (username != null) MqttUtf8String(username) else null,
-                    password = if (password != null) MqttUtf8String(password) else null
-                )
-            )
-
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
 
     override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
 
-    @Ignore
-    @IgnoredOnParcel
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
 
-    @Ignore
-    @IgnoredOnParcel
     override val cleanStart: Boolean = variableHeader.cleanSession
     override fun copy(): IConnectionRequest = copy(variableHeader = variableHeader, payload = payload)
     override fun validateOrGetWarning(): MqttWarning? {
         if (variableHeader.willFlag &&
-                (payload.willPayload == null || payload.willTopic == null)) {
-            return MqttWarning("[MQTT-3.1.2-9]", "If the Will Flag is set to " +
-                    "1, the Will QoS and Will Retain fields in the Connect Flags will be used by the Server, " +
-                    "and the Will Properties, Will Topic and Will Message fields MUST be present in the Payload.")
+            (payload.willPayload == null || payload.willTopic == null)
+        ) {
+            return MqttWarning(
+                "[MQTT-3.1.2-9]", "If the Will Flag is set to " +
+                        "1, the Will QoS and Will Retain fields in the Connect Flags will be used by the Server, " +
+                        "and the Will Properties, Will Topic and Will Message fields MUST be present in the Payload."
+            )
         }
         if (variableHeader.hasUserName && payload.userName == null) {
-            return MqttWarning("[MQTT-3.1.2-17]", "If the User Name Flag is set" +
-                    " to 1, a User Name MUST be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-17]", "If the User Name Flag is set" +
+                        " to 1, a User Name MUST be present in the Payload"
+            )
         }
         if (!variableHeader.hasUserName && payload.userName != null) {
-            return MqttWarning("[MQTT-3.1.2-16]", "If the User Name Flag is set " +
-                    "to 0, a User Name MUST NOT be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-16]", "If the User Name Flag is set " +
+                        "to 0, a User Name MUST NOT be present in the Payload"
+            )
         }
         if (variableHeader.hasPassword && payload.password == null) {
-            return MqttWarning("[MQTT-3.1.2-19]", "If the Password Flag is set" +
-                    " to 1, a Password MUST be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-19]", "If the Password Flag is set" +
+                        " to 1, a Password MUST be present in the Payload"
+            )
         }
         if (!variableHeader.hasPassword && payload.password != null) {
-            return MqttWarning("[MQTT-3.1.2-18]", "If the Password Flag is set " +
-                    "to 0, a Password MUST NOT be present in the Payload")
+            return MqttWarning(
+                "[MQTT-3.1.2-18]", "If the Password Flag is set " +
+                        "to 0, a Password MUST NOT be present in the Payload"
+            )
         }
         return null
     }
 
-    @Parcelize
     data class VariableHeader(
         /**
          * 3.1.2.1 Protocol Name
@@ -346,11 +309,13 @@ data class ConnectionRequest(
          *
          */
         val keepAliveSeconds: Int = UShort.MAX_VALUE.toInt()
-    ) : Parcelable {
+    ) {
         fun validateOrGetWarning(): MqttWarning? {
             if (!willFlag && willRetain) {
-                return MqttWarning("[MQTT-3.1.2-13]", "If the Will Flag is set" +
-                        " to 0, then Will Retain MUST be set to 0")
+                return MqttWarning(
+                    "[MQTT-3.1.2-13]", "If the Will Flag is set" +
+                            " to 0, then Will Retain MUST be set to 0"
+                )
             }
             return null
         }
@@ -368,13 +333,13 @@ data class ConnectionRequest(
             val wFlag = if (willFlag) 0b100 else 0
             val cleanStart = if (cleanSession) 0b10 else 0
             val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            writeBuffer.writeUtf8String(protocolName.value)
+            writeBuffer.writeMqttUtf8String(protocolName.value)
             writeBuffer.write(protocolLevel.toUByte())
             writeBuffer.write(flags)
             writeBuffer.write(keepAliveSeconds.toUShort())
         }
 
-        fun size(writeBuffer: WriteBuffer) = writeBuffer.mqttUtf8Size(protocolName.value) + 6u
+        fun size(writeBuffer: WriteBuffer) = writeBuffer.lengthUtf8String(protocolName.value) + 6u
 
         companion object {
 
@@ -419,124 +384,122 @@ data class ConnectionRequest(
      * the flags in the variable header. These fields, if present, MUST appear in the order Client Identifier,
      * Will Topic, Will Message, User Name, Password [MQTT-3.1.3-1].
      */
-    @Parcelize
-    data class Payload(
-            /**
-             * 3.1.3.1 Client Identifier (ClientID)
-             *
-             * The Client Identifier (ClientId) identifies the Client to the Server. Each Client connecting to the
-             * Server has a unique ClientId. The ClientId MUST be used by Clients and by Servers to identify state
-             * that they hold relating to this MQTT Session between the Client and the Server [MQTT-3.1.3-2].
-             *
-             * The Client Identifier (ClientId) MUST be present and MUST be the first field in the CONNECT packet
-             * payload [MQTT-3.1.3-3].
-             *
-             * The ClientId MUST be a UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-4].
-             *
-             * The Server MUST allow ClientIds which are between 1 and 23 UTF-8 encoded bytes in length, and that
-             * contain only the characters
-             *
-             * "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" [MQTT-3.1.3-5].
-             *
-             * The Server MAY allow ClientId’s that contain more than 23 encoded bytes. The Server MAY allow
-             * ClientId’s that contain characters not included in the list given above.
-             *
-             * A Server MAY allow a Client to supply a ClientId that has a length of zero bytes, however if it does
-             * so the Server MUST treat this as a special case and assign a unique ClientId to that Client. It MUST
-             * then process the CONNECT packet as if the Client had provided that unique ClientId [MQTT-3.1.3-6].
-             *
-             * If the Client supplies a zero-byte ClientId, the Client MUST also set CleanSession to 1 [MQTT-3.1.3-7].
-             *
-             * If the Client supplies a zero-byte ClientId with CleanSession set to 0, the Server MUST respond to the
-             * CONNECT Packet with a CONNACK return code 0x02 (Identifier rejected) and then close the Network
-             * Connection [MQTT-3.1.3-8].
-             *
-             * If the Server rejects the ClientId it MUST respond to the CONNECT Packet with a CONNACK return code
-             * 0x02 (Identifier rejected) and then close the Network Connection [MQTT-3.1.3-9].
-             *
-             * Non normative comment
-             *
-             * A Client implementation could provide a convenience method to generate a random ClientId. Use of such a
-             * method should be actively discouraged when the CleanSession is set to 0.
-             */
-            val clientId: MqttUtf8String = MqttUtf8String(""),
-            /**
-             * 3.1.3.2 Will Topic
-             *
-             * If the Will Flag is set to 1, the Will Topic is the next field in the payload. The Will Topic MUST be a
-             * UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-10].
-             */
-            val willTopic: MqttUtf8String? = null,
-            /**
-             * 3.1.3.3 Will Message
-             * If the Will Flag is set to 1 the Will Message is the next field in the payload. The Will Message defines
-             * the Application Message that is to be published to the Will Topic as described in Section 3.1.2.5. This
-             * field consists of a two byte length followed by the payload for the Will Message expressed as a sequence
-             * of zero or more bytes. The length gives the number of bytes in the data that follows and does not
-             * include the 2 bytes taken up by the length itself.
-             *
-             * When the Will Message is published to the Will Topic its payload consists only of the data portion of
-             * this field, not the first two length bytes.
-             */
-            val willPayload: ByteArrayWrapper? = null,
-            /**
-             * 3.1.3.4 User Name
-             *
-             * If the User Name Flag is set to 1, this is the next field in the payload. The User Name MUST be a UTF-8
-             * encoded string as defined in Section 1.5.3 [MQTT-3.1.3-11]. It can be used by the Server for
-             * authentication and authorization.
-             */
-            val userName: MqttUtf8String? = null,
-            /**
-             * 3.1.3.5 Password
-             *
-             * If the Password Flag is set to 1, this is the next field in the payload. The Password field contains 0
-             * to 65535 bytes of binary data prefixed with a two byte length field which indicates the number of bytes
-             * used by the binary data (it does not include the two bytes taken up by the length field itself).
-             */
-            val password: MqttUtf8String? = null
-    ) : Parcelable {
+    data class Payload<WillPayload : Any>(
+        /**
+         * 3.1.3.1 Client Identifier (ClientID)
+         *
+         * The Client Identifier (ClientId) identifies the Client to the Server. Each Client connecting to the
+         * Server has a unique ClientId. The ClientId MUST be used by Clients and by Servers to identify state
+         * that they hold relating to this MQTT Session between the Client and the Server [MQTT-3.1.3-2].
+         *
+         * The Client Identifier (ClientId) MUST be present and MUST be the first field in the CONNECT packet
+         * payload [MQTT-3.1.3-3].
+         *
+         * The ClientId MUST be a UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-4].
+         *
+         * The Server MUST allow ClientIds which are between 1 and 23 UTF-8 encoded bytes in length, and that
+         * contain only the characters
+         *
+         * "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ" [MQTT-3.1.3-5].
+         *
+         * The Server MAY allow ClientId’s that contain more than 23 encoded bytes. The Server MAY allow
+         * ClientId’s that contain characters not included in the list given above.
+         *
+         * A Server MAY allow a Client to supply a ClientId that has a length of zero bytes, however if it does
+         * so the Server MUST treat this as a special case and assign a unique ClientId to that Client. It MUST
+         * then process the CONNECT packet as if the Client had provided that unique ClientId [MQTT-3.1.3-6].
+         *
+         * If the Client supplies a zero-byte ClientId, the Client MUST also set CleanSession to 1 [MQTT-3.1.3-7].
+         *
+         * If the Client supplies a zero-byte ClientId with CleanSession set to 0, the Server MUST respond to the
+         * CONNECT Packet with a CONNACK return code 0x02 (Identifier rejected) and then close the Network
+         * Connection [MQTT-3.1.3-8].
+         *
+         * If the Server rejects the ClientId it MUST respond to the CONNECT Packet with a CONNACK return code
+         * 0x02 (Identifier rejected) and then close the Network Connection [MQTT-3.1.3-9].
+         *
+         * Non normative comment
+         *
+         * A Client implementation could provide a convenience method to generate a random ClientId. Use of such a
+         * method should be actively discouraged when the CleanSession is set to 0.
+         */
+        val clientId: MqttUtf8String = MqttUtf8String(""),
+        /**
+         * 3.1.3.2 Will Topic
+         *
+         * If the Will Flag is set to 1, the Will Topic is the next field in the payload. The Will Topic MUST be a
+         * UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-10].
+         */
+        val willTopic: MqttUtf8String? = null,
+        /**
+         * 3.1.3.3 Will Message
+         * If the Will Flag is set to 1 the Will Message is the next field in the payload. The Will Message defines
+         * the Application Message that is to be published to the Will Topic as described in Section 3.1.2.5. This
+         * field consists of a two byte length followed by the payload for the Will Message expressed as a sequence
+         * of zero or more bytes. The length gives the number of bytes in the data that follows and does not
+         * include the 2 bytes taken up by the length itself.
+         *
+         * When the Will Message is published to the Will Topic its payload consists only of the data portion of
+         * this field, not the first two length bytes.
+         */
+        val willPayload: GenericType<WillPayload>? = null,
+        /**
+         * 3.1.3.4 User Name
+         *
+         * If the User Name Flag is set to 1, this is the next field in the payload. The User Name MUST be a UTF-8
+         * encoded string as defined in Section 1.5.3 [MQTT-3.1.3-11]. It can be used by the Server for
+         * authentication and authorization.
+         */
+        val userName: MqttUtf8String? = null,
+        /**
+         * 3.1.3.5 Password
+         *
+         * If the Password Flag is set to 1, this is the next field in the payload. The Password field contains 0
+         * to 65535 bytes of binary data prefixed with a two byte length field which indicates the number of bytes
+         * used by the binary data (it does not include the two bytes taken up by the length field itself).
+         */
+        val password: MqttUtf8String? = null
+    ) {
 
         fun size(writeBuffer: WriteBuffer): UInt {
-            var size = 2u + writeBuffer.mqttUtf8Size(clientId.value)
+            var size = 2u + writeBuffer.lengthUtf8String(clientId.value)
             if (willTopic != null) {
-                size += 2u + writeBuffer.mqttUtf8Size(willTopic.value)
+                size += 2u + writeBuffer.lengthUtf8String(willTopic.value)
             }
             if (willPayload != null) {
-                val payload = willPayload.byteArray
-                size += 2u + payload.size.toUInt()
+                size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                size += 2u + writeBuffer.mqttUtf8Size(userName.value)
+                size += 2u + writeBuffer.lengthUtf8String(userName.value)
             }
             if (password != null) {
-                size += 2u + writeBuffer.mqttUtf8Size(password.value)
+                size += 2u + writeBuffer.lengthUtf8String(password.value)
             }
             return size
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
-            writeBuffer.writeUtf8String(clientId.value)
+            writeBuffer.writeMqttUtf8String(clientId.value)
             if (willTopic != null) {
-                writeBuffer.writeUtf8String(willTopic.value)
+                writeBuffer.writeMqttUtf8String(willTopic.value)
             }
             if (willPayload != null) {
-                val payload = willPayload.byteArray
-                writeBuffer.write(payload.size.toUShort())
-                writeBuffer.write(payload)
+                writeBuffer.writeGenericType(willPayload)
             }
             if (userName != null) {
-                writeBuffer.writeUtf8String(userName.value)
+                writeBuffer.writeMqttUtf8String(userName.value)
             }
             if (password != null) {
-                writeBuffer.writeUtf8String(password.value)
+                writeBuffer.writeMqttUtf8String(password.value)
             }
-
         }
 
         companion object {
 
-            fun from(buffer: ReadBuffer, variableHeader: VariableHeader): Payload {
+            fun from(
+                buffer: ReadBuffer,
+                variableHeader: VariableHeader
+            ): Payload<*> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willTopic = if (variableHeader.willFlag) {
                     MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
@@ -544,8 +507,22 @@ data class ConnectionRequest(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    val size = buffer.readUnsignedShort()
-                    ByteArrayWrapper(buffer.readByteArray(size.toUInt()))
+                    val length = buffer.readUnsignedShort()
+                    val headers = HashMap<CharSequence, HashSet<CharSequence>>()
+                    headers.add("${variableHeader.protocolName.value} Control Packet Value", "1")
+                    headers.add("Protocol Name", variableHeader.protocolName.value)
+                    headers.add("Protocol Level", variableHeader.protocolLevel.toString())
+                    headers.add(
+                        "${variableHeader.protocolName.value} Will Retain",
+                        variableHeader.willRetain.toString()
+                    )
+                    headers.add("${variableHeader.protocolName.value} Will QoS", variableHeader.willQos.toString())
+                    headers.add("${variableHeader.protocolName.value} Will Topic", willTopic!!.value)
+                    val params =
+                        DeserializationParameters(buffer, length, ConnectionRequest.toString(), headers = headers)
+                    val obj = buffer.readGenericType(params)!!
+                    @Suppress("UNCHECKED_CAST")
+                    GenericType(obj.obj, obj.kClass as KClass<Any>)
                 } else {
                     null
                 }
@@ -566,7 +543,7 @@ data class ConnectionRequest(
 
     companion object {
 
-        fun from(buffer: ReadBuffer): ConnectionRequest {
+        fun from(buffer: ReadBuffer): ConnectionRequest<*> {
             val variableHeader = VariableHeader.from(buffer)
             val payload = Payload.from(buffer, variableHeader)
             return ConnectionRequest(variableHeader, payload)

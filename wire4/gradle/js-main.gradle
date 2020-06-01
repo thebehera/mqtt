@@ -1,4 +1,3 @@
-
 tasks.withType(compileKotlinJs.getClass()) {
     kotlinOptions {
         moduleKind = "umd"
