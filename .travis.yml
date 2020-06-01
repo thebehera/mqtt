@@ -1,16 +1,16 @@
 addons:
-  homebrew:
-    taps: homebrew/cask-versions
-    packages:
-      - mosquitto
-    update: true
+#  homebrew:
+  #    taps: homebrew/cask-versions
+  #    packages:
+  #      - mosquitto
+  #    update: true
   apt:
-    sources:
-      - sourceline: ppa:mosquitto-dev/mosquitto-ppa
+    #    sources:
+    #      - sourceline: ppa:mosquitto-dev/mosquitto-ppa
     packages:
-      - mosquitto
+      #      - mosquitto
       - libgbm-dev
-    update: true
+  #    update: true
   chrome: stable
 matrix:
   include:
@@ -24,18 +24,25 @@ matrix:
         - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
     - os: linux
       language: java
+      dist: bionic
+    - os: linux
+      language: java
+      dist: xenial
+    - os: linux
+      language: java
+      dist: precise
+    - os: linux
+      language: java
       dist: xenial
       jdk:
-        - oraclejdk11
         - openjdk10
-        - openjdk11
     - os: osx
       language: java
       osx_image: xcode11.3
 #    - os: windows
 #      language: sh
 #      before_install:
-#        - choco install jdk8 -params 'installdir=c:\\java8'
+#        - choco install openjdk -params 'installdir=c:\\java8'
 #        - export JAVA_HOME="/C/java8/"
 #      before_cache:
 #        - rm -rf $HOME/.gradle/
