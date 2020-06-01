@@ -40,6 +40,7 @@ matrix:
       language: sh
       before_install:
         - choco install openjdk -params 'installdir=c:\\jdk'
+        - choco install googlechrome -ignore-checksums -y
         - export JAVA_HOME="/C/jdk/"
       before_cache:
         - rm -rf $HOME/.gradle/
