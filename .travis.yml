@@ -29,6 +29,14 @@ matrix:
       language: java
       osx_image: xcode11.3
     - os: linux
+      language: java
+      dist: xenial
+      arch: arm64
+    - os: linux
+      language: java
+      dist: xenial
+      arch: ppc64le
+    - os: linux
       language: android
       dist: trusty
       before_install:
