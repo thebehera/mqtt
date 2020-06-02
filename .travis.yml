@@ -51,6 +51,7 @@ before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
   - rm -rf $HOME/.gradle/wrapper/dists/
+  - rm -rf $HOME/.gradle/caches/6.3/fileHashes/fileHashes.lock
 cache:
   directories:
     - $HOME/travis/.rvm/
