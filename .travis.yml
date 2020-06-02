@@ -34,8 +34,10 @@ matrix:
       arch: arm64
     - os: linux
       language: java
-      dist: xenial
       arch: ppc64le
+    - os: linux
+      language: java
+      arch: s390x
     - os: linux
       language: android
       dist: trusty
