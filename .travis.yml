@@ -13,6 +13,9 @@ addons:
   #    update: true
   chrome: stable
 matrix:
+  fast_finish: true
+  allow_failures:
+    - os: windows
   include:
     - os: windows
       language: sh
@@ -44,9 +47,6 @@ matrix:
       dist: xenial
       jdk:
         - openjdk10
-jobs:
-  allow_failures:
-    - os: windows
 before_cache:
   - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
   - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
