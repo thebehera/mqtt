@@ -14,14 +14,9 @@ abstract class TCPServerProcess : ServerProcess {
 
     @ExperimentalTime
     override suspend fun startProcessing(socket: ClientSocket) {
-        try {
-            this.socket = socket
-            serverSideProcess()
-        } catch (e: Exception) {
-            throw e
-        } finally {
-            close()
-        }
+        this.socket = socket
+        serverSideProcess()
+      //  close()
     }
 
     @ExperimentalTime
