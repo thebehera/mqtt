@@ -17,6 +17,9 @@ matrix:
   allow_failures:
     - os: windows
   include:
+    - os: osx
+      language: java
+      osx_image: xcode11.3
     - os: windows
       language: sh
       before_install:
@@ -25,19 +28,6 @@ matrix:
         - choco install googlechrome -ignore-checksums -y
       before_cache:
         - rm -rf $HOME/.gradle/
-    - os: osx
-      language: java
-      osx_image: xcode11.3
-    - os: linux
-      language: java
-      dist: xenial
-      arch: arm64
-    - os: linux
-      language: java
-      arch: ppc64le
-    - os: linux
-      language: java
-      arch: s390x
     - os: linux
       language: android
       dist: trusty
