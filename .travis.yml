@@ -1,3 +1,6 @@
+jobs:
+  allow_failures:
+    - os: windows
 addons:
 #  homebrew:
   #    taps: homebrew/cask-versions
