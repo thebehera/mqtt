@@ -21,7 +21,14 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     suspend fun getClientConnection() {
         listen().collect {
             if (it != null) {
-                process.newInstance().startProcessing(it)
+                try {
+                    process.newInstance().startProcessing(it)
+                } catch (e: Exception) {
+                    //any exception bubbles to this will be caught here and ignored.
+                    //this will ensure other processing in the coroutine scope will not be impacted.
+                } finally {
+                    it.close()
+                }
             }
         }
     }
