@@ -5,8 +5,6 @@ package mqtt.client.session.transport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import mqtt.buffer.BufferPool
 import mqtt.buffer.PlatformBuffer
 import mqtt.connection.IRemoteHost
@@ -22,25 +20,22 @@ import kotlin.time.*
 class MqttTransport private constructor(
     private val scope: CoroutineScope,
     private val pool: BufferPool,
-    val remoteHost: IRemoteHost,
+    remoteHost: IRemoteHost,
     val socket: ClientToServerSocket,
-    val controlPacketReader: ControlPacketReader
-) : Transport {
-    private val writeMutex = Mutex()
+    private val controlPacketReader: ControlPacketReader
+) {
     private val keepAliveTimeout = remoteHost.request.keepAliveTimeoutSeconds.toInt().toDuration(DurationUnit.SECONDS)
     lateinit var lastMessageReceived: TimeMark
-    lateinit var lastMessageSent: TimeMark
+    private lateinit var lastMessageSent: TimeMark
 
-    override suspend fun asyncWrite(controlPacket: ControlPacket) {
+    suspend fun asyncWrite(controlPacket: ControlPacket) {
         if (controlPacket.direction == DirectionOfFlow.SERVER_TO_CLIENT) {
             throw IllegalArgumentException("Server to client message")
         }
         pool.borrowSuspend { buffer ->
             controlPacket.serialize(buffer)
-            writeMutex.withLock {
-                socket.write(buffer, keepAliveTimeout)
-                lastMessageSent = TimeSource.Monotonic.markNow()
-            }
+            socket.write(buffer, keepAliveTimeout)
+            lastMessageSent = TimeSource.Monotonic.markNow()
         }
     }
 
@@ -51,7 +46,7 @@ class MqttTransport private constructor(
         return packet
     }
 
-    override suspend fun incomingPackets() = flow {
+    suspend fun incomingPackets() = flow {
         while (isOpen()) {
             pool.borrowSuspend { buffer ->
                 emit(readPacket(buffer))
@@ -61,7 +56,7 @@ class MqttTransport private constructor(
 
     fun isOpen() = socket.isOpen() && scope.isActive
 
-    override suspend fun close() = socket.close()
+    suspend fun close() = socket.close()
 
     companion object {
         suspend fun openConnection(
