@@ -15,6 +15,7 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
     override fun resetForWrite() = buffer.resetForWrite()
 
     override fun readByte() = buffer.readByte()
+    override val capacity: UInt = buffer.capacity.toUInt()
 
     override fun readByteArray(size: UInt) = buffer.readBytes(size.toInt())
 
