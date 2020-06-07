@@ -11,7 +11,7 @@ import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
 @ExperimentalUnsignedTypes
-class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = null) : PlatformBuffer {
+data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = null) : PlatformBuffer {
 
     override val type: BufferType = if (byteBuffer::class == MappedByteBuffer::class) {
         BufferType.Disk
@@ -128,13 +128,6 @@ class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = nul
         fileRef?.aClose()
     }
 
-    override fun equals(other: Any?): Boolean {
-        return byteBuffer == (other as? JvmBuffer)?.byteBuffer
-    }
-
-    override fun hashCode(): Int {
-        return byteBuffer.hashCode()
-    }
 }
 
 

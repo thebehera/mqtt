@@ -44,7 +44,6 @@ kotlin {
             dependencies {
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
             }
         }
         if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
@@ -64,7 +63,6 @@ kotlin {
             dependencies {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
             }
         }
         jsMain {
@@ -75,7 +73,6 @@ kotlin {
         jsTest {
             dependencies {
                 implementation kotlin('test-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
         nativeMain {
@@ -85,40 +82,20 @@ kotlin {
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
             }
         }
-        nativeTest {
-            dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
-            }
-        }
         iOSX64Main {
             dependsOn nativeMain
-        }
-        iOSX64Test {
-            dependsOn nativeTest
         }
         iOSArm64Main {
             dependsOn nativeMain
         }
-        iOSArm64Test {
-            dependsOn nativeTest
-        }
         linuxMain {
             dependsOn nativeMain
-        }
-        linuxTest {
-            dependsOn nativeTest
         }
         macosMain {
             dependsOn nativeMain
         }
-        macosTest {
-            dependsOn nativeTest
-        }
         windowsMain {
             dependsOn nativeMain
-        }
-        windowsTest {
-            dependsOn nativeTest
         }
     }
 
