@@ -6,7 +6,7 @@ import kotlin.experimental.and
 data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     override val type = BufferType.InMemory
     private val littleEndian = false // network endian is big endian
-    private val capacity = buffer.byteLength
+    override val capacity: UInt = buffer.byteLength.toUInt()
     private var limit = 0
     private var position = 0
 
@@ -18,7 +18,7 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
 
     override fun resetForWrite() {
         position = 0
-        limit = capacity
+        limit = capacity.toInt()
     }
 
     override fun readByte(): Byte {
