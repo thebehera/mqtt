@@ -37,13 +37,13 @@ class BufferPoolTests {
     @Test
     fun clearsPool() {
         val bufferPool = BufferPool()
-        bufferPool.borrowAsync { borredBuffer, cb ->
-            bufferAsyc = borredBuffer
+        assertTrue(bufferPool.pool.isEmpty())
+        bufferPool.borrowAsync { _, cb ->
             cb.recycle()
         }
-        bufferPool.borrow {
-            buffer = it
-        }
+        assertEquals(1, bufferPool.pool.size)
+        bufferPool.borrow {}
+        assertEquals(1, bufferPool.pool.size)
         bufferPool.releaseAllBuffers()
         assertTrue(bufferPool.pool.isEmpty())
     }
