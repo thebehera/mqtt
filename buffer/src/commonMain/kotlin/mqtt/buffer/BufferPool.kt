@@ -2,6 +2,12 @@
 
 package mqtt.buffer
 
+/**
+ * The goal of the buffer pool is to provide a performance increase at the expense of security complexity.
+ * When using a pool, it is not required to "zero"-out a buffer compared to allocating/de-allocating which has that
+ * overhead. It is highly suggested to ensure that the buffer pool is allocated per socket or user connection to
+ * prevent accidentally leaking information to the wrong place
+ */
 data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
     internal val pool = HashSet<PlatformBuffer>()
 
@@ -14,6 +20,10 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
         }
     }
 
+    /**
+     * Take care when calling this function and be sure to call RecycleCallback#recycle to ensure the buffer is cleaned
+     * up, otherwise cannot be reused (leading to more expensive allocations and "zero-ing" out of buffers)
+     */
     fun borrowAsync(
         size: UInt = limits.defaultBufferSize,
         cb: (PlatformBuffer, RecycleCallback) -> Unit
@@ -31,6 +41,9 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
         }
     }
 
+    /**
+     * Release all references to all buffers in the pool
+     */
     fun releaseAllBuffers() {
         pool.clear()
     }
