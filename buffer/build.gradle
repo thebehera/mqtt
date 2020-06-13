@@ -1,3 +1,4 @@
+import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
     id 'kotlin-multiplatform'
 }
@@ -17,8 +18,14 @@ kotlin {
     js {
         browser {
             testTask {
+                enabled = System.getenv().containsKey("CHROME_BIN") || System.getenv().containsKey("MOZ_HEADLESS")
                 useKarma {
-                    useChromeHeadless()
+                    if (System.getenv().containsKey("CHROME_BIN")) {
+                        useChromeHeadless()
+                    }
+                    if (System.getenv().containsKey("MOZ_HEADLESS")) {
+                        useFirefox()
+                    }
                 }
             }
         }

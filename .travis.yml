@@ -1,3 +1,6 @@
+env:
+  global:
+    - MOZ_HEADLESS=1
 addons:
 #  homebrew:
   #    taps: homebrew/cask-versions
@@ -12,6 +15,7 @@ addons:
       - libgbm-dev
   #    update: true
   chrome: stable
+  firefox: latest
 matrix:
   fast_finish: true
   allow_failures:

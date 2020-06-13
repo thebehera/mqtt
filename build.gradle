@@ -1,3 +1,5 @@
+import java.util.function.Consumer
+
 buildscript {
     ext.kotlin_version = '1.3.72'
 
@@ -31,7 +33,14 @@ if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() != JavaVers
 } else if (!System.getenv("ANDROID_HOME")) {
     project.logger.warn("Android SDK not found, builds and tests skipped! Please install the Android SDK from: https://developer.android.com/studio/index.html#command-tools and set your ANDROID_HOME env value.")
 }
-if (!System.getenv("CHROME_BIN")) {
+if (!System.getenv().containsKey("CHROME_BIN")) {
+    System.getenv().keySet().forEach(new Consumer<String>() {
+        @Override
+        void accept(String s) {
+            project.logger.warn("ENV Value: " + s)
+        }
+    })
+
     project.logger.warn("Chrome not found! Headless Chrome tests are disabled. Please set your CHROME_BIN env variable to remove this warning")
 }
 allprojects {

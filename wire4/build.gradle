@@ -23,10 +23,15 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    if (System.getenv("CHROME_BIN")) {
-                        useChromeHeadless()
+                    enabled = System.getenv().containsKey("CHROME_BIN") || System.getenv().containsKey("MOZ_HEADLESS")
+                    useKarma {
+                        if (System.getenv().containsKey("CHROME_BIN")) {
+                            useChromeHeadless()
+                        }
+                        if (System.getenv().containsKey("MOZ_HEADLESS")) {
+                            useFirefox()
+                        }
                     }
-                    usePhantomJS()
                 }
             }
         }
