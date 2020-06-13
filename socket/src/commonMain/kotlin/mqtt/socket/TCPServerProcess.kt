@@ -16,7 +16,6 @@ abstract class TCPServerProcess : ServerProcess {
     override suspend fun startProcessing(socket: ClientSocket) {
         this.socket = socket
         serverSideProcess()
-      //  close()
     }
 
     @ExperimentalTime
