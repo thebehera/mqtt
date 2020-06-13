@@ -11,10 +11,10 @@ package mqtt.buffer
 data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
     internal val pool = HashSet<PlatformBuffer>()
 
-    fun borrow(size: UInt = limits.defaultBufferSize, cb: ((PlatformBuffer) -> Unit)) {
+    fun borrow(size: UInt = limits.defaultBufferSize, bufferCallback: ((PlatformBuffer) -> Unit)) {
         val buffer = borrow(size)
         try {
-            cb(buffer)
+            bufferCallback(buffer)
         } finally {
             recycle(buffer)
         }
@@ -26,16 +26,19 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
      */
     fun borrowAsync(
         size: UInt = limits.defaultBufferSize,
-        cb: (PlatformBuffer, RecycleCallback) -> Unit
+        bufferCallback: (PlatformBuffer, RecycleCallback) -> Unit
     ) {
         val buffer = borrow(size)
-        cb(buffer, RecycleCallbackImpl(this, buffer))
+        bufferCallback(buffer, RecycleCallbackImpl(this, buffer))
     }
 
-    suspend fun <T> borrowSuspend(size: UInt = limits.defaultBufferSize, cb: suspend ((PlatformBuffer) -> T)): T {
+    suspend fun <T> borrowSuspend(
+        size: UInt = limits.defaultBufferSize,
+        bufferCallback: suspend ((PlatformBuffer) -> T)
+    ): T {
         val buffer = borrow(size)
         try {
-            return cb(buffer)
+            return bufferCallback(buffer)
         } finally {
             recycle(buffer)
         }

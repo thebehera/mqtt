@@ -23,8 +23,8 @@ class BufferPoolTests {
     fun recyclesAsync() {
         val bufferPool = BufferPool()
         var buffer: PlatformBuffer? = null
-        bufferPool.borrowAsync { borredBuffer, cb ->
-            buffer = borredBuffer
+        bufferPool.borrowAsync { borrowedBuffer, cb ->
+            buffer = borrowedBuffer
             cb.recycle()
         }
         assertTrue(bufferPool.pool.contains(buffer!!))
