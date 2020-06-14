@@ -33,6 +33,19 @@ class BufferPoolTests {
         }
     }
 
+    @Test
+    fun recyclesSuspend() = runTestBlocking {
+        val bufferPool = BufferPool()
+        var buffer: PlatformBuffer? = null
+        bufferPool.borrowSuspend {
+            buffer = it
+        }
+        assertTrue(bufferPool.pool.contains(buffer!!))
+        bufferPool.borrowSuspend {
+            assertEquals(buffer!!, it)
+        }
+    }
+
 
     @Test
     fun clearsPool() {

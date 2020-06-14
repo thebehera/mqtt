@@ -37,7 +37,7 @@ kotlin {
         }
         commonJvm {
             dependencies {
-                implementation kotlin('stdlib-jdk7')
+                implementation kotlin('stdlib-jdk8')
                 implementation project(":buffer")
                 implementation project(":socket")
                 implementation project(":wire-core")
