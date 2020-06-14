@@ -1,6 +1,3 @@
-env:
-  global:
-    - CHROME_BIN="google-chrome"
 addons:
 #  homebrew:
   #    taps: homebrew/cask-versions
