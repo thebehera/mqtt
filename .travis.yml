@@ -1,6 +1,7 @@
 env:
   global:
     - MOZ_HEADLESS=1
+    - CHROME_BIN=1
 addons:
 #  homebrew:
   #    taps: homebrew/cask-versions

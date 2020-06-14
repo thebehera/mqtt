@@ -33,15 +33,12 @@ if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() != JavaVers
 } else if (!System.getenv("ANDROID_HOME")) {
     project.logger.warn("Android SDK not found, builds and tests skipped! Please install the Android SDK from: https://developer.android.com/studio/index.html#command-tools and set your ANDROID_HOME env value.")
 }
-if (!System.getenv().containsKey("CHROME_BIN")) {
-    System.getenv().keySet().forEach(new Consumer<String>() {
-        @Override
-        void accept(String s) {
-            project.logger.warn("ENV Value: " + s)
-        }
-    })
-
+if (!System.getenv().containsKey("CHROME_BIN") && !System.getenv().containsKey("MOZ_HEADLESS") && !System.getenv().containsKey("FIREFOX_BIN")) {
+    project.logger.warn("Chrome/Firefox not found! Browser tests are disabled. Please set your CHROME_BIN/MOZ_HEADLESS/FIREFOX_BIN env variable to remove this warning")
+} else if (!System.getenv().containsKey("CHROME_BIN")) {
     project.logger.warn("Chrome not found! Headless Chrome tests are disabled. Please set your CHROME_BIN env variable to remove this warning")
+} else if (!System.getenv().containsKey("MOZ_HEADLESS") && !System.getenv().containsKey("FIREFOX_BIN")) {
+    project.logger.warn("Firefox not found! Headless Firefox tests are disabled. Please set your FIREFOX_BIN or MOZ_HEADLESS env variable to remove this warning")
 }
 allprojects {
     repositories {
