@@ -76,7 +76,7 @@ class SocketTests2 {
     fun twoServerMultiClient() = block {
         var port0: UShort = 0u
         var port1: UShort = 0u
-        val clientCount = 100
+        val clientCount = 10
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
@@ -136,33 +136,21 @@ class SocketTests2 {
         val timeout = 100.milliseconds
         val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
+        wbuffer.writeMqttUtf8String(sendMsg)
+        socket.write(wbuffer, timeout)
+        socket.read(rbuffer, timeout)
+        val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
 
-        try {
-            wbuffer.writeMqttUtf8String(sendMsg)
-            socket.write(wbuffer, timeout)
-            socket.read(rbuffer, timeout)
-            val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
-
-            assertEquals(respMsg, str, "Excepted message not received.")
-        } catch (e: Exception) {
-            assertTrue("" == "clientMessage.exception: ${e.message}")
-        }
+        assertEquals(respMsg, str, "Excepted message not received.")
     }
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun initiateClient(socket: ClientToServerSocket, port: UShort) {
-
-        try {
-            assertFalse(socket.isOpen(), "Client socket should not be open state")
-            socket.open(100.seconds, port, "localhost")
-
-            assertEquals(socket.remotePort(), port, "Remote port is not the as in connect request.")
-
-            assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
-        } catch (e: Exception) {
-            assertTrue("".equals("initiateClient.exception: ${e.message}"))
-        }
+        assertFalse(socket.isOpen(), "Client socket should not be open state")
+        socket.open(100.seconds, port, "localhost")
+        assertEquals(socket.remotePort(), port, "Remote port is not the as in connect request.")
+        assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
     }
 
     @ExperimentalUnsignedTypes
