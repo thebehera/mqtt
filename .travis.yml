@@ -1,7 +1,6 @@
 env:
   global:
-    - MOZ_HEADLESS=1
-    - CHROME_BIN=1
+    - MOZ_HEADLESS=true
 addons:
 #  homebrew:
   #    taps: homebrew/cask-versions
@@ -30,8 +29,6 @@ matrix:
       before_install:
         - choco install jdk8 -params 'installdir=c:\\java8'
         - export JAVA_HOME="/C/java8/"
-        - choco install googlechrome -ignore-checksums -y
-        - choco install firefox
       before_cache:
         - rm -rf $HOME/.gradle/
     - os: linux
