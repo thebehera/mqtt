@@ -1,9 +1,3 @@
-addons:
-  apt:
-    packages:
-      - libgbm-dev
-    update: true
-  chrome: stable
 matrix:
   fast_finish: true
   allow_failures:
@@ -12,6 +6,11 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.3
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
     - os: windows
       language: sh
       before_install:
@@ -19,6 +18,11 @@ matrix:
         - export JAVA_HOME="/C/java8/"
       before_cache:
         - rm -rf $HOME/.gradle/
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
     - os: linux
       language: android
       dist: trusty
@@ -28,15 +32,34 @@ matrix:
         - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - export IGNORE_BROWSER_TESTS=true
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
     - os: linux
       language: java
       dist: bionic
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
     - os: linux
       language: java
       dist: xenial
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
     - os: linux
       language: java
       dist: xenial
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
       jdk:
         - openjdk10
 before_cache:
