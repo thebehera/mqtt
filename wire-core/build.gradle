@@ -47,7 +47,7 @@ kotlin {
         }
         jvmMain {
             dependencies {
-                implementation kotlin('stdlib-jdk7')
+                implementation kotlin('stdlib-jdk8')
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
@@ -61,7 +61,7 @@ kotlin {
             androidMain {
                 dependsOn commonMain
                 dependencies {
-                    implementation kotlin('stdlib-jdk7')
+                    implementation kotlin('stdlib-jdk8')
                     implementation "androidx.room:room-common:$room_version"
                     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
                 }
