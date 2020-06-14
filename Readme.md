@@ -6,7 +6,7 @@ This is currently a WIP project with the goal of creating a lightweight, highly-
 Please do not attempt to use this in production. It's simply not ready. 
 
 # Min Requirements
-- Install Google Chrome otherwise web tests will fail
+- Install Google Chrome otherwise web tests will fail. If you do not want to install Google Chrome, add the environment variable `IGNORE_BROWSER_TESTS=true`
 
 # Test Status (>1528 tests as of now)
 Currently most of the tests are unit tests and there are some integration tests validating that we can connect to a mosquitto server
