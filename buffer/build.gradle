@@ -17,17 +17,15 @@ kotlin {
     ios("iOS")
     js {
         browser {
-            testTask {
-                enabled = (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN") || System.getenv().containsKey("FIREFOX_BIN"))
-                useKarma {
-                    if (System.getenv().containsKey("CHROME_BIN")) {
-                        useChromeHeadless()
-                    }
-                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
-                        useFirefox()
-                    }
+            useKarma {
+                if (System.getenv().containsKey("CHROME_BIN")) {
+                    useChromeHeadless()
+                }
+                if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
+                    useFirefox()
                 }
             }
+            enabled = (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN") || System.getenv().containsKey("FIREFOX_BIN"))
         }
         nodejs {
             testTask {
