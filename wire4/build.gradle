@@ -23,15 +23,14 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    useKarma {
-                        if (System.getenv().containsKey("CHROME_BIN")) {
-                            useChromeHeadless()
-                        }
-                        if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
-                            useFirefox()
-                        }
+                    if (System.getenv().containsKey("CHROME_BIN")) {
+                        useChromeHeadless()
+                    }
+                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
+                        useFirefox()
                     }
                 }
+                enabled = (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN") || System.getenv().containsKey("FIREFOX_BIN"))
             }
         }
         nodejs {
