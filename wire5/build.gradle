@@ -61,14 +61,14 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    if (System.getenv().containsKey("TRAVIS")) {
+                    if (System.getenv().containsKey("CHROME_BIN")) {
                         useChromeHeadless()
                     }
-                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("TRAVIS")) {
+                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
                         useFirefox()
                     }
                 }
-                enabled = (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("TRAVIS") || System.getenv().containsKey("CHROME_INSTALLED"))
+                enabled = (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN") || System.getenv().containsKey("CHROME_BIN"))
             }
         }
         nodejs {
