@@ -172,25 +172,33 @@ fun NetworkChannel.closeOnCancel(cont: CancellableContinuation<*>) {
 }
 
 @ExperimentalTime
-private suspend fun SocketChannel.suspendRead(buffer: ByteBuffer) = suspendCancellableCoroutine<Int> {
+private suspend fun SocketChannel.suspendRead(buffer: ByteBuffer) :Int {
+    var read = -1
     try {
-        val read = read(buffer)
-        buffer.flip()
-        it.resume(read)
-    } catch (ex: Throwable) {
-        if (ex is AsynchronousCloseException && it.isCancelled) return@suspendCancellableCoroutine
-        closeOnCancel(it)
+        read = suspendCoroutine {
+            val readBytes = read(buffer)
+            buffer.flip()
+            it.resume(readBytes)
+        }
+    } catch (t: Throwable) {
+        if (t !is AsynchronousCloseException) aClose()
+        throw t
     }
+    return read
 }
 
 @ExperimentalTime
-private suspend fun SocketChannel.suspendWrite(buffer: ByteBuffer) = suspendCancellableCoroutine<Int> {
+private suspend fun SocketChannel.suspendWrite(buffer: ByteBuffer) :Int {
+    var written = -1
     try {
-        buffer.flip()
-        val wrote = write(buffer)
-        it.resume(wrote)
-    } catch (ex: Throwable) {
-        if (ex is AsynchronousCloseException && it.isCancelled) return@suspendCancellableCoroutine
-        closeOnCancel(it)
+        written = suspendCoroutine {
+            buffer.flip()
+            val wrote = write(buffer)
+            it.resume(wrote)
+        }
+    } catch (t: Throwable) {
+        if (t !is AsynchronousCloseException) aClose()
+        throw t
     }
+    return written
 }

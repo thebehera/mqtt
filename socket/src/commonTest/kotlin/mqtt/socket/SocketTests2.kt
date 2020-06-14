@@ -14,7 +14,7 @@ import kotlin.time.milliseconds
 import kotlin.time.seconds
 
 
-class `SocketTests-2` {
+class SocketTests2 {
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
@@ -27,7 +27,6 @@ class `SocketTests-2` {
     fun oneServerOneClient() = block {
         var port : UShort = 0u
         lateinit var server : TCPServer
-        lateinit var client: ClientToServerSocket
 
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-1"
@@ -37,7 +36,7 @@ class `SocketTests-2` {
 
         port = server.getListenPort()
 
-        client = asyncClientSocket()
+        val client = asyncClientSocket()
         initiateClient(client, port)
 
         clientMessage (client, "Client-1", "Client-1:Server-1")
@@ -67,7 +66,7 @@ class `SocketTests-2` {
         }
         doneMutex.lock()
         server.close()
-//        assertEquals(0, readStats(port, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+        assertEquals(0, readStats(port, "CLOSE_WAIT").count(), "sockets found in close_wait state")
         doneMutex.unlock()
     }
 
@@ -77,7 +76,7 @@ class `SocketTests-2` {
     fun twoServerMultiClient() = block {
         var port0: UShort = 0u
         var port1: UShort = 0u
-        val clientCount = 10
+        val clientCount = 100
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
@@ -99,8 +98,8 @@ class `SocketTests-2` {
         doneMutex.lock()
         server0.close()
         server1.close()
-//        assertEquals(0, readStats(port0, "CLOSE_WAIT").count(), "sockets found in close_wait state")
-//        assertEquals(0, readStats(port1, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+        assertEquals(0, readStats(port0, "CLOSE_WAIT").count(), "sockets found in close_wait state")
+        assertEquals(0, readStats(port1, "CLOSE_WAIT").count(), "sockets found in close_wait state")
         doneMutex.unlock()
     }
 
@@ -146,7 +145,7 @@ class `SocketTests-2` {
 
             assertEquals(respMsg, str, "Excepted message not received.")
         } catch (e: Exception) {
-            assertTrue("".equals("clientMessage.exception: ${e.message}"))
+            assertTrue("" == "clientMessage.exception: ${e.message}")
         }
     }
 

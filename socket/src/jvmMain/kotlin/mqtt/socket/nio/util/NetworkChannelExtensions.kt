@@ -51,9 +51,8 @@ fun <T> NetworkChannel.tryGettingOption(option: SocketOption<T>) = if (supported
 
 @ExperimentalTime
 suspend fun NetworkChannel.aClose() {
-    suspendCoroutine<Unit> { cont ->
+    withContext(Dispatchers.IO) {
         blockingClose()
-        cont.resume(Unit)
     }
 }
 

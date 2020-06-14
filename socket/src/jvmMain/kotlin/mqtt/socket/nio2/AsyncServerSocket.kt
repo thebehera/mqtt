@@ -7,6 +7,7 @@ import mqtt.socket.nio2.util.openAsyncServerSocketChannel
 import java.net.SocketAddress
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.AsynchronousServerSocketChannel
+import java.nio.channels.ClosedChannelException
 import kotlin.time.ExperimentalTime
 
 
@@ -14,13 +15,12 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class AsyncServerSocket : BaseServerSocket<AsynchronousServerSocketChannel>() {
     override suspend fun accept(): AsyncServerToClientSocket? {
-        var socket: AsyncServerToClientSocket? = null
         try {
-            socket = AsyncServerToClientSocket(server!!.aAccept())
-        } catch (e: AsynchronousCloseException) {
+            return AsyncServerToClientSocket(server!!.aAccept())
+        } catch (e: ClosedChannelException) {
             // This will happen when the server socket is closed.
         }
-        return socket
+        return null
     }
 
     override suspend fun bind(channel: AsynchronousServerSocketChannel, socketAddress: SocketAddress?, backlog: UInt) =

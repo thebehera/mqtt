@@ -14,11 +14,11 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
-const val clientCount = 100L
+const val clientCount = 1000L
 
 @OptIn(ExperimentalTime::class)
 class SocketTests {
-    private val clientCount1 = 100L
+    private val clientCount1 = 1000L
     private val writeTimeout = 100.milliseconds
     private val readTimeout = writeTimeout
     private val validateCloseWait = true
@@ -180,7 +180,7 @@ class SocketTests {
             throw e
         } finally {
             if (port > 0u) {
-                delay(200) // gave a delay to ensure surver has time to process the close() request
+//                delay(200) // gave a delay to ensure surver has time to process the close() request
                 checkPort(port)
             }
 
