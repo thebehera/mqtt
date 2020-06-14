@@ -31,6 +31,7 @@ matrix:
         - choco install jdk8 -params 'installdir=c:\\java8'
         - export JAVA_HOME="/C/java8/"
         - choco install googlechrome -ignore-checksums -y
+        - choco install firefox
       before_cache:
         - rm -rf $HOME/.gradle/
     - os: linux
