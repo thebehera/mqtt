@@ -5,7 +5,6 @@
 // -- Testing with Mocha under Node
 task installDependenciesMochaNode(type: NpmTask, dependsOn: [npmInstall]) {
     args = ['install',
-            'text-encoding',// wont be needed once https://github.com/ktorio/ktor/issues/961 is fixed
             "mocha@$mocha_version",
             "source-map-support@$source_map_support_version",
             '--no-save']
