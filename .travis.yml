@@ -11,6 +11,7 @@ matrix:
           packages:
             - libgbm-dev
         chrome: stable
+        firefox: latest
     - os: windows
       language: sh
       before_install:
@@ -23,6 +24,7 @@ matrix:
           packages:
             - libgbm-dev
         chrome: stable
+        firefox: latest
     - os: linux
       language: android
       dist: trusty
@@ -44,6 +46,7 @@ matrix:
           packages:
             - libgbm-dev
         chrome: stable
+        firefox: latest
     - os: linux
       language: java
       dist: xenial
@@ -52,6 +55,7 @@ matrix:
           packages:
             - libgbm-dev
         chrome: stable
+        firefox: latest
     - os: linux
       language: java
       dist: xenial
@@ -60,6 +64,7 @@ matrix:
           packages:
             - libgbm-dev
         chrome: stable
+        firefox: latest
       jdk:
         - openjdk10
 before_cache:
