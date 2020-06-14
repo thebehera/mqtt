@@ -18,6 +18,7 @@ kotlin {
                 useKarma {
                     useChromeHeadless()
                 }
+                enabled = !System.getenv().containsKey("IGNORE_BROWSER_TESTS")
             }
         }
         nodejs {
