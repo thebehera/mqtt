@@ -1,17 +1,6 @@
-addons:
-#  homebrew:
-  #    taps: homebrew/cask-versions
-  #    packages:
-  #      - mosquitto
-  #    update: true
-  apt:
-    #    sources:
-    #      - sourceline: ppa:mosquitto-dev/mosquitto-ppa
-    packages:
-      #      - mosquitto
-      - libgbm-dev
-  #    update: true
-  chrome: stable
+env:
+  global:
+    - MOZ_HEADLESS=true
 matrix:
   fast_finish: true
   allow_failures:
@@ -20,14 +9,25 @@ matrix:
     - os: osx
       language: java
       osx_image: xcode11.3
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
+        firefox: latest
     - os: windows
       language: sh
       before_install:
         - choco install jdk8 -params 'installdir=c:\\java8'
         - export JAVA_HOME="/C/java8/"
-        - choco install googlechrome -ignore-checksums -y
       before_cache:
         - rm -rf $HOME/.gradle/
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
+        firefox: latest
     - os: linux
       language: android
       dist: trusty
@@ -36,15 +36,38 @@ matrix:
         - echo "8933bad161af4178b1185d1a37fbf41ea5269c55" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" >> "$ANDROID_HOME/licenses/android-sdk-license"
         - echo "24333f8a63b6825ea9c5514f83c2829b004d1fee" >> "$ANDROID_HOME/licenses/android-sdk-license"
+        - export IGNORE_BROWSER_TESTS=true
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
     - os: linux
       language: java
       dist: bionic
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
+        firefox: latest
     - os: linux
       language: java
       dist: xenial
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
+        firefox: latest
     - os: linux
       language: java
       dist: xenial
+      addons:
+        apt:
+          packages:
+            - libgbm-dev
+        chrome: stable
+        firefox: latest
       jdk:
         - openjdk10
 before_cache:
