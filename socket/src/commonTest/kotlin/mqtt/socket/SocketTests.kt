@@ -4,6 +4,7 @@ package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.BufferMemoryLimit
@@ -178,8 +179,11 @@ class SocketTests {
         } catch (e: Exception) {
             throw e
         } finally {
-            if (port > 0u)
+            if (port > 0u) {
+                delay(200) // gave a delay to ensure surver has time to process the close() request
                 checkPort(port)
+            }
+
         }
     }
 
