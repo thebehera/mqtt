@@ -11,13 +11,6 @@ apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
     js {
-        browser {
-            testTask {
-                useKarma {
-                    useChromeHeadless()
-                }
-            }
-        }
         nodejs {
             testTask {
 

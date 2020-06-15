@@ -1,14 +1,10 @@
-@file:OptIn(DangerousInternalIoApi::class)
+
 package mqtt.socket
 
-import io.ktor.utils.io.core.internal.DangerousInternalIoApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import mqtt.buffer.BufferMemoryLimit
-import mqtt.buffer.BufferPool
-import mqtt.buffer.JsBuffer
-import mqtt.buffer.PlatformBuffer
+import mqtt.buffer.*
 import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
@@ -28,7 +24,7 @@ class NodeClientSocket : ClientToServerSocket {
     ): SocketOptions {
         val ctx = CoroutineScope(coroutineContext)
         val onRead = OnRead({
-            Uint8Array((pool.borrow(520u) as JsBuffer).buffer.memory.view.buffer)
+            (allocateNewBuffer(1024u, pool.limits) as JsBuffer).buffer
         }, { _, buffer ->
             netSocket?.pause()
             ctx.launch {
@@ -55,7 +51,7 @@ class NodeClientSocket : ClientToServerSocket {
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
-        val array = Uint8Array((buffer as JsBuffer).buffer.memory.view.buffer)
+        val array = (buffer as JsBuffer).buffer
         val netSocket = netSocket ?: return 0
         netSocket.write(array)
         return array.byteLength

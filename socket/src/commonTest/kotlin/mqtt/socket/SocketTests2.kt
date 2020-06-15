@@ -14,7 +14,7 @@ import kotlin.time.milliseconds
 import kotlin.time.seconds
 
 
-class `SocketTests-2` {
+class SocketTests2 {
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
