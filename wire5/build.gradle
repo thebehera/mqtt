@@ -62,7 +62,12 @@ kotlin {
             testTask {
                 useKarma {
                     useChromeHeadless()
+                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
+                        useFirefox()
+                    }
+                    usePhantomJS()
                 }
+                enabled = !System.getenv().containsKey("IGNORE_BROWSER_TESTS")
             }
         }
         nodejs {
@@ -87,7 +92,7 @@ kotlin {
         }
         jvmMain {
             dependencies {
-                implementation kotlin('stdlib-jdk7')
+                implementation kotlin('stdlib-jdk8')
             }
         }
         jvmTest {
@@ -99,9 +104,8 @@ kotlin {
         if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
             androidMain {
                 dependencies {
-                    implementation "androidx.room:room-common:$room_version"
                     implementation project(':wire-core')
-                    implementation kotlin('stdlib-jdk7')
+                    implementation kotlin('stdlib-jdk8')
                 }
             }
             androidTest {
@@ -114,8 +118,6 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
-                implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
         jsTest {
@@ -138,9 +140,4 @@ kotlin {
 }
 configurations {
     compileClasspath
-}
-if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-    dependencies {
-        implementation project(':wire-core')
-    }
 }

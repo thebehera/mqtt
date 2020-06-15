@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "UNCHECKED_CAST", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
 package mqtt.wire.data.topic
 

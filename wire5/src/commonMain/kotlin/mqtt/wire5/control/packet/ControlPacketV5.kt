@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "KDocUnresolvedReference")
 
 package mqtt.wire5.control.packet
 
@@ -14,21 +14,32 @@ import mqtt.wire.control.packet.ControlPacket
  * @param controlPacketValue Value defined under [MQTT 2.1.2]
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
  */
-abstract class ControlPacketV5(override val controlPacketValue: Byte,
-                               override val direction: mqtt.wire.control.packet.format.fixed.DirectionOfFlow,
-                               override val flags: Byte = 0b0) : ControlPacket {
+abstract class ControlPacketV5(
+    override val controlPacketValue: Byte,
+    override val direction: mqtt.wire.control.packet.format.fixed.DirectionOfFlow,
+    override val flags: Byte = 0b0
+) : ControlPacket {
     override val mqttVersion: Byte = 5
 
     override val controlPacketReader = ControlPacketV5Reader
+
     companion object {
 
-        fun from(buffer: ReadBuffer): ControlPacketV5 {
+        fun from(buffer: ReadBuffer) = fromTyped(buffer)
+
+        fun fromTyped(buffer: ReadBuffer): ControlPacketV5 {
             val byte1 = buffer.readUnsignedByte()
             val remainingLength = buffer.readVariableByteInteger()
-            return from(buffer, byte1, remainingLength)
+            return fromTyped(buffer, byte1, remainingLength)
         }
 
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): ControlPacketV5 {
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) = fromTyped(buffer, byte1, remainingLength)
+
+        fun fromTyped(
+            buffer: ReadBuffer,
+            byte1: UByte,
+            remainingLength: UInt
+        ): ControlPacketV5 {
             val byte1AsUInt = byte1.toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()
             return when (packetValue) {

@@ -8,6 +8,7 @@ import mqtt.wire.control.packet.ControlPacket
 
 interface QueuedObjectCollection : CoroutineScope {
     val connectionId: Int
+
     // Only used to open the DB with a concrete filename
     // Room: Create a DB with the ClientID+ServerUrl
     suspend fun open(remoteHost: IRemoteHost)

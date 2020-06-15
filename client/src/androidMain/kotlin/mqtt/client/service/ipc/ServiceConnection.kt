@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.*
-import mqtt.Parcelize
 import mqtt.client.persistence.MqttConnectionsDatabaseDescriptor
 import mqtt.client.persistence.MqttSubscription
 import mqtt.client.service.REGISTER_CLIENT
@@ -32,7 +31,7 @@ class ClientToServiceConnection(
 
     init {
         val intent = Intent(context, serviceClass)
-        intent.putExtra(MqttConnectionsDatabaseDescriptor.TAG, dbProvider)
+//        intent.putExtra(MqttConnectionsDatabaseDescriptor.TAG, dbProvider)
         context.bindService(intent, this, Context.BIND_AUTO_CREATE)
     }
 
@@ -84,7 +83,7 @@ class ClientToServiceConnection(
         val message = Message.obtain(null, BoundClientToService.SUBSCRIBE.position)
         message.replyTo = incomingMessenger
         val bundle = Bundle()
-        bundle.putParcelable(MqttSubscription::class.java.canonicalName, subscription)
+//        bundle.putParcelable(MqttSubscription::class.java.canonicalName, subscription)
         bundle.putLong("rowId", queuedRowId)
         message.data = bundle
         bindManager.awaitServiceBound().send(message)
@@ -102,11 +101,10 @@ class ClientToServiceConnection(
         val message = Message.obtain(null, BoundClientToService.QUEUE_INSERTED.position)
         message.replyTo = incomingMessenger
         val bundle = Bundle()
-        bundle.putParcelable(NotifyPublish::class.java.canonicalName, notifyPublish)
+//        bundle.putParcelable(NotifyPublish::class.java.canonicalName, notifyPublish)
         message.data = bundle
         bindManager.awaitServiceBound().send(message)
     }
 
-    @Parcelize
-    data class NotifyPublish(val connectionIdentifier: Int, val messageId: Int) : Parcelable
+    data class NotifyPublish(val connectionIdentifier: Int, val messageId: Int)
 }

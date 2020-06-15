@@ -13,7 +13,7 @@ import kotlin.coroutines.suspendCoroutine
 @ExperimentalUnsignedTypes
 data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = null) : PlatformBuffer {
 
-    override val type: BufferType = if (byteBuffer is MappedByteBuffer) {
+    override val type: BufferType = if (byteBuffer::class == MappedByteBuffer::class) {
         BufferType.Disk
     } else {
         BufferType.InMemory
@@ -27,6 +27,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         byteBuffer.clear()
     }
 
+    override val capacity = byteBuffer.capacity().toUInt()
+
     override fun readByte() = byteBuffer.get()
     override fun readByteArray(size: UInt) = byteBuffer.toArray(size)
 
@@ -37,14 +39,13 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
     override fun readUnsignedInt() = byteBuffer.int.toUInt()
     override fun readLong() = byteBuffer.long
 
-    override fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
-        val length = readUnsignedShort().toInt()
-        val finalPosition = byteBuffer.position() + length
+    override fun readUtf8(bytes: UInt): CharSequence {
+        val finalPosition = byteBuffer.position() + bytes.toInt()
         val readBuffer = byteBuffer.asReadOnlyBuffer()
         readBuffer.limit(finalPosition)
         val decoded = Charsets.UTF_8.decode(readBuffer)
         byteBuffer.position(finalPosition)
-        return Pair(length.toUInt(), decoded)
+        return decoded
     }
 
     override fun put(buffer: PlatformBuffer) {
@@ -81,23 +82,21 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         return this
     }
 
-    override fun utf8StringSize(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = mqttUtf8Size(inputSequence, malformedInput, unmappableCharacter)
-
-    override fun writeUtf8String(charSequence: CharSequence): WriteBuffer {
-        val buffer = CharBuffer.wrap(charSequence)
-        val size = mqttUtf8Size(charSequence).toUShort()
-        write(size)
+    override fun writeUtf8(text: CharSequence): WriteBuffer {
+        val buffer = CharBuffer.wrap(text)
         val encoder = Charsets.UTF_8.newEncoder()
         encoder.encode(buffer, byteBuffer, true)
         encoder.flush(byteBuffer)
         return this
     }
 
-    override fun mqttUtf8Size(
+    override fun sizeUtf8String(
+        inputSequence: CharSequence,
+        malformedInput: CharSequence?,
+        unmappableCharacter: CharSequence?
+    ) = lengthUtf8String(inputSequence, malformedInput, unmappableCharacter)
+
+    override fun lengthUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
@@ -128,6 +127,7 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
     override suspend fun close() {
         fileRef?.aClose()
     }
+
 }
 
 

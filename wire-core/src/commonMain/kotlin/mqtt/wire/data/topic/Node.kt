@@ -1,5 +1,9 @@
+@file:Suppress("EXPERIMENTAL_API_USAGE")
+
 package mqtt.wire.data.topic
 
+import mqtt.buffer.BufferDeserializer
+import mqtt.buffer.BufferSerializer
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
@@ -10,6 +14,8 @@ data class Node internal constructor(val level: TopicLevel) {
     private val isRoot = level.value == ROOT_TOPIC_NODE_VALUE
     val isWildcard = level is LevelWildcard
     private val callbacks = ArrayList<CallbackTypeReference<*>>()
+    val deserializers = HashSet<BufferDeserializer<*>>()
+    val serializers = HashSet<BufferSerializer<Any>>()
 
     fun <T : Any> addCallback(callback: CallbackTypeReference<T>) {
         callbacks += callback
@@ -111,6 +117,7 @@ fun Node.addName(other: Name): Node {
     this += node
     return node
 }
+
 operator fun Node.plusAssign(other: Node) {
     for ((topicLevel, newChildNode) in other.children) {
         val originalChild = children[topicLevel]

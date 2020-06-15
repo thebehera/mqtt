@@ -6,9 +6,10 @@ import android.os.Message
 import android.os.Messenger
 import android.util.Log
 import android.util.SparseArray
-import mqtt.client.service.MESSAGE_PAYLOAD
 import mqtt.client.service.ipc.ServiceToBoundClient.*
-import mqtt.connection.*
+import mqtt.connection.ConnectionState
+import mqtt.connection.IRemoteHost
+import mqtt.connection.Initializing
 import mqtt.wire.control.packet.ControlPacket
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -34,7 +35,7 @@ class ClientServiceNewConnectionManager(
             val observable = putOrUpdate(connectionIdentifier, Initializing)
             val messenger = bindManager.awaitServiceBound()
             val bundle = Bundle()
-            bundle.putParcelable(MESSAGE_PAYLOAD, remoteHost)
+//            bundle.putParcelable(MESSAGE_PAYLOAD, remoteHost)
             val message = Message()
             message.what = BoundClientToService.CREATE_CONNECTION.position
             message.data = bundle
@@ -51,16 +52,16 @@ class ClientServiceNewConnectionManager(
             INCOMING_CONTROL_PACKET.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
-                val incomingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
-                incomingMessageCallback?.invoke(incomingControlPacket, msg.arg1)
+//                val incomingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
+//                incomingMessageCallback?.invoke(incomingControlPacket, msg.arg1)
                 return true
             }
             OUTGOING_CONTROL_PACKET.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
                 try {
-                    val outgoingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
-                    outgoingMessageCallback?.invoke(outgoingControlPacket, msg.arg1)
+//                    val outgoingControlPacket = bundle.getParcelable<ControlPacket>(MESSAGE_PAYLOAD) ?: return false
+//                    outgoingMessageCallback?.invoke(outgoingControlPacket, msg.arg1)
                 } catch (e: IllegalAccessError) {
                     Log.e("MQTT", "Failed to forward outgoing packet", e)
                 }
@@ -69,16 +70,16 @@ class ClientServiceNewConnectionManager(
             CONNECTION_STATE_CHANGED.position -> {
                 val bundle = msg.data
                 bundle.classLoader = javaClass.classLoader
-                val updated =
-                    bundle.getParcelable<IMqttConnectionStateUpdated>(MESSAGE_PAYLOAD) ?: return false
-                val currentConnectionState = updated.state
-                Log.i("MQTT", "New connection state recv by client process $currentConnectionState")
-                putOrUpdate(updated.remoteHostConnectionIdentifier, updated.state)
-                val connackHandler = continuationMap.get(updated.remoteHostConnectionIdentifier) ?: return true
-                if (currentConnectionState is Open) {
-                    continuationMap.remove(updated.remoteHostConnectionIdentifier)
-                }
-                connackHandler(currentConnectionState)
+//                val updated =
+//                    bundle.getParcelable<IMqttConnectionStateUpdated>(MESSAGE_PAYLOAD) ?: return false
+//                val currentConnectionState = updated.state
+//                Log.i("MQTT", "New connection state recv by client process $currentConnectionState")
+//                putOrUpdate(updated.remoteHostConnectionIdentifier, updated.state)
+//                val connackHandler = continuationMap.get(updated.remoteHostConnectionIdentifier) ?: return true
+//                if (currentConnectionState is Open) {
+//                    continuationMap.remove(updated.remoteHostConnectionIdentifier)
+//                }
+//                connackHandler(currentConnectionState)
                 return true
             }
         }

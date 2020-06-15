@@ -16,8 +16,15 @@ kotlin {
         browser {
             testTask {
                 useKarma {
-                    useChromeHeadless()
+                    if (!System.getenv().containsKey("IGNORE_BROWSER_TESTS")) {
+                        useChromeHeadless()
+                    }
+                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
+                        useFirefox()
+                    }
+                    usePhantomJS()
                 }
+                enabled = !System.getenv().containsKey("IGNORE_BROWSER_TESTS")
             }
         }
         nodejs {
@@ -35,7 +42,6 @@ kotlin {
             dependencies {
                 implementation project(':buffer')
                 implementation kotlin('stdlib-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
             }
         }
         commonTest {
@@ -46,8 +52,7 @@ kotlin {
         }
         jvmMain {
             dependencies {
-                implementation kotlin('stdlib-jdk7')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
+                implementation kotlin('stdlib-jdk8')
             }
         }
         jvmTest {
@@ -60,9 +65,7 @@ kotlin {
             androidMain {
                 dependsOn commonMain
                 dependencies {
-                    implementation kotlin('stdlib-jdk7')
-                    implementation "androidx.room:room-common:$room_version"
-                    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutines_version"
+                    implementation kotlin('stdlib-jdk8')
                 }
             }
             androidTest {
@@ -75,8 +78,6 @@ kotlin {
         jsMain {
             dependencies {
                 implementation kotlin('stdlib-js')
-                implementation(npm("text-encoding", "0.7.0"))
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
         jsTest {
@@ -86,7 +87,6 @@ kotlin {
         }
         nativeMain {
             dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutines_version"
             }
         }
         iOSX64Main {

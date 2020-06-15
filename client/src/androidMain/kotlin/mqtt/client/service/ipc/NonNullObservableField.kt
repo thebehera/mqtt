@@ -9,6 +9,7 @@ class NonNullObservableField<T : Any>(value: T, vararg dependencies: Observable)
     }
 
     override fun get(): T = super.get()!!
+
     @Suppress("RedundantOverride") // Only allow non-null `value`.
     override fun set(value: T) = super.set(value)
 

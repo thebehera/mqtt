@@ -2,17 +2,14 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.IgnoredOnParcel
-import mqtt.Parcelable
-import mqtt.Parcelize
+import mqtt.buffer.DeserializationParameters
+import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
-import mqtt.wire.data.ByteArrayWrapper
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
@@ -22,11 +19,11 @@ import mqtt.wire5.control.packet.format.variable.property.*
  * Creates an MQTT PUBLISH
  *
  */
-@Parcelize
-data class PublishMessage(
-        val fixed: FixedHeader = FixedHeader(),
-        val variable: VariableHeader,
-        val payload: ByteArrayWrapper = ByteArrayWrapper(byteArrayOf())) :
+data class PublishMessage<ApplicationMessage : Any>(
+    val fixed: FixedHeader = FixedHeader(),
+    val variable: VariableHeader,
+    val payload: GenericType<ApplicationMessage>? = null
+) :
     ControlPacketV5(IPublishMessage.controlPacketValue, DirectionOfFlow.BIDIRECTIONAL, fixed.flags), IPublishMessage {
     init {
         if (fixed.qos == AT_MOST_ONCE && variable.packetIdentifier != null) {
@@ -44,16 +41,22 @@ data class PublishMessage(
         retain: Boolean = false
     ) : this(FixedHeader(dup, qos, retain), VariableHeader(topic, packetIdentifier = packetIdentifier.toInt()))
 
-    @IgnoredOnParcel
     override val qualityOfService: QualityOfService = fixed.qos
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
-        writeBuffer.write(payload.byteArray)
+        if (payload != null) {
+            writeBuffer.writeGenericType(payload)
+        }
     }
 
-    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.byteArray.size.toUInt()
+    override fun remainingLength(buffer: WriteBuffer): UInt {
+        var size = variable.size(buffer)
+        if (payload != null) {
+            size += buffer.sizeGenericType(payload.obj, payload.kClass)
+        }
+        return size
+    }
 
-    @IgnoredOnParcel
     override val topic = variable.topicName
 
     override fun expectedResponse() = when (fixed.qos) {
@@ -66,7 +69,6 @@ data class PublishMessage(
         else -> null
     }
 
-    @Parcelize
     data class FixedHeader(
         /**
          * 3.3.1.1 DUP
@@ -176,8 +178,8 @@ data class PublishMessage(
          * subscriber will receive the most recent state.
          */
         val retain: Boolean = false
-    ) : Parcelable {
-        @IgnoredOnParcel val flags by lazy {
+    ) {
+        val flags by lazy {
             val dupInt = if (dup) 0b1000 else 0b0
             val qosInt = qos.integerValue.toInt().shl(1)
             val retainInt = if (retain) 0b1 else 0b0
@@ -191,10 +193,12 @@ data class PublishMessage(
                 val qosBit2 = byte1Int.shl(5).toUByte().toInt().shr(7) == 1
                 val qosBit1 = byte1Int.shl(6).toUByte().toInt().shr(7) == 1
                 if (qosBit2 && qosBit1) {
-                    throw MalformedPacketException("A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
-                            " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
-                            "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
-                            " section 4.13.")
+                    throw MalformedPacketException(
+                        "A PUBLISH Packet MUST NOT have both QoS bits set to 1 [MQTT-3.3.1-4]." +
+                                " If a Server or Client receives a PUBLISH packet which has both QoS bits set to 1 it is a " +
+                                "Malformed Packet. Use DISCONNECT with Reason Code 0x81 (Malformed Packet) as described in" +
+                                " section 4.13."
+                    )
                 }
                 val qos = QualityOfService.fromBooleans(qosBit2, qosBit1)
                 val retain = byte1Int.shl(7).toUByte().toInt().shr(7) == 1
@@ -209,12 +213,11 @@ data class PublishMessage(
      * The Variable Header of the PUBLISH Packet contains the following fields in the order: Topic Name, Packet
      * Identifier, and Properties. The rules for encoding Properties are described in section 2.2.2.
      */
-    @Parcelize
     data class VariableHeader(
         val topicName: CharSequence,
         val packetIdentifier: Int? = null,
-        val properties: Properties = Properties()
-    ) : Parcelable {
+        val properties: Properties<out Any> = Properties()
+    ) {
 
         init {
             if (properties.topicAlias == 0) {
@@ -242,7 +245,7 @@ data class PublishMessage(
         }
 
         fun serialize(buffer: WriteBuffer) {
-            buffer.writeUtf8String(topicName)
+            buffer.writeMqttUtf8String(topicName)
             if (packetIdentifier != null) {
                 buffer.write(packetIdentifier.toUShort())
             }
@@ -250,7 +253,7 @@ data class PublishMessage(
         }
 
         fun size(buffer: WriteBuffer): UInt {
-            var size = UShort.SIZE_BYTES.toUInt() + buffer.mqttUtf8Size(topicName)
+            var size = UShort.SIZE_BYTES.toUInt() + buffer.lengthUtf8String(topicName)
             if (packetIdentifier != null) {
                 size += UShort.SIZE_BYTES.toUInt()
             }
@@ -266,8 +269,7 @@ data class PublishMessage(
             return result
         }
 
-        @Parcelize
-        data class Properties(
+        data class Properties<CorrelationData : Any>(
             /**
              * 3.3.2.3.2 Payload Format Indicator
              *
@@ -379,7 +381,7 @@ data class PublishMessage(
              * Data, the receiver of the Request Message should also include this Correlation Data as a
              * property in the PUBLISH packet of the Response Message.
              */
-            val responseTopic: MqttUtf8String? = null,
+            val responseTopic: CharSequence? = null,
             /**
              * 3.3.2.3.6 Correlation Data
              *
@@ -408,7 +410,7 @@ data class PublishMessage(
              *
              * Refer to section 4.10 for more information about Request / Response
              */
-            val coorelationData: ByteArrayWrapper? = null,
+            val correlationData: GenericType<CorrelationData>? = null,
             /**
              * 3.3.2.3.7 User Property
              *
@@ -427,7 +429,7 @@ data class PublishMessage(
              * whose meaning and interpretation are known only by the application programs responsible for
              * sending and receiving them.
              */
-            val userProperty: List<Pair<MqttUtf8String, MqttUtf8String>> = emptyList(),
+            val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList(),
             /**
              * 3.3.2.3.8 Subscription Identifier
              *
@@ -467,8 +469,8 @@ data class PublishMessage(
              * Figure 3-9 shows an example of a PUBLISH packet with the Topic Name set to “a/b”, the Packet
              * Identifier set to 10, and having no properties.
              */
-            val contentType: MqttUtf8String? = null
-        ) : Parcelable {
+            val contentType: CharSequence? = null
+        ) {
 
             init {
                 if (topicAlias == 0) {
@@ -478,7 +480,7 @@ data class PublishMessage(
                     )
                 }
             }
-            @IgnoredOnParcel
+
             val props by lazy {
                 val list = ArrayList<Property>(7 + userProperty.count())
                 if (payloadFormatIndicator) {
@@ -493,8 +495,8 @@ data class PublishMessage(
                 if (responseTopic != null) {
                     list += ResponseTopic(responseTopic)
                 }
-                if (coorelationData != null) {
-                    list += CorrelationData(coorelationData)
+                if (correlationData != null) {
+                    list += CorrelationData(correlationData)
                 }
                 if (userProperty.isNotEmpty()) {
                     for (keyValueProperty in userProperty) {
@@ -527,15 +529,15 @@ data class PublishMessage(
             }
 
             companion object {
-                fun from(keyValuePairs: Collection<Property>?): Properties {
+                fun from(keyValuePairs: Collection<Property>?): Properties<*> {
                     var payloadFormatIndicator: Boolean? = null
                     var messageExpiryInterval: Long? = null
                     var topicAlias: Int? = null
-                    var responseTopic: MqttUtf8String? = null
-                    var coorelationData: ByteArrayWrapper? = null
-                    val userProperty = mutableListOf<Pair<MqttUtf8String, MqttUtf8String>>()
+                    var responseTopic: CharSequence? = null
+                    var correlationData: GenericType<*>? = null
+                    val userProperty = mutableListOf<Pair<CharSequence, CharSequence>>()
                     val subscriptionIdentifier = LinkedHashSet<Long>()
-                    var contentType: MqttUtf8String? = null
+                    var contentType: CharSequence? = null
                     keyValuePairs?.forEach {
                         when (it) {
                             is PayloadFormatIndicator -> {
@@ -567,17 +569,21 @@ data class PublishMessage(
                             }
                             is ResponseTopic -> {
                                 if (responseTopic != null) {
-                                    throw ProtocolError("Response Topic found twice see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477414")
+                                    throw ProtocolError(
+                                        "Response Topic found twice see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477414"
+                                    )
                                 }
                                 responseTopic = it.value
                             }
-                            is CorrelationData -> {
-                                if (coorelationData != null) {
-                                    throw ProtocolError("Correlation Data found twice see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477415")
+                            is CorrelationData<*> -> {
+                                if (correlationData != null) {
+                                    throw ProtocolError(
+                                        "Correlation Data found twice see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477415"
+                                    )
                                 }
-                                coorelationData = it.data
+                                correlationData = it.genericType
                             }
                             is UserProperty -> userProperty += Pair(it.key, it.value)
                             is SubscriptionIdentifier -> {
@@ -591,17 +597,21 @@ data class PublishMessage(
                             }
                             is ContentType -> {
                                 if (contentType != null) {
-                                    throw ProtocolError("Content Type found twice see:" +
-                                            "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477417")
+                                    throw ProtocolError(
+                                        "Content Type found twice see:" +
+                                                "https://docs.oasis-open.org/mqtt/mqtt/v5.0/cos02/mqtt-v5.0-cos02.html#_Toc1477417"
+                                    )
                                 }
                                 contentType = it.value
                             }
                             else -> throw MalformedPacketException("Invalid property type found in MQTT properties $it")
                         }
                     }
-                    return Properties(payloadFormatIndicator ?: false,
-                        messageExpiryInterval, topicAlias, responseTopic, coorelationData, userProperty,
-                        subscriptionIdentifier, contentType)
+                    return Properties(
+                        payloadFormatIndicator ?: false,
+                        messageExpiryInterval, topicAlias, responseTopic, correlationData, userProperty,
+                        subscriptionIdentifier, contentType
+                    )
                 }
             }
         }
@@ -610,8 +620,8 @@ data class PublishMessage(
 
             fun from(buffer: ReadBuffer, isQos0: Boolean): Pair<UInt, VariableHeader> {
                 val result = buffer.readMqttUtf8StringNotValidatedSized()
-                var size = result.first
-                val topicName = MqttUtf8String(result.second)
+                var size = result.first + UShort.SIZE_BYTES.toUInt()
+                val topicName = result.second
                 val packetIdentifier = if (isQos0) {
                     null
                 } else {
@@ -622,20 +632,26 @@ data class PublishMessage(
                 size += 1u
                 size += propertiesSized.first
                 val props = Properties.from(propertiesSized.second)
-                return Pair(size, VariableHeader(topicName.value, packetIdentifier, props))
+                return Pair(size, VariableHeader(topicName, packetIdentifier, props))
             }
         }
     }
 
     companion object {
-
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage {
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
             val fixedHeader = FixedHeader.fromByte(byte1)
-            val fixedHeaderSize = 1u + buffer.variableByteSize(remainingLength)
             val variableHeaderSized = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            val payloadBytes = ByteArrayWrapper(buffer.readByteArray(remainingLength - variableHeaderSized.first - fixedHeaderSize))
-            return PublishMessage(fixedHeader, variableHeaderSized.second, payloadBytes)
+            val variableHeader = variableHeaderSized.second
+            val variableSize = variableHeaderSized.first
+            val deserializationParameters = DeserializationParameters(
+                buffer,
+                (remainingLength - variableSize).toUShort(),
+                variableHeader.topicName
+            )
+            val genericType = buffer.readGenericType(deserializationParameters)
+            return PublishMessage(fixedHeader, variableHeader, genericType)
         }
+
     }
 
 }

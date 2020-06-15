@@ -1,9 +1,7 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "KDocUnresolvedReference")
 
 package mqtt.wire4.control.packet
 
-import mqtt.Ignore
-import mqtt.Parcelable
 import mqtt.buffer.ReadBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.ControlPacket
@@ -18,25 +16,32 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  * @param direction Direction of Flow defined under [MQTT 2.1.2]
  */
 abstract class ControlPacketV4(
-    @Ignore override val controlPacketValue: Byte,
-    @Ignore override val direction: DirectionOfFlow,
-    @Ignore override val flags: Byte = 0b0
-) : ControlPacket, Parcelable {
-    @Ignore
+    override val controlPacketValue: Byte,
+    override val direction: DirectionOfFlow,
+    override val flags: Byte = 0b0
+) : ControlPacket {
     override val mqttVersion: Byte = 4
-
-    @Ignore
     override val controlPacketReader = ControlPacketV4Reader
 
     companion object {
 
-        fun from(buffer: ReadBuffer): ControlPacketV4 {
+        inline fun <reified WillPayload : Any, reified PublishPayload : Any> fromTyped(buffer: ReadBuffer): ControlPacketV4 {
             val byte1 = buffer.readUnsignedByte()
             val remainingLength = buffer.readVariableByteInteger()
-            return from(buffer, byte1, remainingLength)
+            return fromTyped<WillPayload, PublishPayload>(buffer, byte1, remainingLength)
         }
 
-        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): ControlPacketV4 {
+        fun from(buffer: ReadBuffer) = fromTyped<Unit, Unit>(buffer)
+
+        fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) =
+            fromTyped<Unit, Unit>(buffer, byte1, remainingLength)
+
+
+        inline fun <reified WillPayload : Any, reified PublishPayload : Any> fromTyped(
+            buffer: ReadBuffer,
+            byte1: UByte,
+            remainingLength: UInt
+        ): ControlPacketV4 {
             val byte1AsUInt = byte1.toUInt()
             val packetValue = byte1AsUInt.shr(4).toInt()
             return when (packetValue) {

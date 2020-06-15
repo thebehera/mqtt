@@ -1,7 +1,6 @@
 package mqtt.client.persistence
 
 import android.content.Context
-import android.os.Parcelable
 import mqtt.client.MqttClient
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Name
@@ -10,7 +9,7 @@ import kotlin.reflect.KClass
 import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
-interface MqttConnectionsDatabaseDescriptor : Parcelable {
+interface MqttConnectionsDatabaseDescriptor {
     fun getDb(context: Context): MqttRoomDatabase
     fun getPersistence(
         context: Context,

@@ -6,7 +6,6 @@ import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.format.ReasonCode.*
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire5.control.packet.UnsubscribeAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
@@ -18,6 +17,7 @@ import kotlin.test.fail
 
 class UnsubscribeAcknowledgmentTests {
     private val packetIdentifier = 2
+
     @Test
     fun serializeDeserializeDefault() {
         val actual = UnsubscribeAcknowledgment(VariableHeader(packetIdentifier))
@@ -148,7 +148,7 @@ class UnsubscribeAcknowledgmentTests {
 
     @Test
     fun reasonString() {
-        val props = VariableHeader.Properties(reasonString = MqttUtf8String("yolo"))
+        val props = VariableHeader.Properties(reasonString = "yolo")
         val header = VariableHeader(packetIdentifier, properties = props)
         val actual = UnsubscribeAcknowledgment(header)
         val buffer = allocateNewBuffer(13u, limits)
@@ -164,12 +164,12 @@ class UnsubscribeAcknowledgmentTests {
         assertEquals(SUCCESS.byte, buffer.readUnsignedByte(), "payload reason code")
         buffer.resetForRead()
         val expected = ControlPacketV5.from(buffer) as UnsubscribeAcknowledgment
-        assertEquals(expected.variable.properties.reasonString, MqttUtf8String("yolo"))
+        assertEquals(expected.variable.properties.reasonString.toString(), "yolo")
     }
 
     @Test
     fun reasonStringMultipleTimesThrowsProtocolError() {
-        val obj1 = ReasonString(MqttUtf8String("yolo"))
+        val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(15u, limits)
         buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
@@ -183,14 +183,14 @@ class UnsubscribeAcknowledgmentTests {
     fun variableHeaderPropertyUserProperty() {
         val props = VariableHeader.Properties.from(
             setOf(
-                UserProperty(MqttUtf8String("key"), MqttUtf8String("value")),
-                UserProperty(MqttUtf8String("key"), MqttUtf8String("value"))
+                UserProperty("key", "value"),
+                UserProperty("key", "value")
             )
         )
         val userPropertyResult = props.userProperty
         for ((key, value) in userPropertyResult) {
-            assertEquals(key.getValueOrThrow(), "key")
-            assertEquals(value.getValueOrThrow(), "value")
+            assertEquals(key, "key")
+            assertEquals(value, "value")
         }
         assertEquals(userPropertyResult.size, 1)
 
@@ -200,8 +200,8 @@ class UnsubscribeAcknowledgmentTests {
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as UnsubscribeAcknowledgment
         val (key, value) = requestRead.variable.properties.userProperty.first()
-        assertEquals("key", key.getValueOrThrow().toString())
-        assertEquals("value", value.getValueOrThrow().toString())
+        assertEquals("key", key.toString())
+        assertEquals("value", value.toString())
     }
 
     @Test

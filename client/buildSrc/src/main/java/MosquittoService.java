@@ -26,7 +26,7 @@ class MosquittoService implements Runnable {
             while ((readline = reader.readLine()) != null) {
                 System.out.println(++i + " " + readline);
             }
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
