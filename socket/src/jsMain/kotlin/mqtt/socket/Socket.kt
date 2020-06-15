@@ -16,7 +16,6 @@ val isNodeJs by lazy {
 actual fun asyncClientSocket(): ClientToServerSocket {
     return if (isNodeJs) {
         NodeClientSocket()
-//        throw UnsupportedOperationException("Implementation WIP")
     } else {
         throw UnsupportedOperationException("Sockets are not supported in the browser")
     }

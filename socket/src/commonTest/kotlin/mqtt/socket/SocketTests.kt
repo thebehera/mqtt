@@ -13,11 +13,11 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
-const val clientCount = 100L
+const val clientCount = 1000L
 
 @OptIn(ExperimentalTime::class)
 class SocketTests {
-    private val clientCount1 = 100L
+    private val clientCount1 = 1000L
     private val writeTimeout = 100.milliseconds
     private val readTimeout = writeTimeout
     private val validateCloseWait = true
@@ -25,130 +25,72 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
-    fun client() = blockIgnoreUnsupported {
-        val s = asyncClientSocket()
-//        console.log(s.isOpen())
-        s.open(1.seconds, 8080u)
-        val buffer = allocateNewBuffer(20u, limits)
-        val buffer2 = allocateNewBuffer(20u, limits)
-        buffer.writeUtf8String("hi\r\n")
-        s.write(buffer, 1.seconds)
-        s.read(buffer2, 1.seconds)
-        s.close()
-    }
-
-    @Test
     fun nio2ConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nio2ConnectClientReadWriteDisconnect() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { asyncClientSocket() }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nio2ConnectDisconnectStress() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nio2ConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { asyncClientSocket() }
         stressDisconnectTest(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nio2ConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nio2ConnectDisconnectStressOpenConnections() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { asyncClientSocket() }
         stressTestOpenConnections(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nioNonBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { clientSocket(false) }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nioNonBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nioNonBlockingConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT))}
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { clientSocket(false) }
         stressDisconnectTest(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nioNonBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT))  }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { clientSocket(false) }
         stressTestOpenConnections(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nioBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nioBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { clientSocket(true) }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nioBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nioBlockingConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { clientSocket(true) }
         stressDisconnectTest(serverSocket, clientSocket)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-<<<<<<< HEAD
     fun nioBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
-        val serverSocket = { asyncServerSocket() }
-=======
-    fun nioBlockingConnectDisconnectStressOpenConnections() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
->>>>>>> 13f07288cbdadbb2ed621d6cb4b3e208f5d1ae7b
         val clientSocket = { clientSocket(true) }
         stressTestOpenConnections(serverSocket, clientSocket)
     }
@@ -236,8 +178,11 @@ class SocketTests {
         } catch (e: Exception) {
             throw e
         } finally {
-            if (port > 0u)
+            if (port > 0u) {
+//                delay(200) // gave a delay to ensure surver has time to process the close() request
                 checkPort(port)
+            }
+
         }
     }
 
