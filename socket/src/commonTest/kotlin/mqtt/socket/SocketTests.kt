@@ -255,7 +255,7 @@ class SocketTests {
         server.startServer()
         assertNotEquals(server.getListenPort(), server.port, "Server listen port is diferent")
         GlobalScope.launch {
-            server.getClientConnection()
+            server.getClientConnection({exp-> println(exp)})
             assertFalse(server.isOpen(), "Server socket is still open.")
         }
         assertTrue(server.isOpen(), "Server socket is not open.")
