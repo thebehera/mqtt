@@ -25,7 +25,7 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
                 try {
                     process.newInstance().startProcessing(it)
                 } catch (c: ClosedReceiveChannelException) {
-                    // do nothing as this expcetion is expected ....
+                    // do nothing as this expcetion is expected
                 } catch (e: Exception) {
                     if (socketCallbackException != null)
                         socketCallbackException(e)
