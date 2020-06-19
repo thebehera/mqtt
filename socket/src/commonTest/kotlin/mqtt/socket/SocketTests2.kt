@@ -169,10 +169,11 @@ class SocketTests2 {
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun launchServer(scope: CoroutineScope, port: UShort, server: TCPServer) {
+        val handler = {exp: Exception -> (assertEquals("-", exp.message, "Received unexpected message"))}
         server.startServer()
         assertNotEquals(server.getListenPort(), port, "Server listen port is diferent")
         scope.launch {
-            server.getClientConnection()
+            server.getClientConnection(handler)
             assertFalse(server.isOpen(), "Server socket is still open.")
         }
         assertTrue(server.isOpen(), "Server socket is not open.")
