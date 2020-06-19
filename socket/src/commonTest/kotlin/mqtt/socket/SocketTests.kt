@@ -252,7 +252,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     private suspend fun launchServer(server: TCPServer) : TCPServer {
-        val handler = {exp: Exception -> (assertEquals("-", exp.message, "Received unexpected message"))}
+        val handler = {exp: Exception -> (throw exp)}
         server.startServer()
         assertNotEquals(server.getListenPort(), server.port, "Server listen port is diferent")
         GlobalScope.launch {

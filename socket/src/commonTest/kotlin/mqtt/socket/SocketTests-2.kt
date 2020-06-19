@@ -169,7 +169,7 @@ class `SocketTests-2` {
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun launchServer(scope: CoroutineScope, port: UShort, server: TCPServer) {
-        val handler = {exp: Exception -> (assertEquals("-", exp.message, "Received unexpected message"))}
+        val handler = {exp: Exception -> (throw exp)}
         server.startServer()
         assertNotEquals(server.getListenPort(), port, "Server listen port is diferent")
         scope.launch {
