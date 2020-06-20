@@ -7,7 +7,34 @@ import org.khronos.webgl.Uint8Array
 external class Net {
     companion object {
         fun connect(tcpOptions: tcpOptions, connectListener: () -> Unit): Socket
+        fun createServer(connectionListener: (Socket) -> Unit = definedExternally): Server
     }
+}
+
+external class Server {
+    fun on(event: String, callback: () -> Unit)
+    fun on(event: String, callback: (Any) -> Unit)
+    fun address(): IpAddress?
+    fun close(callback: () -> Unit): Server
+    fun getConnections(callback: (err: Any, count: Int) -> Unit): Server
+    fun listen(
+        port: Int = definedExternally,
+        host: String = definedExternally,
+        backlog: Int = definedExternally,
+        callback: () -> Unit = definedExternally
+    ): Server
+
+    var listening: Boolean = definedExternally
+    var maxConnections: Int = definedExternally
+    fun ref(): Server
+    fun unref(): Server
+}
+
+
+external class IpAddress {
+    val port: Int
+    val family: String
+    val address: String
 }
 
 external class Socket {

@@ -12,39 +12,12 @@ import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 
-class NodeClientSocket : ClientToServerSocket {
+open class NodeSocket : ClientSocket {
     var netSocket: Socket? = null
     val pool = BufferPool(limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = false
     })
-    val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>()
-
-    override suspend fun open(
-        timeout: Duration,
-        port: UShort,
-        hostname: String?,
-        socketOptions: SocketOptions?
-    ): SocketOptions {
-        val ctx = CoroutineScope(coroutineContext)
-        val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
-        val onRead = OnRead({
-            val buffer = pool.borrowAsync() as JsBuffer
-            arrayPlatformBufferMap[buffer.buffer] = buffer
-            buffer.buffer
-        }, { bytesRead, buffer ->
-            netSocket?.pause()
-            ctx.launch {
-                val jsBuffer = arrayPlatformBufferMap[buffer]!!
-                incomingMessageChannel.send(SocketDataRead(jsBuffer, bytesRead))
-                netSocket?.resume()
-            }
-            true
-        })
-        console.log(tcpOptions(port.toInt(), hostname, onRead))
-        netSocket = connect(tcpOptions(port.toInt(), hostname, onRead))
-        console.log("$netSocket local: ${netSocket?.localPort} ${netSocket?.remoteAddress}:${netSocket?.remotePort}")
-        return SocketOptions()
-    }
+    protected val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>()
 
     override fun isOpen() = netSocket?.remoteAddress != null
 
@@ -72,5 +45,35 @@ class NodeClientSocket : ClientToServerSocket {
         val socket = netSocket
         netSocket = null
         socket?.close()
+    }
+}
+
+class NodeClientSocket : NodeSocket(), ClientToServerSocket {
+
+    override suspend fun open(
+        timeout: Duration,
+        port: UShort,
+        hostname: String?,
+        socketOptions: SocketOptions?
+    ): SocketOptions {
+        val ctx = CoroutineScope(coroutineContext)
+        val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
+        val onRead = OnRead({
+            val buffer = pool.borrowAsync() as JsBuffer
+            arrayPlatformBufferMap[buffer.buffer] = buffer
+            buffer.buffer
+        }, { bytesRead, buffer ->
+            netSocket?.pause()
+            ctx.launch {
+                val jsBuffer = arrayPlatformBufferMap[buffer]!!
+                incomingMessageChannel.send(SocketDataRead(jsBuffer, bytesRead))
+                netSocket?.resume()
+            }
+            true
+        })
+        console.log(tcpOptions(port.toInt(), hostname, onRead))
+        netSocket = connect(tcpOptions(port.toInt(), hostname, onRead))
+        console.log("$netSocket local: ${netSocket?.localPort} ${netSocket?.remoteAddress}:${netSocket?.remotePort}")
+        return SocketOptions()
     }
 }
