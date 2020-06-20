@@ -1,5 +1,6 @@
 package mqtt.socket
 
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlin.time.ExperimentalTime
@@ -18,10 +19,19 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
 
     suspend fun isOpen() : Boolean = serverSocket.isOpen()
 
-    suspend fun getClientConnection() {
+    suspend fun getClientConnection(socketCallbackException: ((Exception)-> Unit)? = null) {
         listen().collect {
             if (it != null) {
-                process.newInstance().startProcessing(it)
+                try {
+                    process.newInstance().startProcessing(it)
+                } catch (c: ClosedReceiveChannelException) {
+                    // do nothing as this expcetion is expected
+                } catch (e: Exception) {
+                    if (socketCallbackException != null)
+                        socketCallbackException(e)
+                } finally {
+                    it.close()
+                }
             }
         }
     }
@@ -37,8 +47,9 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
         try {
             while (serverSocket.isOpen()) {
                 val client = serverSocket.accept()
-                if (client != null)
+                if (client != null) {
                     emit(client)
+                }
             }
         } catch (e: Exception) {
             throw e

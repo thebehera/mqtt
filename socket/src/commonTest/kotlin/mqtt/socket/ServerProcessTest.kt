@@ -26,13 +26,9 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     private suspend fun connectDisProcess() {
         val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
 
-        try {
-            assertTrue(socket.isOpen(), "socket to client is not open")
-            socket.read(serverReadBuffer, timeout)
-        } catch (e: Exception) {
-            assertEquals("remote returned -1 bytes", e.message, "Unknown exception recevied")
-            socket.close()
-        }
+        assertTrue(socket.isOpen(), "socket to client is not open")
+        socket.read(serverReadBuffer, timeout)
+
     }
 
     @ExperimentalTime
@@ -42,17 +38,12 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         val recvData: UShort = 4.toUShort()
         val sendData: UInt = UInt.MAX_VALUE
 
-        try {
-            assertTrue(socket.isOpen(), "socket to client is not open")
-            assertEquals(2, socket.read(serverReadBuffer, timeout), "server received invalid data")
-            assertEquals(recvData, serverReadBuffer.readUnsignedShort(), "server received invalid data")
-            serverWriteBuffer.write(sendData)
-            assertEquals(4, socket.write(serverWriteBuffer, timeout), "server send data size not correct")
-            socket.close()
-        } catch (e: Exception) {
-            println("uShortProcess.exception: ${e.message}, $e")
-            assertEquals("Failure...", e.message)
-        }
+        assertTrue(socket.isOpen(), "socket to client is not open")
+        assertEquals(2, socket.read(serverReadBuffer, timeout), "server received invalid data")
+        assertEquals(recvData, serverReadBuffer.readUnsignedShort(), "server received invalid data")
+        serverWriteBuffer.write(sendData)
+        assertEquals(4, socket.write(serverWriteBuffer, timeout), "server send data size not correct")
+        socket.close()
     }
 
     @ExperimentalTime
@@ -61,24 +52,17 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
-        try {
-            assertTrue(socket.isOpen(), "Client socket is not open")
+        assertTrue(socket.isOpen(), "Client socket is not open")
 
-            //assertEquals(socket.read(rbuffer, timeout), clientResponse.length + 3, "message read length not correct")
+        val ret = socket.read(rbuffer, timeout)
 
-            val ret = socket.read(rbuffer, timeout)
+        val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+        assertEquals(ret, str.length + 2, "message read length not correct")
+        assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
 
-            val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
-            assertEquals(ret, str.length + 2, "message read length not correct")
-            //           println("==> $ret,, $str, $rbuffer")
-            assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
+        wbuffer.writeMqttUtf8String(str + ":" + name)
 
-            wbuffer.writeMqttUtf8String(str + ":" + name)
-
-            assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
-        } catch (e: Exception) {
-            println("mqttStringProcess.exception: $e, ${e.message}")
-        }
+        assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
     }
 
     override suspend fun newInstance(): ServerProcess {

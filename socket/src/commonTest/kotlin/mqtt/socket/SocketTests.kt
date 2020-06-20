@@ -4,6 +4,7 @@ package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.BufferMemoryLimit
@@ -178,8 +179,11 @@ class SocketTests {
         } catch (e: Exception) {
             throw e
         } finally {
-            if (port > 0u)
+            if (port > 0u) {
+                delay(200) // gave a delay to ensure surver has time to process the close() request
                 checkPort(port)
+            }
+
         }
     }
 
@@ -248,10 +252,11 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     private suspend fun launchServer(server: TCPServer) : TCPServer {
+        val handler = {exp: Exception -> (throw exp)}
         server.startServer()
         assertNotEquals(server.getListenPort(), server.port, "Server listen port is diferent")
         GlobalScope.launch {
-            server.getClientConnection()
+            server.getClientConnection(handler)
             assertFalse(server.isOpen(), "Server socket is still open.")
         }
         assertTrue(server.isOpen(), "Server socket is not open.")
