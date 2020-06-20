@@ -24,14 +24,14 @@ actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket {
 
 
 @ExperimentalTime
-actual fun clientSocket(blocking: Boolean, pool: BufferPool) = asyncClientSocket()
-
+actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket =
+    throw UnsupportedOperationException("Only non blocking io is supported with JS")
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 actual fun asyncServerSocket(): ServerSocket {
     if (isNodeJs) {
-        throw UnsupportedOperationException("Implementation WIP")
+        return NodeServerSocket()
     } else {
         throw UnsupportedOperationException("Sockets are not supported in the browser")
     }
