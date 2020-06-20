@@ -4,6 +4,7 @@ package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.BufferMemoryLimit
@@ -179,7 +180,7 @@ class SocketTests {
             throw e
         } finally {
             if (port > 0u) {
-//                delay(200) // gave a delay to ensure surver has time to process the close() request
+                delay(200) // gave a delay to ensure surver has time to process the close() request
                 checkPort(port)
             }
 
@@ -193,35 +194,31 @@ class SocketTests {
         val clientDoneMutex = Mutex(locked = false)
         val clientCount = 50
         var counter = 0
-        try {
-            val server = launchServer(getServerSocket())
-            val port = server.getListenPort()
+        val server = launchServer(getServerSocket())
+        val port = server.getListenPort()
 
-            clientDoneMutex.lock()
-            repeat(clientCount) {
-                val client = getClientSocket()
-                assertFalse (client.isOpen())
-                initiateClient(client, port)
-                assertTrue(client.isOpen(), "Client connection is not open")
-                clients.add(client)
-            }
-            assertEquals(clientCount.toLong(), clients.size.toLong(), "correct amount of clients not initiated.")
-
-            clients.forEach {
-                it.close()
-                assertFalse(it.isOpen(), "client is not closed.")
-                counter++
-                if (counter >= clientCount)
-                    clientDoneMutex.unlock()
-            }
-
-            clientDoneMutex.lock()
-            assertTrue(server.isOpen(), "Server has closed")
-            server.close()
-            assertFalse(server.isOpen(), "Server is still open")
-        } catch (e: Exception) {
-            println("stressTestOpenConnections.exception: ${e.message}, $e")
+        clientDoneMutex.lock()
+        repeat(clientCount) {
+            val client = getClientSocket()
+            assertFalse (client.isOpen())
+            initiateClient(client, port)
+            assertTrue(client.isOpen(), "Client connection is not open")
+            clients.add(client)
         }
+        assertEquals(clientCount.toLong(), clients.size.toLong(), "correct amount of clients not initiated.")
+
+        clients.forEach {
+            it.close()
+            assertFalse(it.isOpen(), "client is not closed.")
+            counter++
+            if (counter >= clientCount)
+                clientDoneMutex.unlock()
+        }
+
+        clientDoneMutex.lock()
+        assertTrue(server.isOpen(), "Server has closed")
+        server.close()
+        assertFalse(server.isOpen(), "Server is still open")
     }
 
     @ExperimentalUnsignedTypes
