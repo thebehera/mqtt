@@ -24,9 +24,13 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
     @ExperimentalTime
     private suspend fun connectDisProcess() {
-        assertTrue(socket.isOpen(), "socket to client is not open")
-        assertTrue(socket.read(timeout) { _, _ -> }.bytesRead > 0)
-        socket.close()
+        try {
+            assertTrue(socket.isOpen(), "socket to client is not open")
+            assertTrue(socket.read(timeout) { _, _ -> }.bytesRead > 0)
+        } catch (e: Exception) {
+            assertEquals("remote returned -1 bytes", e.message, "Unknown exception recevied")
+            socket.close()
+        }
     }
 
     @ExperimentalTime
