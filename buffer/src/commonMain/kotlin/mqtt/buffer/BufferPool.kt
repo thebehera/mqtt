@@ -32,6 +32,10 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
         bufferCallback(buffer, RecycleCallbackImpl(this, buffer))
     }
 
+    fun borrowAsync(
+        size: UInt = limits.defaultBufferSize
+    ) = borrow(size)
+
     suspend fun <T> borrowSuspend(
         size: UInt = limits.defaultBufferSize,
         bufferCallback: suspend ((PlatformBuffer) -> T)
@@ -60,6 +64,11 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
                 it.capacity.toLong()
             }
         } ?: allocateNewBuffer(size, limits)
+
+
+    fun recycleAsync(buffer: PlatformBuffer) {
+        recycle(buffer)
+    }
 
     private fun recycle(buffer: PlatformBuffer) {
         if (buffer.type == BufferType.InMemory) {

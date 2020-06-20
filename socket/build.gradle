@@ -35,14 +35,14 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-            androidMain {
-                dependsOn jvmMain
-            }
-            androidTest {
-                dependsOn jvmTest
-            }
-        }
+//        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+//            androidMain {
+//                dependsOn jvmMain
+//            }
+//            androidTest {
+//                dependsOn jvmTest
+//            }
+//        }
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk8')

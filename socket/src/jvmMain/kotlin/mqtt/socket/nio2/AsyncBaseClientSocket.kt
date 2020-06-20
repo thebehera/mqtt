@@ -1,7 +1,9 @@
 package mqtt.socket.nio2
 
+import mqtt.buffer.BufferPool
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
+import mqtt.socket.SocketDataRead
 import mqtt.socket.nio.ByteBufferClientSocket
 import mqtt.socket.nio2.util.aRead
 import mqtt.socket.nio2.util.aWrite
@@ -12,11 +14,19 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-abstract class AsyncBaseClientSocket : ByteBufferClientSocket<AsynchronousSocketChannel>() {
+abstract class AsyncBaseClientSocket(private val pool: BufferPool) :
+    ByteBufferClientSocket<AsynchronousSocketChannel>() {
     override fun remotePort() = socket?.assignedPort(remote = true)
 
-    override suspend fun read(buffer: PlatformBuffer, timeout: Duration) =
-        socket!!.aRead((buffer as JvmBuffer).byteBuffer, timeout)
+    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+        var bytesRead = 0
+        val result = pool.borrowSuspend {
+            val byteBuffer = (it as JvmBuffer).byteBuffer
+            bytesRead = socket!!.aRead(byteBuffer, timeout)
+            bufferRead(it, bytesRead)
+        }
+        return SocketDataRead(result, bytesRead)
+    }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration) =
         socket!!.aWrite((buffer as JvmBuffer).byteBuffer, timeout)
