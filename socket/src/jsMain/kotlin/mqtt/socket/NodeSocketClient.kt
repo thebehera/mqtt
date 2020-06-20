@@ -4,7 +4,10 @@ package mqtt.socket
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
-import mqtt.buffer.*
+import mqtt.buffer.BufferMemoryLimit
+import mqtt.buffer.BufferPool
+import mqtt.buffer.JsBuffer
+import mqtt.buffer.PlatformBuffer
 import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
@@ -14,7 +17,7 @@ class NodeClientSocket : ClientToServerSocket {
     val pool = BufferPool(limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = false
     })
-    val incomingMessageChannel = Channel<Uint8Array>()
+    val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>()
 
     override suspend fun open(
         timeout: Duration,
@@ -23,12 +26,16 @@ class NodeClientSocket : ClientToServerSocket {
         socketOptions: SocketOptions?
     ): SocketOptions {
         val ctx = CoroutineScope(coroutineContext)
+        val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
         val onRead = OnRead({
-            (allocateNewBuffer(1024u, pool.limits) as JsBuffer).buffer
-        }, { _, buffer ->
+            val buffer = pool.borrowAsync() as JsBuffer
+            arrayPlatformBufferMap[buffer.buffer] = buffer
+            buffer.buffer
+        }, { bytesRead, buffer ->
             netSocket?.pause()
             ctx.launch {
-                incomingMessageChannel.send(buffer)
+                val jsBuffer = arrayPlatformBufferMap[buffer]!!
+                incomingMessageChannel.send(SocketDataRead(jsBuffer, bytesRead))
                 netSocket?.resume()
             }
             true
@@ -45,9 +52,13 @@ class NodeClientSocket : ClientToServerSocket {
 
     override fun remotePort() = netSocket?.remotePort?.toUShort()
 
-    override suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int {
-        val recvBuffer = incomingMessageChannel.receive()
-        return recvBuffer.byteLength
+    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+        val receivedData = incomingMessageChannel.receive()
+        try {
+            return SocketDataRead(bufferRead(receivedData.result, receivedData.bytesRead), receivedData.bytesRead)
+        } finally {
+            pool.recycleAsync(receivedData.result)
+        }
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {

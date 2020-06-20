@@ -110,7 +110,6 @@ class SocketTests {
         val expectedServerToClient = UInt.MAX_VALUE
         val clientWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         clientWriteBuffer.write(expectedClientToServer)
-        val clientReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val server = launchServer(getServerSocket())
 
         val port = server.getListenPort()
@@ -122,8 +121,11 @@ class SocketTests {
 
         scope.launch {
             assertEquals(2, clientToServerSocket.write(clientWriteBuffer, writeTimeout), "client write")
-            assertEquals(4, clientToServerSocket.read(clientReadBuffer, readTimeout), "client read")
-            assertEquals(expectedServerToClient, clientReadBuffer.readUnsignedInt(), "client wrong value")
+            val (value, bytesRead) = clientToServerSocket.read(readTimeout) { clientReadBuffer, _ ->
+                clientReadBuffer.readUnsignedInt()
+            }
+            assertEquals(expectedServerToClient, value, "client wrong value")
+            assertEquals(4, bytesRead, "client read")
             clientDoneMutex.unlock()
         }
 

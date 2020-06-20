@@ -1,5 +1,6 @@
 package mqtt.socket
 
+import mqtt.buffer.BufferPool
 import kotlin.browser.window
 import kotlin.time.ExperimentalTime
 
@@ -13,7 +14,7 @@ val isNodeJs by lazy {
 }
 
 @ExperimentalTime
-actual fun asyncClientSocket(): ClientToServerSocket {
+actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket {
     return if (isNodeJs) {
         NodeClientSocket()
     } else {
@@ -23,7 +24,7 @@ actual fun asyncClientSocket(): ClientToServerSocket {
 
 
 @ExperimentalTime
-actual fun clientSocket(blocking: Boolean) = asyncClientSocket()
+actual fun clientSocket(blocking: Boolean, pool: BufferPool) = asyncClientSocket()
 
 
 @ExperimentalUnsignedTypes

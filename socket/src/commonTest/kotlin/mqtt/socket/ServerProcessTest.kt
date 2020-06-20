@@ -24,28 +24,24 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
     @ExperimentalTime
     private suspend fun connectDisProcess() {
-        val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
-
-        try {
-            assertTrue(socket.isOpen(), "socket to client is not open")
-            socket.read(serverReadBuffer, timeout)
-        } catch (e: Exception) {
-            assertEquals("remote returned -1 bytes", e.message, "Unknown exception recevied")
-            socket.close()
-        }
+        assertTrue(socket.isOpen(), "socket to client is not open")
+        assertTrue(socket.read(timeout) { _, _ -> }.bytesRead > 0)
+        socket.close()
     }
 
     @ExperimentalTime
     private suspend fun uShortProcess() {
-        val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         val recvData: UShort = 4.toUShort()
         val sendData: UInt = UInt.MAX_VALUE
 
         try {
             assertTrue(socket.isOpen(), "socket to client is not open")
-            assertEquals(2, socket.read(serverReadBuffer, timeout), "server received invalid data")
-            assertEquals(recvData, serverReadBuffer.readUnsignedShort(), "server received invalid data")
+            val socketDataRead = socket.read(timeout) { serverReadBuffer, _ ->
+                serverReadBuffer.readUnsignedShort()
+            }
+            assertEquals(recvData, socketDataRead.result, "server received invalid data")
+            assertEquals(2, socketDataRead.bytesRead, "server received invalid data")
             serverWriteBuffer.write(sendData)
             assertEquals(4, socket.write(serverWriteBuffer, timeout), "server send data size not correct")
             socket.close()
@@ -58,24 +54,24 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     @ExperimentalTime
     @ExperimentalUnsignedTypes
     private suspend fun mqttStringProcess() {
-        val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
         try {
             assertTrue(socket.isOpen(), "Client socket is not open")
 
-            //assertEquals(socket.read(rbuffer, timeout), clientResponse.length + 3, "message read length not correct")
-
-            val ret = socket.read(rbuffer, timeout)
-
-            val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
+            val (str, ret) = socket.read(timeout) { rbuffer, _ ->
+                rbuffer.readMqttUtf8StringNotValidated().toString()
+            }
             assertEquals(ret, str.length + 2, "message read length not correct")
-            //           println("==> $ret,, $str, $rbuffer")
             assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
 
             wbuffer.writeMqttUtf8String(str + ":" + name)
 
-            assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
+            assertEquals(
+                socket.write(wbuffer, timeout),
+                name.length + str.length + 3,
+                "write message length not correct"
+            )
         } catch (e: Exception) {
             println("mqttStringProcess.exception: $e, ${e.message}")
         }
