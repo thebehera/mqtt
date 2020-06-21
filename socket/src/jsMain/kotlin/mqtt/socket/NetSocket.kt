@@ -55,5 +55,5 @@ class OnRead(val buffer: () -> Uint8Array, val callback: (Int, Uint8Array) -> Bo
 class tcpOptions(
     val port: Int,
     val host: String? = null,
-    val onread: OnRead
+    val onread: OnRead? = null
 )
