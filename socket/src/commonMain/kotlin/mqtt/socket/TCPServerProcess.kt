@@ -1,11 +1,13 @@
 package mqtt.socket
 
 import kotlinx.coroutines.InternalCoroutinesApi
+import mqtt.buffer.PlatformBuffer
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 
 abstract class TCPServerProcess : ServerProcess {
     @ExperimentalTime
-  protected lateinit var socket: ClientSocket
+  private lateinit var socket: ClientSocket
 
     @ExperimentalTime
     abstract override suspend fun serverSideProcess()
@@ -18,6 +20,20 @@ abstract class TCPServerProcess : ServerProcess {
         serverSideProcess()
     }
 
+    @ExperimentalTime
+    override suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int {
+        return socket.read(buffer, timeout)
+    }
+
+    @ExperimentalTime
+    override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
+        return socket.write(buffer, timeout)
+    }
+
+    @ExperimentalTime
+    override suspend fun isOpen(): Boolean {
+        return socket.isOpen()
+    }
     @ExperimentalTime
     override suspend fun close() {
         try {
