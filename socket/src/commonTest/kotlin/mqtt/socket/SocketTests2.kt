@@ -50,7 +50,7 @@ class SocketTests2 {
     @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
-        val clientCount = 20
+        val clientCount = 25
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
@@ -77,7 +77,7 @@ class SocketTests2 {
     fun twoServerMultiClient() = block {
         var port0: UShort = 0u
         var port1: UShort = 0u
-        val clientCount = 8
+        val clientCount = 10
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"
@@ -163,10 +163,11 @@ class SocketTests2 {
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     private suspend fun launchServer(scope: CoroutineScope, port: UShort, server: TCPServer) {
+        val handler = {exp: Exception -> (throw exp)}
         server.startServer()
         assertNotEquals(server.getListenPort(), port, "Server listen port is diferent")
         scope.launch {
-            server.getClientConnection()
+            server.getClientConnection(handler)
             assertFalse(server.isOpen(), "Server socket is still open.")
         }
         assertTrue(server.isOpen(), "Server socket is not open.")

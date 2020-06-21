@@ -250,10 +250,11 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     private suspend fun launchServer(server: TCPServer) : TCPServer {
+        val handler = {exp: Exception -> (throw exp)}
         server.startServer()
         assertNotEquals(server.getListenPort(), server.port, "Server listen port is diferent")
         GlobalScope.launch {
-            server.getClientConnection()
+            server.getClientConnection(handler)
             assertFalse(server.isOpen(), "Server socket is still open.")
         }
         assertTrue(server.isOpen(), "Server socket is not open.")
