@@ -1,23 +1,35 @@
 package mqtt.socket
 
+import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.JsBuffer
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class EchoTest {
 
     @Test
-    fun createServer() {
-        val echoServerString = "Echo Server\r\n"
+    fun echoClientServer() = block {
+        val clientSendString = "hello\r\n"
+        val clientBuffer = allocateNewBuffer(7u) as JsBuffer
+        clientBuffer.writeUtf8(clientSendString)
         val server = Net.createServer { socket ->
-            val buffer = allocateNewBuffer(13u) as JsBuffer
-            buffer.writeUtf8(echoServerString)
-            socket.write(buffer.buffer) {}
             socket.pipe(socket)
         }
-        val port = server.listen().address()!!.port
-        println("Server running on port $port")
-        server.close { }
+        val serverPort = server.listen().address()!!.port
+        var client: Socket? = null
+        client = Net.connect(tcpOptions(serverPort)) {
+            client!!.write(clientBuffer.buffer) {}
+        }
+        val mutext = Mutex(true)
+        client.on("data") { data ->
+            assertEquals(data.toString(), clientSendString)
+            client.end { }
+            server.close {
+                mutext.unlock()
+            }
+        }
+        mutext.lock()
     }
 
 

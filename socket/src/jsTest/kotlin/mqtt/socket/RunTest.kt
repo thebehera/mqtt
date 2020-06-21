@@ -1,16 +1,22 @@
 package mqtt.socket
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.promise
+import kotlinx.coroutines.*
 
 actual fun <T> block(body: suspend CoroutineScope.() -> T) {
-    blockInternal(body)
+    runTestInternal(block = {
+        body()
+    })
 }
 
 
-private fun <T> blockInternal(body: suspend CoroutineScope.() -> T): dynamic = GlobalScope.promise { body() }.catch {
-    if (it !is UnsupportedOperationException) {
-        throw it
+fun runTestInternal(
+    block: suspend CoroutineScope.() -> Unit
+): dynamic {
+    return GlobalScope.promise(block = block, context = CoroutineExceptionHandler { context, e ->
+        if (e is CancellationException) return@CoroutineExceptionHandler // are ignored
+    }).catch { e ->
+        if (e !is UnsupportedOperationException) {
+            throw e
+        }
     }
 }
