@@ -44,6 +44,7 @@ external class Socket {
     fun write(data: Uint8Array, callback: () -> Unit): Boolean
     fun on(event: String, callback: () -> Unit)
     fun on(event: String, callback: (Any) -> Unit)
+    fun pipe(socket: Socket): Socket
     fun pause(): Socket
     fun resume(): Socket
     fun end(callback: () -> Unit): Socket
