@@ -14,7 +14,7 @@ import kotlin.time.milliseconds
 import kotlin.time.seconds
 
 
-class `SocketTests-2` {
+class SocketTests2 {
 
     @ExperimentalUnsignedTypes
     val limits = object : BufferMemoryLimit {
@@ -135,19 +135,13 @@ class `SocketTests-2` {
     @ExperimentalTime
     private suspend fun clientMessage(socket: ClientSocket, sendMsg: String, respMsg: String) {
         val timeout = 100.milliseconds
-        val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
-
-        try {
-            wbuffer.writeMqttUtf8String(sendMsg)
-            socket.write(wbuffer, timeout)
-            socket.read(rbuffer, timeout)
-            val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
-
-            assertEquals(respMsg, str, "Excepted message not received.")
-        } catch (e: Exception) {
-            assertTrue("".equals("clientMessage.exception: ${e.message}"))
+        wbuffer.writeMqttUtf8String(sendMsg)
+        socket.write(wbuffer, timeout)
+        val str = socket.readTyped(timeout) { rbuffer ->
+            rbuffer.readMqttUtf8StringNotValidated().toString()
         }
+        assertEquals(respMsg, str, "Excepted message not received.")
     }
 
     @ExperimentalUnsignedTypes

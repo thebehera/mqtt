@@ -24,23 +24,21 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
     @ExperimentalTime
     private suspend fun connectDisProcess() {
-        val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
-
         assertTrue(isOpen(), "socket to client is not open")
-        read(serverReadBuffer, timeout)
-
+        read(timeout) { _, _ -> }
     }
 
     @ExperimentalTime
     private suspend fun uShortProcess() {
-        val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         val recvData: UShort = 4.toUShort()
         val sendData: UInt = UInt.MAX_VALUE
-
         assertTrue(isOpen(), "socket to client is not open")
-        assertEquals(2, read(serverReadBuffer, timeout), "server received invalid data")
-        assertEquals(recvData, serverReadBuffer.readUnsignedShort(), "server received invalid data")
+        val dataRead = read(timeout) { buffer, bytesRead ->
+            buffer.readUnsignedShort()
+        }
+        assertEquals(2, dataRead.bytesRead, "server received invalid number of data")
+        assertEquals(recvData, dataRead.result, "server received invalid data")
         serverWriteBuffer.write(sendData)
         assertEquals(4, write(serverWriteBuffer, timeout), "server send data size not correct")
         close()
@@ -49,19 +47,17 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     @ExperimentalTime
     @ExperimentalUnsignedTypes
     private suspend fun mqttStringProcess() {
-        val rbuffer = allocateNewBuffer(100.toUInt(), limits)
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
         assertTrue(isOpen(), "Client socket is not open")
 
-        val ret = read(rbuffer, timeout)
-
-        val str: String = rbuffer.readMqttUtf8StringNotValidated().toString()
-        assertEquals(ret, str.length + 2, "message read length not correct")
+        val socketResponse = read(timeout) { buffer, bytesRead ->
+            buffer.readMqttUtf8StringNotValidated().toString()
+        }
+        val str = socketResponse.result
+        assertEquals(socketResponse.bytesRead, str.length + 2, "message read length not correct")
         assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
-
         wbuffer.writeMqttUtf8String(str + ":" + name)
-
         assertEquals(write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
     }
 

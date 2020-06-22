@@ -1,5 +1,6 @@
 package mqtt.socket.nio
 
+import mqtt.buffer.BufferPool
 import mqtt.socket.ClientToServerSocket
 import mqtt.socket.SocketOptions
 import mqtt.socket.nio.util.*
@@ -11,8 +12,9 @@ import kotlin.time.TimeSource
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 class NioClientSocket(
-    blocking: Boolean = true
-) : BaseClientSocket(blocking), ClientToServerSocket {
+    blocking: Boolean = true,
+    pool: BufferPool
+) : BaseClientSocket(blocking, pool), ClientToServerSocket {
     override suspend fun open(
         timeout: Duration,
         port: UShort,

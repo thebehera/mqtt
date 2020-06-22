@@ -21,9 +21,8 @@ abstract class TCPServerProcess : ServerProcess {
     }
 
     @ExperimentalTime
-    override suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int {
-        return socket.read(buffer, timeout)
-    }
+    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T)
+        = socket.read(timeout, bufferRead)
 
     @ExperimentalTime
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
