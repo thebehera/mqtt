@@ -6,14 +6,16 @@ repositories {
     jcenter()
 }
 
-//apply from: "../gradle/android.gradle"
+apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-
-    //if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-//        android()
-//    }
+    js {
+        nodejs {
+            testTask {
+            }
+        }
+    }
     sourceSets {
         commonMain {
             dependencies {
@@ -28,14 +30,14 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-            androidMain {
-                dependsOn jvmMain
-            }
-            androidTest {
-                dependsOn jvmTest
-            }
-        }
+//        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+//            androidMain {
+//                dependsOn jvmMain
+//            }
+//            androidTest {
+//                dependsOn jvmTest
+//            }
+//        }
         jvmMain {
             dependencies {
                 implementation kotlin('stdlib-jdk8')
@@ -47,6 +49,17 @@ kotlin {
                 implementation kotlin('test')
                 implementation kotlin('test-junit')
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
             }
         }
     }
