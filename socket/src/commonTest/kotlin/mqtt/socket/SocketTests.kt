@@ -14,11 +14,11 @@ import kotlin.time.ExperimentalTime
 import kotlin.time.milliseconds
 import kotlin.time.seconds
 
-const val clientCount = 100L
+const val clientCount = 1000L
 
 @OptIn(ExperimentalTime::class)
 class SocketTests {
-    private val clientCount1 = 100L
+    private val clientCount1 = 1000L
     private val writeTimeout = 100.milliseconds
     private val readTimeout = writeTimeout
     private val validateCloseWait = true
@@ -26,7 +26,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectClientReadWriteDisconnect() = block {
+    fun nio2ConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
         val clientSocket = { asyncClientSocket() }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
@@ -34,7 +34,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectDisconnectStress() = block {
+    fun nio2ConnectDisconnectStress() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         val clientSocket = { asyncClientSocket() }
         stressDisconnectTest(serverSocket, clientSocket)
@@ -42,7 +42,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectDisconnectStressOpenConnections() = block {
+    fun nio2ConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         val clientSocket = { asyncClientSocket() }
         stressTestOpenConnections(serverSocket, clientSocket)
@@ -50,7 +50,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
+    fun nioNonBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
         val clientSocket = { clientSocket(false) }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
@@ -58,7 +58,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectDisconnectStress() = block {
+    fun nioNonBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT))}
         val clientSocket = { clientSocket(false) }
         stressDisconnectTest(serverSocket, clientSocket)
@@ -66,7 +66,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
+    fun nioNonBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT))  }
         val clientSocket = { clientSocket(false) }
         stressTestOpenConnections(serverSocket, clientSocket)
@@ -74,7 +74,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectClientReadWriteDisconnect() = block {
+    fun nioBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
         val clientSocket = { clientSocket(true) }
         connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
@@ -82,7 +82,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectDisconnectStress() = block {
+    fun nioBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         val clientSocket = { clientSocket(true) }
         stressDisconnectTest(serverSocket, clientSocket)
@@ -90,7 +90,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectDisconnectStressOpenConnections() = block {
+    fun nioBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         val clientSocket = { clientSocket(true) }
         stressTestOpenConnections(serverSocket, clientSocket)
@@ -110,7 +110,6 @@ class SocketTests {
         val expectedServerToClient = UInt.MAX_VALUE
         val clientWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         clientWriteBuffer.write(expectedClientToServer)
-        val clientReadBuffer = allocateNewBuffer(10.toUInt(), limits)
         val server = launchServer(getServerSocket())
 
         val port = server.getListenPort()
@@ -122,8 +121,11 @@ class SocketTests {
 
         scope.launch {
             assertEquals(2, clientToServerSocket.write(clientWriteBuffer, writeTimeout), "client write")
-            assertEquals(4, clientToServerSocket.read(clientReadBuffer, readTimeout), "client read")
-            assertEquals(expectedServerToClient, clientReadBuffer.readUnsignedInt(), "client wrong value")
+            val (value, bytesRead) = clientToServerSocket.read(readTimeout) { clientReadBuffer, _ ->
+                clientReadBuffer.readUnsignedInt()
+            }
+            assertEquals(expectedServerToClient, value, "client wrong value")
+            assertEquals(4, bytesRead, "client read")
             clientDoneMutex.unlock()
         }
 
@@ -194,35 +196,31 @@ class SocketTests {
         val clientDoneMutex = Mutex(locked = false)
         val clientCount = 50
         var counter = 0
-        try {
-            val server = launchServer(getServerSocket())
-            val port = server.getListenPort()
+        val server = launchServer(getServerSocket())
+        val port = server.getListenPort()
 
-            clientDoneMutex.lock()
-            repeat(clientCount) {
-                val client = getClientSocket()
-                assertFalse (client.isOpen())
-                initiateClient(client, port)
-                assertTrue(client.isOpen(), "Client connection is not open")
-                clients.add(client)
-            }
-            assertEquals(clientCount.toLong(), clients.size.toLong(), "correct amount of clients not initiated.")
-
-            clients.forEach {
-                it.close()
-                assertFalse(it.isOpen(), "client is not closed.")
-                counter++
-                if (counter >= clientCount)
-                    clientDoneMutex.unlock()
-            }
-
-            clientDoneMutex.lock()
-            assertTrue(server.isOpen(), "Server has closed")
-            server.close()
-            assertFalse(server.isOpen(), "Server is still open")
-        } catch (e: Exception) {
-            println("stressTestOpenConnections.exception: ${e.message}, $e")
+        clientDoneMutex.lock()
+        repeat(clientCount) {
+            val client = getClientSocket()
+            assertFalse (client.isOpen())
+            initiateClient(client, port)
+            assertTrue(client.isOpen(), "Client connection is not open")
+            clients.add(client)
         }
+        assertEquals(clientCount.toLong(), clients.size.toLong(), "correct amount of clients not initiated.")
+
+        clients.forEach {
+            it.close()
+            assertFalse(it.isOpen(), "client is not closed.")
+            counter++
+            if (counter >= clientCount)
+                clientDoneMutex.unlock()
+        }
+
+        clientDoneMutex.lock()
+        assertTrue(server.isOpen(), "Server has closed")
+        server.close()
+        assertFalse(server.isOpen(), "Server is still open")
     }
 
     @ExperimentalUnsignedTypes

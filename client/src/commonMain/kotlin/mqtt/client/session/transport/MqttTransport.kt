@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import mqtt.buffer.BufferPool
-import mqtt.buffer.PlatformBuffer
 import mqtt.connection.IRemoteHost
 import mqtt.socket.ClientToServerSocket
 import mqtt.socket.getClientSocket
@@ -39,18 +38,17 @@ class MqttTransport private constructor(
         }
     }
 
-    private suspend fun readPacket(buffer: PlatformBuffer): ControlPacket {
-        socket.read(buffer, keepAliveTimeout)
-        val packet = controlPacketReader.from(buffer)
+    private suspend fun readPacket(): ControlPacket {
+        val packet = socket.readTyped(keepAliveTimeout) {
+            controlPacketReader.from(it)
+        }
         lastMessageReceived = TimeSource.Monotonic.markNow()
         return packet
     }
 
     suspend fun incomingPackets() = flow {
         while (isOpen()) {
-            pool.borrowSuspend { buffer ->
-                emit(readPacket(buffer))
-            }
+            emit(readPacket())
         }
     }
 
@@ -72,9 +70,7 @@ class MqttTransport private constructor(
             )
             val session = MqttTransport(scope, pool, remoteHost, clientSocket, remoteHost.request.controlPacketReader)
             session.asyncWrite(remoteHost.request)
-            val connack = pool.borrowSuspend {
-                session.readPacket(it) as IConnectionAcknowledgment
-            }
+            val connack = session.readPacket() as IConnectionAcknowledgment
             return ConnectedMqttTransport(session, connack)
         }
     }
