@@ -34,9 +34,11 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         val recvData: UShort = 4.toUShort()
         val sendData: UInt = UInt.MAX_VALUE
         assertTrue(isOpen(), "socket to client is not open")
+
         val dataRead = read(timeout) { buffer, bytesRead ->
             buffer.readUnsignedShort()
         }
+
         assertEquals(2, dataRead.bytesRead, "server received invalid number of data")
         assertEquals(recvData, dataRead.result, "server received invalid data")
         serverWriteBuffer.write(sendData)
