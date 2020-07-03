@@ -6,28 +6,18 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import mqtt.buffer.BufferMemoryLimit
-import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
-import kotlin.time.milliseconds
-import kotlin.time.seconds
 
 
 class SocketTests2 {
-
-    @ExperimentalUnsignedTypes
-    val limits = object : BufferMemoryLimit {
-        override fun isTooLargeForMemory(size: UInt) = size > 1_000u
-    }
-
     @ExperimentalUnsignedTypes
     @ExperimentalTime
     @Test
     fun oneServerOneClient() = block {
         var port : UShort = 0u
         lateinit var server : TCPServer
-        lateinit var client: ClientToServerSocket
+        lateinit var client: ClientProcess
 
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-1"
@@ -37,10 +27,11 @@ class SocketTests2 {
 
         port = server.getListenPort()
 
-        client = asyncClientSocket()
-        initiateClient(client, port)
+        client = ClientProcessTest(ClientAction.MQTTSTRING)
+        client.sendMsg = "Client-1"
+        client.receiveMsg = "Client-1:Server-1"
+        client.connect("localhost", port)
 
-        clientMessage (client, "Client-1", "Client-1:Server-1")
         client.close()
         server.close()
     }
@@ -104,7 +95,7 @@ class SocketTests2 {
         doneMutex.unlock()
     }
 
-    companion object closeCounter {
+    companion object CloseCounter {
         var counter = 0
         private val mux: Mutex = Mutex()
         suspend fun increment() {
@@ -116,48 +107,18 @@ class SocketTests2 {
 
     @ExperimentalTime
     private suspend fun clientSetup(port0: UShort, port1: UShort, counter: Int, clientCount:Int, mut: Mutex) {
-        val sendMsg:String = "Client-" + "$counter"
-        val client = asyncClientSocket()
+        val client = ClientProcessTest(ClientAction.MQTTSTRING)
+        client.sendMsg = "Client-$counter"
+        client.receiveMsg = "${client.sendMsg}:Server-x"
 
         if (counter % 2 == 0)
-            initiateClient(client, port0)
+            client.connect("localhost", port0)
         else
-            initiateClient(client, port1)
-        clientMessage(client, sendMsg, "$sendMsg:Server-x")
-        client.close()
+            client.connect("localhost", port1)
+
         increment()
-        if (closeCounter.counter >= clientCount && mut.isLocked)
+        if (CloseCounter.counter >= clientCount && mut.isLocked)
             mut.unlock()
-
-    }
-
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
-    private suspend fun clientMessage(socket: ClientSocket, sendMsg: String, respMsg: String) {
-        val timeout = 100.milliseconds
-        val wbuffer = allocateNewBuffer(100.toUInt(), limits)
-        wbuffer.writeMqttUtf8String(sendMsg)
-        socket.write(wbuffer, timeout)
-        val str = socket.readTyped(timeout) { rbuffer ->
-            rbuffer.readMqttUtf8StringNotValidated().toString()
-        }
-        assertEquals(respMsg, str, "Excepted message not received.")
-    }
-
-    @ExperimentalUnsignedTypes
-    @ExperimentalTime
-    private suspend fun initiateClient(socket: ClientToServerSocket, port: UShort) {
-
-        try {
-            assertFalse(socket.isOpen(), "Client socket should not be open state")
-            socket.open(100.seconds, port, "localhost")
-
-            assertEquals(socket.remotePort(), port, "Remote port is not the as in connect request.")
-
-            assertTrue(socket.isOpen(), "Connected to server, thus should be in open state")
-        } catch (e: Exception) {
-            assertTrue("".equals("initiateClient.exception: ${e.message}"))
-        }
     }
 
     @ExperimentalUnsignedTypes
