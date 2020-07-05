@@ -1,5 +1,6 @@
 package mqtt.socket
 
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlin.time.ExperimentalTime
@@ -10,30 +11,35 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
     private lateinit var serverSocket : ServerSocket
 
     suspend fun startServer() {
-        val x : UShort = 0u
-        val nPort :UShort? = if (port > x)  port else null
+        val tPort :UShort? = if (port > 0u)  port else null
         serverSocket = asyncServerSocket()
         if (!serverSocket.isOpen())
-            serverSocket.bind(nPort, host)
+            serverSocket.bind(tPort, host)
     }
 
-    suspend fun isOpen() : Boolean {
-        return serverSocket.isOpen()
-    }
-    suspend fun getClientConnection() {
+    suspend fun isOpen() : Boolean = serverSocket.isOpen()
 
+    suspend fun getClientConnection(socketCallbackException: ((Exception)-> Unit)? = null) {
         listen().collect {
-            process.startProcessing(it)
+            if (it != null) {
+                try {
+                    process.newInstance().startProcessing(it)
+                } catch (c: ClosedReceiveChannelException) {
+                    // do nothing as this expcetion is expected
+                } catch (e: Exception) {
+                    if (socketCallbackException != null)
+                        socketCallbackException(e)
+                } finally {
+                    it.close()
+                }
+            }
         }
     }
 
-    suspend fun getListenPort() : UShort {
-        val x : UShort = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
-        return x
-    }
+    suspend fun getListenPort() : UShort = if (serverSocket.port() != null) serverSocket.port() as UShort else 0u
 
     suspend fun close() {
-        if (serverSocket.isOpen())
+        if (isOpen())
             serverSocket.close()
     }
 
@@ -41,13 +47,14 @@ class TCPServer (val host: String, val port: UShort, val process: ServerProcess)
         try {
             while (serverSocket.isOpen()) {
                 val client = serverSocket.accept()
-
-                emit(client)
+                if (client != null) {
+                    emit(client)
+                }
             }
         } catch (e: Exception) {
-            if (! e.toString().equals("java.nio.channels.AsynchronousCloseException"))
-                println("listen exception: $e, ${e.message}")
+            throw e
+        } finally {
+            close()
         }
-        close()
     }
 }

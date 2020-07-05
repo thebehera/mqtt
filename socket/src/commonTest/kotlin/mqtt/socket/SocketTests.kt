@@ -3,179 +3,128 @@
 package mqtt.socket
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.*
 import kotlin.time.ExperimentalTime
-import kotlin.time.milliseconds
-import kotlin.time.seconds
 
-const val clientCount = 100L
+const val clientCount = 1000L
 
 @OptIn(ExperimentalTime::class)
 class SocketTests {
-    private val connectTimeout = 30.seconds
-    private val writeTimeout = 100.milliseconds
-    private val readTimeout = writeTimeout
-    val validateCloseWait = true
-    val validateCloseWaitAgressive = false
+    private val clientCount1 = 1000L
+    private val validateCloseWait = true
+    private val validateCloseWaitAgressive = false
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectClientReadWriteDisconnect() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { asyncClientSocket() }
-        connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
+    fun nio2ConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
+        val clientProcess = { ClientProcessTest(ClientAction.USHORT) }
+        connectClientReadWriteDisconnect(this, serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { asyncClientSocket() }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTest(this, serverLaunched, serverSocket, clientSocket)
+    fun nio2ConnectDisconnectStress() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
+        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT)}
+        stressDisconnectTest(serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { asyncClientSocket() }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(this, serverLaunched, serverSocket, clientSocket)
+    fun nio2ConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
+        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT)}
+        stressTestOpenConnections(serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { clientSocket(false) }
-        connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
+    fun nioNonBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
+        val clientProcess = { ClientProcessTest(ClientAction.USHORT, ConnectionType.NON_BLOCKING) }
+        connectClientReadWriteDisconnect(this, serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { clientSocket(false) }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTest(this, serverLaunched, serverSocket, clientSocket)
+    fun nioNonBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
+        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.NON_BLOCKING)}
+        stressDisconnectTest(serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { clientSocket(false) }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(this, serverLaunched, serverSocket, clientSocket)
+    fun nioNonBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
+        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.NON_BLOCKING)}
+        stressTestOpenConnections(serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectClientReadWriteDisconnect() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { clientSocket(true) }
-        connectClientReadWriteDisconnect(this, serverSocket, clientSocket)
+    fun nioBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
+        val clientProcess = { ClientProcessTest(ClientAction.USHORT, ConnectionType.BLOCKING) }
+        connectClientReadWriteDisconnect(this, serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectDisconnectStress() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { clientSocket(true) }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTest(this, serverLaunched, serverSocket, clientSocket)
+    fun nioBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
+        //val clientSocket = { clientSocket(true) }
+        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.BLOCKING)}
+        stressDisconnectTest(serverSocket, clientProcess)
     }
 
+    @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectDisconnectStressOpenConnections() = block {
-        val serverSocket = { asyncServerSocket() }
-        val clientSocket = { clientSocket(true) }
-        val serverLaunched = launchServer(this, serverSocket)
-        stressTestOpenConnections(this, serverLaunched, serverSocket, clientSocket)
+    fun nioBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
+        val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
+        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.BLOCKING)}
+        stressTestOpenConnections(serverSocket, clientProcess)
     }
 
-    private suspend fun launchServer(
-        scope: CoroutineScope,
-        getServerSocket: () -> ServerSocket
-    ): ServerLaunched {
-        val serverSocket = getServerSocket()
-        val firstReceiveLock = Mutex(true)
-        val mutex = Mutex(true)
-        var serverClientSocket: ClientSocket? = null
-        serverSocket.bind()
-        val server = Server(serverSocket)
-        val launched = ServerLaunched(firstReceiveLock, server, serverSocket, serverClientSocket, mutex)
-        scope.launch {
-            server.listen().collect {
-                serverClientSocket = it
-                launched.serverClientSocket = it
-                firstReceiveLock.unlock()
-                if (++launched.count >= clientCount) {
-                    mutex.unlock()
-                    return@collect
-                }
-            }
-        }
-        return launched
-    }
-
-    data class ServerLaunched(
-        val firstMessageReceivedLock: Mutex,
-        val server: Server,
-        val serverSocket: ServerSocket,
-        var serverClientSocket: ClientSocket?,
-        val mutex: Mutex,
-        var count: Int = 0
-    )
-
-    val limits = object : BufferMemoryLimit {
+    @ExperimentalUnsignedTypes
+    private val limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
+    @ExperimentalUnsignedTypes
     private suspend fun connectClientReadWriteDisconnect(
         scope: CoroutineScope,
-        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
+        getServerSocket: () -> TCPServer, getClientProcess: () -> ClientProcess //getClientSocket: () -> ClientToServerSocket
     ) {
         val expectedClientToServer = 4.toUShort()
-        val expectedServerToClient = UInt.MAX_VALUE
         val clientWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         clientWriteBuffer.write(expectedClientToServer)
-        val clientReadBuffer = allocateNewBuffer(10.toUInt(), limits)
-        val serverSocket = getServerSocket()
-        assertFalse(serverSocket.isOpen())
-        serverSocket.bind()
-        assertTrue(serverSocket.isOpen())
-        val port = serverSocket.port()!!
-        val clientToServerSocket = getClientSocket()
-        assertFalse(clientToServerSocket.isOpen())
-        var clientCount = 0
+        val server = launchServer(getServerSocket())
+
+        val port = server.getListenPort()
+
         val clientDoneMutex = Mutex(true)
+
         scope.launch {
-            clientToServerSocket.open(connectTimeout, port)
-            assertEquals(1, ++clientCount)
-            assertTrue(clientToServerSocket.isOpen())
-            assertEquals(2, clientToServerSocket.write(clientWriteBuffer, writeTimeout), "client write")
-            assertEquals(4, clientToServerSocket.read(clientReadBuffer, readTimeout), "client read")
-            assertEquals(expectedServerToClient, clientReadBuffer.readUnsignedInt(), "client wrong value")
+            val client = getClientProcess()
+
+            client.connect("localhost", port)
+            assertFalse(client.isOpen())
             clientDoneMutex.unlock()
         }
-        val serverToClientSocket = serverSocket.accept()
-        assertTrue(serverToClientSocket.isOpen())
-        val serverReadBuffer = allocateNewBuffer(10.toUInt(), limits)
-        assertEquals(2, serverToClientSocket.read(serverReadBuffer, readTimeout), "server read")
-        assertEquals(expectedClientToServer, serverReadBuffer.readUnsignedShort())
-        val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
-        serverWriteBuffer.write(expectedServerToClient)
-        assertEquals(4, serverToClientSocket.write(serverWriteBuffer, writeTimeout), "server write")
+
         clientDoneMutex.lock()
-        assertTrue(serverToClientSocket.isOpen())
-        serverToClientSocket.close()
-        assertFalse(serverToClientSocket.isOpen())
-        assertTrue(clientToServerSocket.isOpen())
-        clientToServerSocket.close()
-        assertFalse(clientToServerSocket.isOpen())
-        assertTrue(serverSocket.isOpen())
-        serverSocket.close()
-        assertFalse(serverSocket.isOpen())
-        assertEquals(1, clientCount, "Didn't execute client to server socket code")
+        assertTrue(server.isOpen(), "Server has closed")
+        server.close()
+        assertFalse(server.isOpen(), "Server is still open")
+
         if (validateCloseWait || validateCloseWaitAgressive) {
             val stats = readStats(port, "CLOSE_WAIT")
             if (stats.isNotEmpty()) {
@@ -185,82 +134,99 @@ class SocketTests {
         }
     }
 
-    private suspend fun stressTest(
-        scope: CoroutineScope,
-        serverL: ServerLaunched?,
-        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
+    @ExperimentalUnsignedTypes
+    private suspend fun stressDisconnectTest(
+        getServerSocket: () -> TCPServer, getClientProcess: () -> ClientProcess //getClientSocket: () -> ClientToServerSocket
     ) {
-        val serverLaunched = serverL ?: launchServer(scope, getServerSocket)
-        repeat(clientCount.toInt()) {
-            try {
-                val client = getClientSocket()
-                serverLaunched.serverClientSocket = client
-                client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
-                serverLaunched.firstMessageReceivedLock.lock()
-                assertTrue(client.isOpen())
-                val clientPort = client.localPort()!!
-                assertNotNull(serverLaunched.server.connections[clientPort])
-                client.close()
-                serverLaunched.server.closeClient(clientPort)
-                assertNull(serverLaunched.server.connections[clientPort])
-            } catch (e: Throwable) {
-                println("Failed to validate client #$it")
-                throw e
-            } finally {
-                if (validateCloseWaitAgressive) {
-                    checkPort(serverLaunched.server)
-                }
+        val clientDoneMutex = Mutex(locked = false)
+        var port: UShort = 0u
+        var counter = 0
+
+        try {
+            val server = launchServer(getServerSocket())
+
+            port = server.getListenPort()
+
+            clientDoneMutex.lock()
+            repeat (clientCount1.toInt()) {
+                val client = getClientProcess() //ClientProcessTest(ClientAction.CONNECT_DISCONNECT)
+                client.connect("localhost", port)
+                assertFalse(client.isOpen())
+                counter++
+
+                if (counter >= clientCount1)
+                    clientDoneMutex.unlock()
             }
+
+            clientDoneMutex.lock()
+            assertTrue(server.isOpen(), "Server has closed")
+            server.close()
+            assertFalse(server.isOpen(), "Server is still open")
+
+        } catch (e: Exception) {
+            throw e
+        } finally {
+            if (port > 0u) {
+                delay(200) // gave a delay to ensure surver has time to process the close() request
+                checkPort(port)
+            }
+
         }
-        serverLaunched.mutex.lock()
-        if (validateCloseWait) {
-            checkPort(serverLaunched.server)
-        }
-        serverLaunched.serverSocket.close()
-        assertEquals(clientCount, serverLaunched.count.toLong())
     }
 
+    @ExperimentalUnsignedTypes
+    private suspend fun stressTestOpenConnections(getServerSocket: () -> TCPServer,
+                                                  getClientProcess: () -> ClientProcess) { //getClientSocket: () -> ClientToServerSocket) {
+        val clients = ArrayList<ClientProcess>(clientCount.toInt())
+        val clientDoneMutex = Mutex(locked = false)
+        val clientCount = 50
+        var counter = 0
+        val server = launchServer(getServerSocket())
+        val port = server.getListenPort()
 
-    private suspend fun stressTestOpenConnections(
-        scope: CoroutineScope,
-        serverL: ServerLaunched?,
-        getServerSocket: () -> ServerSocket, getClientSocket: () -> ClientToServerSocket
-    ) {
-        val serverLaunched = serverL ?: launchServer(scope, getServerSocket)
-        val clients = ArrayList<ClientSocket>(clientCount.toInt())
-        repeat(clientCount.toInt()) {
-            val client = getClientSocket()
-            serverLaunched.serverClientSocket = client
-            client.open(connectTimeout, serverLaunched.serverSocket.port()!!)
-            serverLaunched.firstMessageReceivedLock.lock()
-            clients += client
+        clientDoneMutex.lock()
+        repeat(clientCount) {
+            val client = getClientProcess() //ClientProcessTest(ClientAction.CONNECT_DISCONNECT)
+            client.connect("localhost", port)
+            assertFalse(client.isOpen())
+            clients.add(client)
         }
-        assertEquals(clientCount, clients.count().toLong())
-        assertEquals(clientCount, serverLaunched.server.connections.count().toLong())
+        assertEquals(clientCount.toLong(), clients.size.toLong(), "correct amount of clients not initiated.")
+
         clients.forEach {
-            val port = it.localPort()!!
-            assertTrue(it.isOpen())
             it.close()
-            serverLaunched.server.closeClient(port)
-            if (validateCloseWaitAgressive) {
-                checkPort(serverLaunched.server)
-            }
+            assertFalse(it.isOpen(), "client is not closed.")
+            counter++
+            if (counter >= clientCount)
+                clientDoneMutex.unlock()
         }
-        assertEquals(0, serverLaunched.server.connections.count().toLong())
-        serverLaunched.mutex.lock()
-        if (validateCloseWait) {
-            checkPort(serverLaunched.server)
-        }
-        serverLaunched.serverSocket.close()
-        assertEquals(clientCount, serverLaunched.count.toLong())
+
+        clientDoneMutex.lock()
+        assertTrue(server.isOpen(), "Server has closed")
+        server.close()
+        assertFalse(server.isOpen(), "Server is still open")
     }
 
-    private fun checkPort(server: Server) {
-        val stats = readStats(server.serverSocket.port()!!, "CLOSE_WAIT")
+    @ExperimentalUnsignedTypes
+    private fun checkPort(port: UShort) {
+        val stats = readStats(port, "CLOSE_WAIT")
         if (stats.isNotEmpty()) {
             println("stats (${stats.count()}): $stats")
         }
         assertEquals(0, stats.count(), "Socket still in CLOSE_WAIT state found!")
+    }
+
+    @ExperimentalUnsignedTypes
+    private suspend fun launchServer(server: TCPServer) : TCPServer {
+        val handler = {exp: Exception -> (throw exp)}
+        server.startServer()
+        assertNotEquals(server.getListenPort(), server.port, "Server listen port is diferent")
+        GlobalScope.launch {
+            server.getClientConnection(handler)
+            assertFalse(server.isOpen(), "Server socket is still open.")
+        }
+        assertTrue(server.isOpen(), "Server socket is not open.")
+        return server
     }
 
 }

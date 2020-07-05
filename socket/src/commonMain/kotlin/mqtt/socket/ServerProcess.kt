@@ -13,7 +13,7 @@ interface ServerProcess {
     suspend fun startProcessing (socket: ClientSocket)
     suspend fun isOpen(): Boolean
     @ExperimentalTime
-    suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int
+    suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T>
     @ExperimentalTime
     suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int
     suspend fun close()
