@@ -24,8 +24,8 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
     @ExperimentalTime
     private suspend fun connectDisProcess() {
-        assertTrue(socket.isOpen(), "socket to client is not open")
-        socket.read(timeout) { _, _ -> }
+        assertTrue(isOpen(), "socket to client is not open")
+        read(timeout) { _, _ -> }
     }
 
     @ExperimentalTime
@@ -33,16 +33,17 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         val serverWriteBuffer = allocateNewBuffer(10.toUInt(), limits)
         val recvData: UShort = 4.toUShort()
         val sendData: UInt = UInt.MAX_VALUE
+        assertTrue(isOpen(), "socket to client is not open")
 
-        assertTrue(socket.isOpen(), "socket to client is not open")
-        val dataRead = socket.read(timeout) { buffer, bytesRead ->
+        val dataRead = read(timeout) { buffer, bytesRead ->
             buffer.readUnsignedShort()
         }
+
         assertEquals(2, dataRead.bytesRead, "server received invalid number of data")
         assertEquals(recvData, dataRead.result, "server received invalid data")
         serverWriteBuffer.write(sendData)
-        assertEquals(4, socket.write(serverWriteBuffer, timeout), "server send data size not correct")
-        socket.close()
+        assertEquals(4, write(serverWriteBuffer, timeout), "server send data size not correct")
+        close()
     }
 
     @ExperimentalTime
@@ -50,18 +51,16 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
     private suspend fun mqttStringProcess() {
         val wbuffer = allocateNewBuffer(100.toUInt(), limits)
 
-        assertTrue(socket.isOpen(), "Client socket is not open")
+        assertTrue(isOpen(), "Client socket is not open")
 
-        val socketResponse = socket.read(timeout) { buffer, bytesRead ->
+        val socketResponse = read(timeout) { buffer, bytesRead ->
             buffer.readMqttUtf8StringNotValidated().toString()
         }
         val str = socketResponse.result
         assertEquals(socketResponse.bytesRead, str.length + 2, "message read length not correct")
         assertEquals(clientResponse, str.substring(0, clientResponse.length), "Received message is not correct.")
-
         wbuffer.writeMqttUtf8String(str + ":" + name)
-
-        assertEquals(socket.write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
+        assertEquals(write(wbuffer, timeout), name.length + str.length + 3, "write message length not correct")
     }
 
     override suspend fun newInstance(): ServerProcess {
