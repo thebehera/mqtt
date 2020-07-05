@@ -41,7 +41,7 @@ class SocketTests2 {
     @Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
-        val clientCount = 25
+        val clientCount = 20
         val serverProcess = ServerProcessTest(ServerAction.MQTTSTRING)
         serverProcess.name = "Server-x"
         serverProcess.clientResponse = "Client-"

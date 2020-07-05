@@ -35,7 +35,7 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
         val sendData: UInt = UInt.MAX_VALUE
         assertTrue(isOpen(), "socket to client is not open")
 
-        val dataRead = read(timeout) { buffer, bytesRead ->
+        val dataRead = read(timeout) { buffer, _ ->
             buffer.readUnsignedShort()
         }
 
@@ -53,7 +53,7 @@ class ServerProcessTest (val action: ServerAction) : TCPServerProcess() {
 
         assertTrue(isOpen(), "Client socket is not open")
 
-        val socketResponse = read(timeout) { buffer, bytesRead ->
+        val socketResponse = read(timeout) { buffer, _ ->
             buffer.readMqttUtf8StringNotValidated().toString()
         }
         val str = socketResponse.result
