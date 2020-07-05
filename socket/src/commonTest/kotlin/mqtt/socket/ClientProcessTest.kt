@@ -62,10 +62,7 @@ class ClientProcessTest (val action: ClientAction, val conType: ConnectionType =
 
 
         assertEquals(sendMsg.length+2, write(writeBuffer!!, timeout), "Sent message is not correct")
-        //val x = write(writeBuffer!!, timeout)
-//        println("value of write message size: $x")
         val (value, size) = read(timeout, {readBuffer: PlatformBuffer, _ -> readBuffer.readMqttUtf8StringNotValidated()})
-        println("mqttStringProcess[client]: ${value.toString()}, $size")
         assertEquals(receiveMsg, value.toString(), "Received value does not match expected")
         assertEquals(value.toString().length + 2, size, "Received data size is not correct")
     }
