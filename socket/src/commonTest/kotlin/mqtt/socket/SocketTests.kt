@@ -22,7 +22,7 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
+    fun nio2ConnectClientReadWriteDisconnect() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
         val clientProcess = { ClientProcessTest(ClientAction.USHORT) }
         connectClientReadWriteDisconnect(this, serverSocket, clientProcess)
@@ -30,23 +30,23 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectDisconnectStress() = blockIgnoreUnsupported {
+    fun nio2ConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
-        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT)}
+        val clientProcess = { ClientProcessTest(ClientAction.CONNECT_DISCONNECT) }
         stressDisconnectTest(serverSocket, clientProcess)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nio2ConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
+    fun nio2ConnectDisconnectStressOpenConnections() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
-        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT)}
+        val clientProcess = { ClientProcessTest(ClientAction.CONNECT_DISCONNECT) }
         stressTestOpenConnections(serverSocket, clientProcess)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
+    fun nioNonBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
         val clientProcess = { ClientProcessTest(ClientAction.USHORT, ConnectionType.NON_BLOCKING) }
         connectClientReadWriteDisconnect(this, serverSocket, clientProcess)
@@ -54,23 +54,23 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
+    fun nioNonBlockingConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
-        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.NON_BLOCKING)}
+        val clientProcess = { ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.NON_BLOCKING) }
         stressDisconnectTest(serverSocket, clientProcess)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioNonBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
+    fun nioNonBlockingConnectDisconnectStressOpenConnections() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
-        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.NON_BLOCKING)}
+        val clientProcess = { ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.NON_BLOCKING) }
         stressTestOpenConnections(serverSocket, clientProcess)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectClientReadWriteDisconnect() = blockIgnoreUnsupported {
+    fun nioBlockingConnectClientReadWriteDisconnect() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.USHORT)) }
         val clientProcess = { ClientProcessTest(ClientAction.USHORT, ConnectionType.BLOCKING) }
         connectClientReadWriteDisconnect(this, serverSocket, clientProcess)
@@ -78,18 +78,18 @@ class SocketTests {
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectDisconnectStress() = blockIgnoreUnsupported {
+    fun nioBlockingConnectDisconnectStress() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
         //val clientSocket = { clientSocket(true) }
-        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.BLOCKING)}
+        val clientProcess = { ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.BLOCKING) }
         stressDisconnectTest(serverSocket, clientProcess)
     }
 
     @ExperimentalUnsignedTypes
     @Test
-    fun nioBlockingConnectDisconnectStressOpenConnections() = blockIgnoreUnsupported {
+    fun nioBlockingConnectDisconnectStressOpenConnections() = block {
         val serverSocket = { TCPServer("localhost", 0u, ServerProcessTest(ServerAction.CONNECT_DISCONNECT)) }
-        val clientProcess = {ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.BLOCKING)}
+        val clientProcess = { ClientProcessTest(ClientAction.CONNECT_DISCONNECT, ConnectionType.BLOCKING) }
         stressTestOpenConnections(serverSocket, clientProcess)
     }
 
@@ -114,7 +114,6 @@ class SocketTests {
 
         scope.launch {
             val client = getClientProcess()
-
             client.connect("localhost", port)
             assertFalse(client.isOpen())
             clientDoneMutex.unlock()

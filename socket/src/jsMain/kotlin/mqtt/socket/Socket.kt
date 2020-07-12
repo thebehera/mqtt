@@ -31,8 +31,8 @@ actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSock
 @ExperimentalTime
 actual fun asyncServerSocket(): ServerSocket {
     if (isNodeJs) {
-        throw UnsupportedOperationException("Not implemented yet")
-//        return NodeServerSocket()
+//        throw UnsupportedOperationException("Not implemented yet")
+        return NodeServerSocket()
     } else {
         throw UnsupportedOperationException("Sockets are not supported in the browser")
     }
