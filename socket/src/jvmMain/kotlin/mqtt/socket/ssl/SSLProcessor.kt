@@ -1,10 +1,12 @@
 package mqtt.socket.ssl
 
 import kotlinx.coroutines.sync.Mutex
+import mqtt.buffer.BufferPool
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.socket.ClientSocket
 import mqtt.socket.ClientToServerSocket
+import mqtt.socket.SocketDataRead
 import java.nio.ByteBuffer
 import javax.net.ssl.SSLEngine
 import javax.net.ssl.SSLEngineResult
@@ -13,26 +15,29 @@ import kotlin.time.milliseconds
 
 class SSLProcessor (private val sslEngine: SSLEngine, public val socket: ClientToServerSocket) {
     private val timeout: Duration = 5000.milliseconds
-    private var networkData:ByteBuffer = ByteBuffer.allocate(sslEngine.session.packetBufferSize + 100)
+    private lateinit var networkData: ByteBuffer
     private lateinit var localData: ByteBuffer
     private val wrapMutex: Mutex = Mutex()
     private val unWrapMutex: Mutex = Mutex()
+    private val bufferPool = BufferPool()
 
     init {
-            println("SSLProcessor.init.peerHost: ${sslEngine.peerHost}, peerPort: ${sslEngine.peerPort}")
-        }
+        networkData = (bufferPool.borrowAsync((sslEngine.session.packetBufferSize.toFloat() * 1.5).toUInt()) as JvmBuffer).byteBuffer
+        localData = (bufferPool.borrowAsync((sslEngine.session.applicationBufferSize.toFloat() * 1.5).toUInt()) as JvmBuffer).byteBuffer
+
+        println("SSLProcessor.init.peerHost: ${sslEngine.peerHost}, peerPort: ${sslEngine.peerPort}")
+    }
 
     suspend fun doHandshake() {
         println("SSLProcessor.doHandshake.begin")
         socket.open(timeout, sslEngine.peerPort.toUShort(), sslEngine.peerHost)
         println("SSLProcessor.doHandshake.open done")
-        localData = ByteBuffer.allocate(sslEngine.session.applicationBufferSize + 100)
         println("SSLProcessor.doHandshake: start handshake")
         sslEngine.beginHandshake()
         manageHandshake()
         println("SSLProcessor.doHandshake: end handshake")
     }
-    suspend fun sslRead(buffer: PlatformBuffer) : Int{
+    suspend fun sslRead(buffer: PlatformBuffer) : Int {
         try {
             val jbuf: JvmBuffer = buffer as JvmBuffer
             localData = jbuf.byteBuffer
@@ -293,7 +298,7 @@ class SSLProcessor (private val sslEngine: SSLEngine, public val socket: ClientT
             return tBuf
         } else {
             //this should not happen for wrap status; happen only for unwrap status
-            if (networkRead(buf) < 0)
+            if (networkRead() < 0)
                 println("bufferUnderflowMemory2.read failure")
             return buf
         }
@@ -325,33 +330,43 @@ class SSLProcessor (private val sslEngine: SSLEngine, public val socket: ClientT
     }
 
     // reads data from the network into buf.
-    private suspend fun networkRead(buf: ByteBuffer) : Int {
+    private suspend fun networkRead() : Int {
         try {
-            resetBufForWrite(buf)
-
-            val jBuf: JvmBuffer = JvmBuffer(buf)
-            println("networkRead1.jvmBuf: $jBuf")
-            val ret: Int = socket.read(jBuf, timeout)
-            println("networkRead2.read: $ret, jvmBuf: $jBuf")
-
-            return ret
+            //resetBufForWrite(buf)
+ //           val jBuf: JvmBuffer = JvmBuffer(buf)
+ //           println("networkRead1.jvmBuf: $jBuf")
+//            val ret: Int = socket.read(jBuf, timeout)
+ //           println("networkRead2.read: $ret, jvmBuf: $jBuf")
+            println("networkRead.1: $networkData")
+            //val responseData: SocketDataRead<ByteBuffer> = socket.read(timeout, { _: PlatformBuffer, _ -> Unit })
+            resetBufForWrite(networkData)
+            val responseData: SocketDataRead<ByteBuffer> = socket.read(timeout, {platformBuffer: PlatformBuffer, byteRead: Int ->
+                                                                {   if (networkData.remaining() > byteRead)
+                                                                        networkData.put((platformBuffer as JvmBuffer).byteBuffer)
+                                                                    else
+                                                                        println("networkRead.2 need more space")
+                                                                }})
+            println("networkRead.3: $networkData")
+            return responseData.bytesRead
+ //           return ret
         } catch (e: Exception) {
             println("networkRead.exception: ${e.message}")
             throw e
         }
     }
 
-    private suspend fun networkWrite(buf: ByteBuffer) : Int {
+    private suspend fun networkWrite() : Int {
         var count: Int = 0
         var sendCount: Int = 0
         try {
-           resetBufForWrite(buf)
-            println("networkWrite1: $buf")
-            while (buf.hasRemaining()) {
-                val r: JvmBuffer = JvmBuffer(buf)
+           //resetBufForWrite(networkData)
+            resetBufForRead(networkData)
+            println("networkWrite1: $networkData")
+            while (networkData.hasRemaining()) {
+                val r = JvmBuffer(networkData)
                 println("networkWrite.jvmBuffer: $r")
                 val ret:Int = socket.write(r, timeout)
-                println("networkWrite2.ret: $ret, buf: $buf")
+                println("networkWrite2.ret: $ret, networkData: $networkData")
                 if (ret < 0) {
                     println("networkWrite3: socket error")
                     return -1
