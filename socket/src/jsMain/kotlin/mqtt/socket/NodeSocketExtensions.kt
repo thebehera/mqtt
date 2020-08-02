@@ -20,6 +20,20 @@ suspend fun connect(tcpOptions: tcpOptions): Socket {
     return netSocket!!
 }
 
+suspend fun connect(tcpOptions: TcpSocketConnectOpts): Socket {
+    var netSocket: Socket? = null
+    suspendCoroutine<Unit> {
+        val socket = Net.connect(tcpOptions) {
+            it.resume(Unit)
+        }
+        socket.on("error") { e ->
+            it.resumeWithException(RuntimeException(e.toString()))
+        }
+        netSocket = socket
+    }
+    return netSocket!!
+}
+
 suspend fun Socket.write(buffer: Uint8Array) {
     suspendCoroutine<Unit> {
         write(buffer) {

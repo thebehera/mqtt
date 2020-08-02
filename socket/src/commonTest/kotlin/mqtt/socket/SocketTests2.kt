@@ -6,14 +6,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlin.test.*
+import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
 
 class SocketTests2 {
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-    @Test
+    //@Test
     fun oneServerOneClient() = block {
         var port : UShort = 0u
         lateinit var server : TCPServer
@@ -38,7 +40,7 @@ class SocketTests2 {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-    @Test
+    //@Test
     fun oneServerMultiClient() = block {
         var port: UShort = 0u
         val clientCount = 25
@@ -64,7 +66,7 @@ class SocketTests2 {
 
     @ExperimentalUnsignedTypes
     @ExperimentalTime
-    @Test
+    //@Test
     fun twoServerMultiClient() = block {
         var port0: UShort = 0u
         var port1: UShort = 0u

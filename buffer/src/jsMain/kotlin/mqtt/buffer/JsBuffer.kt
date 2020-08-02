@@ -21,6 +21,14 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
         limit = capacity.toInt()
     }
 
+    fun setLimit(limit: Int) {
+        this.limit = limit
+    }
+
+    fun setPosition(position: Int) {
+        this.position = position
+    }
+
     override fun readByte(): Byte {
         val dataView = DataView(buffer.buffer, position++, 1)
         return dataView.getInt8(0)

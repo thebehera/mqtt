@@ -20,7 +20,7 @@ abstract class TCPClientProcess (val connectionType: ConnectionType = Connection
                 ConnectionType.NON_BLOCKING -> clientSocket(false)
             }
 
-            client.open(100.seconds, port, host)
+            client.open(port, 100.seconds, host)
             if (client.isOpen()) {
                 socket = client
                 clientSideProcess()

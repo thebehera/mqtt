@@ -1,15 +1,14 @@
 package mqtt.socket
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
+import mqtt.buffer.JsBuffer
+import org.khronos.webgl.Uint8Array
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 class NodeServerSocket : ServerSocket {
     var server: Server? = null
-    private val clientSocketChannel = Channel<Socket>()
+    private val clientSocketChannel = Channel<ClientSocket>(Channel.UNLIMITED)
 
     override suspend fun bind(
         port: UShort?,
@@ -17,22 +16,38 @@ class NodeServerSocket : ServerSocket {
         socketOptions: SocketOptions?,
         backlog: UInt
     ): SocketOptions {
-        val ctx = CoroutineScope(coroutineContext)
         val server = Net.createServer { clientSocket ->
-            clientSocket.pause()
-            ctx.launch {
-                clientSocketChannel.send(clientSocket)
+            val nodeSocket = NodeSocket()
+            nodeSocket.netSocket = clientSocket
+            clientSocket.on("data") { data ->
+                val result = uint8ArrayOf(data)
+                val buffer = JsBuffer(result)
+                buffer.setPosition(0)
+                buffer.setLimit(result.length)
+                nodeSocket.incomingMessageChannel.offer(SocketDataRead(buffer, result.length))
             }
+            clientSocketChannel.offer(nodeSocket)
         }
         server.listenSuspend(port, host, backlog)
         this.server = server
         return socketOptions ?: SocketOptions()
     }
 
+    @Suppress("MemberVisibilityCanBePrivate")
+    fun uint8ArrayOf(@Suppress("UNUSED_PARAMETER") obj: Any): Uint8Array {
+        return js(
+            """
+            if (Buffer.isBuffer(obj)) {
+                return new Uint8Array(obj.buffer)
+            } else {
+                return new Uint8Array(Buffer.from(obj).buffer)
+            }
+        """
+        ) as Uint8Array
+    }
+
     override suspend fun accept(): ClientSocket {
-        val clientSocket = NodeSocket()
-        clientSocket.netSocket = clientSocketChannel.receive()
-        clientSocket.netSocket?.resume()
+        val clientSocket = clientSocketChannel.receive()
         return clientSocket
     }
 
