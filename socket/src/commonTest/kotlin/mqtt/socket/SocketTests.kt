@@ -210,7 +210,7 @@ class SocketTests {
     }
 
     @ExperimentalUnsignedTypes
-    private fun checkPort(port: UShort) {
+    private suspend fun checkPort(port: UShort) {
         val stats = readStats(port, "CLOSE_WAIT")
         if (stats.isNotEmpty()) {
             println("stats (${stats.count()}): $stats")

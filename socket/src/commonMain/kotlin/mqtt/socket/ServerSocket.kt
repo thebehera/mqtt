@@ -25,4 +25,4 @@ interface ServerSocket : SuspendCloseable {
 @ExperimentalTime
 expect fun asyncServerSocket(): ServerSocket
 
-expect fun readStats(port: UShort, contains: String): List<String>
+expect suspend fun readStats(port: UShort, contains: String): List<String>
