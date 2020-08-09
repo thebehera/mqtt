@@ -1,7 +1,6 @@
 package mqtt.socket
 
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -54,18 +53,16 @@ class SimpleSocketTests {
         stringBuffer.writeUtf8(text)
 
         val serverPort = assertNotNull(server.port(), "No port number from server")
-        val clientReadDataMutex = Mutex(true)
+        lateinit var serverToClient: ClientSocket
         launch {
-            clientToServer.open(serverPort)
-            val dataReceivedFromServer = clientToServer.read { buffer, bytesRead ->
-                buffer.readUtf8(bytesRead.toUInt())
-            }
-            assertEquals(text, dataReceivedFromServer.result.toString())
-            clientReadDataMutex.unlock()
+            serverToClient = server.accept()
+            serverToClient.write(stringBuffer)
         }
-        val serverToClient = server.accept()
-        serverToClient.write(stringBuffer)
-        clientReadDataMutex.lock()
+        clientToServer.open(serverPort)
+        val dataReceivedFromServer = clientToServer.read { buffer, bytesRead ->
+            buffer.readUtf8(bytesRead.toUInt())
+        }
+        assertEquals(text, dataReceivedFromServer.result.toString())
         val serverToClientPort = assertNotNull(serverToClient.localPort())
         val clientToServerPort = assertNotNull(clientToServer.localPort())
         serverToClient.close()
