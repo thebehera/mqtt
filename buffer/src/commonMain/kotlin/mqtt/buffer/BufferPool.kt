@@ -36,6 +36,12 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
         size: UInt = limits.defaultBufferSize
     ) = borrow(size)
 
+    fun borrowLaterCallRecycleCallback(size: UInt = limits.defaultBufferSize): Pair<PlatformBuffer, RecycleCallback> {
+        val buffer = borrow(size)
+        val recycleCallbackImpl = RecycleCallbackImpl(this, buffer)
+        return Pair(buffer, recycleCallbackImpl)
+    }
+
     suspend fun <T> borrowSuspend(
         size: UInt = limits.defaultBufferSize,
         bufferCallback: suspend ((PlatformBuffer) -> T)

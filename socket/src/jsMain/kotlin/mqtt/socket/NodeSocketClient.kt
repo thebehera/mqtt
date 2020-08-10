@@ -17,7 +17,7 @@ open class NodeSocket : ClientSocket {
     val pool = BufferPool(limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = false
     })
-    protected val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>()
+    protected val incomingMessageChannel = Channel<SocketPlatformBufferRead>()
 
     override fun isOpen() = netSocket?.remoteAddress != null
 
@@ -27,11 +27,18 @@ open class NodeSocket : ClientSocket {
 
     override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
         val receivedData = incomingMessageChannel.receive()
+        val jsBuffer = receivedData.bufferRead as JsBuffer
         try {
-            return SocketDataRead(bufferRead(receivedData.result, receivedData.bytesRead), receivedData.bytesRead)
+            return SocketDataRead(bufferRead(jsBuffer, receivedData.bytesRead), receivedData.bytesRead)
         } finally {
-            pool.recycleAsync(receivedData.result)
+            receivedData.recycleCallback.recycle()
         }
+    }
+
+    override suspend fun read(timeout: Duration): SocketPlatformBufferRead {
+        val receivedData = incomingMessageChannel.receive()
+        val jsBuffer = receivedData.bufferRead as JsBuffer
+        return SocketPlatformBufferRead(jsBuffer, receivedData.bytesRead, receivedData.recycleCallback)
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
@@ -57,16 +64,17 @@ class NodeClientSocket : NodeSocket(), ClientToServerSocket {
         socketOptions: SocketOptions?
     ): SocketOptions {
         val ctx = CoroutineScope(coroutineContext)
-        val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
+        val arrayPlatformBufferMap = HashMap<Uint8Array, Pair<JsBuffer, BufferPool.RecycleCallback>>()
         val onRead = OnRead({
-            val buffer = pool.borrowAsync() as JsBuffer
-            arrayPlatformBufferMap[buffer.buffer] = buffer
+            val (platformBuffer, recycleCallback) = pool.borrowLaterCallRecycleCallback()
+            val buffer = platformBuffer as JsBuffer
+            arrayPlatformBufferMap[buffer.buffer] = Pair(buffer, recycleCallback)
             buffer.buffer
         }, { bytesRead, buffer ->
             netSocket?.pause()
             ctx.launch {
-                val jsBuffer = arrayPlatformBufferMap[buffer]!!
-                incomingMessageChannel.send(SocketDataRead(jsBuffer, bytesRead))
+                val (jsBuffer, recycleCallback) = arrayPlatformBufferMap[buffer]!!
+                incomingMessageChannel.send(SocketPlatformBufferRead(jsBuffer, bytesRead, recycleCallback))
                 netSocket?.resume()
             }
             true
