@@ -20,8 +20,8 @@ import kotlin.time.ExperimentalTime
 class AsyncClientSocket(pool: BufferPool) : AsyncBaseClientSocket(pool), ClientToServerSocket {
 
     override suspend fun open(
-        timeout: Duration,
         port: UShort,
+        timeout: Duration,
         hostname: String?,
         socketOptions: SocketOptions?
     ): SocketOptions {

@@ -4,7 +4,6 @@ import mqtt.buffer.BufferPool
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.socket.SocketDataRead
-import mqtt.socket.SocketPlatformBufferRead
 import mqtt.socket.nio.util.aClose
 import mqtt.socket.nio.util.read
 import mqtt.socket.nio.util.write
@@ -33,13 +32,6 @@ abstract class BaseClientSocket(
             bufferRead(it, bytesRead)
         }
         return SocketDataRead(result, bytesRead)
-    }
-
-    override suspend fun read(timeout: Duration): SocketPlatformBufferRead {
-        val (buffer, recycleCallback) = pool.borrowLaterCallRecycleCallback()
-        val byteBuffer = (buffer as JvmBuffer).byteBuffer
-        val bytesRead = socket!!.read(byteBuffer, selector, timeout)
-        return SocketPlatformBufferRead(buffer, bytesRead, recycleCallback)
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration) =

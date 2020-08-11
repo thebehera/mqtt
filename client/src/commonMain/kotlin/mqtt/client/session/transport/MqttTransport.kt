@@ -64,8 +64,8 @@ class MqttTransport private constructor(
         ): ConnectedMqttTransport {
             val clientSocket = getClientSocket()
             clientSocket.open(
-                remoteHost.connectionTimeout.toDuration(DurationUnit.MILLISECONDS),
                 remoteHost.port.toUShort(),
+                remoteHost.connectionTimeout.toDuration(DurationUnit.MILLISECONDS),
                 remoteHost.name
             )
             val session = MqttTransport(scope, pool, remoteHost, clientSocket, remoteHost.request.controlPacketReader)

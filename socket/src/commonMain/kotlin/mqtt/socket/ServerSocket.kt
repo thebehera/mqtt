@@ -16,7 +16,7 @@ interface ServerSocket : SuspendCloseable {
         backlog: UInt = 0.toUInt()
     ): SocketOptions
 
-    suspend fun accept(): ClientSocket?
+    suspend fun accept(): ClientSocket
     fun isOpen(): Boolean
     fun port(): UShort?
 }
@@ -25,4 +25,4 @@ interface ServerSocket : SuspendCloseable {
 @ExperimentalTime
 expect fun asyncServerSocket(): ServerSocket
 
-expect fun readStats(port: UShort, contains: String): List<String>
+expect suspend fun readStats(port: UShort, contains: String): List<String>

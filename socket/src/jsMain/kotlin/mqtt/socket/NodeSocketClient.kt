@@ -1,15 +1,12 @@
 
 package mqtt.socket
 
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.launch
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.BufferPool
 import mqtt.buffer.JsBuffer
 import mqtt.buffer.PlatformBuffer
 import org.khronos.webgl.Uint8Array
-import kotlin.coroutines.coroutineContext
 import kotlin.time.Duration
 
 open class NodeSocket : ClientSocket {
@@ -17,7 +14,7 @@ open class NodeSocket : ClientSocket {
     val pool = BufferPool(limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = false
     })
-    protected val incomingMessageChannel = Channel<SocketPlatformBufferRead>()
+    internal val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>(1)
 
     override fun isOpen() = netSocket?.remoteAddress != null
 
@@ -27,18 +24,12 @@ open class NodeSocket : ClientSocket {
 
     override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
         val receivedData = incomingMessageChannel.receive()
-        val jsBuffer = receivedData.bufferRead as JsBuffer
+        netSocket?.resume()
         try {
-            return SocketDataRead(bufferRead(jsBuffer, receivedData.bytesRead), receivedData.bytesRead)
+            return SocketDataRead(bufferRead(receivedData.result, receivedData.bytesRead), receivedData.bytesRead)
         } finally {
-            receivedData.recycleCallback.recycle()
+            pool.recycleAsync(receivedData.result)
         }
-    }
-
-    override suspend fun read(timeout: Duration): SocketPlatformBufferRead {
-        val receivedData = incomingMessageChannel.receive()
-        val jsBuffer = receivedData.bufferRead as JsBuffer
-        return SocketPlatformBufferRead(jsBuffer, receivedData.bytesRead, receivedData.recycleCallback)
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
@@ -49,6 +40,7 @@ open class NodeSocket : ClientSocket {
     }
 
     override suspend fun close() {
+        incomingMessageChannel.close()
         val socket = netSocket
         netSocket = null
         socket?.close()
@@ -58,30 +50,26 @@ open class NodeSocket : ClientSocket {
 class NodeClientSocket : NodeSocket(), ClientToServerSocket {
 
     override suspend fun open(
-        timeout: Duration,
         port: UShort,
+        timeout: Duration,
         hostname: String?,
         socketOptions: SocketOptions?
     ): SocketOptions {
-        val ctx = CoroutineScope(coroutineContext)
-        val arrayPlatformBufferMap = HashMap<Uint8Array, Pair<JsBuffer, BufferPool.RecycleCallback>>()
+        val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
         val onRead = OnRead({
-            val (platformBuffer, recycleCallback) = pool.borrowLaterCallRecycleCallback()
-            val buffer = platformBuffer as JsBuffer
-            arrayPlatformBufferMap[buffer.buffer] = Pair(buffer, recycleCallback)
+            val buffer = pool.borrowAsync() as JsBuffer
+            arrayPlatformBufferMap[buffer.buffer] = buffer
             buffer.buffer
         }, { bytesRead, buffer ->
-            netSocket?.pause()
-            ctx.launch {
-                val (jsBuffer, recycleCallback) = arrayPlatformBufferMap[buffer]!!
-                incomingMessageChannel.send(SocketPlatformBufferRead(jsBuffer, bytesRead, recycleCallback))
-                netSocket?.resume()
-            }
-            true
+            incomingMessageChannel.offer(SocketDataRead(arrayPlatformBufferMap.remove(buffer)!!, bytesRead))
+            false
         })
-        console.log(tcpOptions(port.toInt(), hostname, onRead))
-        netSocket = connect(tcpOptions(port.toInt(), hostname, onRead))
-        console.log("$netSocket local: ${netSocket?.localPort} ${netSocket?.remoteAddress}:${netSocket?.remotePort}")
+        val options = tcpOptions(port.toInt(), hostname, onRead)
+        val netSocket = connect(options)
+        this.netSocket = netSocket
+        netSocket.on("error") { err ->
+            error(err.toString())
+        }
         return SocketOptions()
     }
 }

@@ -7,6 +7,7 @@ import org.khronos.webgl.Uint8Array
 external class Net {
     companion object {
         fun connect(tcpOptions: tcpOptions, connectListener: () -> Unit): Socket
+        fun connect(tcpOptions: TcpSocketConnectOpts, connectListener: () -> Unit = definedExternally): Socket
         fun createServer(connectionListener: (Socket) -> Unit = definedExternally): Server
     }
 }
@@ -50,7 +51,45 @@ external class Socket {
     fun end(callback: () -> Unit): Socket
 }
 
-class OnRead(val buffer: () -> Uint8Array, val callback: (Int, Uint8Array) -> Boolean)
+external interface OnReadOpts {
+    var buffer: dynamic /* Uint8Array | () -> Uint8Array */
+        get() = definedExternally
+        set(value) = definedExternally
+
+    fun callback(bytesWritten: Number, buf: Uint8Array): Boolean
+}
+
+external interface ConnectOpts {
+    var onread: OnReadOpts?
+        get() = definedExternally
+        set(value) = definedExternally
+}
+
+open external interface TcpSocketConnectOpts : ConnectOpts {
+    var port: Number?
+        get() = definedExternally
+        set(value) = definedExternally
+    var host: String?
+        get() = definedExternally
+        set(value) = definedExternally
+    var localAddress: String?
+        get() = definedExternally
+        set(value) = definedExternally
+    var localPort: Number?
+        get() = definedExternally
+        set(value) = definedExternally
+    var hints: Number?
+        get() = definedExternally
+        set(value) = definedExternally
+    var family: Number?
+        get() = definedExternally
+        set(value) = definedExternally
+}
+
+class OnRead(
+    var buffer: (() -> Uint8Array)? = null,
+    var callback: ((Int, Any) -> Boolean)? = null
+)
 
 class tcpOptions(
     val port: Int,

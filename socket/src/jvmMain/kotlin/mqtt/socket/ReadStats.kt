@@ -2,7 +2,7 @@
 
 package mqtt.socket
 
-actual fun readStats(port: UShort, contains: String): List<String> {
+actual suspend fun readStats(port: UShort, contains: String): List<String> {
     try {
         val process = ProcessBuilder()
             .command("lsof", "-iTCP:${port}", "-sTCP:$contains", "-l", "-n")

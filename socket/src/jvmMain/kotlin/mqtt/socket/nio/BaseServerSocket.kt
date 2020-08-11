@@ -39,7 +39,7 @@ abstract class BaseServerSocket<S : NetworkChannel> : ServerSocket {
         return options
     }
 
-    abstract suspend fun bind(channel: S, socketAddress: SocketAddress?, backlog: UInt): S?
+    abstract suspend fun bind(channel: S, socketAddress: SocketAddress?, backlog: UInt): S
     abstract suspend fun serverNetworkChannel(): S
 
     override suspend fun close() {

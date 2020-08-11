@@ -13,6 +13,9 @@ kotlin {
     js {
         nodejs {
             testTask {
+                useMocha {
+                    timeout = "10000"
+                }
             }
         }
     }
@@ -60,6 +63,7 @@ kotlin {
         jsTest {
             dependencies {
                 implementation kotlin('test-js')
+                implementation npm('tcp-port-used', '1.0.1')
             }
         }
     }

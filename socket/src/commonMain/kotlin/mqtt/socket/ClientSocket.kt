@@ -7,32 +7,23 @@ import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.SuspendCloseable
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalTime
 interface ClientSocket : SuspendCloseable {
     fun isOpen(): Boolean
     fun localPort(): UShort?
     fun remotePort(): UShort?
-    suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T>
-    suspend fun <T> readTyped(timeout: Duration, bufferRead: (PlatformBuffer) -> T) = read(timeout) { buffer, _ ->
-        bufferRead(buffer)
-    }.result
+    suspend fun <T> read(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T>
+    suspend fun <T> readTyped(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer) -> T) =
+        read(timeout) { buffer, _ ->
+            bufferRead(buffer)
+        }.result
 
-    suspend fun read(timeout: Duration): SocketPlatformBufferRead
-
-    suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int
+    suspend fun write(buffer: PlatformBuffer, timeout: Duration = 1.seconds): Int
 }
 
 data class SocketDataRead<T>(val result: T, val bytesRead: Int)
-
-/**
- * Buffer filled with data from the read call. When done with the buffer, use the RecycleCallback to release the buffer back into the pool
- */
-data class SocketPlatformBufferRead(
-    val bufferRead: PlatformBuffer,
-    val bytesRead: Int,
-    val recycleCallback: BufferPool.RecycleCallback
-)
 
 @ExperimentalTime
 fun getClientSocket(): ClientToServerSocket {

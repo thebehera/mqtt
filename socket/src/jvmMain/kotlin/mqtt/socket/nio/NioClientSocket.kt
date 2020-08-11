@@ -16,8 +16,8 @@ class NioClientSocket(
     pool: BufferPool
 ) : BaseClientSocket(blocking, pool), ClientToServerSocket {
     override suspend fun open(
-        timeout: Duration,
         port: UShort,
+        timeout: Duration,
         hostname: String?,
         socketOptions: SocketOptions?
     ): SocketOptions {

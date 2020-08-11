@@ -2,13 +2,14 @@ package mqtt.socket
 
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
 interface ClientToServerSocket : ClientSocket {
     suspend fun open(
-        timeout: Duration,
         port: UShort,
+        timeout: Duration = 1.seconds,
         hostname: String? = null,
         socketOptions: SocketOptions? = null
     ): SocketOptions
