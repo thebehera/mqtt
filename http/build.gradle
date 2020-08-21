@@ -1,0 +1,72 @@
+import org.apache.tools.ant.taskdefs.condition.Os
+plugins {
+    id 'kotlin-multiplatform'
+}
+repositories {
+    mavenCentral()
+    jcenter()
+}
+
+apply from: "../gradle/experimental.gradle"
+kotlin {
+    jvm()
+    js {
+        nodejs {
+            testTask {
+
+            }
+        }
+    }
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin('stdlib')
+                implementation project(':socket')
+                implementation project(':buffer')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
+            }
+        }
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+                implementation project(':socket')
+            }
+        }
+        jvmMain {
+            dependencies {
+                implementation kotlin('stdlib-jdk8')
+            }
+        }
+        jvmTest {
+            dependencies {
+                implementation kotlin('test')
+                implementation kotlin('test-junit')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
+            }
+        }
+        jsMain {
+            dependencies {
+                implementation kotlin('stdlib-js')
+            }
+        }
+        jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
+            }
+        }
+    }
+
+    targets.all {
+        compilations.all {
+            kotlinOptions {
+                freeCompilerArgs += [
+                        "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
+                        "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.RequiresOptIn"
+                ]
+            }
+        }
+    }
+}
