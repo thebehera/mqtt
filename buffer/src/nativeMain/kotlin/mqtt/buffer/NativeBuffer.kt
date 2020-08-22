@@ -10,6 +10,8 @@ import io.ktor.utils.io.core.internal.DangerousInternalIoApi
 @OptIn(DangerousInternalIoApi::class, ExperimentalStdlibApi::class)
 data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
     override val type = BufferType.InMemory
+    override fun limit() = buffer.limit.toUInt()
+    override fun position() = buffer.writePosition.toUInt()
 
     override fun resetForRead() = buffer.resetForRead()
     override fun resetForWrite() = buffer.resetForWrite()
@@ -79,6 +81,15 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
     ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
+
+
+    override fun write(buffer: PlatformBuffer) {
+        this.buffer.writeFully((buffer as NativeBuffer).buffer)
+    }
+
+    override fun position(newPosition: Int) {
+        this.buffer.rewind(newPosition - this.buffer.readPosition)
+    }
 
     override suspend fun close() {}
 }

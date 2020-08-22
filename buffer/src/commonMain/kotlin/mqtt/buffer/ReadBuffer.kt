@@ -4,6 +4,12 @@ import kotlin.experimental.and
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
+
+    fun limit(): UInt
+    fun position(): UInt
+    fun position(newPosition: Int)
+    fun remaining() = limit() - position()
+
     fun resetForRead()
     fun readByte(): Byte
     fun readByteArray(size: UInt): ByteArray
