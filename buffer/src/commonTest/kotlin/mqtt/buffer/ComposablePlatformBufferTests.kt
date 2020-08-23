@@ -120,7 +120,6 @@ class ComposablePlatformBufferTests {
         assertEquals(expectedFifthByte, composableBuffer.readByte())
     }
 
-
     @Test
     fun readUByteFromFirstBuffer() {
         val expectedFirstUByte = UByte.MAX_VALUE
@@ -231,6 +230,118 @@ class ComposablePlatformBufferTests {
         assertEquals(expectedThirdUByte, composableBuffer.readUnsignedByte())
         assertEquals(expectedFourthUByte, composableBuffer.readUnsignedByte())
         assertEquals(expectedFifthUByte, composableBuffer.readUnsignedByte())
+    }
+
+    @Test
+    fun readUnsignedShortFromFirstBuffer() {
+        val expectedFirstUShort = UShort.MAX_VALUE
+        val first = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        first.write(expectedFirstUShort)
+        first.resetForRead()
+        val second = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedSecondUShort = UShort.MIN_VALUE
+        second.write(expectedSecondUShort)
+        second.resetForRead()
+
+        val composableBuffer = ComposablePlatformBuffer(first, second)
+        assertEquals(expectedFirstUShort, composableBuffer.readUnsignedShort())
+    }
+
+    @Test
+    fun readUnsignedShortFromSecondBuffer() {
+        val expectedFirstUShort = UShort.MAX_VALUE
+        val first = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        first.write(expectedFirstUShort)
+        first.resetForRead()
+        val second = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedSecondUShort = UShort.MIN_VALUE
+        second.write(expectedSecondUShort)
+        second.resetForRead()
+
+        val composableBuffer = ComposablePlatformBuffer(first, second)
+        composableBuffer.position(UShort.SIZE_BYTES)
+        assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
+    }
+
+    @Test
+    fun readUnsignedShortsFromThreeBuffers() {
+        val expectedFirstUShort = UShort.MAX_VALUE
+        val first = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        first.write(expectedFirstUShort)
+        first.resetForRead()
+        val second = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedSecondUShort = 6.toUShort()
+        second.write(expectedSecondUShort)
+        second.resetForRead()
+        val third = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedThirdUShort = UShort.MIN_VALUE
+        third.write(expectedThirdUShort)
+        third.resetForRead()
+
+        val composableBuffer = arrayListOf(first, second, third).toComposableBuffer()
+        assertEquals(expectedFirstUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedThirdUShort, composableBuffer.readUnsignedShort())
+    }
+
+    @Test
+    fun readUnsignedShortsFromFourBuffers() {
+        val expectedFirstUShort = UShort.MAX_VALUE
+        val first = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        first.write(expectedFirstUShort)
+        first.resetForRead()
+        val second = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedSecondUShort = 6.toUShort()
+        second.write(expectedSecondUShort)
+        second.resetForRead()
+        val third = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedThirdUShort = 12.toUShort()
+        third.write(expectedThirdUShort)
+        third.resetForRead()
+
+        val fourth = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedFourthUShort = UShort.MIN_VALUE
+        fourth.write(expectedFourthUShort)
+        fourth.resetForRead()
+
+        val composableBuffer = arrayListOf(first, second, third, fourth).toComposableBuffer()
+        assertEquals(expectedFirstUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedThirdUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedFourthUShort, composableBuffer.readUnsignedShort())
+    }
+
+    @Test
+    fun readUnsignedShortsFromFiveBuffers() {
+        val expectedFirstUShort = UShort.MAX_VALUE
+        val first = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        first.write(expectedFirstUShort)
+        first.resetForRead()
+        val second = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedSecondUShort = 6.toUShort()
+        second.write(expectedSecondUShort)
+        second.resetForRead()
+        val third = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedThirdUShort = (-1).toUShort()
+        third.write(expectedThirdUShort)
+        third.resetForRead()
+
+        val fourth = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedFourthUShort = 0.toUShort()
+        fourth.write(expectedFourthUShort)
+        fourth.resetForRead()
+
+        val fifth = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
+        val expectedFifthUShort = UShort.MIN_VALUE
+        fifth.write(expectedFifthUShort)
+        fifth.resetForRead()
+
+        val composableBuffer = arrayListOf(first, second, third, fourth, fifth).toComposableBuffer()
+        assertEquals(expectedFirstUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedThirdUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedFourthUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedFifthUShort, composableBuffer.readUnsignedShort())
     }
 
 }
