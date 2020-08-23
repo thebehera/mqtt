@@ -201,7 +201,7 @@ class ComposablePlatformBufferTests {
     }
 
     @Test
-    fun readUUByteFromFiveBuffers() {
+    fun readUByteFromFiveBuffers() {
         val expectedFirstUByte = UByte.MAX_VALUE
         val first = allocateNewBuffer(1u)
         first.write(expectedFirstUByte)
