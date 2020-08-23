@@ -75,21 +75,19 @@ class ComposablePlatformBuffer(
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
     ) = first.sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
+}
 
-
-    companion object {
-        fun List<PlatformBuffer>.toComposableBuffer(): ReadBuffer {
-            return when (size) {
-                1 -> {
-                    first()
-                }
-                else -> {
-                    ComposablePlatformBuffer(
-                        first(),
-                        subList(1, size).toComposableBuffer()
-                    )
-                }
-            }
+@ExperimentalUnsignedTypes
+fun List<PlatformBuffer>.toComposableBuffer(): ReadBuffer {
+    return when (size) {
+        1 -> {
+            first()
+        }
+        else -> {
+            ComposablePlatformBuffer(
+                first(),
+                subList(1, size).toComposableBuffer()
+            )
         }
     }
 }
