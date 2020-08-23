@@ -60,7 +60,6 @@ class ComposablePlatformBufferTests {
         assertEquals(expectedThirdByte, composableBuffer.readByte())
     }
 
-
     @Test
     fun readBytesFromFourBuffers() {
         val expectedFirstByte = Byte.MAX_VALUE
@@ -87,5 +86,4 @@ class ComposablePlatformBufferTests {
         assertEquals(expectedThirdByte, composableBuffer.readByte())
         assertEquals(expectedFourthByte, composableBuffer.readByte())
     }
-
 }
