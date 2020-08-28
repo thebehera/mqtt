@@ -14,7 +14,7 @@ val isNodeJs by lazy {
 }
 
 @ExperimentalTime
-actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket {
+actual fun asyncClientSocket(pool: BufferPool, ssl: Boolean): ClientToServerSocket {
     return if (isNodeJs) {
         NodeClientSocket()
     } else {
@@ -24,7 +24,7 @@ actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket {
 
 
 @ExperimentalTime
-actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket =
+actual fun clientSocket(blocking: Boolean, pool: BufferPool, ssl: Boolean): ClientToServerSocket =
     throw UnsupportedOperationException("Only non blocking io is supported with JS")
 
 @ExperimentalUnsignedTypes
@@ -39,3 +39,8 @@ actual fun asyncServerSocket(): ServerSocket {
 }
 
 external fun require(module: String): dynamic
+
+//@ExperimentalTime
+//actual fun asyncClientSocket(pool: BufferPool, ssl: Boolean): ClientToServerSocket {
+//    TODO("Not yet implemented")
+//}

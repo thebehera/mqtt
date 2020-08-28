@@ -26,18 +26,20 @@ interface ClientSocket : SuspendCloseable {
 data class SocketDataRead<T>(val result: T, val bytesRead: Int)
 
 @ExperimentalTime
-fun getClientSocket(): ClientToServerSocket {
+fun getClientSocket(pool: BufferPool = BufferPool(), ssl: Boolean = false): ClientToServerSocket {
     try {
-        return asyncClientSocket()
+        return asyncClientSocket(pool, ssl)
     } catch (e: Throwable) {
         // failed to allocate async socket channel based socket, fallback to nio
     }
-    return clientSocket(false)
+    return clientSocket(false, pool, ssl)
 }
 
 @ExperimentalTime
-expect fun asyncClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket
+expect fun asyncClientSocket(pool: BufferPool = BufferPool(), ssl: Boolean = true): ClientToServerSocket
 
 @ExperimentalTime
-expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool()): ClientToServerSocket
+expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool(), ssl: Boolean = false): ClientToServerSocket
 
+//@ExperimentalTime
+//expect fun asyncClientSocket(pool: BufferPool): ClientToServerSocket
