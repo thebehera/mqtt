@@ -7,6 +7,8 @@ import mqtt.socket.nio.util.asInetAddress
 import mqtt.socket.nio.util.asyncSetOptions
 import mqtt.socket.nio2.util.aConnect
 import mqtt.socket.nio2.util.asyncSocket
+import mqtt.socket.ssl.SSLManager
+import mqtt.socket.ssl.SSLVersion
 import java.net.InetAddress
 import java.net.InetSocketAddress
 import kotlin.coroutines.resume
@@ -17,15 +19,15 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-class AsyncClientSocket(pool: BufferPool) : AsyncBaseClientSocket(pool), ClientToServerSocket {
+class AsyncClientSocket(private val pool: BufferPool, private val ssl: Boolean) : AsyncBaseClientSocket(pool, true), ClientToServerSocket {
 
     override suspend fun open(
         port: UShort,
         timeout: Duration,
-        hostname: String?,
+        hostname: String,
         socketOptions: SocketOptions?
     ): SocketOptions {
-        val socketAddress = if (hostname != null) {
+        val socketAddress = if (hostname.compareTo("lcoalhost") != 0) {
             InetSocketAddress(hostname.asInetAddress(), port.toInt())
         } else {
             suspendCoroutine {
@@ -40,9 +42,12 @@ class AsyncClientSocket(pool: BufferPool) : AsyncBaseClientSocket(pool), ClientT
         this.socket = asyncSocket
         val options = asyncSocket.asyncSetOptions(socketOptions)
         asyncSocket.aConnect(socketAddress)
+
+        if (ssl)
+            sslProcess = SSLManager.getSSLclient(pool, asyncSocket, hostname, port, SSLVersion.DEFAULT)
+
         return options
     }
-
 }
 
 
