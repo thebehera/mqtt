@@ -10,7 +10,7 @@ interface ClientToServerSocket : ClientSocket {
     suspend fun open(
         port: UShort,
         timeout: Duration = 1.seconds,
-        hostname: String? = null,
+        hostname: String = "localhost",
         socketOptions: SocketOptions? = null
     ): SocketOptions
 }
