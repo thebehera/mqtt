@@ -18,10 +18,10 @@ class NioClientSocket(
     override suspend fun open(
         port: UShort,
         timeout: Duration,
-        hostname: String?,
+        hostname: String,
         socketOptions: SocketOptions?
     ): SocketOptions {
-        val socketAddress = InetSocketAddress(hostname?.asInetAddress(), port.toInt())
+        val socketAddress = InetSocketAddress(hostname.asInetAddress(), port.toInt())
         val socketChannel = openSocketChannel()
         socketChannel.aConfigureBlocking(blocking)
         this.socket = socketChannel
