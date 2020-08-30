@@ -279,10 +279,10 @@ class SSLProcessor (private val pool: BufferPool, private val sslEngine: SSLEngi
 //                        println("manageHandshake3.not_handshaking")
                         return
                     }
-                    SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN -> {
-//                        println("manageHandshakeneed4_unwrap_again")
-                        return
-                    }
+//                    SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN -> { // Java 9
+////                        println("manageHandshakeneed4_unwrap_again")
+//                        return
+//                    }
                 }
             }
         } catch (e: Exception) {

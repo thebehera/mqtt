@@ -52,7 +52,7 @@ class NodeClientSocket : NodeSocket(), ClientToServerSocket {
     override suspend fun open(
         port: UShort,
         timeout: Duration,
-        hostname: String?,
+        hostname: String,
         socketOptions: SocketOptions?
     ): SocketOptions {
         val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
