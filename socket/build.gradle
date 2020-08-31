@@ -10,21 +10,21 @@ apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     js {
         nodejs {
             testTask {
-                useMocha {
-                    timeout = "10000"
-                }
+
             }
         }
     }
     sourceSets {
         commonMain {
             dependencies {
-                implementation kotlin('stdlib-common')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
                 implementation project(':buffer')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
         commonTest {
@@ -33,31 +33,25 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-//        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-//            androidMain {
-//                dependsOn jvmMain
-//            }
-//            androidTest {
-//                dependsOn jvmTest
-//            }
-//        }
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependsOn jvmMain
+            }
+            androidTest {
+                dependsOn jvmTest
+            }
+        }
         jvmMain {
             dependencies {
-                implementation kotlin('stdlib-jdk8')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
         jvmTest {
             dependencies {
-                implementation kotlin('test')
                 implementation kotlin('test-junit')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
             }
         }
         jsMain {
             dependencies {
-                implementation kotlin('stdlib-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
         jsTest {
