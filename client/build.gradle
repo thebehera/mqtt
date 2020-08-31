@@ -6,15 +6,13 @@ repositories {
     jcenter()
 }
 apply from: "../gradle/experimental.gradle"
-//apply from: "../gradle/android.gradle"
+apply from: "../gradle/android.gradle"
 
 kotlin {
-//    jvm()
+    jvm()
     if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-//        android()
-        jvm()
-    } else {
-        jvm()
+        android()
+
     }
     sourceSets {
         commonMain {
@@ -25,19 +23,18 @@ kotlin {
                 api project(":wire-core")
                 implementation project(":buffer")
                 implementation project(":socket")
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
         commonTest {
             dependencies {
                 implementation project(":wire4")
-                implementation kotlin('test-common')
+                implementation kotlin('test')
                 implementation kotlin('test-annotations-common')
             }
         }
         commonJvm {
             dependencies {
-                implementation kotlin('stdlib-jdk8')
                 implementation project(":buffer")
                 implementation project(":socket")
                 implementation project(":wire-core")

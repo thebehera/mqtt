@@ -63,7 +63,7 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
 
     private fun borrow(size: UInt = limits.defaultBufferSize) = pool
         .sortedBy { it.capacity }
-        .minBy {
+        .minByOrNull {
             if (it.capacity.toLong() < size.toLong()) {
                 Int.MAX_VALUE.toLong()
             } else {
