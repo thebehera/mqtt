@@ -19,10 +19,6 @@ kotlin {
             testTask {
                 useKarma {
                     useChromeHeadless()
-                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
-                        useFirefox()
-                    }
-                    usePhantomJS()
                 }
                 enabled = !System.getenv().containsKey("IGNORE_BROWSER_TESTS")
             }
