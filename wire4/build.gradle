@@ -48,20 +48,17 @@ kotlin {
     sourceSets {
         commonMain {
             dependencies {
-                implementation kotlin('stdlib-common')
                 implementation project(':buffer')
                 api project(':wire-core')
             }
         }
         commonTest {
             dependencies {
-                implementation kotlin('test-common')
-                implementation kotlin('test-annotations-common')
+                implementation kotlin('test')
             }
         }
         jvmMain {
             dependencies {
-                implementation kotlin('stdlib-jdk8')
             }
         }
         jvmTest {
@@ -74,7 +71,6 @@ kotlin {
             androidMain {
                 dependencies {
                     implementation project(':wire-core')
-                    implementation kotlin('stdlib-jdk8')
                 }
             }
             androidTest {
@@ -86,7 +82,6 @@ kotlin {
         }
         jsMain {
             dependencies {
-                implementation kotlin('stdlib-js')
             }
         }
         jsTest {
