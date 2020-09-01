@@ -41,7 +41,6 @@ matrix:
         apt:
           packages:
             - libgbm-dev
-        chrome: stable
     - os: linux
       language: java
       dist: bionic
