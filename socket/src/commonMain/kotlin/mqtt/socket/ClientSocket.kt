@@ -36,8 +36,8 @@ fun getClientSocket(): ClientToServerSocket {
 }
 
 @ExperimentalTime
-expect fun asyncClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket
+expect fun asyncClientSocket(pool: BufferPool = BufferPool(), ssl: Boolean = false): ClientToServerSocket
 
 @ExperimentalTime
-expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool()): ClientToServerSocket
+expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool(), ssl: Boolean = false): ClientToServerSocket
 

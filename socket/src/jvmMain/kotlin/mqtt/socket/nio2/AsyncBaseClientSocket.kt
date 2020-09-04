@@ -15,7 +15,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-abstract class AsyncBaseClientSocket(private val pool: BufferPool, private val ssl: Boolean = false) :
+abstract class AsyncBaseClientSocket(private val pool: BufferPool, private val ssl: Boolean) :
     ByteBufferClientSocket<AsynchronousSocketChannel>() {
     override fun remotePort() = socket?.assignedPort(remote = true)
     protected lateinit var sslProcess: SSLProcessor
