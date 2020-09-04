@@ -19,7 +19,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-class AsyncClientSocket(private val pool: BufferPool, private val ssl: Boolean) : AsyncBaseClientSocket(pool, true), ClientToServerSocket {
+class AsyncClientSocket(private val pool: BufferPool, private val ssl: Boolean) : AsyncBaseClientSocket(pool, ssl), ClientToServerSocket {
 
     override suspend fun open(
         port: UShort,
