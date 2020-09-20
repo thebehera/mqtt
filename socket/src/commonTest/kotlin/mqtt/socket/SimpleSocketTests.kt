@@ -12,6 +12,26 @@ import kotlin.time.ExperimentalTime
 class SimpleSocketTests {
 
     @Test
+    fun httpRequest() = block {
+        val client = asyncClientSocket()
+        client.open(80u, hostname = "example.com")
+        val request =
+"""
+GET / HTTP/1.1
+Host: example.com
+Connection: close
+
+"""
+        val stringBuffer = allocateNewBuffer(request.length.toUInt())
+        stringBuffer.writeUtf8(request)
+        client.write(stringBuffer)
+        val response = client.read { platformBuffer, bytesRead ->
+            platformBuffer.readUtf8(bytesRead.toUInt())
+        }
+        println(response)
+    }
+
+    @Test
     fun serverEcho() = block {
         val server = asyncServerSocket()
         val clientToServer = asyncClientSocket()

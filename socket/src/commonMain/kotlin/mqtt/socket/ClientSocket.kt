@@ -21,6 +21,12 @@ interface ClientSocket : SuspendCloseable {
         }.result
 
     suspend fun write(buffer: PlatformBuffer, timeout: Duration = 1.seconds): Int
+
+    suspend fun writeFully(buffer: PlatformBuffer, timeout: Duration) {
+        while (buffer.position() < buffer.limit()) {
+            write(buffer, timeout)
+        }
+    }
 }
 
 data class SocketDataRead<T>(val result: T, val bytesRead: Int)

@@ -122,12 +122,22 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         }
     }
 
+    override fun write(buffer: PlatformBuffer) {
+        byteBuffer.put((buffer as JvmBuffer).byteBuffer)
+    }
+
+    override fun position(newPosition: Int) {
+        byteBuffer.position(newPosition)
+    }
+
     override fun toString() = byteBuffer.toString()
 
     override suspend fun close() {
         fileRef?.aClose()
     }
 
+    override fun limit() = byteBuffer.limit().toUInt()
+    override fun position() = byteBuffer.position().toUInt()
 }
 
 

@@ -10,6 +10,9 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     private var limit = 0
     private var position = 0
 
+    init {
+        limit = buffer.length
+    }
 
     override fun resetForRead() {
         limit = position
@@ -146,8 +149,17 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
         unmappableCharacter: CharSequence?
     ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
 
-    fun limit() = limit
-    fun position() = position
+    override fun limit() = limit.toUInt()
+    override fun position() = position.toUInt()
+    override fun position(newPosition: Int) {
+        position = newPosition
+    }
+
+    override fun write(buffer: PlatformBuffer) {
+        val otherRemaining = buffer.remaining()
+        this.buffer.set((buffer as JsBuffer).buffer, position)
+        position += otherRemaining.toInt()
+    }
 
     override suspend fun close() {}
 }
@@ -157,4 +169,10 @@ actual fun allocateNewBuffer(
     limits: BufferMemoryLimit
 ): PlatformBuffer {
     return JsBuffer(Uint8Array(size.toInt()))
+}
+
+actual fun String.toBuffer(): PlatformBuffer {
+    val int8Array = encodeToByteArray().unsafeCast<Int8Array>()
+    val uint8Array = Uint8Array(int8Array.buffer)
+    return JsBuffer(uint8Array)
 }
