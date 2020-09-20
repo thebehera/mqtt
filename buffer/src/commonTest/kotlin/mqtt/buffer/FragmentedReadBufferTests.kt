@@ -6,7 +6,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 @ExperimentalUnsignedTypes
-class ComposablePlatformBufferTests {
+class FragmentedReadBufferTests {
 
     @Test
     fun readByteFromFirstBuffer() {
@@ -19,7 +19,7 @@ class ComposablePlatformBufferTests {
         second.write(expectedSecondByte)
         second.resetForRead()
 
-        val composableBuffer = ComposablePlatformBuffer(first, second)
+        val composableBuffer = FragmentedReadBuffer(first, second)
         assertEquals(expectedFirstByte, composableBuffer.readByte())
     }
 
@@ -34,7 +34,7 @@ class ComposablePlatformBufferTests {
         second.write(expectedSecondByte)
         second.resetForRead()
 
-        val composableBuffer = ComposablePlatformBuffer(first, second)
+        val composableBuffer = FragmentedReadBuffer(first, second)
         composableBuffer.position(1)
         assertEquals(expectedSecondByte, composableBuffer.readByte())
     }
@@ -131,7 +131,7 @@ class ComposablePlatformBufferTests {
         second.write(expectedSecondUByte)
         second.resetForRead()
 
-        val composableBuffer = ComposablePlatformBuffer(first, second)
+        val composableBuffer = FragmentedReadBuffer(first, second)
         assertEquals(expectedFirstUByte, composableBuffer.readUnsignedByte())
     }
 
@@ -146,7 +146,7 @@ class ComposablePlatformBufferTests {
         second.write(expectedSecondUByte)
         second.resetForRead()
 
-        val composableBuffer = ComposablePlatformBuffer(first, second)
+        val composableBuffer = FragmentedReadBuffer(first, second)
         composableBuffer.position(1)
         assertEquals(expectedSecondUByte, composableBuffer.readUnsignedByte())
     }
@@ -244,7 +244,7 @@ class ComposablePlatformBufferTests {
         second.write(expectedSecondUShort)
         second.resetForRead()
 
-        val composableBuffer = ComposablePlatformBuffer(first, second)
+        val composableBuffer = FragmentedReadBuffer(first, second)
         assertEquals(expectedFirstUShort, composableBuffer.readUnsignedShort())
         assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
     }
@@ -260,7 +260,7 @@ class ComposablePlatformBufferTests {
         second.write(expectedSecondUShort)
         second.resetForRead()
 
-        val composableBuffer = ComposablePlatformBuffer(first, second)
+        val composableBuffer = FragmentedReadBuffer(first, second)
         composableBuffer.position(UShort.SIZE_BYTES)
         assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
     }
@@ -344,5 +344,18 @@ class ComposablePlatformBufferTests {
         assertEquals(expectedThirdUShort, composableBuffer.readUnsignedShort())
         assertEquals(expectedFourthUShort, composableBuffer.readUnsignedShort())
         assertEquals(expectedFifthUShort, composableBuffer.readUnsignedShort())
+    }
+
+    @Test
+    fun readFragmentedStringFromThreeBuffers() {
+        val expectedString = "yolo-swag-lyfestyle"
+        val utf8length = expectedString.toBuffer().limit()
+        val composableBuffer = expectedString
+            .split(Regex("(?=-)"))
+            .map { it.toBuffer() }
+            .toComposableBuffer()
+        val actual = composableBuffer.readUtf8(utf8length)
+        assertEquals(expectedString, actual.toString())
+
     }
 }

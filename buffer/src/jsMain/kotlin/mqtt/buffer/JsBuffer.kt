@@ -10,6 +10,9 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     private var limit = 0
     private var position = 0
 
+    init {
+        limit = buffer.length
+    }
 
     override fun resetForRead() {
         limit = position

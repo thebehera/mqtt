@@ -1,7 +1,12 @@
 package mqtt.buffer
 
+/**
+ * Provides a single ReadBuffer interface that delegates to multiple buffers.
+ * While reading from a buffer sometimes you might need more data to complete the decoding operation. This class will
+ * handle reading from multiple fragmented buffers in memory and provide a simple read api.
+ */
 @ExperimentalUnsignedTypes
-class ComposablePlatformBuffer(
+class FragmentedReadBuffer(
     private val first: ReadBuffer,
     private val second: ReadBuffer,
     private val pool: BufferPool = BufferPool(UnlimitedMemoryLimit)
@@ -84,7 +89,7 @@ fun List<PlatformBuffer>.toComposableBuffer(): ReadBuffer {
             first()
         }
         else -> {
-            ComposablePlatformBuffer(
+            FragmentedReadBuffer(
                 first(),
                 subList(1, size).toComposableBuffer()
             )
