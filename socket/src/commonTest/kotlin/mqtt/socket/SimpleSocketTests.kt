@@ -5,7 +5,9 @@ import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
@@ -13,22 +15,19 @@ class SimpleSocketTests {
 
     @Test
     fun httpRequest() = block {
-        val client = asyncClientSocket()
-        client.open(80u, hostname = "example.com")
+        val client = openClientSocket(80u, hostname = "example.com")
         val request =
-"""
+            """
 GET / HTTP/1.1
 Host: example.com
 Connection: close
 
 """
-        val stringBuffer = allocateNewBuffer(request.length.toUInt())
-        stringBuffer.writeUtf8(request)
-        client.write(stringBuffer)
-        val response = client.read { platformBuffer, bytesRead ->
-            platformBuffer.readUtf8(bytesRead.toUInt())
-        }
-        println(response)
+        client.write(request)
+        val response = client.read().result
+        assertTrue { response.contains("200 OK") }
+        assertTrue { response.contains("HTTP") }
+        assertTrue { response.contains("<html>") }
     }
 
     @Test

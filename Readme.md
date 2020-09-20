@@ -5,6 +5,20 @@ This is currently a WIP project with the goal of creating a lightweight, highly-
 
 Please do not attempt to use this in production. It's simply not ready. 
 
+# Creating a HTTP request (JVM + NodeJS)
+```
+val client = openClientSocket(80u, hostname = "example.com")
+val request =
+    """
+GET / HTTP/1.1
+Host: example.com
+Connection: close
+
+"""
+client.write(request)
+val response = client.read().result
+```
+
 # Min Requirements
 - Install Google Chrome otherwise web tests will fail. If you do not want to install Google Chrome, add the environment variable `IGNORE_BROWSER_TESTS=true`
 
