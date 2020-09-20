@@ -37,5 +37,5 @@ private class ThreadLocalLazy<T>(val provider: () -> T) : ReadOnlyProperty<Any?,
     }
 
     override fun getValue(thisRef: Any?, property: KProperty<*>): T =
-        threadLocal.get()
+        threadLocal.get()!!
 }
