@@ -15,10 +15,12 @@ class SimpleSocketTests {
 
     @Test
     fun httpRequest() = block {
-        val client = openClientSocket(80u, hostname = "facebook.com")
-        client.write("""
+        val client = asyncClientSocket()
+        client.open(80u, hostname = "example.com")
+        client.write(
+            """
 GET / HTTP/1.1
-Host: facebook.com
+Host: example.com
 Connection: close
 
 """
