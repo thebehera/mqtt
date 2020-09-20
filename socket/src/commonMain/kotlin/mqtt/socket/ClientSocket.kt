@@ -23,7 +23,8 @@ interface ClientSocket : SuspendCloseable {
         }.result
 
     suspend fun write(buffer: PlatformBuffer, timeout: Duration = 1.seconds): Int
-    suspend fun write(buffer: String, timeout: Duration = 1.seconds): Int = write(buffer.toBuffer(), timeout)
+    suspend fun write(buffer: String, timeout: Duration = 1.seconds): Int
+            = write(buffer.toBuffer().also { it.position(it.limit().toInt()) }, timeout)
 
     suspend fun writeFully(buffer: PlatformBuffer, timeout: Duration) {
         while (buffer.position() < buffer.limit()) {

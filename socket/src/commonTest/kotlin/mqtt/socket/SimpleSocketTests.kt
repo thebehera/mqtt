@@ -15,22 +15,19 @@ class SimpleSocketTests {
 
     @Test
     fun httpRequest() = block {
-        val client = asyncClientSocket()
-        client.open(80u, hostname = "example.com")
-        client.write(
+        val client = openClientSocket(80u, hostname = "example.com")
+        val request =
             """
 GET / HTTP/1.1
 Host: example.com
 Connection: close
 
 """
-        )
-        val response = client.read()
-        val responseString = response.result.toString()
-        assertTrue { responseString.contains("200 OK") }
-        assertTrue { responseString.contains("HTTP") }
-        assertTrue { responseString.contains("<html>") }
-        client.close()
+        client.write(request)
+        val response = client.read().result
+        assertTrue { response.contains("200 OK") }
+        assertTrue { response.contains("HTTP") }
+        assertTrue { response.contains("<html>") }
     }
 
     @Test
