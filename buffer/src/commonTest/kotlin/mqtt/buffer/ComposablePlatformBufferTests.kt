@@ -238,6 +238,7 @@ class ComposablePlatformBufferTests {
         val first = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
         first.write(expectedFirstUShort)
         first.resetForRead()
+
         val second = allocateNewBuffer(UShort.SIZE_BYTES.toUInt())
         val expectedSecondUShort = UShort.MIN_VALUE
         second.write(expectedSecondUShort)
@@ -245,6 +246,7 @@ class ComposablePlatformBufferTests {
 
         val composableBuffer = ComposablePlatformBuffer(first, second)
         assertEquals(expectedFirstUShort, composableBuffer.readUnsignedShort())
+        assertEquals(expectedSecondUShort, composableBuffer.readUnsignedShort())
     }
 
     @Test
@@ -343,5 +345,4 @@ class ComposablePlatformBufferTests {
         assertEquals(expectedFourthUShort, composableBuffer.readUnsignedShort())
         assertEquals(expectedFifthUShort, composableBuffer.readUnsignedShort())
     }
-
 }

@@ -2,10 +2,9 @@
 
 package mqtt.buffer
 
-import io.ktor.utils.io.charsets.Charsets
-import io.ktor.utils.io.charsets.encodeToByteArray
+import io.ktor.utils.io.charsets.*
 import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.DangerousInternalIoApi
+import io.ktor.utils.io.core.internal.*
 
 @OptIn(DangerousInternalIoApi::class, ExperimentalStdlibApi::class)
 data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
@@ -102,4 +101,14 @@ actual fun allocateNewBuffer(
 //    return NativeBuffer(IoBuffer.Pool.borrow())
     @OptIn(DangerousInternalIoApi::class)
     return NativeBuffer(Buffer(IoBuffer.Pool.borrow().memory.slice(0, size.toInt())))
+}
+
+actual fun String.toBuffer(): PlatformBuffer {
+    val array = Charsets.UTF_8.newEncoder().encodeToByteArray(this)
+
+    @OptIn(DangerousInternalIoApi::class)
+    val buffer = NativeBuffer(Buffer(IoBuffer.Pool.borrow().memory.slice(0, array.size)))
+    buffer.write(array)
+    buffer.resetForRead()
+    return buffer
 }

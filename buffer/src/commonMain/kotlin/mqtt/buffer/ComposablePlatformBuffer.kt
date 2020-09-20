@@ -32,7 +32,7 @@ class ComposablePlatformBuffer(
     }
 
     private fun readSizeIntoBuffer(size: UInt): ReadBuffer {
-        val buffer = if (currentPosition < firstInitialLimit && currentPosition + size < firstInitialLimit) {
+        val buffer = if (currentPosition < firstInitialLimit && currentPosition + size <= firstInitialLimit) {
             first
         } else if (currentPosition < firstInitialLimit && currentPosition + size > firstInitialLimit) {
             val firstChunkSize = firstInitialLimit - currentPosition

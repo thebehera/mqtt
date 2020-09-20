@@ -3,3 +3,5 @@
 package mqtt.buffer
 
 expect fun allocateNewBuffer(size: UInt, limits: BufferMemoryLimit = DefaultMemoryLimit): PlatformBuffer
+
+expect fun String.toBuffer(): PlatformBuffer
