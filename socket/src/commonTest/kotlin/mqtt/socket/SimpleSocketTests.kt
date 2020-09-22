@@ -7,7 +7,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
-import kotlin.time.seconds
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
@@ -24,10 +23,13 @@ Connection: close
 
 """
         client.write(request)
+        val remotePort = client.remotePort()!!
         val response = client.read().result
         assertTrue { response.contains("200 OK") }
         assertTrue { response.contains("HTTP") }
         assertTrue { response.contains("<html>") }
+        client.close()
+        checkPort(remotePort)
     }
 
     @Test
