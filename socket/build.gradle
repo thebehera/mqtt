@@ -20,6 +20,11 @@ kotlin {
             }
         }
     }
+    ios("iOS")
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
+    
     sourceSets {
         commonMain {
             dependencies {
@@ -59,6 +64,47 @@ kotlin {
                 implementation kotlin('test-js')
                 implementation npm('tcp-port-used', '1.0.1')
             }
+        }
+
+        posixMain {
+            dependsOn commonMain
+            dependencies {
+            }
+        }
+        posixTest {
+            dependencies {
+            }
+        }
+
+        iOSX64Main {
+            dependsOn posixMain
+        }
+        iOSX64Test {
+            dependsOn posixTest
+        }
+        iOSArm64Main {
+            dependsOn posixMain
+        }
+        iOSArm64Test {
+            dependsOn posixTest
+        }
+        linuxMain {
+            dependsOn posixMain
+        }
+        linuxTest {
+            dependsOn posixTest
+        }
+        macosMain {
+            dependsOn posixMain
+        }
+        macosTest {
+            dependsOn posixTest
+        }
+        windowsMain {
+            dependsOn posixMain
+        }
+        windowsTest {
+            dependsOn posixTest
         }
     }
 
