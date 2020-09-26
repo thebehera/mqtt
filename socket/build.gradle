@@ -20,10 +20,9 @@ kotlin {
             }
         }
     }
-    ios("iOS")
-    macosX64("macos")
-    linuxX64("linux")
-    mingwX64("windows")
+    macosX64("posix")
+//    linuxX64("linux")
+//    mingwX64("windows")
     
     sourceSets {
         commonMain {
@@ -34,6 +33,7 @@ kotlin {
         }
         commonTest {
             dependencies {
+                implementation kotlin('test')
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
             }
@@ -72,6 +72,7 @@ kotlin {
             }
         }
         posixTest {
+            dependsOn commonTest
             dependencies {
             }
         }
@@ -107,7 +108,10 @@ kotlin {
             dependsOn posixTest
         }
     }
-
+// Enable experimental stdlib API used by the sample.
+    sourceSets.all {
+        languageSettings.useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
+    }
     targets.all {
         compilations.all {
             kotlinOptions {

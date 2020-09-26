@@ -7,12 +7,11 @@ import kotlin.time.ExperimentalTime
 
 
 @ExperimentalTime
-actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket {
-    throw UnsupportedOperationException("not implemented yet")
-}
+actual fun asyncClientSocket(pool: BufferPool) = clientSocket(false, pool)
 
 @ExperimentalTime
 actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket {
+
     throw UnsupportedOperationException("not implemented yet")
 }
 

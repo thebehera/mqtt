@@ -7,12 +7,8 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     override val type = BufferType.InMemory
     private val littleEndian = false // network endian is big endian
     override val capacity: UInt = buffer.byteLength.toUInt()
-    private var limit = 0
+    private var limit = buffer.length
     private var position = 0
-
-    init {
-        limit = buffer.length
-    }
 
     override fun resetForRead() {
         limit = position
@@ -22,14 +18,6 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
     override fun resetForWrite() {
         position = 0
         limit = capacity.toInt()
-    }
-
-    fun setLimit(limit: Int) {
-        this.limit = limit
-    }
-
-    fun setPosition(position: Int) {
-        this.position = position
     }
 
     override fun readByte(): Byte {
