@@ -22,6 +22,8 @@ Host: example.com
 Connection: close
 
 """
+        val bytesWritten = client.write(request)
+        assertTrue { bytesWritten > 0 }
         val response = client.read().result
         assertTrue { response.contains("200 OK") }
         assertTrue { response.contains("HTTP") }
