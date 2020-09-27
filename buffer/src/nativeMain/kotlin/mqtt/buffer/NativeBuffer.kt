@@ -1,5 +1,7 @@
 package mqtt.buffer
 
+import kotlin.native.*
+
 @ExperimentalUnsignedTypes
 class NativeBuffer(private val data: ByteArray) : PlatformBuffer {
     override val type = BufferType.InMemory
@@ -26,25 +28,37 @@ class NativeBuffer(private val data: ByteArray) : PlatformBuffer {
     override fun readByteArray(size: UInt): ByteArray {
         val result = data.copyOfRange(position, position + size.toInt())
         position += size.toInt()
+
         return result
     }
 
-    override fun readUnsignedByte() = data.getUByteAt(position++)
+    override fun readUnsignedByte() = data[position++].toUByte()
 
     override fun readUnsignedShort(): UShort {
-        val value = data.getUShortAt(position)
+        val value = ((0xff and data[position + 0].toInt() shl 8)
+                or (0xff and data[position + 1].toInt() shl 0)).toUShort()
         position += UShort.SIZE_BYTES
         return value
     }
 
     override fun readUnsignedInt(): UInt {
-        val value = data.getUIntAt(position)
+        val value = (0xff and data[position + 0].toInt() shl 24
+                or (0xff and data[position + 1].toInt() shl 16)
+                or (0xff and data[position + 2].toInt() shl 8)
+                or (0xff and data[position + 3].toInt() shl 0)).toUInt()
         position += UInt.SIZE_BYTES
         return value
     }
 
     override fun readLong(): Long {
-        val value = data.getLongAt(position)
+        val value = (data[position + 0].toLong() shl 56
+                or (data[position + 1].toLong() and 0xff shl 48)
+                or (data[position + 2].toLong() and 0xff shl 40)
+                or (data[position + 3].toLong() and 0xff shl 32)
+                or (data[position + 4].toLong() and 0xff shl 24)
+                or (data[position + 5].toLong() and 0xff shl 16)
+                or (data[position + 6].toLong() and 0xff shl 8)
+                or (data[position + 7].toLong() and 0xff))
         position += Long.SIZE_BYTES
         return value
     }
@@ -75,9 +89,9 @@ class NativeBuffer(private val data: ByteArray) : PlatformBuffer {
     override fun write(uByte: UByte) = write(uByte.toByte())
 
     override fun write(uShort: UShort): WriteBuffer {
-        val value = uShort.toInt()
-        data[position++] = value.toByte()
-        data[position++] = value.shr(8).toByte()
+        val value = uShort.toShort().toInt()
+        data[position++] = (value shr 8 and 0xff).toByte()
+        data[position++] = (value shr 0 and 0xff).toByte()
         return this
     }
 
@@ -91,14 +105,15 @@ class NativeBuffer(private val data: ByteArray) : PlatformBuffer {
     }
 
     override fun write(long: Long): WriteBuffer {
-        data[position++] = (long shr 56 and 0xff).toByte()
-        data[position++] = (long shr 48 and 0xff).toByte()
-        data[position++] = (long shr 40 and 0xff).toByte()
-        data[position++] = (long shr 32 and 0xff).toByte()
-        data[position++] = (long shr 24 and 0xff).toByte()
-        data[position++] = (long shr 16 and 0xff).toByte()
-        data[position++] = (long shr 8 and 0xff).toByte()
-        data[position++] = (long shr 0 and 0xff).toByte()
+        val value = long
+        data[position++] = (value shr 56 and 0xff).toByte()
+        data[position++] = (value shr 48 and 0xff).toByte()
+        data[position++] = (value shr 40 and 0xff).toByte()
+        data[position++] = (value shr 32 and 0xff).toByte()
+        data[position++] = (value shr 24 and 0xff).toByte()
+        data[position++] = (value shr 16 and 0xff).toByte()
+        data[position++] = (value shr 8 and 0xff).toByte()
+        data[position++] = (value shr 0 and 0xff).toByte()
         return this
     }
 

@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 
 @ExperimentalUnsignedTypes
 class BufferTests {
-    val limit = object : BufferMemoryLimit {
+    private val limit = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = size > 1_000u
     }
 
@@ -47,16 +47,55 @@ class BufferTests {
     @Test
     fun unsignedShort() {
         val platformBuffer = allocateNewBuffer(2u, limit)
-        val uShort = (-1).toUShort()
+        val uShort = UShort.MAX_VALUE.toInt() / 2
+        println(uShort)
+        platformBuffer.write(uShort.toUShort())
+        platformBuffer.resetForRead()
+        assertEquals(uShort, platformBuffer.readUnsignedShort().toInt())
+        platformBuffer.resetForRead()
+        val msb = platformBuffer.readByte()
+        val lsb = platformBuffer.readByte()
+        val value = ((0xff and msb.toInt() shl 8)
+                or (0xff and lsb.toInt() shl 0)).toUShort()
+        assertEquals(value.toInt(), uShort)
+    }
+
+    @Test
+    fun allUShortValues() {
+        val buffer = allocateNewBuffer(UShort.MAX_VALUE.toUInt() * UShort.SIZE_BYTES.toUInt())
+        (0 until UShort.MAX_VALUE.toInt()).forEach {
+            buffer.write(it.toUShort())
+        }
+        buffer.resetForRead()
+        (0 until UShort.MAX_VALUE.toInt()).forEach {
+            assertEquals(it, buffer.readUnsignedShort().toInt())
+        }
+    }
+
+    @Test
+    fun unsignedShortHalf() {
+        val platformBuffer = allocateNewBuffer(2u, limit)
+        val uShort = (UShort.MAX_VALUE / 2u).toUShort()
         platformBuffer.write(uShort)
         platformBuffer.resetForRead()
-        assertEquals(uShort.toInt(), platformBuffer.readUnsignedShort().toInt())
+        val actual = platformBuffer.readUnsignedShort().toInt()
+        assertEquals(uShort.toInt(), actual)
+        assertEquals(uShort.toString(), actual.toString())
     }
 
     @Test
     fun unsignedInt() {
         val platformBuffer = allocateNewBuffer(4u, limit)
         val uInt = (-1).toUInt()
+        platformBuffer.write(uInt)
+        platformBuffer.resetForRead()
+        assertEquals(uInt.toLong(), platformBuffer.readUnsignedInt().toLong())
+    }
+
+    @Test
+    fun unsignedIntHalf() {
+        val platformBuffer = allocateNewBuffer(4u, limit)
+        val uInt = Int.MAX_VALUE.toUInt() / 2u
         platformBuffer.write(uInt)
         platformBuffer.resetForRead()
         assertEquals(uInt.toLong(), platformBuffer.readUnsignedInt().toLong())
