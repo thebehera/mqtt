@@ -3,7 +3,7 @@ package mqtt.buffer
 import kotlin.native.*
 
 @ExperimentalUnsignedTypes
-class NativeBuffer(private val data: ByteArray) : PlatformBuffer {
+class NativeBuffer(val data: ByteArray) : PlatformBuffer {
     override val type = BufferType.InMemory
     override val capacity: UInt = data.size.toUInt()
     private var limit = data.size

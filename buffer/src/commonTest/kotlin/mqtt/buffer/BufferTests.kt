@@ -48,7 +48,6 @@ class BufferTests {
     fun unsignedShort() {
         val platformBuffer = allocateNewBuffer(2u, limit)
         val uShort = UShort.MAX_VALUE.toInt() / 2
-        println(uShort)
         platformBuffer.write(uShort.toUShort())
         platformBuffer.resetForRead()
         assertEquals(uShort, platformBuffer.readUnsignedShort().toInt())
