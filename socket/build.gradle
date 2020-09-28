@@ -20,9 +20,9 @@ kotlin {
             }
         }
     }
-    macosX64("posix")
-//    linuxX64("linux")
-//    mingwX64("windows")
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
     
     sourceSets {
         commonMain {
