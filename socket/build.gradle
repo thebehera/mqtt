@@ -20,7 +20,7 @@ kotlin {
             }
         }
     }
-    ios("iOS")
+//    ios("iOS")
     macosX64("macos")
     linuxX64("linux")
     mingwX64("windows")

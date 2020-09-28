@@ -13,7 +13,7 @@ kotlin {
     if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
         android()
     }
-//    ios("iOS")
+    ios("iOS")
     js {
         browser {
             testTask {
