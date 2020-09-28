@@ -76,7 +76,6 @@ kotlin {
         nativeMain {
             dependsOn commonMain
             dependencies {
-                implementation "io.ktor:ktor-io:1.4.0"
             }
         }
         nativeTest {

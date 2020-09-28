@@ -1,7 +1,8 @@
 package mqtt.socket
 
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import mqtt.buffer.allocateNewBuffer
+import kotlinx.coroutines.withContext
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -22,30 +23,25 @@ Host: example.com
 Connection: close
 
 """
-        client.write(request)
-        val remotePort = client.remotePort()!!
+        val bytesWritten = client.write(request)
+        assertTrue { bytesWritten > 0 }
         val response = client.read().result
         assertTrue { response.contains("200 OK") }
         assertTrue { response.contains("HTTP") }
         assertTrue { response.contains("<html>") }
         client.close()
-        checkPort(remotePort)
     }
 
     @Test
     fun serverEcho() = block {
         val server = asyncServerSocket()
-        val clientToServer = asyncClientSocket()
         server.bind()
-
         val text = "yolo swag lyfestyle"
-        val stringBuffer = allocateNewBuffer(text.length.toUInt())
-        stringBuffer.writeUtf8(text)
-
         val serverPort = assertNotNull(server.port(), "No port number from server")
-        launch {
+        val clientToServer = asyncClientSocket()
+        launch(Dispatchers.Unconfined) {
             clientToServer.open(serverPort)
-            clientToServer.write(stringBuffer)
+            clientToServer.write(text)
         }
         val serverToClient = server.accept()
         val dataReceivedFromClient = serverToClient.read { buffer, bytesRead ->
@@ -60,28 +56,23 @@ Connection: close
         checkPort(serverToClientPort)
         checkPort(clientToServerPort)
         checkPort(serverPort)
-
     }
 
     @Test
     fun clientEcho() = block {
         val server = asyncServerSocket()
-        val clientToServer = asyncClientSocket()
         server.bind()
-
+        val clientToServer = asyncClientSocket()
         val text = "yolo swag lyfestyle"
-        val stringBuffer = allocateNewBuffer(text.length.toUInt())
-        stringBuffer.writeUtf8(text)
-
         val serverPort = assertNotNull(server.port(), "No port number from server")
         lateinit var serverToClient: ClientSocket
         launch {
             serverToClient = server.accept()
-            serverToClient.write(stringBuffer)
+            serverToClient.write(text)
         }
         clientToServer.open(serverPort)
-        val dataReceivedFromServer = clientToServer.read { buffer, bytesRead ->
-            buffer.readUtf8(bytesRead.toUInt())
+        val dataReceivedFromServer = withContext(Dispatchers.Default) {
+            clientToServer.read { buffer, bytesRead -> buffer.readUtf8(bytesRead.toUInt()) }
         }
         assertEquals(text, dataReceivedFromServer.result.toString())
         val serverToClientPort = assertNotNull(serverToClient.localPort())

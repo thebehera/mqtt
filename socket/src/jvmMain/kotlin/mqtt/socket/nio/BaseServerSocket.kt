@@ -29,7 +29,7 @@ abstract class BaseServerSocket<S : NetworkChannel> : ServerSocket {
         backlog: UInt
     ): SocketOptions {
         val socketAddress = if (port != null) {
-            InetSocketAddress(host, port.toInt())
+            InetSocketAddress(host ?: "localhost", port.toInt())
         } else {
             null
         }

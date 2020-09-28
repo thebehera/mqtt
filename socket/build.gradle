@@ -20,6 +20,11 @@ kotlin {
             }
         }
     }
+//    ios("iOS")
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
+    
     sourceSets {
         commonMain {
             dependencies {
@@ -29,6 +34,7 @@ kotlin {
         }
         commonTest {
             dependencies {
+                implementation kotlin('test')
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
             }
@@ -60,8 +66,53 @@ kotlin {
                 implementation npm('tcp-port-used', '1.0.1')
             }
         }
-    }
 
+        posixMain {
+            dependsOn commonMain
+            dependencies {
+            }
+        }
+        posixTest {
+            dependsOn commonTest
+            dependencies {
+            }
+        }
+
+        iOSX64Main {
+            dependsOn posixMain
+        }
+        iOSX64Test {
+            dependsOn posixTest
+        }
+        iOSArm64Main {
+            dependsOn posixMain
+        }
+        iOSArm64Test {
+            dependsOn posixTest
+        }
+        linuxMain {
+            dependsOn posixMain
+        }
+        linuxTest {
+            dependsOn posixTest
+        }
+        macosMain {
+            dependsOn posixMain
+        }
+        macosTest {
+            dependsOn posixTest
+        }
+        windowsMain {
+            dependsOn posixMain
+        }
+        windowsTest {
+            dependsOn posixTest
+        }
+    }
+// Enable experimental stdlib API used by the sample.
+    sourceSets.all {
+        languageSettings.useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
+    }
     targets.all {
         compilations.all {
             kotlinOptions {

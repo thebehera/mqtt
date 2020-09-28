@@ -1,79 +1,130 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "DEPRECATION")
-
 package mqtt.buffer
 
-import io.ktor.utils.io.charsets.*
-import io.ktor.utils.io.core.*
-import io.ktor.utils.io.core.internal.*
+import kotlin.native.*
 
-@OptIn(DangerousInternalIoApi::class, ExperimentalStdlibApi::class)
-data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
+@ExperimentalUnsignedTypes
+class NativeBuffer(val data: ByteArray) : PlatformBuffer {
     override val type = BufferType.InMemory
-    override fun limit() = buffer.limit.toUInt()
-    override fun position() = buffer.writePosition.toUInt()
+    override val capacity: UInt = data.size.toUInt()
+    private var limit = data.size
+    private var position = 0
 
-    override fun resetForRead() = buffer.resetForRead()
-    override fun resetForWrite() = buffer.resetForWrite()
+    override fun put(buffer: PlatformBuffer) {
+        write(buffer)
+    }
 
-    override fun readByte() = buffer.readByte()
-    override val capacity: UInt = buffer.capacity.toUInt()
+    override fun resetForRead() {
+        limit = position
+        position = 0
+    }
 
-    override fun readByteArray(size: UInt) = buffer.readBytes(size.toInt())
+    override fun resetForWrite() {
+        position = 0
+        limit = data.size
+    }
 
-    override fun readUnsignedByte() = buffer.readUByte()
+    override fun readByte() = data[position++]
 
-    override fun readUnsignedShort() = buffer.readUShort()
+    override fun readByteArray(size: UInt): ByteArray {
+        val result = data.copyOfRange(position, position + size.toInt())
+        position += size.toInt()
 
-    override fun readUnsignedInt() = buffer.readUInt()
-    override fun readLong() = buffer.readLong()
+        return result
+    }
+
+    override fun readUnsignedByte() = data[position++].toUByte()
+
+    override fun readUnsignedShort(): UShort {
+        val value = ((0xff and data[position + 0].toInt() shl 8)
+                or (0xff and data[position + 1].toInt() shl 0)).toUShort()
+        position += UShort.SIZE_BYTES
+        return value
+    }
+
+    override fun readUnsignedInt(): UInt {
+        val value = (0xff and data[position + 0].toInt() shl 24
+                or (0xff and data[position + 1].toInt() shl 16)
+                or (0xff and data[position + 2].toInt() shl 8)
+                or (0xff and data[position + 3].toInt() shl 0)).toUInt()
+        position += UInt.SIZE_BYTES
+        return value
+    }
+
+    override fun readLong(): Long {
+        val value = (data[position + 0].toLong() shl 56
+                or (data[position + 1].toLong() and 0xff shl 48)
+                or (data[position + 2].toLong() and 0xff shl 40)
+                or (data[position + 3].toLong() and 0xff shl 32)
+                or (data[position + 4].toLong() and 0xff shl 24)
+                or (data[position + 5].toLong() and 0xff shl 16)
+                or (data[position + 6].toLong() and 0xff shl 8)
+                or (data[position + 7].toLong() and 0xff))
+        position += Long.SIZE_BYTES
+        return value
+    }
 
     override fun readUtf8(bytes: UInt): CharSequence {
-        return buffer.readBytes(bytes.toInt()).decodeToString()
-    }
-
-    override fun put(buffer: PlatformBuffer) = this.buffer.writeFully((buffer as NativeBuffer).buffer)
-
-    override fun write(byte: Byte): WriteBuffer {
-        buffer.writeByte(byte)
-        return this
-    }
-
-    override fun write(bytes: ByteArray): WriteBuffer {
-        buffer.writeFully(bytes)
-        return this
-    }
-
-    override fun write(uByte: UByte): WriteBuffer {
-        buffer.writeUByte(uByte)
-        return this
-    }
-
-    override fun write(uShort: UShort): WriteBuffer {
-        buffer.writeUShort(uShort)
-        return this
-    }
-
-    override fun write(uInt: UInt): WriteBuffer {
-        buffer.writeUInt(uInt)
-        return this
-    }
-
-    override fun write(long: Long): WriteBuffer {
-        buffer.writeLong(long)
-        return this
-    }
-
-    override fun writeUtf8(text: CharSequence): WriteBuffer {
-        val bytes = Charsets.UTF_8.newEncoder().encodeToByteArray(text)
-        buffer.writeFully(bytes)
-        return this
+        val value = data.decodeToString(position, position + bytes.toInt())
+        position += bytes.toInt()
+        return value
     }
 
     override fun sizeUtf8String(
         inputSequence: CharSequence,
         malformedInput: CharSequence?,
         unmappableCharacter: CharSequence?
-    ) = Charsets.UTF_8.newEncoder().encodeToByteArray(inputSequence).size.toUInt()
+    ) = inputSequence.toString().encodeToByteArray().size.toUInt()
+
+    override fun write(byte: Byte): WriteBuffer {
+        data[position++] = byte
+        return this
+    }
+
+    override fun write(bytes: ByteArray): WriteBuffer {
+        bytes.copyInto(data, position)
+        position += bytes.size
+        return this
+    }
+
+    override fun write(uByte: UByte) = write(uByte.toByte())
+
+    override fun write(uShort: UShort): WriteBuffer {
+        val value = uShort.toShort().toInt()
+        data[position++] = (value shr 8 and 0xff).toByte()
+        data[position++] = (value shr 0 and 0xff).toByte()
+        return this
+    }
+
+    override fun write(uInt: UInt): WriteBuffer {
+        val value = uInt.toInt()
+        data[position++] = (value shr 24 and 0xff).toByte()
+        data[position++] = (value shr 16 and 0xff).toByte()
+        data[position++] = (value shr 8 and 0xff).toByte()
+        data[position++] = (value shr 0 and 0xff).toByte()
+        return this
+    }
+
+    override fun write(long: Long): WriteBuffer {
+        val value = long
+        data[position++] = (value shr 56 and 0xff).toByte()
+        data[position++] = (value shr 48 and 0xff).toByte()
+        data[position++] = (value shr 40 and 0xff).toByte()
+        data[position++] = (value shr 32 and 0xff).toByte()
+        data[position++] = (value shr 24 and 0xff).toByte()
+        data[position++] = (value shr 16 and 0xff).toByte()
+        data[position++] = (value shr 8 and 0xff).toByte()
+        data[position++] = (value shr 0 and 0xff).toByte()
+        return this
+    }
+
+    override fun write(buffer: PlatformBuffer) {
+        write((buffer as NativeBuffer).data)
+    }
+
+    override fun writeUtf8(text: CharSequence): WriteBuffer {
+        write(text.toString().encodeToByteArray())
+        return this
+    }
 
     override fun lengthUtf8String(
         inputSequence: CharSequence,
@@ -81,34 +132,18 @@ data class NativeBuffer constructor(val buffer: Buffer) : PlatformBuffer {
         unmappableCharacter: CharSequence?
     ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
 
+    override suspend fun close() = Unit
 
-    override fun write(buffer: PlatformBuffer) {
-        this.buffer.writeFully((buffer as NativeBuffer).buffer)
-    }
-
+    override fun limit() = limit.toUInt()
+    override fun position() = position.toUInt()
     override fun position(newPosition: Int) {
-        this.buffer.rewind(newPosition - this.buffer.readPosition)
+        position = newPosition
     }
-
-    override suspend fun close() {}
 }
-
 
 actual fun allocateNewBuffer(
     size: UInt,
     limits: BufferMemoryLimit
-): PlatformBuffer {
-//    return NativeBuffer(IoBuffer.Pool.borrow())
-    @OptIn(DangerousInternalIoApi::class)
-    return NativeBuffer(Buffer(IoBuffer.Pool.borrow().memory.slice(0, size.toInt())))
-}
+): PlatformBuffer = NativeBuffer(ByteArray(size.toInt()))
 
-actual fun String.toBuffer(): PlatformBuffer {
-    val array = Charsets.UTF_8.newEncoder().encodeToByteArray(this)
-
-    @OptIn(DangerousInternalIoApi::class)
-    val buffer = NativeBuffer(Buffer(IoBuffer.Pool.borrow().memory.slice(0, array.size)))
-    buffer.write(array)
-    buffer.resetForRead()
-    return buffer
-}
+actual fun String.toBuffer(): PlatformBuffer = NativeBuffer(this.encodeToByteArray())
