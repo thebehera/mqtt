@@ -1,20 +1,10 @@
 package mqtt.socket
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.promise
 import kotlin.js.Promise
-import kotlin.test.Test
-
-class RunTest {
-    @Test
-    fun testAsyncWorksCorrectly() = runTestInternal {
-        println("hello")
-        println("pre loop")
-        delay(3400)
-        println("we done son")
-
-        println("start")
-    }
-}
 
 actual fun <T> block(body: suspend CoroutineScope.() -> T): dynamic = runTestInternal(block = body)
 

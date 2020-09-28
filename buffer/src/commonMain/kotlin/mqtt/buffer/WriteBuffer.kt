@@ -68,6 +68,7 @@ interface WriteBuffer {
 
 
 //    fun <T> write(serializationStrategy: MqttSerializationStrategy<T>): WriteBuffer
-    // mqtt 5
-    // fun write(property:Property)
+// mqtt 5
+// fun write(property:Property)
+fun write(buffer: PlatformBuffer)
 }

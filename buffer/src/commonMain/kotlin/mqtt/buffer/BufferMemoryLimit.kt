@@ -11,3 +11,7 @@ interface BufferMemoryLimit {
 object DefaultMemoryLimit : BufferMemoryLimit {
     override fun isTooLargeForMemory(size: UInt) = size > defaultBufferSize
 }
+
+object UnlimitedMemoryLimit : BufferMemoryLimit {
+    override fun isTooLargeForMemory(size: UInt) = false
+}

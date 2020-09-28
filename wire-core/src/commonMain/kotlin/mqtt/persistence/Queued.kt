@@ -46,7 +46,7 @@ class InMemoryPersistence : MqttPersistence<QueuedMessage> {
 
     override fun queueNewMessage(tableName: String, rowId: Long, priority: Double): Long {
         val largestMessageId =
-            queuedMessages.values.filter { it.messageId != null }.maxBy { it.messageId!! }?.messageId ?: 0
+            queuedMessages.values.filter { it.messageId != null }.maxByOrNull { it.messageId!! }?.messageId ?: 0
         val nextMessageId = largestMessageId + 1
 
         val queuedMessage = QueuedMessage(nextMessageId.toLong(), tableName, rowId, priority, nextMessageId)

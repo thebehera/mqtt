@@ -16,7 +16,7 @@ class MemoryQueuedObjectCollection(override val connectionId: Int) : QueuedObjec
     }
 
     override suspend fun get(packetId: Int?): ControlPacket? {
-        val lowestMessageId = map.keys.min() ?: return null
+        val lowestMessageId = map.keys.minOrNull() ?: return null
         return map[lowestMessageId]
     }
 

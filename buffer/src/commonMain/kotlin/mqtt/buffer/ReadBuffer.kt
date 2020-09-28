@@ -4,6 +4,12 @@ import kotlin.experimental.and
 
 @ExperimentalUnsignedTypes
 interface ReadBuffer {
+
+    fun limit(): UInt
+    fun position(): UInt
+    fun position(newPosition: Int)
+    fun remaining() = limit() - position()
+
     fun resetForRead()
     fun readByte(): Byte
     fun readByteArray(size: UInt): ByteArray
@@ -12,6 +18,7 @@ interface ReadBuffer {
     fun readUnsignedInt(): UInt
     fun readLong(): Long
     fun readUtf8(bytes: UInt): CharSequence
+    fun readUtf8(bytes: Int): CharSequence = readUtf8(bytes.toUInt())
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
 
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
@@ -45,7 +52,7 @@ interface ReadBuffer {
     }
 
     fun variableByteSize(uInt: UInt): UByte {
-        if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX.toUInt()) {
+        if (uInt !in 0.toUInt()..VARIABLE_BYTE_INT_MAX) {
             throw MalformedInvalidVariableByteInteger(uInt)
         }
         var numBytes = 0

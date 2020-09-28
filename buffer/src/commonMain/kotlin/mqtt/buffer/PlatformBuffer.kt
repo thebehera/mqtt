@@ -7,3 +7,4 @@ interface PlatformBuffer : ReadBuffer, WriteBuffer, SuspendCloseable {
     val capacity: UInt
     fun put(buffer: PlatformBuffer)
 }
+
