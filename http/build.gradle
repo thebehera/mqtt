@@ -1,4 +1,3 @@
-import org.apache.tools.ant.taskdefs.condition.Os
 plugins {
     id 'kotlin-multiplatform'
 }
@@ -7,9 +6,13 @@ repositories {
     jcenter()
 }
 
+apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
+    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        android()
+    }
     js {
         nodejs {
             testTask {
@@ -17,53 +20,106 @@ kotlin {
             }
         }
     }
+//    ios("iOS")
+    macosX64("macos")
+    linuxX64("linux")
+    mingwX64("windows")
+
     sourceSets {
         commonMain {
             dependencies {
-                implementation kotlin('stdlib')
-                implementation project(':socket')
                 implementation project(':buffer')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutines_version"
+                implementation project(':socket')
+                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
         commonTest {
             dependencies {
+                implementation kotlin('test')
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
-                implementation project(':socket')
+            }
+        }
+        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+            androidMain {
+                dependsOn jvmMain
+            }
+            androidTest {
+                dependsOn jvmTest
             }
         }
         jvmMain {
             dependencies {
-                implementation kotlin('stdlib-jdk8')
             }
         }
         jvmTest {
             dependencies {
-                implementation kotlin('test')
                 implementation kotlin('test-junit')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }
         jsMain {
             dependencies {
-                implementation kotlin('stdlib-js')
             }
         }
         jsTest {
             dependencies {
                 implementation kotlin('test-js')
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutines_version"
             }
         }
-    }
 
+        nativeMain {
+            dependsOn commonMain
+            dependencies {
+            }
+        }
+        nativeTest {
+            dependsOn commonTest
+            dependencies {
+            }
+        }
+
+        iOSX64Main {
+            dependsOn nativeMain
+        }
+        iOSX64Test {
+            dependsOn nativeTest
+        }
+        iOSArm64Main {
+            dependsOn nativeMain
+        }
+        iOSArm64Test {
+            dependsOn nativeTest
+        }
+        linuxMain {
+            dependsOn nativeMain
+        }
+        linuxTest {
+            dependsOn nativeTest
+        }
+        macosMain {
+            dependsOn nativeMain
+        }
+        macosTest {
+            dependsOn nativeTest
+        }
+        windowsMain {
+            dependsOn nativeMain
+        }
+        windowsTest {
+            dependsOn nativeTest
+        }
+    }
+// Enable experimental stdlib API used by the sample.
+    sourceSets.all {
+        languageSettings.useExperimentalAnnotation("kotlin.ExperimentalStdlibApi")
+    }
     targets.all {
         compilations.all {
             kotlinOptions {
                 freeCompilerArgs += [
                         "-Xuse-experimental=kotlin.ExperimentalUnsignedTypes",
                         "-Xuse-experimental=kotlin.ExperimentalStdlibApi",
+                        "-Xopt-in=kotlin.time.ExperimentalTime",
                         "-Xopt-in=kotlin.RequiresOptIn"
                 ]
             }
