@@ -4,6 +4,7 @@ package mqtt.buffer
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @ExperimentalUnsignedTypes
 class FragmentedReadBufferTests {
@@ -356,6 +357,22 @@ class FragmentedReadBufferTests {
             .toComposableBuffer()
         val actual = composableBuffer.readUtf8(utf8length)
         assertEquals(expectedString, actual.toString())
+    }
 
+    @Test
+    fun utf8Line() {
+        val buffers = arrayOf("yolo\r\n", "\nsw\n\r\nag", "\r\nli\n\r\nfe\r\nstyle\r\n")
+        val composableBuffer = buffers.map { it.toBuffer() }.toComposableBuffer()
+        assertEquals("yolo", composableBuffer.readUtf8Line().toString())
+        assertEquals("", composableBuffer.readUtf8Line().toString())
+        assertEquals("sw", composableBuffer.readUtf8Line().toString())
+        assertEquals("", composableBuffer.readUtf8Line().toString())
+        assertEquals("ag", composableBuffer.readUtf8Line().toString())
+        assertEquals("li", composableBuffer.readUtf8Line().toString())
+        assertEquals("", composableBuffer.readUtf8Line().toString())
+        assertEquals("fe", composableBuffer.readUtf8Line().toString())
+        assertEquals("style", composableBuffer.readUtf8Line().toString())
+        assertEquals("", composableBuffer.readUtf8Line().toString())
+        assertTrue { composableBuffer.remaining() == 0u }
     }
 }

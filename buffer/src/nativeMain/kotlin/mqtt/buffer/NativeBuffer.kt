@@ -69,6 +69,21 @@ class NativeBuffer(val data: ByteArray) : PlatformBuffer {
         return value
     }
 
+    override fun readUtf8Line(): CharSequence {
+        val bytesUntilNextLine = data.sliceArray(position until limit)
+            .indexOfFirst { it == ReadBuffer.newLine[1] }
+        return when (bytesUntilNextLine) {
+            -1 -> readUtf8(remaining())
+            else -> {
+                val carriageFeedPositionIncrement =
+                    if (data[position + bytesUntilNextLine - 1] == ReadBuffer.newLine[0]) 1 else 0
+                val utf8Line = readUtf8(bytesUntilNextLine - carriageFeedPositionIncrement)
+                position += carriageFeedPositionIncrement + 1
+                utf8Line
+            }
+        }
+    }
+
     override fun write(byte: Byte): WriteBuffer {
         data[position++] = byte
         return this

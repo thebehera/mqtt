@@ -123,7 +123,6 @@ class BufferTests {
     }
 
     @Test
-    @ExperimentalStdlibApi
     fun utf8String() {
         val string = "yolo swag lyfestyle"
         assertEquals(19, string.utf8Length().toInt())
@@ -133,5 +132,80 @@ class BufferTests {
         val actual = platformBuffer.readUtf8(19u).toString()
         assertEquals(string.length, actual.length)
         assertEquals(string, actual)
+    }
+
+
+    @Test
+    fun readUtf8LineSingle() {
+        val text = "hello"
+        val buffer = text.toBuffer()
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals(buffer.remaining(), 0u)
+    }
+
+    @Test
+    fun readUtf8LineDouble() {
+        val text = "hello\r\n"
+        val buffer = text.toBuffer()
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals(buffer.remaining(), 0u)
+    }
+
+    @Test
+    fun readUtf8LineStart() {
+        val text = "\r\nhello"
+        val buffer = text.toBuffer()
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals(buffer.remaining(), 0u)
+    }
+
+    @Test
+    fun readUtf8LineStartN() {
+        val text = "\nhello"
+        val buffer = text.toBuffer()
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals(buffer.remaining(), 0u)
+    }
+
+    @Test
+    fun readUtf8LineMix() {
+        val text = "\nhello\r\nhello\nhello\r\n"
+        val buffer = text.toBuffer()
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals(buffer.remaining(), 0u)
+    }
+
+
+    @Test
+    fun readUtf8LineMixMulti() {
+        val text = "\nhello\r\n\nhello\n\nhello\r\n"
+        val buffer = text.toBuffer()
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals("hello", buffer.readUtf8Line().toString())
+        assertEquals("", buffer.readUtf8Line().toString())
+        assertEquals(buffer.remaining(), 0u)
+    }
+
+    @Test
+    fun readUtf8Line() {
+        val stringArray = "yolo swag lyfestyle".split(' ')
+        assertEquals(3, stringArray.size)
+        val newLineString = stringArray.joinToString("\r\n")
+        val stringBuffer = newLineString.toBuffer()
+        stringArray.forEach {
+            val line = stringBuffer.readUtf8Line()
+            assertEquals(it, line.toString())
+        }
     }
 }

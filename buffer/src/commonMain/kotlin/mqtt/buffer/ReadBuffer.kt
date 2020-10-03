@@ -19,6 +19,7 @@ interface ReadBuffer {
     fun readLong(): Long
     fun readUtf8(bytes: UInt): CharSequence
     fun readUtf8(bytes: Int): CharSequence = readUtf8(bytes.toUInt())
+    fun readUtf8Line(): CharSequence
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
 
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {
@@ -64,4 +65,7 @@ interface ReadBuffer {
         return numBytes.toUByte()
     }
 
+    companion object {
+        val newLine = "\r\n".encodeToByteArray()
+    }
 }

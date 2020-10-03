@@ -77,6 +77,23 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
         return readByteArray(bytes).decodeToString()
     }
 
+
+    override fun readUtf8Line(): CharSequence {
+        val bytesUntilNextLine = this.buffer.subarray(position, limit)
+            .unsafeCast<ByteArray>()
+            .indexOfFirst { it == ReadBuffer.newLine[1] }
+        return when (bytesUntilNextLine) {
+            -1 -> readUtf8(remaining())
+            else -> {
+                val carriageFeedPositionIncrement =
+                    if (buffer[position + bytesUntilNextLine - 1] == ReadBuffer.newLine[0]) 1 else 0
+                val utf8Line = readUtf8(bytesUntilNextLine - carriageFeedPositionIncrement)
+                position += carriageFeedPositionIncrement + 1
+                utf8Line
+            }
+        }
+    }
+
     override fun put(buffer: PlatformBuffer) {
         val otherBuffer = (buffer as JsBuffer)
         val size = otherBuffer.limit - otherBuffer.position
