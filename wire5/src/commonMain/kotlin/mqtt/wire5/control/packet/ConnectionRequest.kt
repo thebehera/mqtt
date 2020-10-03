@@ -2,10 +2,7 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.buffer.DeserializationParameters
-import mqtt.buffer.GenericType
-import mqtt.buffer.ReadBuffer
-import mqtt.buffer.WriteBuffer
+import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
@@ -13,6 +10,7 @@ import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.utf8Length
 import mqtt.wire5.control.packet.format.variable.property.*
 
 /**
@@ -92,7 +90,7 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
         return null
     }
 
-    override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
+    override fun remainingLength() = variableHeader.size() + payload.size()
     data class VariableHeader<AuthenticationDataPayload : Any>(
         /**
          * 3.1.2.1 Protocol Name
@@ -588,14 +586,14 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
                 list
             }
 
-            fun size(writeBuffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0.toUInt()
-                props.forEach { size += it.size(writeBuffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(writeBuffer: WriteBuffer) {
-                writeBuffer.writeVariableByteInteger(size(writeBuffer))
+                writeBuffer.writeVariableByteInteger(size())
                 props.forEach { it.write(writeBuffer) }
             }
 
@@ -741,11 +739,11 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
             properties.serialize(writeBuffer)
         }
 
-        fun size(writeBuffer: WriteBuffer): UInt {
-            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(protocolName)
+        fun size(): UInt {
+            var size = UShort.SIZE_BYTES.toUInt() + protocolName.utf8Length().toUInt()
             size += (2u * UByte.SIZE_BYTES.toUInt()) + UShort.SIZE_BYTES.toUInt()
-            val propsSize = properties.size(writeBuffer)
-            size += propsSize + writeBuffer.variableByteIntegerSize(propsSize)
+            val propsSize = properties.size()
+            size += propsSize + WriteBuffer.variableByteIntegerSize(propsSize)
             return size
         }
 
@@ -1045,14 +1043,14 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
                 properties
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0.toUInt()
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 
@@ -1157,23 +1155,23 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
             }
         }
 
-        fun size(writeBuffer: WriteBuffer): UInt {
-            var size = UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(clientId)
+        fun size(): UInt {
+            var size = (UShort.SIZE_BYTES + clientId.utf8Length()).toUInt()
             if (willTopic != null) {
-                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(willTopic)
+                size += (UShort.SIZE_BYTES + willTopic.utf8Length()).toUInt()
             }
             if (willProperties != null) {
-                val willPropertiesSize = willProperties.size(writeBuffer)
-                size += writeBuffer.variableByteIntegerSize(willPropertiesSize) + willPropertiesSize
+                val willPropertiesSize = willProperties.size()
+                size += WriteBuffer.variableByteIntegerSize(willPropertiesSize) + willPropertiesSize
             }
             if (willPayload != null) {
-                size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
+                size += GenericSerialization.size(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(userName)
+                size += (UShort.SIZE_BYTES + userName.utf8Length()).toUInt()
             }
             if (password != null) {
-                size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(password)
+                size += (UShort.SIZE_BYTES + password.utf8Length()).toUInt()
             }
             return size
         }

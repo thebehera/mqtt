@@ -83,43 +83,8 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
     }
 
     override fun writeUtf8(text: CharSequence): WriteBuffer {
-        val buffer = CharBuffer.wrap(text)
-        val encoder = Charsets.UTF_8.newEncoder()
-        encoder.encode(buffer, byteBuffer, true)
-        encoder.flush(byteBuffer)
+        write(text.toString().encodeToByteArray())
         return this
-    }
-
-    override fun sizeUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = lengthUtf8String(inputSequence, malformedInput, unmappableCharacter)
-
-    override fun lengthUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ): UInt {
-        val encoder = Charsets.UTF_8.newEncoder()
-        encoder.onMalformedInput(codingErrorAction(encoder, malformedInput))
-            .onUnmappableCharacter(codingErrorAction(encoder, unmappableCharacter))
-        val input = CharBuffer.wrap(inputSequence)
-        val result = encoder.encode(input)
-        return result.limit().toUInt()
-    }
-
-
-    private fun codingErrorAction(encoder: CharsetEncoder, inputSequence: CharSequence?): CodingErrorAction {
-        return if (inputSequence != null && inputSequence.isNotEmpty() && encoder.canEncode(inputSequence)) {
-            val encodedReplacement = encoder.encode(CharBuffer.wrap(inputSequence))
-            encoder.replaceWith(encodedReplacement.toArray())
-            CodingErrorAction.REPLACE
-        } else if (inputSequence?.isEmpty() == true) {
-            CodingErrorAction.IGNORE
-        } else {
-            CodingErrorAction.REPORT
-        }
     }
 
     override fun write(buffer: PlatformBuffer) {

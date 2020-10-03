@@ -20,7 +20,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  */
 data class SubscribeAcknowledgement(override val packetIdentifier: Int, val payload: List<ReasonCode>) :
     ControlPacketV4(9, DirectionOfFlow.SERVER_TO_CLIENT), ISubscribeAcknowledgement {
-    override fun remainingLength(buffer: WriteBuffer) = 2u + payload.size.toUInt()
+    override fun remainingLength() = 2u + payload.size.toUInt()
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }

@@ -113,8 +113,7 @@ class BufferTests {
     @ExperimentalStdlibApi
     fun mqttUtf8String() {
         val string = "yolo swag lyfestyle"
-        val tmpBuffer = allocateNewBuffer(1u)
-        assertEquals(19, tmpBuffer.sizeUtf8String(string).toInt())
+        assertEquals(19, string.utf8Length().toInt())
         val platformBuffer = allocateNewBuffer(21u, limit)
         platformBuffer.writeMqttUtf8String(string)
         platformBuffer.resetForRead()
@@ -127,8 +126,7 @@ class BufferTests {
     @ExperimentalStdlibApi
     fun utf8String() {
         val string = "yolo swag lyfestyle"
-        val tmpBuffer = allocateNewBuffer(1u)
-        assertEquals(19, tmpBuffer.sizeUtf8String(string).toInt())
+        assertEquals(19, string.utf8Length().toInt())
         val platformBuffer = allocateNewBuffer(19u, limit)
         platformBuffer.writeUtf8(string)
         platformBuffer.resetForRead()

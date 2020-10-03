@@ -76,7 +76,7 @@ class PublishCompleteTests {
         val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(35u, limits)
-        buffer.writeVariableByteInteger(obj1.size(buffer) + obj2.size(buffer))
+        buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
         buffer.resetForRead()

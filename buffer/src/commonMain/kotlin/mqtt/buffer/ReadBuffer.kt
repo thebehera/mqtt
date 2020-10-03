@@ -64,10 +64,4 @@ interface ReadBuffer {
         return numBytes.toUByte()
     }
 
-    fun sizeUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence? = null,
-        unmappableCharacter: CharSequence? = null
-    ): UInt
-
 }

@@ -10,6 +10,7 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.Type
+import mqtt.wire.data.utf8Length
 
 
 abstract class Property(val identifierByte: Byte, val type: Type, val willProperties: Boolean = false) {
@@ -17,7 +18,7 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         return 0u
     }
 
-    open fun size(buffer: WriteBuffer): UInt {
+    open fun size(): UInt {
         return 0u
     }
 
@@ -27,26 +28,26 @@ abstract class Property(val identifierByte: Byte, val type: Type, val willProper
         return 2u
     }
 
-    fun size(bytePacketBuilder: WriteBuffer, number: UInt) = 5u
+    fun size(number: UInt) = 5u
     fun write(bytePacketBuilder: WriteBuffer, number: UInt): UInt {
         bytePacketBuilder.write(identifierByte)
         bytePacketBuilder.write(number)
         return 5u
     }
 
-    fun size(bytePacketBuilder: WriteBuffer, number: UShort) = 3u
+    fun size(number: UShort) = 3u
     fun write(bytePacketBuilder: WriteBuffer, number: UShort): UInt {
         bytePacketBuilder.write(identifierByte)
         bytePacketBuilder.write(number)
         return 3u
     }
 
-    fun size(bytePacketBuilder: WriteBuffer, string: CharSequence) =
-        bytePacketBuilder.lengthUtf8String(string) + UShort.SIZE_BYTES.toUInt() + 1u
+    fun size(string: CharSequence) =
+        string.utf8Length().toUInt() + UShort.SIZE_BYTES.toUInt() + 1u
 
     fun write(bytePacketBuilder: WriteBuffer, string: CharSequence): UInt {
         bytePacketBuilder.write(identifierByte)
-        val size = bytePacketBuilder.lengthUtf8String(string)
+        val size = string.utf8Length().toUInt()
         bytePacketBuilder.writeMqttUtf8String(string)
         return size
     }
@@ -126,7 +127,7 @@ fun ReadBuffer.readMqttProperty(): Pair<Property, Long> {
             )}"
         )
     }
-    return Pair(property, property.size(this as PlatformBuffer).toLong() + 1)
+    return Pair(property, property.size().toLong() + 1)
 }
 
 fun ReadBuffer.readProperties() = readPropertiesSized().second

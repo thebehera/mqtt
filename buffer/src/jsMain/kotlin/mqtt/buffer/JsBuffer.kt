@@ -137,18 +137,6 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
         return this
     }
 
-    override fun sizeUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = inputSequence.toString().encodeToByteArray().size.toUInt()
-
-    override fun lengthUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
-
     override fun limit() = limit.toUInt()
     override fun position() = position.toUInt()
     override fun position(newPosition: Int) {
@@ -176,3 +164,5 @@ actual fun String.toBuffer(): PlatformBuffer {
     val uint8Array = Uint8Array(int8Array.buffer)
     return JsBuffer(uint8Array)
 }
+
+actual fun String.utf8Length(): UInt = encodeToByteArray().unsafeCast<Int8Array>().length.toUInt()
