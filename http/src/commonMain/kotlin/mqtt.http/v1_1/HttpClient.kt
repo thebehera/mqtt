@@ -46,14 +46,12 @@ object HttpClient {
 
         val requestBuffer = allocateNewBuffer(bufferSize)
         requestBuffer.writeUtf8(httpRequestStringBuilder)
-        println("writing headers $httpRequestStringBuilder")
         request.body?.let { requestSerializer.serialize(requestBuffer, it) }
         val socket = openClientSocket(request.hostPort ?: 80u, hostname = request.hostName)
         socket.write(requestBuffer, writeTimeout)
         val result = socket.read { buffer, totalBytesRead ->
             val startPosition = buffer.position()
             val statusLine = buffer.readUtf8Line().split(' ')
-            println(statusLine.first())
             val protocolVersion = HttpVersion.values().first { it.versionString == statusLine.first() }
             val statusCode = statusLine[1].toShort()
             val statusText = statusLine.last()

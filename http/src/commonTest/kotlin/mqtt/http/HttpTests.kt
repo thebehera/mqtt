@@ -25,7 +25,6 @@ Connection: close
         assertTrue { bytesWritten > 0 }
         val response = client.read().result
         client.close()
-        println(response)
         assertTrue { response.contains("200 OK") }
         assertTrue { response.contains("HTTP") }
         assertTrue { response.contains("<html>") }
@@ -33,12 +32,10 @@ Connection: close
 
     @Test
     fun http2() = block {
-        val headers = mapOf(Pair("Connection", "close")).toHeaders()
-        val request = HttpRequest<String>(HttpMethod.GET, "example.com", 80u, "/", HttpVersion.v1_0, headers, null)
-        val response = HttpClient.request(request)
+        val response = HttpClient.request(HttpRequest("example.com"))
         assertEquals(response.statusCode, 200)
-        assertTrue(response.body?.contains("<html>") ?: false)
-        assertTrue(response.body?.contains("</html>") ?: false)
+        assertTrue(response.body!!.contains("<html>"))
+        assertTrue(response.body!!.contains("</html>"))
     }
 
 }
