@@ -8,6 +8,7 @@ import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
+import mqtt.wire.data.utf8Length
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
@@ -20,10 +21,10 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Char
     ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override fun remainingLength(buffer: WriteBuffer): UInt {
-        val variableSize = variable.size(buffer)
+    override fun remainingLength(): UInt {
+        val variableSize = variable.size()
         var payloadSize = 0u
-        topics.forEach { payloadSize += UShort.SIZE_BYTES.toUInt() + buffer.lengthUtf8String(it) }
+        topics.forEach { payloadSize += UShort.SIZE_BYTES.toUInt() + it.utf8Length().toUInt() }
         return variableSize + payloadSize
     }
 
@@ -48,10 +49,8 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Char
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) {
-        fun size(writeBuffer: WriteBuffer) =
-            UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
-                writeBuffer
-            )
+        fun size() =
+            UShort.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(properties.size()) + properties.size()
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
@@ -91,14 +90,14 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Char
                 props
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0u
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 

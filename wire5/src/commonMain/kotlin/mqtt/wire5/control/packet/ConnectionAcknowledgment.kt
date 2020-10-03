@@ -29,7 +29,7 @@ data class ConnectionAcknowledgment<AuthenticationDataPayload : Any>(val header:
     override val connectionReason: String = header.connectReason.name
     override val sessionPresent: Boolean = header.sessionPresent
     override fun variableHeader(writeBuffer: WriteBuffer) = header.serialize(writeBuffer)
-    override fun remainingLength(buffer: WriteBuffer) = header.size(buffer)
+    override fun remainingLength() = header.size()
 
     /**
      * The Variable Header of the CONNACK Packet contains the following fields in the order: Connect Acknowledge Flags,
@@ -433,15 +433,15 @@ data class ConnectionAcknowledgment<AuthenticationDataPayload : Any>(val header:
 
             fun serialize(writeBuffer: WriteBuffer) {
                 var size = 0u
-                props.forEach { size += it.size(writeBuffer) }
+                props.forEach { size += it.size() }
                 writeBuffer.writeVariableByteInteger(size)
                 props.forEach { it.write(writeBuffer) }
             }
 
-            fun size(writeBuffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0u
-                props.forEach { size += it.size(writeBuffer) }
-                return size + writeBuffer.variableByteIntegerSize(size)
+                props.forEach { size += it.size() }
+                return size + WriteBuffer.variableByteIntegerSize(size)
             }
 
             companion object {
@@ -651,7 +651,7 @@ data class ConnectionAcknowledgment<AuthenticationDataPayload : Any>(val header:
             properties.serialize(writeBuffer)
         }
 
-        fun size(writeBuffer: WriteBuffer) = 2u + properties.size(writeBuffer)
+        fun size() = 2u + properties.size()
 
 
         companion object {

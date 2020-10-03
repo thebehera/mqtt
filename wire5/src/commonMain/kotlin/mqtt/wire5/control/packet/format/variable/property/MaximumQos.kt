@@ -8,7 +8,7 @@ import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.Type
 
 data class MaximumQos(val qos: QualityOfService) : Property(0x24, Type.BYTE) {
-    override fun size(buffer: WriteBuffer) = 2u
+    override fun size() = 2u
 
     override fun write(buffer: WriteBuffer) = when (qos) {
         QualityOfService.AT_MOST_ONCE -> write(buffer, false)

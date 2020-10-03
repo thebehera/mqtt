@@ -2,16 +2,14 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.DeserializationParameters
-import mqtt.buffer.GenericType
-import mqtt.buffer.ReadBuffer
-import mqtt.buffer.WriteBuffer
+import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Name
+import mqtt.wire.data.utf8Length
 
 /**
  * A PUBLISH Control Packet is sent from a Client to a Server or from Server to a Client to transport an
@@ -40,7 +38,7 @@ data class PublishMessage<ApplicationMessage : Any>(
         }
     }
 
-    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payloadSize(buffer)
+    override fun remainingLength() = variable.size() + payloadSize()
 
     override fun expectedResponse() = when {
         fixed.qos == AT_LEAST_ONCE -> {
@@ -196,8 +194,8 @@ data class PublishMessage<ApplicationMessage : Any>(
             }
         }
 
-        fun size(writeBuffer: WriteBuffer): UInt {
-            var size = writeBuffer.lengthUtf8String(topicName) + UShort.SIZE_BYTES.toUInt()
+        fun size(): UInt {
+            var size = topicName.utf8Length().toUInt() + UShort.SIZE_BYTES.toUInt()
             if (packetIdentifier != null) {
                 size += 2u
             }
@@ -215,9 +213,9 @@ data class PublishMessage<ApplicationMessage : Any>(
         }
     }
 
-    fun payloadSize(writeBuffer: WriteBuffer): UInt {
+    private fun payloadSize(): UInt {
         if (payload != null) {
-            return writeBuffer.sizeGenericType(payload.obj, payload.kClass)
+            return GenericSerialization.size(payload.obj, payload.kClass)
         }
         return 0u
     }
@@ -227,7 +225,7 @@ data class PublishMessage<ApplicationMessage : Any>(
         fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt): PublishMessage<*> {
             val fixedHeader = FixedHeader.fromByte(byte1)
             val variableHeader = VariableHeader.from(buffer, fixedHeader.qos == AT_MOST_ONCE)
-            var variableSize = 2u + buffer.sizeUtf8String(variableHeader.topicName)
+            var variableSize = 2u + variableHeader.topicName.utf8Length().toUInt()
             if (variableHeader.packetIdentifier != null) {
                 variableSize += 2u
             }

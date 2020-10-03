@@ -25,11 +25,11 @@ object GenericSerialization {
         serializerMap.get<T>(genericType.kClass).serialize(buffer, genericType.obj)
     }
 
-    fun <T : Any> size(buffer: WriteBuffer, obj: T, type: KClass<T>): UInt {
+    fun <T : Any> size(obj: T, type: KClass<T>): UInt {
         if (type == Unit::class) {
             return 0u
         }
-        return serializerMap.get<T>(type).size(buffer, obj)
+        return serializerMap.get<T>(type).size(obj)
     }
 
     inline fun <reified T : Any> registerDeserializer(deserializer: BufferDeserializer<T>) {
@@ -46,7 +46,7 @@ object GenericSerialization {
 
 object CharSequenceSerializer : BufferSerializer<CharSequence>, BufferDeserializer<CharSequence> {
     override val kClass: KClass<CharSequence> = CharSequence::class
-    override fun size(buffer: WriteBuffer, obj: CharSequence) = buffer.lengthUtf8String(obj)
+    override fun size(obj: CharSequence) = obj.toString().utf8Length()
 
     override fun serialize(buffer: WriteBuffer, obj: CharSequence): Boolean {
         buffer.writeUtf8(obj)

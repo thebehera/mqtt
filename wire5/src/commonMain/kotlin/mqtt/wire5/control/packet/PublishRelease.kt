@@ -28,7 +28,7 @@ data class PublishRelease(val variable: VariableHeader) : ControlPacketV5(6, Dir
     override val packetIdentifier: Int = variable.packetIdentifier
     override fun expectedResponse() = PublishComplete(packetIdentifier.toUShort())
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
+    override fun remainingLength() = variable.size()
 
     /**
      * 3.6.2 PUBREL Variable Header
@@ -66,14 +66,14 @@ data class PublishRelease(val variable: VariableHeader) : ControlPacketV5(6, Dir
             }
         }
 
-        fun size(buffer: WriteBuffer): UInt {
+        fun size(): UInt {
             val canOmitReasonCodeAndProperties = (reasonCode == SUCCESS
                     && properties.userProperty.isEmpty()
                     && properties.reasonString == null)
             var size = UShort.SIZE_BYTES.toUInt()
             if (!canOmitReasonCodeAndProperties) {
-                val propsSize = properties.size(buffer)
-                size += UByte.SIZE_BYTES.toUInt() + buffer.variableByteIntegerSize(propsSize) + propsSize
+                val propsSize = properties.size()
+                size += UByte.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(propsSize) + propsSize
             }
             return size
         }
@@ -132,14 +132,14 @@ data class PublishRelease(val variable: VariableHeader) : ControlPacketV5(6, Dir
                 props
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0u
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 

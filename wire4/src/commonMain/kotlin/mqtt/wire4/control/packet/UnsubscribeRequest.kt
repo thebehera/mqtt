@@ -8,6 +8,7 @@ import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.MqttUtf8String
+import mqtt.wire.data.utf8Length
 
 /**
  * 3.10 UNSUBSCRIBE – Unsubscribe request
@@ -18,17 +19,17 @@ data class UnsubscribeRequest(
     val topics: List<MqttUtf8String>
 ) : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
 
-    override fun remainingLength(buffer: WriteBuffer) = UShort.SIZE_BYTES.toUInt() + payloadSize(buffer)
+    override fun remainingLength() = UShort.SIZE_BYTES.toUInt() + payloadSize()
 
 
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }
 
-    fun payloadSize(writeBuffer: WriteBuffer): UInt {
+    private fun payloadSize(): UInt {
         var size = 0u
         topics.forEach {
-            size += UShort.SIZE_BYTES.toUInt() + writeBuffer.lengthUtf8String(it.value)
+            size += UShort.SIZE_BYTES.toUInt() + it.value.utf8Length().toUInt()
         }
         return size
     }

@@ -35,7 +35,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
     override val packetIdentifier: Int = variable.packetIdentifier.toInt()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.forEach { writeBuffer.write(it.byte) }
-    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer) + payload.size.toUInt()
+    override fun remainingLength() = variable.size() + payload.size.toUInt()
 
     init {
         payload.forEach {
@@ -60,10 +60,10 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
             properties.serialize(writeBuffer)
         }
 
-        fun size(writeBuffer: WriteBuffer): UInt {
+        fun size(): UInt {
             var size = UShort.SIZE_BYTES.toUInt()
-            val propsSize = properties.size(writeBuffer)
-            size += writeBuffer.variableByteIntegerSize(propsSize) + propsSize
+            val propsSize = properties.size()
+            size += WriteBuffer.variableByteIntegerSize(propsSize) + propsSize
             return size
         }
 
@@ -112,14 +112,14 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
                 props
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0u
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 

@@ -20,8 +20,8 @@ data class UnsubscribeAcknowledgment(
 ) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
 
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
-    override fun remainingLength(buffer: WriteBuffer): UInt {
-        val variableSize = variable.size(buffer)
+    override fun remainingLength(): UInt {
+        val variableSize = variable.size()
         val subSize = reasonCodes.size.toUInt()
         return variableSize + subSize
     }
@@ -46,10 +46,8 @@ data class UnsubscribeAcknowledgment(
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) {
-        fun size(writeBuffer: WriteBuffer) =
-            UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
-                writeBuffer
-            )
+        fun size() =
+            UShort.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(properties.size()) + properties.size()
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
@@ -103,14 +101,14 @@ data class UnsubscribeAcknowledgment(
                 props
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0u
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 
