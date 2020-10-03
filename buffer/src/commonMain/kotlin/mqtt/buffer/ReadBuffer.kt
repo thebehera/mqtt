@@ -28,13 +28,13 @@ interface ReadBuffer {
             lastByte = currentByte
             currentByte = readByte()
             bytesRead++
-            if (currentByte == ReadBuffer.newLine[1]) {
+            if (currentByte == newLine[1]) {
                 break
             }
         }
         val carriageFeedPositionIncrement =
-            if (lastByte == ReadBuffer.newLine[0] && currentByte == ReadBuffer.newLine[1]) 2
-            else if (currentByte == ReadBuffer.newLine[1]) 1
+            if (lastByte == newLine[0] && currentByte == newLine[1]) 2
+            else if (currentByte == newLine[1]) 1
             else 0
 
         val bytesToRead = bytesRead - carriageFeedPositionIncrement.toUInt()
