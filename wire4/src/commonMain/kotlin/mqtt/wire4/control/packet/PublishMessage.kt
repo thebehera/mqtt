@@ -230,7 +230,7 @@ data class PublishMessage<ApplicationMessage : Any>(
                 variableSize += 2u
             }
             val deserializationParameters =
-                DeserializationParameters(buffer, (remainingLength - variableSize).toUShort(), variableHeader.topicName)
+                DeserializationParameters(buffer, remainingLength - variableSize, variableHeader.topicName)
             val genericType = buffer.readGenericType(deserializationParameters)
             return PublishMessage(fixedHeader, variableHeader, genericType)
         }
