@@ -20,14 +20,14 @@ interface ControlPacket {
         val localFlagsByte = flags.toUByte().toInt()
         val byte1 = (packetValueShifted.toByte() + localFlagsByte).toUByte()
         writeBuffer.write(byte1)
-        val remaining = remainingLength(writeBuffer)
+        val remaining = remainingLength()
         writeBuffer.writeVariableByteInteger(remaining)
     }
 
     fun variableHeader(writeBuffer: WriteBuffer) {}
     fun payload(writeBuffer: WriteBuffer) {}
 
-    fun remainingLength(buffer: WriteBuffer) = 0u
+    fun remainingLength() = 0u
 
     fun validateOrGetWarning(): MqttWarning? {
         return null

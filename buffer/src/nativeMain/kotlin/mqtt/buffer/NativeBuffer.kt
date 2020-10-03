@@ -69,12 +69,6 @@ class NativeBuffer(val data: ByteArray) : PlatformBuffer {
         return value
     }
 
-    override fun sizeUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = inputSequence.toString().encodeToByteArray().size.toUInt()
-
     override fun write(byte: Byte): WriteBuffer {
         data[position++] = byte
         return this
@@ -126,12 +120,6 @@ class NativeBuffer(val data: ByteArray) : PlatformBuffer {
         return this
     }
 
-    override fun lengthUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
-
     override suspend fun close() = Unit
 
     override fun limit() = limit.toUInt()
@@ -147,3 +135,4 @@ actual fun allocateNewBuffer(
 ): PlatformBuffer = NativeBuffer(ByteArray(size.toInt()))
 
 actual fun String.toBuffer(): PlatformBuffer = NativeBuffer(this.encodeToByteArray())
+actual fun String.utf8Length(): UInt = encodeToByteArray().size.toUInt()

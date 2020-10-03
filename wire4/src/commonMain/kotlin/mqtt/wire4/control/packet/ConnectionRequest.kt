@@ -10,6 +10,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
+import mqtt.wire.data.utf8Length
 import kotlin.reflect.KClass
 
 /**
@@ -43,7 +44,7 @@ data class ConnectionRequest<WillPayload : Any>(
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
 
-    override fun remainingLength(buffer: WriteBuffer) = variableHeader.size(buffer) + payload.size(buffer)
+    override fun remainingLength() = variableHeader.size() + payload.size()
 
     override val keepAliveTimeoutSeconds: UShort = variableHeader.keepAliveSeconds.toUShort()
 
@@ -339,7 +340,7 @@ data class ConnectionRequest<WillPayload : Any>(
             writeBuffer.write(keepAliveSeconds.toUShort())
         }
 
-        fun size(writeBuffer: WriteBuffer) = writeBuffer.lengthUtf8String(protocolName.value) + 6u
+        fun size() = protocolName.value.utf8Length().toUInt() + 6u
 
         companion object {
 
@@ -461,19 +462,19 @@ data class ConnectionRequest<WillPayload : Any>(
         val password: MqttUtf8String? = null
     ) {
 
-        fun size(writeBuffer: WriteBuffer): UInt {
-            var size = 2u + writeBuffer.lengthUtf8String(clientId.value)
+        fun size(): UInt {
+            var size = 2u + clientId.value.utf8Length().toUInt()
             if (willTopic != null) {
-                size += 2u + writeBuffer.lengthUtf8String(willTopic.value)
+                size += 2u + willTopic.value.utf8Length().toUInt()
             }
             if (willPayload != null) {
-                size += writeBuffer.sizeGenericType(willPayload.obj, willPayload.kClass)
+                size += GenericSerialization.size(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                size += 2u + writeBuffer.lengthUtf8String(userName.value)
+                size += 2u + userName.value.utf8Length().toUInt()
             }
             if (password != null) {
-                size += 2u + writeBuffer.lengthUtf8String(password.value)
+                size += 2u + password.value.utf8Length().toUInt()
             }
             return size
         }

@@ -11,6 +11,7 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
+import mqtt.wire.data.utf8Length
 import mqtt.wire5.control.packet.RetainHandling.*
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.Property
@@ -59,9 +60,9 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
     override fun expectedResponse() = SubscribeAcknowledgement(variable.packetIdentifier.toUShort(), ReasonCode.SUCCESS)
     override fun getTopics() = subscriptions.map { it.topicFilter }
     override fun payload(writeBuffer: WriteBuffer) = subscriptions.forEach { it.serialize(writeBuffer) }
-    override fun remainingLength(buffer: WriteBuffer): UInt {
-        val variableSize = variable.size(buffer)
-        val subSize = subscriptions.size(buffer)
+    override fun remainingLength(): UInt {
+        val variableSize = variable.size()
+        val subSize = subscriptions.size()
         return variableSize + subSize
     }
 
@@ -80,10 +81,8 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         val packetIdentifier: Int,
         val properties: Properties = Properties()
     ) {
-        fun size(writeBuffer: WriteBuffer) =
-            UShort.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(properties.size(writeBuffer)) + properties.size(
-                writeBuffer
-            )
+        fun size() =
+            UShort.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(properties.size()) + properties.size()
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
@@ -143,14 +142,14 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
                 props
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0u
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 
@@ -254,8 +253,8 @@ data class Subscription(
         writeBuffer.write(combinedByte)
     }
 
-    fun size(writeBuffer: WriteBuffer) =
-        writeBuffer.lengthUtf8String(topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
+    fun size() =
+        (topicFilter.topicFilter.utf8Length() + UShort.SIZE_BYTES).toUInt() + Byte.SIZE_BYTES.toUInt()
 
     companion object {
         fun fromMany(buffer: ReadBuffer, remainingLength: UInt): Set<Subscription> {
@@ -351,9 +350,9 @@ data class Subscription(
     }
 }
 
-fun Collection<Subscription>.size(writeBuffer: WriteBuffer): UInt {
+fun Collection<Subscription>.size(): UInt {
     var size = 0u
-    forEach { size += it.size(writeBuffer) }
+    forEach { size += it.size() }
     return size
 }
 

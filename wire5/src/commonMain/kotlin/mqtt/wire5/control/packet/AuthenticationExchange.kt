@@ -24,7 +24,7 @@ import mqtt.wire5.control.packet.format.variable.property.*
 data class AuthenticationExchange<AuthenticationDataPayload : Any>(val variable: VariableHeader<AuthenticationDataPayload>) :
     ControlPacketV5(15, DirectionOfFlow.BIDIRECTIONAL) {
 
-    override fun remainingLength(buffer: WriteBuffer) = variable.size(buffer)
+    override fun remainingLength() = variable.size()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
 
     /**
@@ -60,9 +60,9 @@ data class AuthenticationExchange<AuthenticationDataPayload : Any>(val variable:
             getReasonCode(reasonCode.byte)
         }
 
-        fun size(writeBuffer: WriteBuffer): UInt {
-            val propSize = properties.size(writeBuffer)
-            return propSize + UByte.SIZE_BYTES.toUInt() + writeBuffer.variableByteIntegerSize(propSize)
+        fun size(): UInt {
+            val propSize = properties.size()
+            return propSize + UByte.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(propSize)
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
@@ -76,16 +76,16 @@ data class AuthenticationExchange<AuthenticationDataPayload : Any>(val variable:
             val userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
         ) {
 
-            fun size(writeBuffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 val authMethod = if (authentication != null) AuthenticationMethod(authentication.method) else null
                 val authData = if (authentication != null) AuthenticationData(authentication.data) else null
                 val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
                 val props = userProperty.map { UserProperty(it.first, it.second) }
-                var size = authMethod?.size(writeBuffer) ?: 0u
-                size += authData?.size(writeBuffer) ?: 0.toUInt()
-                size += authReasonString?.size(writeBuffer) ?: 0.toUInt()
+                var size = authMethod?.size() ?: 0u
+                size += authData?.size() ?: 0.toUInt()
+                size += authReasonString?.size() ?: 0.toUInt()
                 props.forEach {
-                    size += it.size(writeBuffer)
+                    size += it.size()
                 }
                 return size
             }
@@ -95,7 +95,7 @@ data class AuthenticationExchange<AuthenticationDataPayload : Any>(val variable:
                 val authData = if (authentication != null) AuthenticationData(authentication.data) else null
                 val authReasonString = if (reasonString != null) ReasonString(reasonString) else null
                 val props = userProperty.map { UserProperty(it.first, it.second) }
-                val size = size(writeBuffer)
+                val size = size()
                 writeBuffer.writeVariableByteInteger(size)
                 authMethod?.write(writeBuffer)
                 authData?.write(writeBuffer)

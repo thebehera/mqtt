@@ -122,14 +122,14 @@ data class DisconnectNotification(val variable: VariableHeader = VariableHeader(
                 list
             }
 
-            fun size(buffer: WriteBuffer): UInt {
+            fun size(): UInt {
                 var size = 0.toUInt()
-                props.forEach { size += it.size(buffer) }
+                props.forEach { size += it.size() }
                 return size
             }
 
             fun serialize(buffer: WriteBuffer) {
-                buffer.writeVariableByteInteger(size(buffer))
+                buffer.writeVariableByteInteger(size())
                 props.forEach { it.write(buffer) }
             }
 

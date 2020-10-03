@@ -10,6 +10,7 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
+import mqtt.wire.data.utf8Length
 
 /**
  * 3.8 SUBSCRIBE - Subscribe request
@@ -38,8 +39,8 @@ data class SubscribeRequest(override val packetIdentifier: Int, val subscription
 
     override fun payload(writeBuffer: WriteBuffer) = Subscription.writeMany(subscriptions, writeBuffer)
 
-    override fun remainingLength(buffer: WriteBuffer) =
-        UShort.SIZE_BYTES.toUInt() + Subscription.sizeMany(subscriptions, buffer)
+    override fun remainingLength() =
+        UShort.SIZE_BYTES.toUInt() + Subscription.sizeMany(subscriptions)
 
     override fun expectedResponse(): SubscribeAcknowledgement {
         val returnCodes = subscriptions.map {
@@ -109,10 +110,10 @@ data class Subscription(
             return subscriptions
         }
 
-        fun sizeMany(subscriptions: Collection<Subscription>, writeBuffer: WriteBuffer): UInt {
+        fun sizeMany(subscriptions: Collection<Subscription>): UInt {
             var size = 0u
             subscriptions.forEach {
-                size += writeBuffer.lengthUtf8String(it.topicFilter.topicFilter) + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
+                size += it.topicFilter.topicFilter.utf8Length().toUInt() + UShort.SIZE_BYTES.toUInt() + Byte.SIZE_BYTES.toUInt()
             }
             return size
         }

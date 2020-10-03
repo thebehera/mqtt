@@ -75,11 +75,6 @@ class FragmentedReadBuffer(
 
     override fun readUtf8(bytes: UInt) = readSizeIntoBuffer(bytes).readUtf8(bytes)
 
-    override fun sizeUtf8String(
-        inputSequence: CharSequence,
-        malformedInput: CharSequence?,
-        unmappableCharacter: CharSequence?
-    ) = first.sizeUtf8String(inputSequence, malformedInput, unmappableCharacter)
 }
 
 @ExperimentalUnsignedTypes

@@ -6,6 +6,7 @@ import java.nio.CharBuffer
 import java.nio.channels.FileChannel
 import java.nio.charset.CharsetDecoder
 import java.nio.charset.CharsetEncoder
+import java.nio.charset.CoderResult
 import java.nio.file.Files
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
@@ -23,19 +24,6 @@ actual fun allocateNewBuffer(
 }
 
 
-actual fun String.toBuffer(): PlatformBuffer = JvmBuffer(threadLocalUtf8Encoder.encode(CharBuffer.wrap(this)))
+actual fun String.toBuffer(): PlatformBuffer = JvmBuffer(ByteBuffer.wrap(encodeToByteArray()))
 
-private val threadLocalUtf8Encoder: CharsetEncoder by threadLocalLazy { Charsets.UTF_8.newEncoder() }
-private val threadLocalUtf8Decoder: CharsetDecoder by threadLocalLazy { Charsets.UTF_8.newDecoder() }
-
-
-private fun <T> threadLocalLazy(provider: () -> T) = ThreadLocalLazy(provider)
-
-private class ThreadLocalLazy<T>(val provider: () -> T) : ReadOnlyProperty<Any?, T> {
-    private val threadLocal = object : ThreadLocal<T>() {
-        override fun initialValue(): T = provider()
-    }
-
-    override fun getValue(thisRef: Any?, property: KProperty<*>): T =
-        threadLocal.get()!!
-}
+actual fun String.utf8Length(): UInt = encodeToByteArray().size.toUInt()

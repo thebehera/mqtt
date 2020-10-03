@@ -82,7 +82,7 @@ class AuthenticationExchangeTests {
         val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
         val buffer = allocateNewBuffer(20u, limits)
-        val size = obj1.size(buffer) + obj2.size(buffer)
+        val size = obj1.size() + obj2.size()
         buffer.writeVariableByteInteger(size)
         obj1.write(buffer)
         obj2.write(buffer)
@@ -151,7 +151,7 @@ class AuthenticationExchangeTests {
     fun authMethodMultipleTimesThrowsProtocolError() {
         val obj1 = AuthenticationMethod("yolo")
         val buffer1 = allocateNewBuffer(20u, limits)
-        val remainingLength = 2u * obj1.size(buffer1) + 1u
+        val remainingLength = 2u * obj1.size() + 1u
         buffer1.writeVariableByteInteger(remainingLength)
         obj1.write(buffer1)
         val obj2 = obj1.copy()
