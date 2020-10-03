@@ -2,12 +2,12 @@
 
 package mqtt.http
 
-interface HttpRequest<B> {
-    val method: HttpMethod
-    val hostName: String
-    val hostPort: UShort?
-    val target: String
-    val httpVersion: HttpVersion
-    val headers: Collection<Pair<String, String>>
-    val body: B?
-}
+class HttpRequest<B>(
+    val method: HttpMethod,
+    val hostName: String,
+    val hostPort: UShort?,
+    val target: String,
+    val httpVersion: HttpVersion,
+    val headers: Map<CharSequence, Set<CharSequence>>,
+    val body: B?,
+)

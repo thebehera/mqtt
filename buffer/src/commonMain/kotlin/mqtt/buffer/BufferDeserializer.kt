@@ -8,7 +8,7 @@ interface BufferDeserializer<T : Any> {
 
 data class DeserializationParameters(
     val buffer: ReadBuffer,
-    val length: UShort = 0u,
+    val length: UInt = 0u,
     val path: CharSequence = "",
     val properties: Map<Int, Any> = emptyMap(),
     val headers: Map<CharSequence, Set<CharSequence>> = emptyMap()
