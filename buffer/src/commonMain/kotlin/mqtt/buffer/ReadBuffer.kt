@@ -19,7 +19,31 @@ interface ReadBuffer {
     fun readLong(): Long
     fun readUtf8(bytes: UInt): CharSequence
     fun readUtf8(bytes: Int): CharSequence = readUtf8(bytes.toUInt())
-    fun readUtf8Line(): CharSequence
+    fun readUtf8Line(): CharSequence {
+        val initialPosition = position()
+        var lastByte: Byte = 0
+        var currentByte: Byte = 0
+        var bytesRead = 0u
+        while (remaining() > 0u) {
+            lastByte = currentByte
+            currentByte = readByte()
+            bytesRead++
+            if (currentByte == ReadBuffer.newLine[1]) {
+                break
+            }
+        }
+        val carriageFeedPositionIncrement =
+            if (lastByte == ReadBuffer.newLine[0] && currentByte == ReadBuffer.newLine[1]) 2
+            else if (currentByte == ReadBuffer.newLine[1]) 1
+            else 0
+
+        val bytesToRead = bytesRead - carriageFeedPositionIncrement.toUInt()
+        position(initialPosition.toInt())
+        val result = readUtf8(bytesToRead)
+        position(position().toInt() + carriageFeedPositionIncrement)
+        return result
+    }
+
     fun readMqttUtf8StringNotValidated(): CharSequence = readMqttUtf8StringNotValidatedSized().second
 
     fun readMqttUtf8StringNotValidatedSized(): Pair<UInt, CharSequence> {

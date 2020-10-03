@@ -45,31 +45,6 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         return decoded
     }
 
-    override fun readUtf8Line(): CharSequence {
-        val readOnlyBuffer = byteBuffer.asReadOnlyBuffer()
-        var lastByte: Byte = 0
-        var currentByte: Byte = 0
-        var bytesRead = 0u
-        while (readOnlyBuffer.hasRemaining()) {
-            lastByte = currentByte
-            currentByte = readOnlyBuffer.get()
-            bytesRead++
-            if (currentByte == ReadBuffer.newLine[1]) {
-                break
-            }
-        }
-
-        val carriageFeedPositionIncrement =
-            if (lastByte == ReadBuffer.newLine[0] && currentByte == ReadBuffer.newLine[1]) 2
-            else if (currentByte == ReadBuffer.newLine[1]) 1
-            else 0
-
-        val bytesToRead = bytesRead - carriageFeedPositionIncrement.toUInt()
-        val result = readUtf8(bytesToRead)
-        position(position().toInt() + carriageFeedPositionIncrement)
-        return result
-    }
-
     override fun put(buffer: PlatformBuffer) {
         byteBuffer.put((buffer as JvmBuffer).byteBuffer)
     }
