@@ -508,7 +508,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    val length = buffer.readUnsignedShort()
+                    val length = buffer.readUnsignedShort().toUInt()
                     val headers = HashMap<CharSequence, HashSet<CharSequence>>()
                     headers.add("${variableHeader.protocolName.value} Control Packet Value", "1")
                     headers.add("Protocol Name", variableHeader.protocolName.value)

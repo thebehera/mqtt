@@ -37,7 +37,7 @@ object GenericSerialization {
     }
 
     fun deserialize(deserializationParameters: DeserializationParameters): GenericType<*>? {
-        if (deserializationParameters.length == 0.toUShort()) {
+        if (deserializationParameters.length == 0u) {
             return null
         }
         return CharSequenceSerializer.deserialize(deserializationParameters)
@@ -54,10 +54,28 @@ object CharSequenceSerializer : BufferSerializer<CharSequence>, BufferDeserializ
     }
 
     override fun deserialize(params: DeserializationParameters): GenericType<CharSequence>? {
-        if (params.length == 0.toUShort()) {
+        if (params.length == 0u) {
             return null
         }
         val obj = params.buffer.readUtf8(params.length.toUInt())
         return GenericType(obj, CharSequence::class)
+    }
+}
+
+object StringSerializer : BufferSerializer<String>, BufferDeserializer<String> {
+    override val kClass: KClass<String> = String::class
+    override fun size(obj: String) = obj.utf8Length()
+
+    override fun serialize(buffer: WriteBuffer, obj: String): Boolean {
+        buffer.writeUtf8(obj)
+        return true
+    }
+
+    override fun deserialize(params: DeserializationParameters): GenericType<String>? {
+        if (params.length == 0u) {
+            return null
+        }
+        val obj = params.buffer.readUtf8(params.length).toString()
+        return GenericType(obj, String::class)
     }
 }

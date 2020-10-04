@@ -29,6 +29,15 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
         }
     }
 
+    fun <T> borrowTyped(size: UInt = limits.defaultBufferSize, bufferCallback: ((PlatformBuffer) -> T)): T {
+        val buffer = borrow(size)
+        return try {
+            bufferCallback(buffer)
+        } finally {
+            recycle(buffer)
+        }
+    }
+
     /**
      * Take care when calling this function and be sure to call RecycleCallback#recycle to ensure the buffer is cleaned
      * up, otherwise cannot be reused (leading to more expensive allocations and "zero-ing" out of buffers)

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_API_USAGE")
+
 package mqtt.socket
 
 import kotlinx.coroutines.Dispatchers
@@ -9,12 +11,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
-@ExperimentalUnsignedTypes
-@ExperimentalTime
+@OptIn(ExperimentalTime::class)
 class SimpleSocketTests {
 
     @Test
-    fun httpRequest() = block {
+    fun httpRawSocket() = block {
         val client = openClientSocket(80u, hostname = "example.com")
         val request =
             """
@@ -26,10 +27,10 @@ Connection: close
         val bytesWritten = client.write(request)
         assertTrue { bytesWritten > 0 }
         val response = client.read().result
+        client.close()
         assertTrue { response.contains("200 OK") }
         assertTrue { response.contains("HTTP") }
         assertTrue { response.contains("<html>") }
-        client.close()
     }
 
     @Test

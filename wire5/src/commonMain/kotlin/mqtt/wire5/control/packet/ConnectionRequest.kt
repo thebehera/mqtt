@@ -1191,7 +1191,7 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    buffer.readGenericType(DeserializationParameters(buffer, buffer.readUnsignedShort()))
+                    buffer.readGenericType(DeserializationParameters(buffer, buffer.readUnsignedShort().toUInt()))
                 } else {
                     null
                 }
