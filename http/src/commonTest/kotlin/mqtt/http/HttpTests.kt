@@ -12,7 +12,7 @@ import kotlin.time.ExperimentalTime
 class HttpTests {
 
     @Test
-    fun http() = block {
+    fun httpRawSocket() = block {
         val client = openClientSocket(80u, hostname = "example.com")
         val request =
             """
@@ -31,7 +31,7 @@ Connection: close
     }
 
     @Test
-    fun http2() = block {
+    fun http() = block {
         val response = HttpClient.request(HttpRequest("example.com"))
         assertEquals(response.statusCode, 200)
         assertTrue(response.body!!.contains("<html>"))
