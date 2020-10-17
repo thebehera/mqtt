@@ -11,7 +11,7 @@ import kotlin.time.Duration
 
 open class NodeSocket : ClientSocket {
     var netSocket: Socket? = null
-    val pool = BufferPool(limits = object : BufferMemoryLimit {
+    override val pool = BufferPool(limits = object : BufferMemoryLimit {
         override fun isTooLargeForMemory(size: UInt) = false
     })
     internal val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>(1)
@@ -22,6 +22,13 @@ open class NodeSocket : ClientSocket {
 
     override fun remotePort() = netSocket?.remotePort?.toUShort()
 
+    override suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int {
+        val receivedData = incomingMessageChannel.receive()
+        netSocket?.resume()
+        buffer.put(receivedData.result)
+        receivedData.result.put(buffer)
+        return receivedData.bytesRead
+    }
     override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
         val receivedData = incomingMessageChannel.receive()
         netSocket?.resume()

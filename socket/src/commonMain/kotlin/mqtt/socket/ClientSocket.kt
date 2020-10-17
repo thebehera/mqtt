@@ -12,11 +12,21 @@ import kotlin.time.seconds
 
 @ExperimentalTime
 interface ClientSocket : SuspendCloseable {
+    val pool: BufferPool
+
     fun isOpen(): Boolean
     fun localPort(): UShort?
     fun remotePort(): UShort?
+    suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int
     suspend fun read(timeout: Duration = 1.seconds) = read(timeout) { buffer, bytesRead -> buffer.readUtf8(bytesRead) }
-    suspend fun <T> read(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T>
+    suspend fun <T> read(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+        var bytesRead = 0
+        val result = pool.borrowSuspend {
+            bytesRead = read(it, timeout)
+            bufferRead(it, bytesRead)
+        }
+        return SocketDataRead(result, bytesRead)
+    }
     suspend fun <T> readTyped(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer) -> T) =
         read(timeout) { buffer, _ ->
             bufferRead(buffer)
@@ -46,13 +56,13 @@ suspend fun openClientSocket(port: UShort,
 }
 
 @ExperimentalTime
-fun getClientSocket(): ClientToServerSocket {
+fun getClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket {
     try {
-        return asyncClientSocket()
+        return asyncClientSocket(pool)
     } catch (e: Throwable) {
         // failed to allocate async socket channel based socket, fallback to nio
     }
-    return clientSocket(false)
+    return clientSocket(false, pool)
 }
 
 @ExperimentalTime

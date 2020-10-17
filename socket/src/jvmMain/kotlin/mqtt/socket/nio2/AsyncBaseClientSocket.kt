@@ -14,19 +14,12 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-abstract class AsyncBaseClientSocket(private val pool: BufferPool) :
+abstract class AsyncBaseClientSocket(override val pool: BufferPool) :
     ByteBufferClientSocket<AsynchronousSocketChannel>() {
     override fun remotePort() = socket?.assignedPort(remote = true)
 
-    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
-        var bytesRead = 0
-        val result = pool.borrowSuspend {
-            val byteBuffer = (it as JvmBuffer).byteBuffer
-            bytesRead = socket!!.aRead(byteBuffer, timeout)
-            bufferRead(it, bytesRead)
-        }
-        return SocketDataRead(result, bytesRead)
-    }
+    override suspend fun read(buffer: PlatformBuffer, timeout: Duration)
+            = socket!!.aRead((buffer as JvmBuffer).byteBuffer, timeout)
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration) =
         socket!!.aWrite((buffer as JvmBuffer).byteBuffer, timeout)

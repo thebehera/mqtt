@@ -11,7 +11,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-open class PosixClientSocket(private val pool: BufferPool = BufferPool()) : ClientSocket {
+open class PosixClientSocket(override val pool: BufferPool = BufferPool()) : ClientSocket {
 
     var currentFileDescriptor: Int? = null
 
@@ -46,6 +46,14 @@ open class PosixClientSocket(private val pool: BufferPool = BufferPool()) : Clie
                     SocketDataRead(bufferRead(nativeBuffer, bytesRead.toInt()), bytesRead.toInt())
                 }
             }
+        }
+    }
+
+    override suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int {
+        val nativeBuffer = buffer as NativeBuffer
+        return buffer.data.usePinned { pinned ->
+            recv(currentFileDescriptor!!, pinned.addressOf(0), buffer.capacity.toInt().convert(), 0)
+                    .ensureUnixCallResult("read") { it >= 0 }.toInt()
         }
     }
 

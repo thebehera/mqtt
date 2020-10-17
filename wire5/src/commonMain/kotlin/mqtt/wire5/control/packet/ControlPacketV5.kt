@@ -21,7 +21,7 @@ abstract class ControlPacketV5(
 ) : ControlPacket {
     override val mqttVersion: Byte = 5
 
-    override val controlPacketReader = ControlPacketV5Reader
+    override val controlPacketFactory = ControlPacketV5Factory
 
     companion object {
 
