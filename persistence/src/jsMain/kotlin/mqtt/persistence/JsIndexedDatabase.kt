@@ -1,6 +1,10 @@
 package mqtt.persistence
 
-import kotlinx.coroutines.*
+import kotlinx.browser.window
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
@@ -15,17 +19,30 @@ class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
             setup()
             isDbSetup = true
         }
-        IDBDatabase
-        val context = CoroutineScope(currentCoroutineContext() + Dispatchers.Unconfined)
+        val operations = mutableListOf<IDBObjectStore>()
+        val indexedDb =
+            window.asDynamic().indexedDB.unsafeCast<IDBFactory>()
         db = suspendCancellableCoroutine { continuation ->
-            val indexedDb = js("window.indexedDB").unsafeCast<IDBFactory>()
-            val request = indexedDb.open(dbName, 2)
+            val request = indexedDb.open(dbName, 3)
             request.onerror = {
                 console.log("error", it)
                 continuation.resumeWithException(RuntimeException(request.error.toString()))
             }
             request.onsuccess = {
                 val db = it.target.asDynamic().result.unsafeCast<IDBDatabase>()
+                val names = db.objectStoreNames.unsafeCast<DOMStringList>()
+                val tableNames = mutableListOf<String>()
+                val count = names.length
+                (0..count).forEachIndexed { index, _->
+                    val name = names.item(index)
+                    if (name != null) {
+                        tableNames += name
+                    }
+                }
+                tableNames.forEach { name ->
+                    val row = tables[name]!!
+                    objectStores[name] = JsObjectStore(db, name, row)
+                }
                 continuation.resume(db)
             }
             request.onblocked = {
@@ -42,29 +59,12 @@ class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
                     continuation.resumeWithException(RuntimeException(request.error.toString()))
                 }
                 tables.forEach { (name, row) ->
-                    println("Create obj store")
-                    val objStore = js("db.createObjectStore(name, {autoIncrement: true})")
+                    val objStore = db.createObjectStore(name, IDBObjectStoreParameters("rowId", true))
                         .unsafeCast<IDBObjectStore>()
-                    println("obj store $objStore")
-                    objectStores[name] = JsObjectStore(db, objStore, name, row)
+                    operations += objStore
+                    objectStores[name] = JsObjectStore(db, name, row)
                 }
-                println("launch $tables")
-                context.launch {
-                    objectStores.forEach { (name, objectStore) ->
-                        suspendCoroutine<Unit> {
-                            objectStore.objectStore.transaction.oncomplete = { _ ->
-                                it.resume(Unit)
-                            }
-                            objectStore.objectStore.transaction.onerror = { event ->
-                                it.resumeWithException(RuntimeException(event.toString()))
-                            }
-                        }
-                    }
-                    continuation.resume(db)
-                }
-                println("on upgrade complete")
             }
-            console.log("success", request)
         }
         return objectStores
     }

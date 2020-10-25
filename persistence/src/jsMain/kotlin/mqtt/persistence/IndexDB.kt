@@ -1,10 +1,7 @@
 package mqtt.persistence
 
-import kotlinx.browser.window
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.promise
-import kotlinx.coroutines.sync.Mutex
 import org.w3c.dom.events.Event
 import org.w3c.dom.events.EventTarget
 
@@ -13,6 +10,7 @@ fun main() {
         setup()
     }
 }
+
 @JsModule("indexeddbshim")
 @JsNonModule
 external fun setGlobalVars(): Unit = definedExternally
@@ -66,6 +64,36 @@ public external abstract class IDBFactory {
     fun cmp(first: Any?, second: Any?): Short
 }
 
+external interface DOMStringList {
+    val length: Int
+    fun item(index: Int): String?
+}
+external interface ReadonlyMap<T> {
+    fun get(key: String): T?
+    fun has(key: String): Boolean
+    fun forEach(action: (value: T, key: String) -> Unit)
+    val size: Int
+    fun keys(): Iterator<String>
+    fun values(): Iterator<T>
+    fun entries(): Iterator<Any>
+}
+/** ES6 Map interface. */
+@JsName("Map")
+external interface JsMap<T> :ReadonlyMap<T> {
+    fun set(key: String, value: T?)
+    fun delete(key: String): Boolean
+    fun clear()
+}
+
+external class Object {
+    companion object {
+        fun entries(obj: Any): Any
+        fun keys(obj:Any): Array<String>
+        fun values(obj:Any): Array<Any?>
+        fun fromEntries(map: JsMap<Any>): Any
+    }
+}
+
 /**
  * Exposes the JavaScript [IDBDatabase](https://developer.mozilla.org/en/docs/Web/API/IDBDatabase) to Kotlin
  */
@@ -78,6 +106,7 @@ public external abstract class IDBDatabase : EventTarget {
     open var onerror: ((Event) -> dynamic)?
     open var onversionchange: ((Event) -> dynamic)?
     fun transaction(storeNames: dynamic, mode: IDBTransactionMode = definedExternally): IDBTransaction
+    fun transaction(storeNames: dynamic, mode: String = definedExternally, options: String = definedExternally): IDBTransaction
     fun close(): Unit
     fun createObjectStore(name: String, options: IDBObjectStoreParameters = definedExternally): IDBObjectStore
     fun deleteObjectStore(name: String): Unit

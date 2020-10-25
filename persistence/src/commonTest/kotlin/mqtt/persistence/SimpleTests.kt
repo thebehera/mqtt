@@ -11,15 +11,20 @@ class SimpleTests {
 
         val column1 = TextColumn("column1").also { it.value = "hello" }
         val column2 = IntegerColumn("column2").also { it.value = 3 }
-        val row = Row(column1, column2)
+        val column3 = FloatColumn("column3").also { it.value = 3.6f }
+        val columnsMap = mutableMapOf("column1" to column1, "column2" to column2,"column3" to column3)
+        var row = Row(columnsMap)
         val map = LinkedHashMap<String, Row>()
         map["test"] = row
         val tables = platformDatabase.open(map)
-        println("opened")
-        val table = tables["test"] ?: error("Failed to find table")
-        val rowId = table.upsert(column1, column2)
-        val results = table.read(rowId).toTypedArray()
-        println("done")
-        assertEquals(Row(*results), row)
+        val table = tables.values.first()
+        val rowId = table.upsert(column1, column2, column3)
+        columnsMap["rowId"] = IntegerColumn("rowId", rowId)
+        row = Row(columnsMap)
+        println(" $rowId ")
+        val results = table.read(rowId).associateBy { it.name }.toMutableMap()
+        val resultRow = Row(results)
+        println("assert")
+        assertEquals(resultRow, row)
     }
 }

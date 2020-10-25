@@ -1,3 +1,5 @@
 package mqtt.persistence
 
-actual fun getPlatformDatabase(name: String): PlatformDatabase = JsIndexedDatabase(name)
+actual fun getPlatformDatabase(name: String): PlatformDatabase  {
+    return JsIndexedDatabase(name)
+}

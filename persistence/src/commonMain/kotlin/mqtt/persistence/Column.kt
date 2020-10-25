@@ -1,22 +1,16 @@
 package mqtt.persistence
 
-import mqtt.buffer.PlatformBuffer
-
 sealed class Column(
-    val name: String,
+    open val name: String,
     val type: Type,
-    val isPrimaryKey: Boolean = false,
+    open val isPrimaryKey: Boolean = false,
 ) {
-    var value: Any? = null
+    open var value: Any? = null
     fun columnIdentifier() = if (isPrimaryKey) {
         "$name $type PRIMARY KEY"
     } else {
         "$name $type"
     }
-
-    fun valueString() = value?.toString()
-
-    override fun toString() = "${columnIdentifier()}\t$value"
 }
 
 
@@ -28,14 +22,14 @@ fun Array<out Column>.toKeyPair(): Map<String, Any?> {
     return linkedHashMap
 }
 
-class IntegerColumn(name: String, isPrimaryKey: Boolean = false)
+data class IntegerColumn(override val name: String, override var value: Any? = null, override val isPrimaryKey: Boolean = false)
     : Column(name, Type.INTEGER)
 
-class FloatColumn(name: String, isPrimaryKey: Boolean = false)
+data class FloatColumn(override val name: String, override var value: Any? = null,override val isPrimaryKey: Boolean = false)
     : Column(name, Type.FLOAT)
 
-class TextColumn(name: String, isPrimaryKey: Boolean = false)
+data class TextColumn(override val name: String, override var value: Any? = null, override val isPrimaryKey: Boolean = false)
     : Column(name, Type.TEXT)
 
-class BlobColumn(name: String, isPrimaryKey: Boolean = false)
+data class BlobColumn(override val name: String, override var value: Any? = null, override val isPrimaryKey: Boolean = false)
     : Column(name, Type.BLOB)
