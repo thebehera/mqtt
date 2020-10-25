@@ -6,10 +6,14 @@ import java.sql.Connection
 
 class JvmSqlDatabase(name: String) : PlatformDatabase {
     lateinit var connection: Connection
+    override suspend fun open(tables: Map<String, Row>): Map<String, PlatformTable> {
+        return emptyMap()
+    }
+
     override suspend fun createTable(name: String, rowData: Row): PlatformTable {
         val createStatement = rowData.columns.joinToString(
             prefix = "CREATE TABLE $name (",
-            transform = {column -> column.columnIdentifier()},
+            transform = { column -> column.columnIdentifier() },
             postfix = ")"
         )
         connection.withStatement(createStatement)

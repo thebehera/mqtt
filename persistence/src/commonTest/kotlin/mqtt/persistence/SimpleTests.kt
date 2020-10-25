@@ -16,15 +16,17 @@ class SimpleTests {
         var row = Row(columnsMap)
         val map = LinkedHashMap<String, Row>()
         map["test"] = row
+        println("tables")
         val tables = platformDatabase.open(map)
         val table = tables.values.first()
         val rowId = table.upsert(column1, column2, column3)
         columnsMap["rowId"] = IntegerColumn("rowId", rowId)
         row = Row(columnsMap)
-        println(" $rowId ")
         val results = table.read(rowId).associateBy { it.name }.toMutableMap()
         val resultRow = Row(results)
-        println("assert")
+        println(" $resultRow\r\n")
+        println(" $row\n")
         assertEquals(resultRow, row)
+        return@runTest
     }
 }

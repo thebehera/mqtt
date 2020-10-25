@@ -4,7 +4,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mqtt.buffer.JvmBuffer
 import java.io.ByteArrayInputStream
-import java.lang.IllegalStateException
 import java.nio.ByteBuffer
 import java.sql.Connection
 import java.sql.Statement
@@ -13,53 +12,54 @@ import java.sql.Types
 class JvmSqliteTable(val connection: Connection,
                      override val name: String, override val rowData: Row)
     : PlatformTable {
-    override suspend fun upsert(vararg columns: Column): Long {
-        val sqlPrefix = columns.joinToString(
+    override suspend fun upsert(vararg column: Column): Long {
+        val sqlPrefix = column.joinToString(
             prefix = "UPSERT INTO $name(",
-            postfix = ") VALUES(") { it.name }
-        val sql = columns.joinToString(
+            postfix = ") VALUES("
+        ) { it.name }
+        val sql = column.joinToString(
             prefix = sqlPrefix,
             postfix = ")"
-        ) {"?"}
+        ) { "?" }
 
-            val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-            columns.forEachIndexed { index, column ->
-                val actualIndex = index + 1
-                when (column) {
-                    is IntegerColumn -> {
-                        val value = column.value
-                        if (value == null) {
-                            statement.setNull(actualIndex, Types.BIGINT)
-                        } else {
-                            statement.setLong(actualIndex, value)
-                        }
+        val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+        column.forEachIndexed { index, column ->
+            val actualIndex = index + 1
+            when (column) {
+                is IntegerColumn -> {
+                    val value = column.value
+                    if (value == null) {
+                        statement.setNull(actualIndex, Types.BIGINT)
+                    } else {
+                        statement.setLong(actualIndex, value)
                     }
-                    is FloatColumn -> {
-                        val value = column.value
-                        if (value == null) {
-                            statement.setNull(actualIndex, Types.DOUBLE)
-                        } else {
-                            statement.setDouble(actualIndex, value)
-                        }
+                }
+                is FloatColumn -> {
+                    val value = column.value
+                    if (value == null) {
+                        statement.setNull(actualIndex, Types.DOUBLE)
+                    } else {
+                        statement.setDouble(actualIndex, value)
                     }
-                    is TextColumn -> {
-                        val value = column.value
-                        if (value == null) {
-                            statement.setNull(actualIndex, Types.VARCHAR)
-                        } else {
-                            statement.setString(actualIndex, value)
-                        }
+                }
+                is TextColumn -> {
+                    val value = column.value
+                    if (value == null) {
+                        statement.setNull(actualIndex, Types.VARCHAR)
+                    } else {
+                        statement.setString(actualIndex, value)
                     }
-                    is BlobColumn -> {
-                        val value = column.value
-                        if (value == null) {
-                            statement.setNull(actualIndex, Types.BLOB)
-                        } else {
-                            val byteArray = value.readByteArray(value.remaining())
-                            val inputStream = ByteArrayInputStream(byteArray)
-                            statement.setBlob(actualIndex, inputStream, byteArray.size.toLong())
-                        }
+                }
+                is BlobColumn -> {
+                    val value = column.value
+                    if (value == null) {
+                        statement.setNull(actualIndex, Types.BLOB)
+                    } else {
+                        val byteArray = value.readByteArray(value.remaining())
+                        val inputStream = ByteArrayInputStream(byteArray)
+                        statement.setBlob(actualIndex, inputStream, byteArray.size.toLong())
                     }
+                }
                 }
             }
             withContext(Dispatchers.IO) {

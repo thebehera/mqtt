@@ -11,25 +11,19 @@ fun main() {
     }
 }
 
-@JsModule("indexeddbshim")
-@JsNonModule
-external fun setGlobalVars(): Unit = definedExternally
-
-
-
 fun setup() {
     val isNodeJs = isNodeJs
     if (isNodeJs) {
-        js("global.window = global;")
-        setGlobalVars()
-        js("require('indexeddbshim')({}, {checkOrigin: false})")
+        js("var setGlobalVars = require('indexeddbshim')")
+        js("setGlobalVars(null, {checkOrigin: false})")
+        js("global.window = global")
     }
 }
 
 /**
  * Exposes the JavaScript [IDBRequest](https://developer.mozilla.org/en/docs/Web/API/IDBRequest) to Kotlin
  */
-public external abstract class IDBRequest : EventTarget {
+abstract external class IDBRequest : EventTarget {
     open val result: Any?
     open val error: dynamic
     open val source: UnionIDBCursorOrIDBIndexOrIDBObjectStore?
@@ -42,7 +36,7 @@ public external abstract class IDBRequest : EventTarget {
 /**
  * Exposes the JavaScript [IDBOpenDBRequest](https://developer.mozilla.org/en/docs/Web/API/IDBOpenDBRequest) to Kotlin
  */
-public external abstract class IDBOpenDBRequest : IDBRequest {
+abstract external class IDBOpenDBRequest : IDBRequest {
     open var onblocked: ((Event) -> dynamic)?
     open var onupgradeneeded: ((Event) -> dynamic)?
 }
@@ -50,7 +44,7 @@ public external abstract class IDBOpenDBRequest : IDBRequest {
 /**
  * Exposes the JavaScript [IDBVersionChangeEvent](https://developer.mozilla.org/en/docs/Web/API/IDBVersionChangeEvent) to Kotlin
  */
-public external open class IDBVersionChangeEvent : Event {
+open external class IDBVersionChangeEvent : Event {
     open val oldVersion: Int
     open val newVersion: Int?
 }
@@ -58,7 +52,7 @@ public external open class IDBVersionChangeEvent : Event {
 /**
  * Exposes the JavaScript [IDBFactory](https://developer.mozilla.org/en/docs/Web/API/IDBFactory) to Kotlin
  */
-public external abstract class IDBFactory {
+abstract external class IDBFactory {
     fun open(name: String, version: Int = definedExternally): IDBOpenDBRequest
     fun deleteDatabase(name: String): IDBOpenDBRequest
     fun cmp(first: Any?, second: Any?): Short
@@ -97,7 +91,7 @@ external class Object {
 /**
  * Exposes the JavaScript [IDBDatabase](https://developer.mozilla.org/en/docs/Web/API/IDBDatabase) to Kotlin
  */
-public external abstract class IDBDatabase : EventTarget {
+abstract external class IDBDatabase : EventTarget {
     open val name: String
     open val version: Int
     open val objectStoreNames: dynamic
@@ -106,13 +100,18 @@ public external abstract class IDBDatabase : EventTarget {
     open var onerror: ((Event) -> dynamic)?
     open var onversionchange: ((Event) -> dynamic)?
     fun transaction(storeNames: dynamic, mode: IDBTransactionMode = definedExternally): IDBTransaction
-    fun transaction(storeNames: dynamic, mode: String = definedExternally, options: String = definedExternally): IDBTransaction
+    fun transaction(
+        storeNames: dynamic,
+        mode: String = definedExternally,
+        options: String = definedExternally
+    ): IDBTransaction
+
     fun close(): Unit
     fun createObjectStore(name: String, options: IDBObjectStoreParameters = definedExternally): IDBObjectStore
     fun deleteObjectStore(name: String): Unit
 }
 
-public external interface IDBObjectStoreParameters {
+external interface IDBObjectStoreParameters {
     var keyPath: dynamic /* = null */
         get() = definedExternally
         set(value) = definedExternally
@@ -122,7 +121,10 @@ public external interface IDBObjectStoreParameters {
 }
 
 //@kotlin.internal.InlineOnly
-public inline fun IDBObjectStoreParameters(keyPath: dynamic = null, autoIncrement: Boolean? = false): IDBObjectStoreParameters {
+inline fun IDBObjectStoreParameters(
+    keyPath: dynamic = null,
+    autoIncrement: Boolean? = false
+): IDBObjectStoreParameters {
     val o = js("({})")
 
     o["keyPath"] = keyPath
@@ -134,7 +136,8 @@ public inline fun IDBObjectStoreParameters(keyPath: dynamic = null, autoIncremen
 /**
  * Exposes the JavaScript [IDBObjectStore](https://developer.mozilla.org/en/docs/Web/API/IDBObjectStore) to Kotlin
  */
-public external abstract class IDBObjectStore : UnionIDBCursorOrIDBIndexOrIDBObjectStore, UnionIDBIndexOrIDBObjectStore {
+abstract external class IDBObjectStore : UnionIDBCursorOrIDBIndexOrIDBObjectStore,
+    UnionIDBIndexOrIDBObjectStore {
     open var name: String
     open val keyPath: Any?
     open val indexNames: dynamic
@@ -156,7 +159,7 @@ public external abstract class IDBObjectStore : UnionIDBCursorOrIDBIndexOrIDBObj
     fun deleteIndex(name: String): Unit
 }
 
-public external interface IDBIndexParameters {
+external interface IDBIndexParameters {
     var unique: Boolean? /* = false */
         get() = definedExternally
         set(value) = definedExternally
@@ -166,7 +169,7 @@ public external interface IDBIndexParameters {
 }
 
 //@kotlin.internal.InlineOnly
-public inline fun IDBIndexParameters(unique: Boolean? = false, multiEntry: Boolean? = false): IDBIndexParameters {
+inline fun IDBIndexParameters(unique: Boolean? = false, multiEntry: Boolean? = false): IDBIndexParameters {
     val o = js("({})")
 
     o["unique"] = unique
@@ -178,7 +181,7 @@ public inline fun IDBIndexParameters(unique: Boolean? = false, multiEntry: Boole
 /**
  * Exposes the JavaScript [IDBIndex](https://developer.mozilla.org/en/docs/Web/API/IDBIndex) to Kotlin
  */
-public external abstract class IDBIndex : UnionIDBCursorOrIDBIndexOrIDBObjectStore, UnionIDBIndexOrIDBObjectStore {
+abstract external class IDBIndex : UnionIDBCursorOrIDBIndexOrIDBObjectStore, UnionIDBIndexOrIDBObjectStore {
     open var name: String
     open val objectStore: IDBObjectStore
     open val keyPath: Any?
@@ -196,7 +199,7 @@ public external abstract class IDBIndex : UnionIDBCursorOrIDBIndexOrIDBObjectSto
 /**
  * Exposes the JavaScript [IDBKeyRange](https://developer.mozilla.org/en/docs/Web/API/IDBKeyRange) to Kotlin
  */
-public external abstract class IDBKeyRange {
+abstract external class IDBKeyRange {
     open val lower: Any?
     open val upper: Any?
     open val lowerOpen: Boolean
@@ -214,13 +217,13 @@ public external abstract class IDBKeyRange {
 /**
  * Exposes the JavaScript [IDBCursor](https://developer.mozilla.org/en/docs/Web/API/IDBCursor) to Kotlin
  */
-public external abstract class IDBCursor : UnionIDBCursorOrIDBIndexOrIDBObjectStore {
+abstract external class IDBCursor : UnionIDBCursorOrIDBIndexOrIDBObjectStore {
     open val source: UnionIDBIndexOrIDBObjectStore
     open val direction: IDBCursorDirection
     open val key: Any?
     open val primaryKey: Any?
     fun advance(count: Int): Unit
-    fun `continue`(key: Any?): Unit;
+    fun `continue`(key: Any?): Unit
     fun continuePrimaryKey(key: Any?, primaryKey: Any?): Unit
     fun update(value: Any?): IDBRequest
     fun delete(): IDBRequest
@@ -229,14 +232,14 @@ public external abstract class IDBCursor : UnionIDBCursorOrIDBIndexOrIDBObjectSt
 /**
  * Exposes the JavaScript [IDBCursorWithValue](https://developer.mozilla.org/en/docs/Web/API/IDBCursorWithValue) to Kotlin
  */
-public external abstract class IDBCursorWithValue : IDBCursor {
+abstract external class IDBCursorWithValue : IDBCursor {
     open val value: Any?
 }
 
 /**
  * Exposes the JavaScript [IDBTransaction](https://developer.mozilla.org/en/docs/Web/API/IDBTransaction) to Kotlin
  */
-public external abstract class IDBTransaction : EventTarget {
+abstract external class IDBTransaction : EventTarget {
     open val objectStoreNames: dynamic
     open val mode: IDBTransactionMode
     open val db: IDBDatabase
@@ -248,15 +251,15 @@ public external abstract class IDBTransaction : EventTarget {
     fun abort(): Unit
 }
 
-public external interface UnionIDBCursorOrIDBIndexOrIDBObjectStore
+external interface UnionIDBCursorOrIDBIndexOrIDBObjectStore
 
-public external interface UnionIDBIndexOrIDBObjectStore
-
-/* please, don't implement this interface! */
-public external interface IDBRequestReadyState
+external interface UnionIDBIndexOrIDBObjectStore
 
 /* please, don't implement this interface! */
-public external interface IDBCursorDirection
+external interface IDBRequestReadyState
 
 /* please, don't implement this interface! */
-public external interface IDBTransactionMode
+external interface IDBCursorDirection
+
+/* please, don't implement this interface! */
+external interface IDBTransactionMode

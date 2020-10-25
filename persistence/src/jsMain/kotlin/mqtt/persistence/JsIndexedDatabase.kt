@@ -1,13 +1,9 @@
 package mqtt.persistence
 
 import kotlinx.browser.window
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
 
 class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
     private var db: IDBDatabase? = null
@@ -23,7 +19,7 @@ class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
         val indexedDb =
             window.asDynamic().indexedDB.unsafeCast<IDBFactory>()
         db = suspendCancellableCoroutine { continuation ->
-            val request = indexedDb.open(dbName, 3)
+            val request = indexedDb.open(dbName, 5)
             request.onerror = {
                 console.log("error", it)
                 continuation.resumeWithException(RuntimeException(request.error.toString()))
