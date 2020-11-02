@@ -24,8 +24,6 @@ class SimpleTests {
         row = Row(columnsMap)
         val results = table.read(rowId).associateBy { it.name }.toMutableMap()
         val resultRow = Row(results)
-        println(" $resultRow\r\n")
-        println(" $row\n")
         assertEquals(resultRow, row)
         return@runTest
     }

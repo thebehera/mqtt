@@ -7,7 +7,7 @@ import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
 import java.sql.Connection
 import java.sql.Statement
-import java.sql.Types
+import java.sql.Types.*
 
 data class JvmSqliteTable(
     val connection: Connection,
@@ -15,15 +15,15 @@ data class JvmSqliteTable(
 ) : PlatformTable {
     override suspend fun upsert(vararg column: Column): Long {
         val sqlPrefix = column.joinToString(
-            prefix = "UPSERT INTO $name(",
+            prefix = "INSERT INTO $name (",
             postfix = ") VALUES("
         ) { it.name }
         val sql = column.joinToString(
             prefix = sqlPrefix,
             postfix = ")"
         ) { "?" }
-        println(sql)
         val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
+        println(statement)
         column.forEachIndexed { index, column ->
             val actualIndex = index + 1
             when (column) {
@@ -43,7 +43,7 @@ data class JvmSqliteTable(
                     statement.setBlob(actualIndex, inputStream, byteArray.size.toLong())
                 }
                 is NullColumn -> {
-                    statement.setNull(actualIndex, Types.INTEGER)
+                    statement.setNull(actualIndex, INTEGER)
                 }
             }
         }
@@ -61,25 +61,26 @@ data class JvmSqliteTable(
         val statement = connection.createStatement()
         val result = statement.executeQuery("SELECT * FROM $name WHERE _rowid_ = $rowId")
         val columns = ArrayList<Column>(result.metaData.columnCount)
-        (1..result.metaData.columnCount + 1).forEach { columnIndex ->
+        (1..result.metaData.columnCount).forEach { columnIndex ->
+            val columnName = result.metaData.getColumnName(columnIndex)
             columns += when (result.metaData.getColumnType(columnIndex)) {
-                Types.BIGINT -> {
-                    IntegerColumn(result.metaData.getColumnName(columnIndex), result.getLong(columnIndex))
+                BIGINT, INTEGER, BOOLEAN, NUMERIC, ROWID, SMALLINT, TINYINT -> {
+                    IntegerColumn(columnName, result.getLong(columnIndex))
                 }
-                Types.DOUBLE -> {
-                    FloatColumn(result.metaData.getColumnName(columnIndex), result.getDouble(columnIndex))
+                DOUBLE, FLOAT, DECIMAL, REAL -> {
+                    FloatColumn(columnName, result.getDouble(columnIndex))
                 }
-                Types.VARCHAR -> {
-                    TextColumn(result.metaData.getColumnName(columnIndex), result.getString(columnIndex))
+                VARCHAR, CHAR, LONGNVARCHAR, LONGVARCHAR, NVARCHAR -> {
+                    TextColumn(columnName, result.getString(columnIndex))
                 }
-                Types.BLOB -> {
-                    BlobColumn(
-                        result.metaData.getColumnName(columnIndex),
-                        JvmBuffer(ByteBuffer.wrap(result.getBytes(columnIndex)))
-                    )
+                BLOB -> {
+                    BlobColumn(columnName, JvmBuffer(ByteBuffer.wrap(result.getBytes(columnIndex))))
                 }
                 else -> throw IllegalStateException("Illegal type ${result.metaData.getColumnType(columnIndex)}")
             }
+        }
+        if (columns.isNotEmpty()) {
+            columns += IntegerColumn("rowId", rowId)
         }
         result.close()
         statement.close()

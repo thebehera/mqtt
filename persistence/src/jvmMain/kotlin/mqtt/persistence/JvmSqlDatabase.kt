@@ -19,7 +19,6 @@ class JvmSqlDatabase(val name: String) : PlatformDatabase {
         }
         if (copiedExpectedTables.isNotEmpty()) {
             for (table in copiedExpectedTables) {
-                println("creating table ${table.key}")
                 createTable(table.key, table.value)
             }
             val tables = getTables()
