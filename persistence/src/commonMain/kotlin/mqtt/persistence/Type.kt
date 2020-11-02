@@ -2,7 +2,8 @@ package mqtt.persistence
 
 enum class Type {
     INTEGER,
-    FLOAT,
+    REAL,
     TEXT,
     BLOB,
+    NULL,
 }

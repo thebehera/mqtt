@@ -5,7 +5,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
+class JsIndexedDatabase(private val dbName: String) : PlatformDatabase {
     private var db: IDBDatabase? = null
     private val objectStores = mutableMapOf<String, JsObjectStore>()
 
@@ -29,7 +29,7 @@ class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
                 val names = db.objectStoreNames.unsafeCast<DOMStringList>()
                 val tableNames = mutableListOf<String>()
                 val count = names.length
-                (0..count).forEachIndexed { index, _->
+                (0..count).forEachIndexed { index, _ ->
                     val name = names.item(index)
                     if (name != null) {
                         tableNames += name
@@ -63,10 +63,6 @@ class JsIndexedDatabase(private val dbName: String): PlatformDatabase {
             }
         }
         return objectStores
-    }
-
-    override suspend fun createTable(name: String, rowData: Row): PlatformTable {
-        throw UnsupportedOperationException()
     }
 
     override suspend fun dropTable(table: PlatformTable) {}

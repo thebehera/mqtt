@@ -9,10 +9,10 @@ class SimpleTests {
     fun openTest() = runTest {
         val platformDatabase = getPlatformDatabase("rahultestdb")
 
-        val column1 = TextColumn("column1").also { it.value = "hello" }
-        val column2 = IntegerColumn("column2").also { it.value = 3 }
-        val column3 = FloatColumn("column3").also { it.value = 3.6f }
-        val columnsMap = mutableMapOf("column1" to column1, "column2" to column2,"column3" to column3)
+        val column1 = TextColumn("column1", "hello")
+        val column2 = IntegerColumn("column2", 3)
+        val column3 = FloatColumn("column3", 3.6)
+        val columnsMap = mutableMapOf("column1" to column1, "column2" to column2, "column3" to column3)
         var row = Row(columnsMap)
         val map = LinkedHashMap<String, Row>()
         map["test"] = row

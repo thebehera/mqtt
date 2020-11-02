@@ -4,13 +4,13 @@ import android.database.sqlite.SQLiteDatabase
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-class AndroidSqlDatabase(name: String): PlatformDatabase {
+class AndroidSqlDatabase(name: String) : PlatformDatabase {
     lateinit var database: SQLiteDatabase
     override suspend fun open(tables: Map<String, Row>): Map<String, PlatformTable> {
         return emptyMap()
     }
 
-    override suspend fun createTable(name: String, rowData: Row): PlatformTable {
+    suspend fun createTable(name: String, rowData: Row): PlatformTable {
         val statement = rowData.columns.joinToString(
             prefix = "CREATE TABLE $name (",
             transform = { column -> column.columnIdentifier() },

@@ -16,8 +16,8 @@ class JsObjectStore(private val db: IDBDatabase, override val name: String, over
             request.onsuccess = { event ->
                 it.resume(event.target.asDynamic().result.unsafeCast<Long>())
             }
-            request.onerror = {event ->
-                 it.resumeWithException(RuntimeException(request.error.toString()))
+            request.onerror = { event ->
+                it.resumeWithException(RuntimeException(request.error.toString()))
             }
         }
     }
@@ -48,13 +48,13 @@ class JsObjectStore(private val db: IDBDatabase, override val name: String, over
                     columns += when (jsTypeOf(value)) {
                         "number" -> {
                             if (value.toString().contains('.')) {
-                                FloatColumn(key, value)
+                                FloatColumn(key, value.unsafeCast<Double>())
                             } else {
-                                IntegerColumn(key, value)
+                                IntegerColumn(key, value.unsafeCast<Long>())
                             }
                         }
-                        "string" -> TextColumn(key, value)
-                        else -> TextColumn(key)
+                        "string" -> TextColumn(key, value.unsafeCast<String>())
+                        else -> NullColumn(key)
                     }
                 }
                 it.resume(columns)

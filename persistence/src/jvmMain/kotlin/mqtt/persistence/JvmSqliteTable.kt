@@ -9,9 +9,10 @@ import java.sql.Connection
 import java.sql.Statement
 import java.sql.Types
 
-class JvmSqliteTable(val connection: Connection,
-                     override val name: String, override val rowData: Row)
-    : PlatformTable {
+data class JvmSqliteTable(
+    val connection: Connection,
+    override val name: String, override val rowData: Row
+) : PlatformTable {
     override suspend fun upsert(vararg column: Column): Long {
         val sqlPrefix = column.joinToString(
             prefix = "UPSERT INTO $name(",
@@ -21,55 +22,39 @@ class JvmSqliteTable(val connection: Connection,
             prefix = sqlPrefix,
             postfix = ")"
         ) { "?" }
-
+        println(sql)
         val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
         column.forEachIndexed { index, column ->
             val actualIndex = index + 1
             when (column) {
                 is IntegerColumn -> {
-                    val value = column.value
-                    if (value == null) {
-                        statement.setNull(actualIndex, Types.BIGINT)
-                    } else {
-                        statement.setLong(actualIndex, value)
-                    }
+                    statement.setLong(actualIndex, column.value)
                 }
                 is FloatColumn -> {
-                    val value = column.value
-                    if (value == null) {
-                        statement.setNull(actualIndex, Types.DOUBLE)
-                    } else {
-                        statement.setDouble(actualIndex, value)
-                    }
+                    statement.setDouble(actualIndex, column.value)
                 }
                 is TextColumn -> {
-                    val value = column.value
-                    if (value == null) {
-                        statement.setNull(actualIndex, Types.VARCHAR)
-                    } else {
-                        statement.setString(actualIndex, value)
-                    }
+                    statement.setString(actualIndex, column.value)
                 }
                 is BlobColumn -> {
                     val value = column.value
-                    if (value == null) {
-                        statement.setNull(actualIndex, Types.BLOB)
-                    } else {
-                        val byteArray = value.readByteArray(value.remaining())
-                        val inputStream = ByteArrayInputStream(byteArray)
-                        statement.setBlob(actualIndex, inputStream, byteArray.size.toLong())
-                    }
+                    val byteArray = value.readByteArray(value.remaining())
+                    val inputStream = ByteArrayInputStream(byteArray)
+                    statement.setBlob(actualIndex, inputStream, byteArray.size.toLong())
                 }
+                is NullColumn -> {
+                    statement.setNull(actualIndex, Types.INTEGER)
                 }
             }
-            withContext(Dispatchers.IO) {
-                statement.execute()
-            }
-            val resultSet = statement.generatedKeys
-            val result = resultSet.getLong("last_insert_rowid()")
-            resultSet.close()
-            statement.close()
-            return result
+        }
+        withContext(Dispatchers.IO) {
+            statement.execute()
+        }
+        val resultSet = statement.generatedKeys
+        val result = resultSet.getLong("last_insert_rowid()")
+        resultSet.close()
+        statement.close()
+        return result
     }
 
     override suspend fun read(rowId: Long): Collection<Column> = withContext(Dispatchers.IO) {
@@ -79,20 +64,19 @@ class JvmSqliteTable(val connection: Connection,
         (1..result.metaData.columnCount + 1).forEach { columnIndex ->
             columns += when (result.metaData.getColumnType(columnIndex)) {
                 Types.BIGINT -> {
-                    IntegerColumn(result.metaData.getColumnName(columnIndex))
-                        .also { it.value = result.getLong(columnIndex) }
+                    IntegerColumn(result.metaData.getColumnName(columnIndex), result.getLong(columnIndex))
                 }
                 Types.DOUBLE -> {
-                    FloatColumn(result.metaData.getColumnName(columnIndex))
-                        .also { it.value = result.getDouble(columnIndex) }
+                    FloatColumn(result.metaData.getColumnName(columnIndex), result.getDouble(columnIndex))
                 }
                 Types.VARCHAR -> {
-                    TextColumn(result.metaData.getColumnName(columnIndex))
-                        .also { it.value = result.getString(columnIndex) }
+                    TextColumn(result.metaData.getColumnName(columnIndex), result.getString(columnIndex))
                 }
                 Types.BLOB -> {
-                    BlobColumn(result.metaData.getColumnName(columnIndex))
-                        .also { it.value = JvmBuffer(ByteBuffer.wrap(result.getBytes(columnIndex))) }
+                    BlobColumn(
+                        result.metaData.getColumnName(columnIndex),
+                        JvmBuffer(ByteBuffer.wrap(result.getBytes(columnIndex)))
+                    )
                 }
                 else -> throw IllegalStateException("Illegal type ${result.metaData.getColumnType(columnIndex)}")
             }

@@ -62,6 +62,7 @@ external interface DOMStringList {
     val length: Int
     fun item(index: Int): String?
 }
+
 external interface ReadonlyMap<T> {
     fun get(key: String): T?
     fun has(key: String): Boolean
@@ -71,9 +72,10 @@ external interface ReadonlyMap<T> {
     fun values(): Iterator<T>
     fun entries(): Iterator<Any>
 }
+
 /** ES6 Map interface. */
 @JsName("Map")
-external interface JsMap<T> :ReadonlyMap<T> {
+external interface JsMap<T> : ReadonlyMap<T> {
     fun set(key: String, value: T?)
     fun delete(key: String): Boolean
     fun clear()
@@ -82,8 +84,8 @@ external interface JsMap<T> :ReadonlyMap<T> {
 external class Object {
     companion object {
         fun entries(obj: Any): Any
-        fun keys(obj:Any): Array<String>
-        fun values(obj:Any): Array<Any?>
+        fun keys(obj: Any): Array<String>
+        fun values(obj: Any): Array<Any?>
         fun fromEntries(map: JsMap<Any>): Any
     }
 }
@@ -210,7 +212,12 @@ abstract external class IDBKeyRange {
         fun only(value: Any?): IDBKeyRange
         fun lowerBound(lower: Any?, open: Boolean = definedExternally): IDBKeyRange
         fun upperBound(upper: Any?, open: Boolean = definedExternally): IDBKeyRange
-        fun bound(lower: Any?, upper: Any?, lowerOpen: Boolean = definedExternally, upperOpen: Boolean = definedExternally): IDBKeyRange
+        fun bound(
+            lower: Any?,
+            upper: Any?,
+            lowerOpen: Boolean = definedExternally,
+            upperOpen: Boolean = definedExternally
+        ): IDBKeyRange
     }
 }
 
