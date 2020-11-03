@@ -54,18 +54,22 @@ class AndroidSqliteTable(
             ).use { cursor ->
                 with(cursor) {
                     val list = ArrayList<Column>(cursor.columnCount)
-                    (0..cursor.columnCount).forEach { index ->
-                        when (getType(index)) {
-                            FIELD_TYPE_NULL -> list += NullColumn(getColumnName(index))
-                            FIELD_TYPE_INTEGER -> list += IntegerColumn(getColumnName(index), cursor.getLong(index))
-                            FIELD_TYPE_FLOAT -> list += FloatColumn(getColumnName(index), cursor.getDouble(index))
-                            FIELD_TYPE_STRING -> list += TextColumn(getColumnName(index), cursor.getString(index))
-                            FIELD_TYPE_BLOB -> list += BlobColumn(
-                                getColumnName(index),
-                                JvmBuffer(ByteBuffer.wrap(cursor.getBlob(index)))
-                            )
+                    if (cursor.count > 0) {
+                        cursor.moveToFirst()
+                        (0 until cursor.columnCount).forEach { index ->
+                            when (getType(index)) {
+                                FIELD_TYPE_NULL -> list += NullColumn(getColumnName(index))
+                                FIELD_TYPE_INTEGER -> list += IntegerColumn(getColumnName(index), cursor.getLong(index))
+                                FIELD_TYPE_FLOAT -> list += FloatColumn(getColumnName(index), cursor.getDouble(index))
+                                FIELD_TYPE_STRING -> list += TextColumn(getColumnName(index), cursor.getString(index))
+                                FIELD_TYPE_BLOB -> list += BlobColumn(
+                                    getColumnName(index),
+                                    JvmBuffer(ByteBuffer.wrap(cursor.getBlob(index)))
+                                )
+                            }
                         }
                     }
+                    list += IntegerColumn("rowId", rowId)
                     list
                 }
             }
