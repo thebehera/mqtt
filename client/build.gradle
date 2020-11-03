@@ -21,9 +21,9 @@ kotlin {
         }
     }
 //    ios("iOS")
-    macosX64("macos")
-    linuxX64("linux")
-    mingwX64("windows")
+//    macosX64("macos")
+//    linuxX64("linux")
+//    mingwX64("windows")
     sourceSets {
         commonMain {
             dependencies {
@@ -32,6 +32,7 @@ kotlin {
                 implementation project(":wire-core")
                 implementation project(":buffer")
                 implementation project(":socket")
+                implementation project(":persistence")
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
             }
         }

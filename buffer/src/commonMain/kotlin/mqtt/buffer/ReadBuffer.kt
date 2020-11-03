@@ -9,6 +9,7 @@ interface ReadBuffer {
     fun position(): UInt
     fun position(newPosition: Int)
     fun remaining() = limit() - position()
+    fun hasRemaining() = position() < limit()
 
     fun resetForRead()
     fun readByte(): Byte
