@@ -21,7 +21,7 @@ abstract class ControlPacketV4(
     override val flags: Byte = 0b0
 ) : ControlPacket {
     override val mqttVersion: Byte = 4
-    override val controlPacketReader = ControlPacketV4Reader
+    override val controlPacketFactory = ControlPacketV4Factory
 
     companion object {
 

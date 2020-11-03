@@ -1,4 +1,4 @@
-if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+if (System.getenv("ANDROID_HOME")) {
     apply plugin: 'com.android.library'
     apply plugin: 'kotlin-android-extensions'
     androidExtensions {
@@ -7,14 +7,18 @@ if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVers
     android {
         compileSdkVersion 29
         defaultConfig {
-            minSdkVersion 15
+            minSdkVersion 21
+            testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         }
-        dataBinding.enabled = true
         buildTypes {
             release {
                 minifyEnabled true
                 proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             }
+        }
+        compileOptions {
+            sourceCompatibility 1.8
+            targetCompatibility 1.8
         }
         packagingOptions {
             exclude 'META-INF/*.kotlin_module'

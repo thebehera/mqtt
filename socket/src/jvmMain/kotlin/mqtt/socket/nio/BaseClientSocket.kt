@@ -17,12 +17,15 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 abstract class BaseClientSocket(
     protected val blocking: Boolean = false,
-    private val pool: BufferPool
+    override val pool: BufferPool
 ) : ByteBufferClientSocket<SocketChannel>() {
 
     val selector = if (!blocking) Selector.open()!! else null
 
     override fun remotePort() = (socket?.remoteAddress as? InetSocketAddress)?.port?.toUShort()
+
+    override suspend fun read(buffer: PlatformBuffer, timeout: Duration) =
+        socket!!.read((buffer as JvmBuffer).byteBuffer, selector, timeout)
 
     override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
         var bytesRead = 0

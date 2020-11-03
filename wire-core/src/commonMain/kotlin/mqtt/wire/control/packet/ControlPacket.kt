@@ -12,7 +12,7 @@ interface ControlPacket {
     val flags: Byte get() = 0b0
     val mqttVersion: Byte
 
-    val controlPacketReader: ControlPacketReader
+    val controlPacketFactory: ControlPacketFactory
 
     private fun fixedHeader(writeBuffer: WriteBuffer) {
         val packetValueUInt = controlPacketValue.toUInt()
@@ -26,7 +26,7 @@ interface ControlPacket {
 
     fun variableHeader(writeBuffer: WriteBuffer) {}
     fun payload(writeBuffer: WriteBuffer) {}
-
+    fun packetSize() = 2u + remainingLength()
     fun remainingLength() = 0u
 
     fun validateOrGetWarning(): MqttWarning? {
