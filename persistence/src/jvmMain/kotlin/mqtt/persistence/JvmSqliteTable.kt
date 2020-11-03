@@ -15,7 +15,7 @@ data class JvmSqliteTable(
 ) : PlatformTable {
     override suspend fun upsert(vararg column: Column): Long {
         val sqlPrefix = column.joinToString(
-            prefix = "INSERT INTO $name (",
+            prefix = "INSERT OR REPLACE INTO $name (",
             postfix = ") VALUES("
         ) { it.name }
         val sql = column.joinToString(
@@ -23,7 +23,6 @@ data class JvmSqliteTable(
             postfix = ")"
         ) { "?" }
         val statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)
-        println(statement)
         column.forEachIndexed { index, column ->
             val actualIndex = index + 1
             when (column) {

@@ -14,18 +14,7 @@ ext {
     coroutines_version = '1.3.9'
     room_version = '2.2.2'
 }
-if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() != JavaVersion.VERSION_1_8.ordinal()) {
-    def stdout = new ByteArrayOutputStream()
-    exec {
-        commandLine "which", "java"
-        standardOutput = stdout
-    }
-    throw new GradleException("*******Java 8 is required with Android!**********\n Please set to java 8 and ensure that it's the default" +
-            " The current version is set to " + JavaVersion.current().getMajorVersion() + " located at @ $stdout\n" +
-            "If you are are seeing this error from the IntelliJ, click 'File' -> 'Project Structure' -> 'Platform Settings', 'SDKs' tab, then ensure that only Java 1.8, Android SDK and Kotlin SDK are in the list. Ensure everything in this project sturcture dialog is set to 1.8\n" +
-            "If you are missing Java 8, or are using the gradle wrapper install it using:\n" +
-            "Install Java 8 through SDKMan at https://sdkman.io/install")
-} else if (!System.getenv("ANDROID_HOME")) {
+if (!System.getenv("ANDROID_HOME")) {
     project.logger.warn("Android SDK not found, builds and tests skipped! Please install the Android SDK from: https://developer.android.com/studio/index.html#command-tools and set your ANDROID_HOME env value.")
 }
 if (!System.getenv().containsKey("MOZ_HEADLESS") && !System.getenv().containsKey("FIREFOX_BIN")) {

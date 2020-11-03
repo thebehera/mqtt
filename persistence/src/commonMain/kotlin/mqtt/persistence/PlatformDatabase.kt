@@ -5,4 +5,6 @@ interface PlatformDatabase {
     suspend fun dropTable(table: PlatformTable)
 }
 
-expect fun getPlatformDatabase(name: String): PlatformDatabase
+open class ContextProvider
+
+expect fun getPlatformDatabase(name: String, contextProvider: ContextProvider = ContextProvider()): PlatformDatabase

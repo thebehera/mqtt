@@ -10,7 +10,7 @@ apply from: "../gradle/android.gradle"
 
 kotlin {
     jvm()
-    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+    if (System.getenv("ANDROID_HOME")) {
         android()
     }
     js {
@@ -53,7 +53,7 @@ kotlin {
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:$coroutines_version"
             }
         }
-        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+        if (System.getenv("ANDROID_HOME")) {
             androidMain {
                 dependsOn commonJvm
                 dependencies {
@@ -137,7 +137,7 @@ kotlin {
     }
 }
 
-if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
+if (System.getenv("ANDROID_HOME")) {
 //    dependencies {
 ////        implementation project(":android_roomdb_core")
 //        implementation "androidx.room:room-runtime:$room_version"

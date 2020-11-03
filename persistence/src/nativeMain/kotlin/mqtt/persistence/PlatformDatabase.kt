@@ -1,3 +1,4 @@
 package mqtt.persistence
 
-actual fun getPlatformDatabase(name: String): PlatformDatabase = throw UnsupportedOperationException()
+actual fun getPlatformDatabase(name: String, contextProvider: ContextProvider): PlatformDatabase =
+    throw UnsupportedOperationException()

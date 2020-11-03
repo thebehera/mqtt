@@ -70,7 +70,6 @@ class JvmSqlDatabase(val name: String) : PlatformDatabase {
             postfix = ")"
         )
         println("$createStatement ${connection.withStatement(createStatement)}")
-
         return JvmSqliteTable(connection, name, rowData)
     }
 

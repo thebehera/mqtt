@@ -10,9 +10,7 @@ apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
     jvm()
-    if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-        android()
-    }
+    android()
     ios("iOS")
     js {
         browser {
@@ -48,17 +46,22 @@ kotlin {
                 implementation kotlin('test-annotations-common')
             }
         }
-        if (System.getenv("ANDROID_HOME") && JavaVersion.current().ordinal() == JavaVersion.VERSION_1_8.ordinal()) {
-            androidMain {
-                dependencies {
-                }
-            }
-            androidTest {
-                dependencies {
-                    implementation kotlin('test-junit')
-                }
+        androidMain {
+            dependencies {
             }
         }
+        androidTest {
+            dependencies {
+                implementation kotlin('test-junit')
+                implementation 'androidx.test.espresso:espresso-core:3.2.0'
+                implementation 'androidx.test:core:1.2.0'
+                implementation 'androidx.test.ext:junit:1.1.1'
+                implementation 'androidx.test:runner:1.2.0'
+                implementation 'androidx.test:rules:1.2.0'
+                implementation 'org.robolectric:robolectric:4.4'
+            }
+        }
+
         jvmMain {
             dependencies {
                 implementation 'org.xerial:sqlite-jdbc:3.32.3.2'

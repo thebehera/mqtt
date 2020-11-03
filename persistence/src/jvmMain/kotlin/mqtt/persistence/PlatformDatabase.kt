@@ -1,3 +1,3 @@
 package mqtt.persistence
 
-actual fun getPlatformDatabase(name: String): PlatformDatabase = JvmSqlDatabase(name)
+actual fun getPlatformDatabase(name: String, contextProvider: ContextProvider): PlatformDatabase = JvmSqlDatabase(name)
