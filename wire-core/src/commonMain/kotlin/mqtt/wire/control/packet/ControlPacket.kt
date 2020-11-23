@@ -46,3 +46,11 @@ interface ControlPacket {
         }
     }
 }
+
+fun Array<out ControlPacket>.bufferSize(): UInt {
+    var bufferSize = 0u
+    forEach { packet ->
+        bufferSize += packet.packetSize()
+    }
+    return bufferSize
+}
