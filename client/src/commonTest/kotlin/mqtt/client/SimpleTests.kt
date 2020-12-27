@@ -9,14 +9,13 @@ import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import mqtt.wire4.control.packet.ConnectionRequest
-import kotlin.test.Test
 import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 class SimpleTests {
 
-    @Test
+//    @Test
     fun mqttSimpleTest() = block {
         var request = ConnectionRequest<Unit>("123asoko0k234difhuio09123132344")
         val newVariableHeader = request.variableHeader.copy(keepAliveSeconds = 10)
