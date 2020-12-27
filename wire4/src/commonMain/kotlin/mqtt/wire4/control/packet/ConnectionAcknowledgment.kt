@@ -9,8 +9,6 @@ import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire4.control.packet.ConnectionAcknowledgment.VariableHeader.ReturnCode.*
 
-typealias CONNACK = ConnectionAcknowledgment
-
 /**
  * The CONNACK packet is the packet sent by the Server in response to a CONNECT packet received from a Client.
  * The Server MUST send a CONNACK with a 0x00 (Success) Reason Code before sending any Packet other than
@@ -122,17 +120,21 @@ data class ConnectionAcknowledgment(val header: VariableHeader = VariableHeader(
 
     companion object {
         fun from(buffer: ReadBuffer) = ConnectionAcknowledgment(VariableHeader.from(buffer))
-    }
-}
 
-val connackReturnCode by lazy {
-    mapOf(
-        Pair(CONNECTION_ACCEPTED.value, CONNECTION_ACCEPTED),
-        Pair(CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION.value, CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION),
-        Pair(CONNECTION_REFUSED_IDENTIFIER_REJECTED.value, CONNECTION_REFUSED_IDENTIFIER_REJECTED),
-        Pair(CONNECTION_REFUSED_SERVER_UNAVAILABLE.value, CONNECTION_REFUSED_SERVER_UNAVAILABLE),
-        Pair(CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD.value, CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD),
-        Pair(CONNECTION_REFUSED_NOT_AUTHORIZED.value, CONNECTION_REFUSED_NOT_AUTHORIZED),
-        Pair(RESERVED.value, CONNECTION_REFUSED_NOT_AUTHORIZED)
-    )
+        val connackReturnCode by lazy {
+            mapOf(
+                Pair(CONNECTION_ACCEPTED.value, CONNECTION_ACCEPTED),
+                Pair(
+                    CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION.value,
+                    CONNECTION_REFUSED_UNACCEPTABLE_PROTOCOL_VERSION
+                ),
+                Pair(CONNECTION_REFUSED_IDENTIFIER_REJECTED.value, CONNECTION_REFUSED_IDENTIFIER_REJECTED),
+                Pair(CONNECTION_REFUSED_SERVER_UNAVAILABLE.value, CONNECTION_REFUSED_SERVER_UNAVAILABLE),
+                Pair(CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD.value, CONNECTION_REFUSED_BAD_USER_NAME_OR_PASSWORD),
+                Pair(CONNECTION_REFUSED_NOT_AUTHORIZED.value, CONNECTION_REFUSED_NOT_AUTHORIZED),
+                Pair(RESERVED.value, CONNECTION_REFUSED_NOT_AUTHORIZED)
+            )
+        }
+
+    }
 }

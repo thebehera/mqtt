@@ -19,14 +19,19 @@ interface ClientSocket : SuspendCloseable {
     fun remotePort(): UShort?
     suspend fun read(buffer: PlatformBuffer, timeout: Duration): Int
     suspend fun read(timeout: Duration = 1.seconds) = read(timeout) { buffer, bytesRead -> buffer.readUtf8(bytesRead) }
-    suspend fun <T> read(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+    suspend fun <T> read(
+        timeout: Duration = 1.seconds,
+        bufferRead: suspend (PlatformBuffer, Int) -> T
+    ): SocketDataRead<T> {
         var bytesRead = 0
         val result = pool.borrowSuspend {
+            it.resetForWrite()
             bytesRead = read(it, timeout)
             bufferRead(it, bytesRead)
         }
         return SocketDataRead(result, bytesRead)
     }
+
     suspend fun <T> readTyped(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer) -> T) =
         read(timeout) { buffer, _ ->
             bufferRead(buffer)
@@ -40,6 +45,7 @@ interface ClientSocket : SuspendCloseable {
         while (buffer.position() < buffer.limit()) {
             write(buffer, timeout)
         }
+        buffer.toString()
     }
 }
 

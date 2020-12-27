@@ -19,7 +19,7 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
  */
 data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<CharSequence>) :
     ControlPacketV5(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
-
+    override val packetIdentifier = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(): UInt {
         val variableSize = variable.size()

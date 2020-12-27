@@ -7,12 +7,13 @@ import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.ISubscribeRequest
+import mqtt.wire.control.packet.RetainHandling
+import mqtt.wire.control.packet.RetainHandling.*
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire.data.utf8Length
-import mqtt.wire5.control.packet.RetainHandling.*
 import mqtt.wire5.control.packet.SubscribeRequest.VariableHeader.Properties
 import mqtt.wire5.control.packet.format.variable.property.Property
 import mqtt.wire5.control.packet.format.variable.property.ReasonString
@@ -354,10 +355,4 @@ fun Collection<Subscription>.size(): UInt {
     var size = 0u
     forEach { size += it.size() }
     return size
-}
-
-enum class RetainHandling(val value: UByte) {
-    SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE(0.toUByte()),
-    SEND_RETAINED_MESSAGES_AT_SUBSCRIBE_ONLY_IF_SUBSCRIBE_DOESNT_EXISTS(1.toUByte()),
-    DO_NOT_SEND_RETAINED_MESSAGES(2.toUByte())
 }

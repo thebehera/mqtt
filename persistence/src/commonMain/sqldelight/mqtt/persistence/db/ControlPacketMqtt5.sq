@@ -1,0 +1,66 @@
+CREATE TABLE ConnectionRequest5 (
+      connectionId INTEGER NOT NULL,
+      protocolName TEXT NOT NULL,
+      protocolVersion INTEGER NOT NULL CHECK (protocolVersion BETWEEN 0 AND 255),
+      username TEXT,
+      password TEXT,
+      clientId TEXT NOT NULL CHECK (length(clientId) <= 65535 AND clientId GLOB '[a-zA-Z0-9]*'),
+      willPropertyRowId INTEGER,
+      willTopic TEXT CHECK (willTopic IS NULL OR willTopic GLOB '^(\+|.+/\+|[^#]+#|.*/\+/.*)$'),
+      willPayload BLOB,
+      willRetain INTEGER NOT NULL DEFAULT 0 CHECK (willRetain BETWEEN 0 AND 1),
+      willQos INTEGER NOT NULL CHECK (willQos BETWEEN 0 AND 2),
+      willFlag INTEGER NOT NULL CHECK (willFlag BETWEEN 0 AND 1),
+      cleanStart INTEGER NOT NULL DEFAULT 0 CHECK (cleanStart BETWEEN 0 AND 1),
+      keepAliveSeconds INTEGER NOT NULL CHECK (keepAliveSeconds BETWEEN 0 AND 65353),
+      userProperty INTEGER,
+      PRIMARY KEY (connectionId),
+      FOREIGN KEY (willPropertyRowId) REFERENCES WillProperties(row_id),
+      FOREIGN KEY (userProperty) REFERENCES UserProperty(property_id)
+) WITHOUT ROWID;
+
+CREATE TABLE PublishMessage5 (
+    connectionId INTEGER NOT NULL,
+    publishMessageId INTEGER NOT NULL,
+    dup INTEGER NOT NULL DEFAULT 0 CHECK (dup BETWEEN 0 AND 1),
+    qos INTEGER NOT NULL CHECK (qos BETWEEN 0 AND 2),
+    retain INTEGER NOT NULL DEFAULT 0 CHECK (retain BETWEEN 0 AND 1),
+    topicName TEXT CHECK (topicName GLOB '^(\+|.+/\+|[^#]+#|.*/\+/.*)$'),
+    packetIdentifier INTEGER CHECK (packetIdentifier IS NULL OR packetIdentifier BETWEEN 0 AND 65353),
+    payloadFormatIndicator INTEGER NOT NULL DEFAULT 0 CHECK (payloadFormatIndicator BETWEEN 0 AND 1),
+    messageExpiryInterval INTEGER CHECK (messageExpiryInterval IS NULL OR messageExpiryInterval BETWEEN 0 AND 4294967295),
+    topicAlias INTEGER CHECK (topicAlias IS NULL OR topicAlias BETWEEN 0 AND 65353),
+    responseTopic TEXT CHECK (responseTopic IS NULL OR responseTopic GLOB '^(\+|.+/\+|[^#]+#|.*/\+/.*)$'),
+    correlationData BLOB,
+    userProperty INTEGER,
+    payload BLOB,
+    PRIMARY KEY (connectionId, publishMessageId, packetIdentifier)
+) WITHOUT ROWID;
+
+CREATE TABLE SubscriptionIdentifier(
+  connectionId INTEGER NOT NULL,
+  publishMessageId INTEGER NOT NULL,
+  identifier INTEGER NOT NULL CHECK (identifier BETWEEN 1 AND 268435455),
+  PRIMARY KEY (connectionId, publishMessageId, identifier)
+) WITHOUT ROWID;
+
+
+CREATE TABLE WillProperties (
+    row_id INTEGER NOT NULL,
+    willDelayIntervalSeconds INTEGER NOT NULL DEFAULT 0 CHECK (willDelayIntervalSeconds BETWEEN 0 AND 4294967295),
+    payloadFormatIndicator INTEGER NOT NULL DEFAULT 0 CHECK (payloadFormatIndicator BETWEEN 0 AND 1),
+    messageExpiryIntervalSeconds INTEGER CHECK (willDelayIntervalSeconds BETWEEN 0 AND 4294967295),
+    contentType TEXT,
+    responseTopic TEXT CHECK (responseTopic IS NULL OR responseTopic GLOB '^(\+|.+/\+|[^#]+#|.*/\+/.*)$'),
+    correlationData BLOB,
+    userProperty INTEGER,
+    PRIMARY KEY (row_id),
+    FOREIGN KEY (userProperty) REFERENCES UserProperty(property_id)
+) WITHOUT ROWID;
+
+CREATE TABLE UserProperty (
+  property_id INTEGER NOT NULL,
+  `key` TEXT NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (property_id, `key`, value)
+) WITHOUT ROWID;

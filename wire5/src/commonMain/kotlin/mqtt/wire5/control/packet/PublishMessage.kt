@@ -6,6 +6,7 @@ import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
 import mqtt.wire.control.packet.IPublishMessage
+import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
@@ -39,6 +40,7 @@ data class PublishMessage<ApplicationMessage : Any>(
         retain: Boolean = false
     ) : this(FixedHeader(dup, qos, retain), VariableHeader(topic, packetIdentifier = packetIdentifier.toInt()))
 
+    override val packetIdentifier = variable.packetIdentifier?.toUShort()
     override val qualityOfService: QualityOfService = fixed.qos
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
@@ -57,12 +59,16 @@ data class PublishMessage<ApplicationMessage : Any>(
 
     override val topic = variable.topicName
 
-    override fun expectedResponse() = when (fixed.qos) {
+    override fun expectedResponse(
+        reasonCode: ReasonCode,
+        reasonString: CharSequence?,
+        userProperty: List<Pair<CharSequence, CharSequence>>
+    ) = when (fixed.qos) {
         AT_LEAST_ONCE -> {
             PublishAcknowledgment(variable.packetIdentifier!!.toUShort())
         }
         QualityOfService.EXACTLY_ONCE -> {
-            PublishRelease(variable.packetIdentifier!!.toUShort())
+            PublishReceived(variable.packetIdentifier!!, reasonCode, reasonString, userProperty)
         }
         else -> null
     }

@@ -6,6 +6,7 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.control.packet.IUnsubscribeAckowledgment
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -17,8 +18,8 @@ import mqtt.wire5.control.packet.format.variable.property.readPropertiesSized
 data class UnsubscribeAcknowledgment(
     val variable: VariableHeader,
     val reasonCodes: List<ReasonCode> = listOf(SUCCESS)
-) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT) {
-
+) : ControlPacketV5(11, DirectionOfFlow.SERVER_TO_CLIENT), IUnsubscribeAckowledgment {
+    override val packetIdentifier: Int = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun remainingLength(): UInt {
         val variableSize = variable.size()

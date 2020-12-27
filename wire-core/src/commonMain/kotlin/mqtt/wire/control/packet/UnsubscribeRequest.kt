@@ -1,3 +1,5 @@
 package mqtt.wire.control.packet
 
-interface IUnsubscribeRequest : ControlPacket
+interface IUnsubscribeRequest : ControlPacket {
+    val packetIdentifier: Int
+}

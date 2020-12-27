@@ -22,6 +22,15 @@ import mqtt.wire5.control.packet.format.variable.property.readProperties
  */
 data class PublishReceived(val variable: VariableHeader) : ControlPacketV5(5, DirectionOfFlow.BIDIRECTIONAL),
     IPublishReceived {
+    constructor(
+        packetIdentifier: Int,
+        reasonCode: ReasonCode,
+        reasonString: CharSequence?,
+        userProperty: List<Pair<CharSequence, CharSequence>>
+    ) : this(
+        VariableHeader(packetIdentifier, reasonCode, VariableHeader.Properties(reasonString, userProperty))
+    )
+
     override fun expectedResponse() = PublishRelease(variable.packetIdentifier.toUShort())
     override val packetIdentifier: Int = variable.packetIdentifier
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)

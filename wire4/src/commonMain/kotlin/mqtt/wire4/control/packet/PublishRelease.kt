@@ -14,6 +14,9 @@ import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
  */
 data class PublishRelease(override val packetIdentifier: Int) : ControlPacketV4(6, DirectionOfFlow.BIDIRECTIONAL, 0b10),
     IPublishRelease {
+
+    override fun packetSize() = 4u
+    override fun remainingLength() = 2u
     override fun variableHeader(writeBuffer: WriteBuffer) {
         writeBuffer.write(packetIdentifier.toUShort())
     }

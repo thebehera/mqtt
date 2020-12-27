@@ -28,25 +28,25 @@ data class IntegerColumn(
     override val name: String,
     override val value: Long,
     override val isPrimaryKey: Boolean = false
-) : Column(name, Type.INTEGER)
+) : Column(name, Type.INTEGER, isPrimaryKey)
 
 data class FloatColumn(
     override val name: String,
     override val value: Double,
     override val isPrimaryKey: Boolean = false
-) : Column(name, Type.REAL)
+) : Column(name, Type.REAL, isPrimaryKey)
 
 data class TextColumn(
     override val name: String,
     override val value: String,
     override val isPrimaryKey: Boolean = false
-) : Column(name, Type.TEXT)
+) : Column(name, Type.TEXT, isPrimaryKey)
 
 data class BlobColumn(
     override val name: String,
     override val value: PlatformBuffer,
     override val isPrimaryKey: Boolean = false
-) : Column(name, Type.BLOB)
+) : Column(name, Type.BLOB, isPrimaryKey)
 
 data class NullColumn(override val name: String, override val isPrimaryKey: Boolean = false) : Column(name, Type.NULL) {
     override val value: Any? = null

@@ -4,9 +4,10 @@ package mqtt.wire5.control.packet
 
 import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
-import mqtt.wire.control.packet.ControlPacketFactory
-import mqtt.wire.control.packet.IPublishMessage
+import mqtt.wire.control.packet.*
+import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.data.QualityOfService
+import mqtt.wire5.control.packet.DisconnectNotification.VariableHeader
 
 object ControlPacketV5Factory : ControlPacketFactory {
     override fun from(buffer: ReadBuffer, byte1: UByte, remainingLength: UInt) =
@@ -16,6 +17,28 @@ object ControlPacketV5Factory : ControlPacketFactory {
     override fun pingRequest() = PingRequest
     override fun pingResponse() = PingResponse
 
+
+    override fun subscribe(
+        packetIdentifier: Int,
+        subscriptions: Set<SubscriptionWrapper>,
+        reasonString: CharSequence?,
+        userProperty: List<Pair<CharSequence, CharSequence>>
+    ): ISubscribeRequest {
+        val variableHeader = SubscribeRequest.VariableHeader(
+            packetIdentifier,
+            SubscribeRequest.VariableHeader.Properties(reasonString, userProperty)
+        )
+        val subscriptionsMqtt5 = subscriptions.map {
+            Subscription(
+                it.topicFilter,
+                it.maximumQos,
+                it.noLocal,
+                it.retainAsPublished,
+                it.retainHandling
+            )
+        }
+        return SubscribeRequest(variableHeader, subscriptionsMqtt5.toSet())
+    }
 
     override fun <ApplicationMessage : Any, CorrelationData : Any> publish(
         dup: Boolean,
@@ -46,5 +69,21 @@ object ControlPacketV5Factory : ControlPacketFactory {
         )
         val variableHeader = PublishMessage.VariableHeader(topicName, packetIdentifier, properties)
         return PublishMessage(fixedHeader, variableHeader, payload)
+    }
+
+    override fun reserved() = Reserved
+    override fun disconnect(
+        reasonCode: ReasonCode,
+        sessionExpiryIntervalSeconds: Long?,
+        reasonString: CharSequence?,
+        userProperty: List<Pair<CharSequence, CharSequence>>,
+        serverReference: CharSequence?
+    ): IDisconnectNotification {
+        return DisconnectNotification(
+            VariableHeader(
+                reasonCode,
+                VariableHeader.Properties(sessionExpiryIntervalSeconds, reasonString, userProperty, serverReference)
+            )
+        )
     }
 }

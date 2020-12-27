@@ -1,11 +1,15 @@
+import org.gradle.internal.os.OperatingSystem
+
 plugins {
     id 'kotlin-multiplatform'
+    id 'com.squareup.sqldelight'
 }
 repositories {
     mavenCentral()
     jcenter()
 }
 
+apply plugin: 'com.squareup.sqldelight'
 apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
 kotlin {
@@ -13,7 +17,6 @@ kotlin {
     if (System.getenv("ANDROID_HOME")) {
         android()
     }
-    ios("iOS")
     js {
         browser {
             testTask {
@@ -32,12 +35,19 @@ kotlin {
             }
         }
     }
-    macosX64("macos")
-    linuxX64("linux")
-    mingwX64("windows")
+    if (OperatingSystem.current().isWindows()) {
+        mingwX64("native")
+    } else if (OperatingSystem.current().isMacOsX()) {
+        ios("iOS")
+        macosX64("macos")
+    } else if (OperatingSystem.current().isLinux()) {
+        linuxX64("native")
+    }
+//    mingwX64("windows")
     sourceSets {
         commonMain {
             dependencies {
+                implementation "com.squareup.sqldelight:runtime:$sql_delight_version"
                 implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutines_version"
                 implementation project(":buffer")
             }
@@ -52,6 +62,7 @@ kotlin {
         if (System.getenv("ANDROID_HOME")) {
             androidMain {
                 dependencies {
+                    implementation "com.squareup.sqldelight:android-driver:1.4.3"
                 }
             }
             androidTest {
@@ -69,6 +80,7 @@ kotlin {
         jvmMain {
             dependencies {
                 implementation 'org.xerial:sqlite-jdbc:3.32.3.2'
+                implementation "com.squareup.sqldelight:sqlite-driver:1.4.3"
             }
         }
         jvmTest {
@@ -86,41 +98,46 @@ kotlin {
                 implementation kotlin('test-js')
             }
         }
-        nativeMain {
-            dependsOn commonMain
-            dependencies {
-            }
-        }
         nativeTest {
             dependencies {
             }
         }
         iOSX64Main {
-            dependsOn nativeMain
+            dependencies {
+                implementation "com.squareup.sqldelight:native-driver:1.4.3"
+            }
         }
         iOSX64Test {
             dependsOn nativeTest
         }
         iOSArm64Main {
-            dependsOn nativeMain
+            dependencies {
+                implementation "com.squareup.sqldelight:native-driver:1.4.3"
+            }
         }
         iOSArm64Test {
             dependsOn nativeTest
         }
         linuxMain {
-            dependsOn nativeMain
+            dependencies {
+                implementation "com.squareup.sqldelight:native-driver:1.4.3"
+            }
         }
         linuxTest {
             dependsOn nativeTest
         }
         macosMain {
-            dependsOn nativeMain
+            dependencies {
+                implementation "com.squareup.sqldelight:native-driver:1.4.3"
+            }
         }
         macosTest {
             dependsOn nativeTest
         }
         windowsMain {
-            dependsOn nativeMain
+            dependencies {
+                implementation "com.squareup.sqldelight:native-driver:1.4.3"
+            }
         }
         windowsTest {
             dependsOn nativeTest
@@ -137,5 +154,12 @@ kotlin {
                 ]
             }
         }
+    }
+}
+
+
+sqldelight {
+    Database { // This will be the name of the generated database class.
+        packageName = "mqtt.persistence.db"
     }
 }

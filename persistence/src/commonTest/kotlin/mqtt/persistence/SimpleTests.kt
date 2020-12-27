@@ -25,4 +25,19 @@ class SimpleTests {
         assertEquals(resultRow, row)
         return@runTest
     }
+
+    @Test
+    fun relationTest() = runTest { contextProvider ->
+        val platformDatabase = getPlatformDatabase("rahultestdb", contextProvider)
+        val column1 = TextColumn("column1", "hello")
+        val column2 = IntegerColumn("column2", 3)
+        val columnsMap = mutableMapOf("column1" to column1, "column2" to column2)
+        var row = Row(columnsMap)
+        val map = LinkedHashMap<String, Row>()
+        map["test"] = row
+        val tables = platformDatabase.open(map)
+        val table = tables.values.first()
+
+
+    }
 }

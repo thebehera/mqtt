@@ -1,0 +1,17 @@
+CREATE TABLE ConnectionRequest4 (
+   connectionId INTEGER NOT NULL,
+   protocolName TEXT NOT NULL,
+   protocolVersion INTEGER NOT NULL CHECK (protocolVersion BETWEEN 0 AND 255),
+   username TEXT,
+   password TEXT,
+   clientId TEXT NOT NULL CHECK (length(clientId) <= 65535 AND clientId GLOB '[a-zA-Z0-9]*'),
+   willTopic TEXT CHECK (willTopic IS NULL OR willTopic GLOB '^(\+|.+/\+|[^#]+#|.*/\+/.*)$'),
+   willPayload BLOB,
+   willRetain INTEGER NOT NULL DEFAULT 0 CHECK (willRetain BETWEEN 0 AND 1),
+   willQos INTEGER NOT NULL CHECK (willQos BETWEEN 0 AND 2),
+   willFlag INTEGER NOT NULL CHECK (willFlag BETWEEN 0 AND 1),
+   cleanSession INTEGER NOT NULL DEFAULT 0 CHECK (cleanSession BETWEEN 0 AND 1),
+   keepAliveSeconds INTEGER NOT NULL CHECK (keepAliveSeconds BETWEEN 0 AND 65353),
+   PRIMARY KEY (connectionId)
+) WITHOUT ROWID;
+

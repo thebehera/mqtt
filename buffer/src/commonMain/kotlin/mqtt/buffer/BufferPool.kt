@@ -66,6 +66,7 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
     ): T {
         val buffer = borrow(size)
         try {
+            buffer.resetForWrite()
             return bufferCallback(buffer)
         } finally {
             recycle(buffer)
@@ -79,15 +80,19 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
         pool.clear()
     }
 
-    private fun borrow(size: UInt = limits.defaultBufferSize) = pool
-        .sortedBy { it.capacity }
-        .minByOrNull {
-            if (it.capacity.toLong() < size.toLong()) {
-                Int.MAX_VALUE.toLong()
-            } else {
-                it.capacity.toLong()
-            }
-        } ?: allocateNewBuffer(size, limits)
+    private fun borrow(size: UInt = limits.defaultBufferSize): PlatformBuffer {
+        return allocateNewBuffer(size, limits)
+        //TODO: Fix borrowing and make sure it's thread safe
+//        return pool
+//            .filter { it.capacity >= size }
+//            .minByOrNull {
+//                if (it.capacity.toLong() < size.toLong()) {
+//                    Int.MAX_VALUE.toLong()
+//                } else {
+//                    it.capacity.toLong()
+//                }
+//            } ?: allocateNewBuffer(size, limits)
+    }
 
 
     fun recycleAsync(buffer: PlatformBuffer) {

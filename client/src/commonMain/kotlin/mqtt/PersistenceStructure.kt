@@ -1,5 +1,0 @@
-package mqtt
-
-object PersistenceStructure {
-
-}

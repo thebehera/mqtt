@@ -4,6 +4,8 @@ package mqtt.wire.control.packet
 
 import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
+import mqtt.wire.control.packet.format.ReasonCode
+import mqtt.wire.control.packet.format.ReasonCode.NORMAL_DISCONNECTION
 import mqtt.wire.data.QualityOfService
 
 interface ControlPacketFactory {
@@ -17,6 +19,13 @@ interface ControlPacketFactory {
 
     fun pingRequest(): IPingRequest
     fun pingResponse(): IPingResponse
+
+    fun subscribe(
+        packetIdentifier: Int,
+        subscriptions: Set<SubscriptionWrapper>,
+        reasonString: CharSequence? = null,
+        userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
+    ): ISubscribeRequest
 
     fun publish(
         dup: Boolean = false,
@@ -70,5 +79,15 @@ interface ControlPacketFactory {
         subscriptionIdentifier: Set<Long> = emptySet(),
         contentType: CharSequence? = null
     ): IPublishMessage
+
+
+    fun reserved(): IReserved
+    fun disconnect(
+        reasonCode: ReasonCode = NORMAL_DISCONNECTION,
+        sessionExpiryIntervalSeconds: Long? = null,
+        reasonString: CharSequence? = null,
+        userProperty: List<Pair<CharSequence, CharSequence>> = emptyList(),
+        serverReference: CharSequence? = null
+    ): IDisconnectNotification
 
 }

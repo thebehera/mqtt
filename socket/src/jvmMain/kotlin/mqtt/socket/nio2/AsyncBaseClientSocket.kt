@@ -3,7 +3,6 @@ package mqtt.socket.nio2
 import mqtt.buffer.BufferPool
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
-import mqtt.socket.SocketDataRead
 import mqtt.socket.nio.ByteBufferClientSocket
 import mqtt.socket.nio2.util.aRead
 import mqtt.socket.nio2.util.aWrite
@@ -18,9 +17,9 @@ abstract class AsyncBaseClientSocket(override val pool: BufferPool) :
     ByteBufferClientSocket<AsynchronousSocketChannel>() {
     override fun remotePort() = socket?.assignedPort(remote = true)
 
-    override suspend fun read(buffer: PlatformBuffer, timeout: Duration)
-            = socket!!.aRead((buffer as JvmBuffer).byteBuffer, timeout)
+    override suspend fun read(buffer: PlatformBuffer, timeout: Duration) =
+        socket?.aRead((buffer as JvmBuffer).byteBuffer, timeout) ?: -1
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration) =
-        socket!!.aWrite((buffer as JvmBuffer).byteBuffer, timeout)
+        socket?.aWrite((buffer as JvmBuffer).byteBuffer, timeout) ?: -1
 }

@@ -15,10 +15,9 @@ import mqtt.wire.data.utf8Length
  * An UNSUBSCRIBE packet is sent by the Client to the Server, to unsubscribe from topics.
  */
 data class UnsubscribeRequest(
-    val packetIdentifier: Int,
+    override val packetIdentifier: Int,
     val topics: List<MqttUtf8String>
 ) : ControlPacketV4(10, DirectionOfFlow.CLIENT_TO_SERVER, 0b10), IUnsubscribeRequest {
-
     override fun remainingLength() = UShort.SIZE_BYTES.toUInt() + payloadSize()
 
 

@@ -5,6 +5,7 @@ package mqtt.wire4.control.packet
 import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.control.packet.IPublishMessage
+import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
@@ -30,7 +31,7 @@ data class PublishMessage<ApplicationMessage : Any>(
     }
 
     override val qualityOfService: QualityOfService = fixed.qos
-
+    override val packetIdentifier = variable.packetIdentifier?.toUShort()
     override fun variableHeader(writeBuffer: WriteBuffer) = variable.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) {
         if (payload != null) {
@@ -40,12 +41,16 @@ data class PublishMessage<ApplicationMessage : Any>(
 
     override fun remainingLength() = variable.size() + payloadSize()
 
-    override fun expectedResponse() = when {
-        fixed.qos == AT_LEAST_ONCE -> {
+    override fun expectedResponse(
+        reasonCode: ReasonCode,
+        reasonString: CharSequence?,
+        userProperty: List<Pair<CharSequence, CharSequence>>
+    ) = when (fixed.qos) {
+        AT_LEAST_ONCE -> {
             PublishAcknowledgment(variable.packetIdentifier!!.toUShort().toInt())
         }
-        fixed.qos == EXACTLY_ONCE -> {
-            PublishRelease(variable.packetIdentifier!!.toUShort().toInt())
+        EXACTLY_ONCE -> {
+            PublishReceived(variable.packetIdentifier!!.toUShort().toInt())
         }
         else -> null
     }

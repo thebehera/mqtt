@@ -1,0 +1,12 @@
+CREATE TABLE MqttRemoteHost(
+    name TEXT NOT NULL PRIMARY KEY
+) WITHOUT ROWID;
+
+insertHost:
+INSERT OR IGNORE INTO MqttRemoteHost(name) VALUES (?);
+
+selectAll:
+SELECT * FROM MqttRemoteHost;
+
+ignoreHost:
+DELETE FROM MqttRemoteHost WHERE name = ?;

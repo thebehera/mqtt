@@ -19,7 +19,6 @@ abstract class BaseClientSocket(
     protected val blocking: Boolean = false,
     override val pool: BufferPool
 ) : ByteBufferClientSocket<SocketChannel>() {
-
     val selector = if (!blocking) Selector.open()!! else null
 
     override fun remotePort() = (socket?.remoteAddress as? InetSocketAddress)?.port?.toUShort()
@@ -27,7 +26,10 @@ abstract class BaseClientSocket(
     override suspend fun read(buffer: PlatformBuffer, timeout: Duration) =
         socket!!.read((buffer as JvmBuffer).byteBuffer, selector, timeout)
 
-    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+    override suspend fun <T> read(
+        timeout: Duration,
+        bufferRead: suspend (PlatformBuffer, Int) -> T
+    ): SocketDataRead<T> {
         var bytesRead = 0
         val result = pool.borrowSuspend {
             val byteBuffer = (it as JvmBuffer).byteBuffer

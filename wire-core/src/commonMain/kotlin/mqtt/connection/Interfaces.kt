@@ -15,6 +15,21 @@ data class MqttConnectionStateUpdated(
             : this(remote.connectionIdentifier(), acknowledgment)
 }
 
+data class RemoteHost(
+    override val name: String,
+    override val port: Int,
+    override val request: IConnectionRequest,
+    override val security: SecurityParameters = SecurityParameters(false, false),
+    override val websocket: WebsocketParameters = WebsocketParameters(false),
+    override val connectionTimeout: Milliseconds = 1000,
+) : IRemoteHost {
+    data class WebsocketParameters(override val isEnabled: Boolean) : IRemoteHost.IWebsocketParameters
+    data class SecurityParameters(
+        override val isTransportLayerSecurityEnabled: Boolean,
+        override val acceptAllCertificates: Boolean
+    ) : IRemoteHost.ISecurityParameters
+}
+
 interface IRemoteHost {
     interface IWebsocketParameters {
         val isEnabled: Boolean
@@ -31,8 +46,6 @@ interface IRemoteHost {
     val security: ISecurityParameters
     val websocket: IWebsocketParameters
     val request: IConnectionRequest
-
-    val maxNumberOfRetries: Int //= Int.MAX_VALUE
 
     fun connectionIdentifier() = uniqueIdentifier().hashCode()
     fun uniqueIdentifier(): CharSequence = Companion.uniqueIdentifier(
@@ -55,14 +68,6 @@ interface IRemoteHost {
                 name,
                 port
             ).joinToString(".")
-
-        fun connectionIdentifier(
-            protocolName: CharSequence,
-            protocolVersion: Int,
-            clientId: CharSequence,
-            name: CharSequence,
-            port: Int
-        ) = uniqueIdentifier(protocolName, protocolVersion, clientId, name, port).hashCode()
     }
 }
 
