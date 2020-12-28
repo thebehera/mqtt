@@ -35,7 +35,10 @@ open class PosixClientSocket(override val pool: BufferPool = BufferPool()) : Cli
         else swapBytes(peerAddress.sin_port)
     }
 
-    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+    override suspend fun <T> read(
+        timeout: Duration,
+        bufferRead: suspend (PlatformBuffer, Int) -> T
+    ): SocketDataRead<T> {
         return withTimeout(timeout) {
             pool.borrowSuspend { buffer ->
                 val nativeBuffer = buffer as NativeBuffer

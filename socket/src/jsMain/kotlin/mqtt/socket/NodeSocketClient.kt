@@ -29,7 +29,11 @@ open class NodeSocket : ClientSocket {
         receivedData.result.put(buffer)
         return receivedData.bytesRead
     }
-    override suspend fun <T> read(timeout: Duration, bufferRead: (PlatformBuffer, Int) -> T): SocketDataRead<T> {
+
+    override suspend fun <T> read(
+        timeout: Duration,
+        bufferRead: suspend (PlatformBuffer, Int) -> T
+    ): SocketDataRead<T> {
         val receivedData = incomingMessageChannel.receive()
         netSocket?.resume()
         try {

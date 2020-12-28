@@ -13,13 +13,13 @@ kotlin {
     if (System.getenv("ANDROID_HOME")) {
         android()
     }
-    js {
-        nodejs {
-            testTask {
-
-            }
-        }
-    }
+//    js {
+//        nodejs {
+//            testTask {
+//
+//            }
+//        }
+//    }
 //    ios("iOS")
 //    macosX64("macos")
 //    linuxX64("linux")
