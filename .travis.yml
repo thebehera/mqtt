@@ -12,6 +12,7 @@ matrix:
       addons:
         apt:
           packages:
+            - mosquitto
             - libgbm-dev
         chrome: stable
         firefox: latest
@@ -26,6 +27,7 @@ matrix:
         apt:
           packages:
             - libgbm-dev
+            - mosquitto
         chrome: stable
         firefox: latest
     - os: linux
@@ -41,6 +43,7 @@ matrix:
         apt:
           packages:
             - libgbm-dev
+            - mosquitto
     - os: linux
       language: java
       dist: bionic
@@ -48,6 +51,7 @@ matrix:
         apt:
           packages:
             - libgbm-dev
+            - mosquitto
         chrome: stable
         firefox: latest
     - os: linux
@@ -57,6 +61,7 @@ matrix:
         apt:
           packages:
             - libgbm-dev
+            - mosquitto
         chrome: stable
         firefox: latest
     - os: linux
@@ -66,6 +71,7 @@ matrix:
         apt:
           packages:
             - libgbm-dev
+            - mosquitto
         chrome: stable
         firefox: latest
       jdk:
