@@ -18,7 +18,7 @@ class SimpleTests {
         val client = Client(
             RemoteHost(
                 "localhost",
-                1883,
+                60000,
                 ConnectionRequest<Unit>("mix12${Random.nextLong()}", keepAliveSeconds = 56, cleanSession = true)
             ), scope = this
         )

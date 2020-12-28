@@ -81,17 +81,20 @@ data class BufferPool(val limits: BufferMemoryLimit = DefaultMemoryLimit) {
     }
 
     private fun borrow(size: UInt = limits.defaultBufferSize): PlatformBuffer {
-//        return allocateNewBuffer(size, limits)
         //TODO: Fix borrowing and make sure it's thread safe
-        return pool
-            .filter { it.capacity >= size }
-            .minByOrNull {
-                if (it.capacity.toLong() < size.toLong()) {
-                    Int.MAX_VALUE.toLong()
-                } else {
-                    it.capacity.toLong()
-                }
-            } ?: allocateNewBuffer(size, limits)
+        return try {
+            pool
+                .filter { it.capacity >= size }
+                .minByOrNull {
+                    if (it.capacity.toLong() < size.toLong()) {
+                        Int.MAX_VALUE.toLong()
+                    } else {
+                        it.capacity.toLong()
+                    }
+                } ?: allocateNewBuffer(size, limits)
+        } catch (e: Exception) {
+            allocateNewBuffer(size, limits)
+        }
     }
 
 
