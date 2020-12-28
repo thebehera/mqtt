@@ -35,14 +35,14 @@ kotlin {
             }
         }
     }
-    if (OperatingSystem.current().isWindows()) {
-        mingwX64("native")
-    } else if (OperatingSystem.current().isMacOsX()) {
-        ios("iOS")
-        macosX64("macos")
-    } else if (OperatingSystem.current().isLinux()) {
-        linuxX64("native")
-    }
+//    if (OperatingSystem.current().isWindows()) {
+//        mingwX64("native")
+//    } else if (OperatingSystem.current().isMacOsX()) {
+//        ios("iOS")
+//        macosX64("macos")
+//    } else if (OperatingSystem.current().isLinux()) {
+//        linuxX64("native")
+//    }
 //    mingwX64("windows")
     sourceSets {
         commonMain {
