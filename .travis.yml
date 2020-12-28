@@ -10,12 +10,11 @@ matrix:
       language: java
       osx_image: xcode11.6
       addons:
-        apt:
-          sources:
-            - sourceline: ppa:mosquitto-dev/mosquitto-ppa
+        homebrew:
+          taps: homebrew/cask-versions
           packages:
             - mosquitto
-            - libgbm-dev
+          update: true
         chrome: stable
         firefox: latest
     - os: windows
