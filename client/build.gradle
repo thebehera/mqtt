@@ -140,3 +140,4 @@ kotlin {
 }
 
 apply from: "./gradle/integration-tests-mqtt-servers.gradle"
+startMosquitto60000Default

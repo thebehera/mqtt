@@ -65,7 +65,7 @@ class SocketController(
                         readAndEmit(platformBuffer, this)
                     }
                 }
-            } catch (e: ClosedReceiveChannelException) {
+            } catch (e: Exception) {
                 // ignore closed exceptions
 //                println("closed read")
             }
