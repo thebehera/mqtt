@@ -40,6 +40,9 @@ object ControlPacketV5Factory : ControlPacketFactory {
         return SubscribeRequest(variableHeader, subscriptionsMqtt5.toSet())
     }
 
+    override fun unsubscribe(packetIdentifier: Int, subscriptions: Set<CharSequence>) =
+        UnsubscribeRequest(packetIdentifier, subscriptions)
+
     override fun <ApplicationMessage : Any, CorrelationData : Any> publish(
         dup: Boolean,
         qos: QualityOfService,

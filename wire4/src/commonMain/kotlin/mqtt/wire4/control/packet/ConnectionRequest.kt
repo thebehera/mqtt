@@ -35,9 +35,20 @@ data class ConnectionRequest<WillPayload : Any>(
     val variableHeader: VariableHeader = VariableHeader(),
     val payload: Payload<WillPayload> = Payload()
 ) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
-    constructor(clientId: String, username: String? = null, password: String? = null) :
+    constructor(
+        clientId: String,
+        username: String? = null,
+        password: String? = null,
+        keepAliveSeconds: Int = UShort.MAX_VALUE.toInt(),
+        cleanSession: Boolean = false
+    ) :
             this(
-                VariableHeader(hasUserName = username != null, hasPassword = password != null),
+                VariableHeader(
+                    hasUserName = username != null,
+                    hasPassword = password != null,
+                    keepAliveSeconds = keepAliveSeconds,
+                    cleanSession = cleanSession
+                ),
                 Payload(
                     clientId = MqttUtf8String(clientId),
                     userName = username?.let { MqttUtf8String(it) },

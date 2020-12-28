@@ -2,6 +2,8 @@ package mqtt
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
@@ -31,28 +33,43 @@ class SocketController(
             while (isActive && socket.isOpen()) {
                 writeQueue.consumeAsFlow().collect { packets ->
                     socket.write(packets, keepAliveTimeout * 1.5)
-                    println("writing $packets")
                 }
             }
         }
     }
 
     suspend fun write(controlPacket: ControlPacket) {
-        writeQueue.send(listOf(controlPacket))
+        try {
+            writeQueue.send(listOf(controlPacket))
+        } catch (e: ClosedSendChannelException) {
+            println("closed while trying to write $controlPacket")
+            // ignore closed channels
+        }
     }
 
     suspend fun write(controlPackets: Collection<ControlPacket>) {
-        writeQueue.send(controlPackets)
+        try {
+            writeQueue.send(controlPackets)
+        } catch (e: ClosedSendChannelException) {
+            // ignore closed channels
+            println("closed while trying to write $controlPackets")
+        }
     }
 
     suspend fun read() = withContext(Dispatchers.Default) {
         flow {
-            while (scope.isActive && socket.isOpen()) {
-                socket.read(keepAliveTimeout * 1.5) { platformBuffer, _ ->
-                    lastMessageReceived = TimeSource.Monotonic.markNow()
-                    readAndEmit(platformBuffer, this)
+            try {
+                while (scope.isActive && socket.isOpen()) {
+                    socket.read(keepAliveTimeout * 1.5) { platformBuffer, _ ->
+                        lastMessageReceived = TimeSource.Monotonic.markNow()
+                        readAndEmit(platformBuffer, this)
+                    }
                 }
+            } catch (e: ClosedReceiveChannelException) {
+                // ignore closed exceptions
+//                println("closed read")
             }
+
         }
     }
 
@@ -84,8 +101,8 @@ class SocketController(
         remainingLength: UInt,
         collector: FlowCollector<ControlPacket>
     ) {
-        collector.emit(controlPacketFactory.from(platformBuffer, byte1, remainingLength))
-//        readAndEmit(platformBuffer, collector)
+        val packet = controlPacketFactory.from(platformBuffer, byte1, remainingLength)
+        collector.emit(packet)
     }
 
     suspend fun close() {

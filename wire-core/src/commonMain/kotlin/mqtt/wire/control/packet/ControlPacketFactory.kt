@@ -27,6 +27,11 @@ interface ControlPacketFactory {
         userProperty: List<Pair<CharSequence, CharSequence>> = emptyList()
     ): ISubscribeRequest
 
+    fun unsubscribe(
+        packetIdentifier: Int,
+        subscriptions: Set<CharSequence>
+    ): IUnsubscribeRequest
+
     fun publish(
         dup: Boolean = false,
         qos: QualityOfService = QualityOfService.EXACTLY_ONCE,
