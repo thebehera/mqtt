@@ -2,6 +2,7 @@
 package mqtt.socket
 
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedSendChannelException
 import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.BufferPool
 import mqtt.buffer.JsBuffer
@@ -72,7 +73,11 @@ class NodeClientSocket : NodeSocket(), ClientToServerSocket {
             arrayPlatformBufferMap[buffer.buffer] = buffer
             buffer.buffer
         }, { bytesRead, buffer ->
-            incomingMessageChannel.offer(SocketDataRead(arrayPlatformBufferMap.remove(buffer)!!, bytesRead))
+            try {
+                incomingMessageChannel.offer(SocketDataRead(arrayPlatformBufferMap.remove(buffer)!!, bytesRead))
+            } catch (e: ClosedSendChannelException) {
+                println("ignore closed send channel excp")
+            }
             false
         })
         val options = tcpOptions(port.toInt(), hostname, onRead)

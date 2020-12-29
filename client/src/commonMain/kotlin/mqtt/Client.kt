@@ -24,7 +24,7 @@ class Client(
     private val messageCallback: ApplicationMessageCallback? = null,
     private val persistence: Persistence = InMemoryPersistence(),
     private val pool: BufferPool = BufferPool(),
-    private val scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
+    private val scope: CoroutineScope,
 ) {
     private val packetFactory = remoteHost.request.controlPacketFactory
     private var socketController: SocketController? = null
@@ -49,8 +49,10 @@ class Client(
         socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
         socketController =
             SocketController(scope, request.controlPacketFactory, socket, request.keepAliveTimeout)
-        scope.launch { routeIncomingMessages() }
-        socketController?.write(request)
+        scope.launch {
+            socketController?.write(request)
+            routeIncomingMessages()
+        }
         suspendUntilMessage { it is IConnectionAcknowledgment } as IConnectionAcknowledgment
     }
 
@@ -67,16 +69,17 @@ class Client(
         keepAliveJob = null
         val socketControllerTmp = socketController
         socketController = null
-        socketControllerTmp?.write(
-            packetFactory.disconnect(
-                reasonCode,
-                sessionExpiryIntervalSeconds,
-                reasonString,
-                userProperty,
-                serverReference
-            )
+        val disconnect = packetFactory.disconnect(
+            reasonCode,
+            sessionExpiryIntervalSeconds,
+            reasonString,
+            userProperty,
+            serverReference
         )
-        socketControllerTmp?.close()
+        socketControllerTmp?.write(disconnect)
+        launch {
+            socketControllerTmp?.close()
+        }
     }
 
     fun stayConnectedAsync() = scope.async {
@@ -202,8 +205,9 @@ class Client(
         )
         routeOutgoingMessages(pub)
         when (pub.qualityOfService) {
-            AT_LEAST_ONCE ->
+            AT_LEAST_ONCE -> {
                 suspendUntilMessage { it is IPublishAcknowledgment && it.packetIdentifier == packetIdentifier }
+            }
             EXACTLY_ONCE -> {
                 suspendUntilMessage { it is IPublishReceived && it.packetIdentifier == packetIdentifier }
                 suspendUntilMessage { it is IPublishComplete && it.packetIdentifier == packetIdentifier }
@@ -261,6 +265,7 @@ class Client(
     private suspend fun routeIncomingMessages() {
         var receivedConnack = false
         socketController?.read()?.collect { incomingControlPacket ->
+            println("IN: $incomingControlPacket")
             when (incomingControlPacket) {
                 is IPublishMessage -> {
                     when (incomingControlPacket.qualityOfService) {
@@ -334,7 +339,7 @@ class Client(
     }
 
     private fun maintainKeepAlive() {
-        keepAliveJob = scope.launch(Dispatchers.Default) {
+        keepAliveJob = scope.launch {
             try {
                 while (isActive && isConnected() && socketController != null) {
                     delayUntilNextKeepAlive()
@@ -358,7 +363,7 @@ class Client(
                 return packet
             }
         }
-        throw IllegalStateException("Impossible state!")
+        throw IllegalStateException("Impossible state when waiting for message!")
     }
 
 }

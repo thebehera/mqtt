@@ -1,13 +1,14 @@
 package mqtt
 
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import mqtt.buffer.PlatformBuffer
 import mqtt.socket.ClientSocket
 import mqtt.wire.control.packet.ControlPacket
@@ -27,12 +28,14 @@ class SocketController(
 ) {
     private val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
     lateinit var lastMessageReceived: TimeMark
-
+    val allocatedTime = TimeSource.Monotonic.markNow()
     init {
-        scope.launch(Dispatchers.Default) {
+        scope.launch {
             while (isActive && socket.isOpen()) {
                 writeQueue.consumeAsFlow().collect { packets ->
+
                     socket.write(packets, keepAliveTimeout * 1.5)
+                    packets.forEach { println("OUT: $it") }
                 }
             }
         }
@@ -56,7 +59,7 @@ class SocketController(
         }
     }
 
-    suspend fun read() = withContext(Dispatchers.Default) {
+    suspend fun read() =
         flow {
             try {
                 while (scope.isActive && socket.isOpen()) {
@@ -71,7 +74,7 @@ class SocketController(
             }
 
         }
-    }
+
 
     private suspend fun readAndEmit(platformBuffer: PlatformBuffer, collector: FlowCollector<ControlPacket>) {
 //        if (!platformBuffer.hasRemaining()) {

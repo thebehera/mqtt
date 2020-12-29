@@ -9,11 +9,17 @@ import kotlin.coroutines.suspendCoroutine
 suspend fun connect(tcpOptions: tcpOptions): Socket {
     var netSocket: Socket? = null
     suspendCoroutine<Unit> {
+        var count = 0
         val socket = Net.connect(tcpOptions) {
+            ++count
             it.resume(Unit)
         }
         socket.on("error") { e ->
-            it.resumeWithException(RuntimeException(e.toString()))
+            if (count == 0) {
+                it.resumeWithException(RuntimeException(e.toString()))
+            } else {
+                console.log("error with connection", e)
+            }
         }
         netSocket = socket
     }
@@ -23,10 +29,13 @@ suspend fun connect(tcpOptions: tcpOptions): Socket {
 suspend fun connect(tcpOptions: TcpSocketConnectOpts): Socket {
     var netSocket: Socket? = null
     suspendCoroutine<Unit> {
+        var count = 0
         val socket = Net.connect(tcpOptions) {
+            println("resume ${++count}")
             it.resume(Unit)
         }
         socket.on("error") { e ->
+            println("resume ${++count}")
             it.resumeWithException(RuntimeException(e.toString()))
         }
         netSocket = socket

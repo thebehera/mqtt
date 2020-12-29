@@ -19,19 +19,14 @@ class SimpleTests {
             RemoteHost(
                 "localhost",
                 60000,
-                ConnectionRequest<Unit>("mix12${Random.nextLong()}", keepAliveSeconds = 56, cleanSession = true)
+                ConnectionRequest<Unit>("m2${Random.nextLong()}", keepAliveSeconds = 56, cleanSession = true)
             ), scope = this
         )
-        println("connecting")
+        val topic = "hello-${Random.nextLong()}"
         client.connectAsync().await()
-        println("connected, subscribe")
-        client.subscribeAsync("rahul12", AT_LEAST_ONCE).await()
-        println("subscribed, publish")
-        client.publishAsync(topicName = "rahul12", payload = "testPayloa2d2", qos = EXACTLY_ONCE).await()
-        println("published, unsubscibe")
-        client.unsubscribeAsync("rahul21").await()
-        println("unsubscribe, disconnect")
-        client.disconnectAsync().await()
-        println("disconencted")
+        client.publishAsync(topicName = topic, payload = "testP", qos = EXACTLY_ONCE).await()
+        client.subscribeAsync(topic, AT_LEAST_ONCE).await()
+        client.unsubscribeAsync(topic).await()
+        client.disconnectAsync()
     }
 }
