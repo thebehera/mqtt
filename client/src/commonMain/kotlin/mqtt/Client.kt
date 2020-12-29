@@ -35,9 +35,14 @@ class Client(
     var authenticator: ((ControlPacket) -> ControlPacket)? = null
 
     var connectionState: ConnectionState = ConnectionState.Disconnected
+        set(value) {
+            field = value
+            onConnectionStateCallback?.invoke(value)
+        }
+
     var onConnectionStateCallback: ((ConnectionState) -> Unit)? = null
 
-    fun isConnected() = connectionState is ConnectionState.Connected
+    private fun isConnected() = connectionState is ConnectionState.Connected
 
     suspend fun connectAsync() = scope.async {
         val socket = getClientSocket(pool)
@@ -88,13 +93,13 @@ class Client(
         val initialFailureDelay = 1.seconds
         var currentDelay = initialFailureDelay
         while (isActive) {
-            socketController = try {
-                connectAsync()
-                null
+            try {
+                connectAsync().await()
+                connectionState = ConnectionState.Reconnecting(null, currentDelay)
             } catch (e: Exception) {
-                e.printStackTrace()
+                connectionState = ConnectionState.Reconnecting(e, currentDelay)
                 socketController?.close()
-                null
+                socketController = null
             }
             delay(currentDelay)
             currentDelay = (currentDelay * exponentialBackoffFactor)
@@ -265,7 +270,6 @@ class Client(
     private suspend fun routeIncomingMessages() {
         var receivedConnack = false
         socketController?.read()?.collect { incomingControlPacket ->
-            println("IN: $incomingControlPacket")
             when (incomingControlPacket) {
                 is IPublishMessage -> {
                     when (incomingControlPacket.qualityOfService) {
@@ -314,7 +318,6 @@ class Client(
                         }
                     }
                     socketController?.let { connectionState = ConnectionState.Connected(incomingControlPacket, it) }
-                    onConnectionStateCallback?.invoke(connectionState)
                     reconnectCount = 0
                     receivedConnack = true
                     maintainKeepAlive()
@@ -331,7 +334,7 @@ class Client(
         }
     }
 
-    suspend fun delayUntilNextKeepAlive() {
+    private suspend fun delayUntilNextKeepAlive() {
         val lastMessageReceived = socketController?.lastMessageReceived
         if (lastMessageReceived != null) {
             delay(remoteHost.request.keepAliveTimeout - lastMessageReceived.elapsedNow())

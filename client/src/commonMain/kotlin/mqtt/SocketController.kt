@@ -21,21 +21,24 @@ import kotlin.time.TimeSource
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 class SocketController(
-    val scope: CoroutineScope,
-    val controlPacketFactory: ControlPacketFactory,
-    val socket: ClientSocket,
-    val keepAliveTimeout: Duration
+    private val scope: CoroutineScope,
+    private val controlPacketFactory: ControlPacketFactory,
+    private val socket: ClientSocket,
+    private val keepAliveTimeout: Duration
 ) {
     private val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
     lateinit var lastMessageReceived: TimeMark
-    val allocatedTime = TimeSource.Monotonic.markNow()
     init {
         scope.launch {
             while (isActive && socket.isOpen()) {
                 writeQueue.consumeAsFlow().collect { packets ->
-
-                    socket.write(packets, keepAliveTimeout * 1.5)
-                    packets.forEach { println("OUT: $it") }
+                    val totalBufferSize = packets.fold(0u) { acc, controlPacket ->
+                        acc + controlPacket.packetSize()
+                    }
+                    socket.pool.borrowSuspend(totalBufferSize) { buffer ->
+                        packets.forEach { packet -> packet.serialize(buffer) }
+                        socket.write(buffer, keepAliveTimeout * 1.5)
+                    }
                 }
             }
         }
@@ -45,7 +48,6 @@ class SocketController(
         try {
             writeQueue.send(listOf(controlPacket))
         } catch (e: ClosedSendChannelException) {
-            println("closed while trying to write $controlPacket")
             // ignore closed channels
         }
     }
@@ -55,7 +57,6 @@ class SocketController(
             writeQueue.send(controlPackets)
         } catch (e: ClosedSendChannelException) {
             // ignore closed channels
-            println("closed while trying to write $controlPackets")
         }
     }
 
@@ -70,35 +71,17 @@ class SocketController(
                 }
             } catch (e: Exception) {
                 // ignore closed exceptions
-//                println("closed read")
             }
-
         }
 
 
     private suspend fun readAndEmit(platformBuffer: PlatformBuffer, collector: FlowCollector<ControlPacket>) {
-//        if (!platformBuffer.hasRemaining()) {
-//            socket.read(keepAliveTimeout * 1.5) { nextBuffer, _ ->
-//                readAndEmit(nextBuffer, collector)
-//            }
-//            return
-//        }
         val byte1 = platformBuffer.readUnsignedByte()
         val remainingLength = platformBuffer.readVariableByteInteger()
         process(platformBuffer, byte1, remainingLength, collector)
-//        when(val remainingLengthTrial = platformBuffer.tryReadingVariableByteInteger()) {
-//            is ReadBuffer.VariableByteIntegerRead.NotEnoughSpaceInBuffer -> {
-//                socket.read { nextBuffer, _ ->
-//                    process(nextBuffer, byte1, remainingLengthTrial.getRemainingLengthWithNextBuffer(nextBuffer).remainingLength, collector)
-//                }
-//            }
-//            is ReadBuffer.VariableByteIntegerRead.SuccessfullyRead -> {
-//
-//            }
-//        }
     }
 
-    suspend fun process(
+    private suspend fun process(
         platformBuffer: PlatformBuffer,
         byte1: UByte,
         remainingLength: UInt,

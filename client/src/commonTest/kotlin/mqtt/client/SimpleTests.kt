@@ -23,10 +23,10 @@ class SimpleTests {
             ), scope = this
         )
         val topic = "hello-${Random.nextLong()}"
-        client.connectAsync().await()
-        client.publishAsync(topicName = topic, payload = "testP", qos = EXACTLY_ONCE).await()
-        client.subscribeAsync(topic, AT_LEAST_ONCE).await()
-        client.unsubscribeAsync(topic).await()
+        println(client.connectAsync().await())
+        println(client.publishAsync(topicName = topic, payload = "testP", qos = EXACTLY_ONCE).await())
+        println(client.subscribeAsync(topic, AT_LEAST_ONCE).await())
+        println(client.unsubscribeAsync(topic).await())
         client.disconnectAsync()
     }
 }

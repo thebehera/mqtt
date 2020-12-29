@@ -84,11 +84,6 @@ class InMemoryPersistence : Persistence {
         }
     }
 
-//    override suspend fun store(pub: IPublishReceived) {
-//        val packetIdentifier = pub.packetIdentifier.toUShort()
-//        outgoingQueued[packetIdentifier] = pub
-//    }
-
     override suspend fun complete(pubcomp: IPublishComplete) {
         outgoingQueued.remove(pubcomp.packetIdentifier.toUShort())
     }
