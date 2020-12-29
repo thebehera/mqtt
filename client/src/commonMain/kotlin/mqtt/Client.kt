@@ -85,6 +85,7 @@ class Client(
         launch {
             socketControllerTmp?.close()
         }
+        disconnect
     }
 
     fun stayConnectedAsync() = scope.async {

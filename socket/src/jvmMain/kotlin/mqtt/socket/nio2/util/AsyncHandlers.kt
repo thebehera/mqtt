@@ -1,7 +1,6 @@
 package mqtt.socket.nio2.util
 
 import kotlinx.coroutines.CancellableContinuation
-import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import java.nio.channels.AsynchronousCloseException
 import java.nio.channels.CompletionHandler
 import kotlin.coroutines.Continuation
@@ -40,10 +39,6 @@ internal object AsyncIOHandlerAny :
 fun asyncIOIntHandler(): CompletionHandler<Int, CancellableContinuation<Int>> =
     object : CompletionHandler<Int, CancellableContinuation<Int>> {
         override fun completed(result: Int, attachment: CancellableContinuation<Int>) {
-            if (result == -1) {
-                attachment.resumeWithException(ClosedReceiveChannelException("remote returned -1 bytes"))
-                return
-            }
             attachment.resume(result)
         }
 

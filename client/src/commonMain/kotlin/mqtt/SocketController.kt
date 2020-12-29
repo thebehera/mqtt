@@ -2,21 +2,20 @@ package mqtt
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.ClosedSendChannelException
-import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import mqtt.buffer.PlatformBuffer
 import mqtt.socket.ClientSocket
+import mqtt.socket.SuspendingInputStream
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
@@ -45,11 +44,7 @@ class SocketController(
     }
 
     suspend fun write(controlPacket: ControlPacket) {
-        try {
-            writeQueue.send(listOf(controlPacket))
-        } catch (e: ClosedSendChannelException) {
-            // ignore closed channels
-        }
+        write(listOf(controlPacket))
     }
 
     suspend fun write(controlPackets: Collection<ControlPacket>) {
@@ -60,35 +55,22 @@ class SocketController(
         }
     }
 
-    suspend fun read() =
-        flow {
-            try {
-                while (scope.isActive && socket.isOpen()) {
-                    socket.read(keepAliveTimeout * 1.5) { platformBuffer, _ ->
-                        lastMessageReceived = TimeSource.Monotonic.markNow()
-                        readAndEmit(platformBuffer, this)
-                    }
+    suspend fun read() = flow {
+        val inputStream = SuspendingInputStream(keepAliveTimeout * 1.5, scope, socket)
+        try {
+            while (scope.isActive && socket.isOpen()) {
+                val byte1 = inputStream.readUnsignedByte()
+                val remainingLength = inputStream.readVariableByteInteger()
+                val packet = inputStream.readTyped(remainingLength.toLong()) { readBuffer ->
+                    controlPacketFactory.from(readBuffer, byte1, remainingLength)
                 }
-            } catch (e: Exception) {
-                // ignore closed exceptions
+                emit(packet)
             }
+        } catch (e: ClosedReceiveChannelException) {
+            // ignore closed
+        } finally {
+            inputStream.close()
         }
-
-
-    private suspend fun readAndEmit(platformBuffer: PlatformBuffer, collector: FlowCollector<ControlPacket>) {
-        val byte1 = platformBuffer.readUnsignedByte()
-        val remainingLength = platformBuffer.readVariableByteInteger()
-        process(platformBuffer, byte1, remainingLength, collector)
-    }
-
-    private suspend fun process(
-        platformBuffer: PlatformBuffer,
-        byte1: UByte,
-        remainingLength: UInt,
-        collector: FlowCollector<ControlPacket>
-    ) {
-        val packet = controlPacketFactory.from(platformBuffer, byte1, remainingLength)
-        collector.emit(packet)
     }
 
     suspend fun close() {

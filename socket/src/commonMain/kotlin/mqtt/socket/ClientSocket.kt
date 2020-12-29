@@ -32,21 +32,10 @@ interface ClientSocket : SuspendCloseable {
         return SocketDataRead(result, bytesRead)
     }
 
-    suspend fun <T> readTyped(timeout: Duration = 1.seconds, bufferRead: (PlatformBuffer) -> T) =
-        read(timeout) { buffer, _ ->
-            bufferRead(buffer)
-        }.result
-
     suspend fun write(buffer: PlatformBuffer, timeout: Duration = 1.seconds): Int
     suspend fun write(buffer: String, timeout: Duration = 1.seconds): Int
             = write(buffer.toBuffer().also { it.position(it.limit().toInt()) }, timeout)
 
-    suspend fun writeFully(buffer: PlatformBuffer, timeout: Duration) {
-        while (buffer.position() < buffer.limit()) {
-            write(buffer, timeout)
-        }
-        buffer.toString()
-    }
 }
 
 data class SocketDataRead<T>(val result: T, val bytesRead: Int)

@@ -18,7 +18,7 @@ class SimpleTests {
         val client = Client(
             RemoteHost(
                 "localhost",
-                60000,
+                1883,
                 ConnectionRequest<Unit>("m2${Random.nextLong()}", keepAliveSeconds = 56, cleanSession = true)
             ), scope = this
         )
@@ -27,6 +27,6 @@ class SimpleTests {
         println(client.publishAsync(topicName = topic, payload = "testP", qos = EXACTLY_ONCE).await())
         println(client.subscribeAsync(topic, AT_LEAST_ONCE).await())
         println(client.unsubscribeAsync(topic).await())
-        client.disconnectAsync()
+        println(client.disconnectAsync().await())
     }
 }

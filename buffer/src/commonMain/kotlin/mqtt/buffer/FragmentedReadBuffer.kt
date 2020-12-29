@@ -98,10 +98,23 @@ class FragmentedReadBuffer(
             return line
         }
     }
+
+    fun getBuffers(out: MutableList<PlatformBuffer>) {
+        if (first is FragmentedReadBuffer) {
+            first.getBuffers(out)
+        } else if (first is PlatformBuffer) {
+            out += first
+        }
+        if (second is FragmentedReadBuffer) {
+            second.getBuffers(out)
+        } else if (second is PlatformBuffer) {
+            out += second
+        }
+    }
 }
 
 @ExperimentalUnsignedTypes
-fun List<PlatformBuffer>.toComposableBuffer(): ReadBuffer {
+fun List<ReadBuffer>.toComposableBuffer(): ReadBuffer {
     return when (size) {
         1 -> {
             first()
