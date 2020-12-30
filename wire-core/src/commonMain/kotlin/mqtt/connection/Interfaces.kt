@@ -1,6 +1,10 @@
 package mqtt.connection
 
 import mqtt.wire.control.packet.IConnectionRequest
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.toDuration
 
 interface IMqttConnectionStateUpdated {
     val remoteHostConnectionIdentifier: Int
@@ -15,15 +19,17 @@ data class MqttConnectionStateUpdated(
             : this(remote.connectionIdentifier(), acknowledgment)
 }
 
+@ExperimentalTime
 data class RemoteHost(
     override val name: String,
     override val port: Int,
     override val request: IConnectionRequest,
     override val security: SecurityParameters = SecurityParameters(false, false),
-    override val websocket: WebsocketParameters = WebsocketParameters(false),
-    override val connectionTimeout: Milliseconds = 1000,
+    override val websocket: WebsocketParameters? = null,
+    override val connectionTimeoutMs: Milliseconds = 1000,
+    override val connectionTimeout: Duration = connectionTimeoutMs.toDuration(DurationUnit.MILLISECONDS),
 ) : IRemoteHost {
-    data class WebsocketParameters(override val isEnabled: Boolean) : IRemoteHost.IWebsocketParameters
+    data class WebsocketParameters(override val endpoint: String = "/") : IRemoteHost.IWebsocketParameters
     data class SecurityParameters(
         override val isTransportLayerSecurityEnabled: Boolean,
         override val acceptAllCertificates: Boolean
@@ -32,7 +38,7 @@ data class RemoteHost(
 
 interface IRemoteHost {
     interface IWebsocketParameters {
-        val isEnabled: Boolean
+        val endpoint: String
     }
 
     interface ISecurityParameters {
@@ -42,9 +48,12 @@ interface IRemoteHost {
 
     val name: String
     val port: Int
-    val connectionTimeout: Milliseconds
+    val connectionTimeoutMs: Milliseconds
+
+    @ExperimentalTime
+    val connectionTimeout: Duration
     val security: ISecurityParameters
-    val websocket: IWebsocketParameters
+    val websocket: IWebsocketParameters?
     val request: IConnectionRequest
 
     fun connectionIdentifier() = uniqueIdentifier().hashCode()

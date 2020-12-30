@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.collect
 import mqtt.buffer.BufferPool
 import mqtt.buffer.GenericType
 import mqtt.connection.IRemoteHost
-import mqtt.socket.getClientSocket
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.RetainHandling.SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
 import mqtt.wire.control.packet.format.ReasonCode
@@ -27,7 +26,7 @@ class Client(
     private val scope: CoroutineScope,
 ) {
     private val packetFactory = remoteHost.request.controlPacketFactory
-    private var socketController: SocketController? = null
+    private var socketController: ISocketController? = null
     private var reconnectCount = 0
     private var keepAliveJob: Job? = null
     private var incomingMessageBroadcastChannel = BroadcastChannel<ControlPacket>(Channel.BUFFERED)
@@ -45,17 +44,19 @@ class Client(
     private fun isConnected() = connectionState is ConnectionState.Connected
 
     suspend fun connectAsync() = scope.async {
-        val socket = getClientSocket(pool)
         reconnectCount++
         val request = remoteHost.request
         if (request.cleanStart) {
             persistence.clear()
         }
-        socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
-        socketController =
-            SocketController(scope, request.controlPacketFactory, socket, request.keepAliveTimeout)
+        val websocketParams = remoteHost.websocket
+        socketController = if (websocketParams != null) {
+            WebsocketController.openWebSocket(scope, pool, remoteHost)
+        } else {
+            SocketController.openSocket(scope, pool, remoteHost)
+        }
+        socketController?.write(request)
         scope.launch {
-            socketController?.write(request)
             routeIncomingMessages()
         }
         suspendUntilMessage { it is IConnectionAcknowledgment } as IConnectionAcknowledgment
@@ -83,6 +84,8 @@ class Client(
         )
         socketControllerTmp?.write(disconnect)
         launch {
+            // just add a short delay to prevent things from crashing
+            delay(10)
             socketControllerTmp?.close()
         }
         disconnect

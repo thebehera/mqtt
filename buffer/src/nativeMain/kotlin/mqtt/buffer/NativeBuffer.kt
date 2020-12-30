@@ -1,7 +1,5 @@
 package mqtt.buffer
 
-import kotlin.native.*
-
 @ExperimentalUnsignedTypes
 class NativeBuffer(val data: ByteArray) : PlatformBuffer {
     override val type = BufferType.InMemory
@@ -21,6 +19,10 @@ class NativeBuffer(val data: ByteArray) : PlatformBuffer {
     override fun resetForWrite() {
         position = 0
         limit = data.size
+    }
+
+    override fun setLimit(limit: Int) {
+        this.limit = limit
     }
 
     override fun readByte() = data[position++]

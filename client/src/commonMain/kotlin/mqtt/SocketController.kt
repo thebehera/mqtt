@@ -4,13 +4,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.channels.ClosedSendChannelException
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import mqtt.buffer.BufferPool
+import mqtt.connection.IRemoteHost
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream
+import mqtt.socket.getClientSocket
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import kotlin.time.Duration
@@ -19,35 +23,20 @@ import kotlin.time.TimeMark
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-class SocketController(
+class SocketController private constructor(
     private val scope: CoroutineScope,
     private val controlPacketFactory: ControlPacketFactory,
     private val socket: ClientSocket,
-    private val keepAliveTimeout: Duration
-) {
-    private val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
-    lateinit var lastMessageReceived: TimeMark
-    init {
-        scope.launch {
-            while (isActive && socket.isOpen()) {
-                writeQueue.consumeAsFlow().collect { packets ->
-                    val totalBufferSize = packets.fold(0u) { acc, controlPacket ->
-                        acc + controlPacket.packetSize()
-                    }
-                    socket.pool.borrowSuspend(totalBufferSize) { buffer ->
-                        packets.forEach { packet -> packet.serialize(buffer) }
-                        socket.write(buffer, keepAliveTimeout * 1.5)
-                    }
-                }
-            }
-        }
-    }
+    private val keepAliveTimeout: Duration,
+    private val writeQueue: SendChannel<Collection<ControlPacket>>,
+) : ISocketController {
+    override lateinit var lastMessageReceived: TimeMark
 
-    suspend fun write(controlPacket: ControlPacket) {
+    override suspend fun write(controlPacket: ControlPacket) {
         write(listOf(controlPacket))
     }
 
-    suspend fun write(controlPackets: Collection<ControlPacket>) {
+    override suspend fun write(controlPackets: Collection<ControlPacket>) {
         try {
             writeQueue.send(controlPackets)
         } catch (e: ClosedSendChannelException) {
@@ -55,7 +44,7 @@ class SocketController(
         }
     }
 
-    suspend fun read() = flow {
+    override suspend fun read() = flow {
         val inputStream = SuspendingInputStream(keepAliveTimeout * 1.5, scope, socket)
         try {
             while (scope.isActive && socket.isOpen()) {
@@ -73,8 +62,46 @@ class SocketController(
         }
     }
 
-    suspend fun close() {
+    override suspend fun close() {
         writeQueue.close()
-        socket.close()
+        try {
+            socket.close()
+        } catch (e: Exception) {
+            // ignore close exceptions
+        }
+    }
+
+
+    companion object {
+        suspend fun openSocket(
+            scope: CoroutineScope,
+            pool: BufferPool,
+            remoteHost: IRemoteHost
+        )
+                : SocketController {
+            val socket = getClientSocket(pool)
+            socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
+            val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
+            scope.launch {
+                while (isActive && socket.isOpen()) {
+                    writeQueue.consumeAsFlow().collect { packets ->
+                        val totalBufferSize = packets.fold(0u) { acc, controlPacket ->
+                            acc + controlPacket.packetSize()
+                        }
+                        socket.pool.borrowSuspend(totalBufferSize) { buffer ->
+                            packets.forEach { packet -> packet.serialize(buffer) }
+                            socket.write(buffer, remoteHost.request.keepAliveTimeout * 1.5)
+                        }
+                    }
+                }
+            }
+            return SocketController(
+                scope,
+                remoteHost.request.controlPacketFactory,
+                socket,
+                remoteHost.request.keepAliveTimeout,
+                writeQueue
+            )
+        }
     }
 }

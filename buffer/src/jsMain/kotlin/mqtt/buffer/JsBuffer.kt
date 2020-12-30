@@ -24,7 +24,7 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
         limit = capacity.toInt()
     }
 
-    fun setLimit(limit: Int) {
+    override fun setLimit(limit: Int) {
         this.limit = limit
     }
 

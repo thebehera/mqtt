@@ -12,9 +12,10 @@ import kotlin.time.TimeSource
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope, val socket: ClientSocket) {
-    private val channel = Channel<PlatformBuffer>()
+    private val channel = Channel<PlatformBuffer>(3)
     lateinit var lastMessageReceived: TimeMark
     var currentBuffer: ReadBuffer? = null
+    var transformer: ((UInt, Byte) -> Byte)? = null
 
     val readJob = sessionScope.launch {
         var exception: Exception? = null
@@ -30,7 +31,7 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
                     channel.send(platformBuffer)
                 } catch (e: Exception) {
                     // ignore streaming errors
-                    exception = e
+//                    exception = e
                     return@launch
                 }
             }
@@ -39,10 +40,16 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
         }
     }
 
+
+    suspend fun read(bufferSize: Long): ReadBuffer {
+        return readBufferWithSize(bufferSize)
+    }
+
     suspend fun <T> readTyped(size: Long, callback: (ReadBuffer) -> T): T {
-        val checkBufferResult = checkBuffers(size)
+        val checkBufferResult = readBufferWithSize(size)
         val result = callback(checkBufferResult)
         val buffers = mutableListOf<PlatformBuffer>()
+
         if (result is FragmentedReadBuffer) {
             result.getBuffers(buffers)
         } else if (result is PlatformBuffer) {
@@ -52,17 +59,22 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
         return result
     }
 
-    suspend fun readUnsignedByte() = checkBuffers(1L).readUnsignedByte()
-    suspend fun readByte() = checkBuffers(1L).readByte()
+    suspend fun readUnsignedByte() = readBufferWithSize(1L).readUnsignedByte()
+    suspend fun readByte() = readBufferWithSize(1L).readByte()
+    suspend fun readByteArray(size: Long) = readBufferWithSize(size).readByteArray(size.toUInt())
 
     suspend fun readVariableByteInteger(): UInt {
         var digit: Byte
         var value = 0L
         var multiplier = 1L
-        var count = 0L
+        var count = 0
         try {
             do {
                 digit = readByte()
+                val transformer = transformer
+                if (transformer != null) {
+                    digit = transformer(count.toUInt(), digit)
+                }
                 count++
                 value += (digit and 0x7F).toLong() * multiplier
                 multiplier *= 128
@@ -77,13 +89,14 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
     }
 
 
-    private suspend fun checkBuffers(size: Long): ReadBuffer {
+    suspend fun readBufferWithSize(size: Long): ReadBuffer {
         val bufferTmp = currentBuffer
         val currentBuffer = if (bufferTmp != null && bufferTmp.remaining().toLong() >= size) {
             bufferTmp
         } else {
             channel.receive()
         }
+
         var extraBufferNeededWithSize = size - currentBuffer.remaining().toLong()
         return if (extraBufferNeededWithSize > 0) {
             // we need to read more data
@@ -94,12 +107,23 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
                 buffers += nextBuffer
             }
 
-            val buffer = buffers.toComposableBuffer()
+            val transformer = transformer
+            val buffer = if (transformer != null) {
+                TransformedReadBuffer(buffers.toComposableBuffer(), transformer)
+            } else {
+                buffers.toComposableBuffer()
+            }
             this.currentBuffer = buffer
             buffer
         } else {
-            this.currentBuffer = currentBuffer
-            return currentBuffer
+            val transformer = transformer
+            val buffer = if (transformer != null) {
+                TransformedReadBuffer(currentBuffer, transformer)
+            } else {
+                currentBuffer
+            }
+            this.currentBuffer = buffer
+            buffer
         }
     }
 

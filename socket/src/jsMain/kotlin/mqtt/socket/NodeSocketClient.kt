@@ -28,6 +28,8 @@ open class NodeSocket : ClientSocket {
         netSocket?.resume()
         buffer.put(receivedData.result)
         receivedData.result.put(buffer)
+        buffer.position(0)
+        buffer.setLimit(receivedData.bytesRead)
         return receivedData.bytesRead
     }
 

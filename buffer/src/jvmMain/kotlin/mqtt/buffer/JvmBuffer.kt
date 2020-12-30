@@ -24,6 +24,10 @@ data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? 
         byteBuffer.clear()
     }
 
+    override fun setLimit(limit: Int) {
+        byteBuffer.limit(limit)
+    }
+
     override val capacity = byteBuffer.capacity().toUInt()
 
     override fun readByte() = byteBuffer.get()

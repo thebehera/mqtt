@@ -13,6 +13,7 @@ interface WriteBuffer {
     fun write(uInt: UInt): WriteBuffer
     fun write(long: Long): WriteBuffer
     fun writeUtf8(text: CharSequence): WriteBuffer
+    fun setLimit(limit: Int)
 
     fun writeMqttUtf8String(charSequence: CharSequence): WriteBuffer {
         val string = charSequence.toString()

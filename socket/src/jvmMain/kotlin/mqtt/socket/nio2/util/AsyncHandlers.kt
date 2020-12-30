@@ -43,7 +43,6 @@ fun asyncIOIntHandler(): CompletionHandler<Int, CancellableContinuation<Int>> =
         }
 
         override fun failed(ex: Throwable, cont: CancellableContinuation<Int>) {
-            println("read failure $ex")
             // just return if already cancelled and got an expected exception for that case
             if (ex is AsynchronousCloseException && cont.isCancelled) return
             cont.resumeWithException(ex)
