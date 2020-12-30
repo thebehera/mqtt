@@ -21,6 +21,17 @@ kotlin {
                 timeout = Duration.ofSeconds(10)
             }
         }
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
+                        useFirefox()
+                    }
+                }
+                enabled = !System.getenv().containsKey("IGNORE_BROWSER_TESTS")
+            }
+        }
     }
 //    ios("iOS")
 //    macosX64("macos")

@@ -2,16 +2,18 @@ package mqtt.socket
 
 import org.khronos.webgl.Uint8Array
 
-@JsModule("net")
-@JsNonModule
-external class Net {
+//@JsModule("net")
+//@JsNonModule
+external class net {
     companion object {
         fun connect(tcpOptions: tcpOptions, connectListener: () -> Unit): Socket
         fun connect(tcpOptions: TcpSocketConnectOpts, connectListener: () -> Unit = definedExternally): Socket
         fun createServer(connectionListener: (Socket) -> Unit = definedExternally): Server
+
+
     }
 }
-
+fun getNet():net = js("require('net')") as net
 external class Server {
     fun on(event: String, callback: () -> Unit)
     fun on(event: String, callback: (Any) -> Unit)

@@ -14,27 +14,30 @@ val isNodeJs by lazy {
 }
 
 @ExperimentalTime
-actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket {
+actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket? {
+
     return if (isNodeJs) {
+        val net = require("net")
+        println(net)
         NodeClientSocket()
     } else {
-        throw UnsupportedOperationException("Sockets are not supported in the browser")
+        return null
     }
 }
 
 
 @ExperimentalTime
-actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket =
-    throw UnsupportedOperationException("Only non blocking io is supported with JS")
+actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket? = null
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-actual fun asyncServerSocket(): ServerSocket {
+actual fun asyncServerSocket(): ServerSocket? {
     if (isNodeJs) {
+        val net = require("net")
 //        throw UnsupportedOperationException("Not implemented yet")
         return NodeServerSocket()
     } else {
-        throw UnsupportedOperationException("Sockets are not supported in the browser")
+        return null
     }
 }
 

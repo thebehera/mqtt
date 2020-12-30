@@ -51,9 +51,9 @@ class Client(
         }
         val websocketParams = remoteHost.websocket
         socketController = if (websocketParams != null) {
-            WebsocketController.openWebSocket(scope, pool, remoteHost)
+            WebsocketController.openWebSocket(scope, pool, remoteHost)!!
         } else {
-            SocketController.openSocket(scope, pool, remoteHost)
+            SocketController.openSocket(scope, pool, remoteHost)!!
         }
         socketController?.write(request)
         scope.launch {

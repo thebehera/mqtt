@@ -8,15 +8,28 @@ repositories {
 
 apply from: "../gradle/android.gradle"
 apply from: "../gradle/experimental.gradle"
+
 kotlin {
     jvm()
     if (System.getenv("ANDROID_HOME")) {
         android()
     }
     js {
+        useCommonJs()
         nodejs {
             testTask {
 
+            }
+        }
+        browser {
+            testTask {
+                useKarma {
+                    useChromeHeadless()
+                    if (System.getenv().containsKey("MOZ_HEADLESS") || System.getenv().containsKey("FIREFOX_BIN")) {
+                        useFirefox()
+                    }
+                }
+                enabled = !System.getenv().containsKey("IGNORE_BROWSER_TESTS")
             }
         }
     }
@@ -60,7 +73,24 @@ kotlin {
             dependencies {
             }
         }
+
         jsTest {
+            dependencies {
+                implementation kotlin('test-js')
+            }
+        }
+        browserMain{
+            dependsOn jsMain
+        }
+        browserTest {
+            dependencies {
+
+            }
+        }
+        nodejsMain {
+            dependsOn jsMain
+        }
+        nodejsTest {
             dependencies {
                 implementation kotlin('test-js')
                 implementation npm('tcp-port-used', '1.0.1')

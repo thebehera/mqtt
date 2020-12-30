@@ -8,13 +8,13 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket = AsyncClientSocket(pool)
+actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket? = AsyncClientSocket(pool)
 
 @ExperimentalTime
 @ExperimentalUnsignedTypes
-actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket =
+actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket? =
     NioClientSocket(blocking, pool)
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-actual fun asyncServerSocket(): ServerSocket = AsyncServerSocket()
+actual fun asyncServerSocket(): ServerSocket? = AsyncServerSocket()

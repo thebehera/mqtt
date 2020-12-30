@@ -16,7 +16,8 @@ class NodeServerSocket : ServerSocket {
         socketOptions: SocketOptions?,
         backlog: UInt
     ): SocketOptions {
-        val server = Net.createServer { clientSocket ->
+
+        val server = js("require('net')").createServer { clientSocket ->
             val nodeSocket = NodeSocket()
             nodeSocket.netSocket = clientSocket
             clientSocket.on("data") { data ->
@@ -28,7 +29,7 @@ class NodeServerSocket : ServerSocket {
             }
             clientSocketChannel.offer(nodeSocket)
         }
-        server.listenSuspend(port, host, backlog)
+        listenSuspend(server, port, host, backlog)
         this.server = server
         return socketOptions ?: SocketOptions()
     }
@@ -63,22 +64,22 @@ class NodeServerSocket : ServerSocket {
     }
 }
 
-suspend fun Server.listenSuspend(port: UShort?, host: String?, backlog: UInt) {
+suspend fun listenSuspend(server:dynamic, port: UShort?, host: String?, backlog: UInt) {
     suspendCoroutine<Unit> {
         if (host != null && port != null) {
-            listen(port.toInt(), host, backlog.toInt()) {
+            server.listen(port.toInt(), host, backlog.toInt()) {
                 it.resume(Unit)
             }
         } else if (port != null) {
-            listen(port.toInt(), backlog = backlog.toInt()) {
+            server.listen(port.toInt(), backlog = backlog.toInt()) {
                 it.resume(Unit)
             }
         } else if (host != null) {
-            listen(host = host, backlog = backlog.toInt()) {
+            server.listen(host = host, backlog = backlog.toInt()) {
                 it.resume(Unit)
             }
         } else {
-            listen(backlog = backlog.toInt()) {
+            server.listen(backlog = backlog.toInt()) {
                 it.resume(Unit)
             }
         }

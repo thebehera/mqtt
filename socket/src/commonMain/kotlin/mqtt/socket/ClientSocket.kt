@@ -44,14 +44,14 @@ data class SocketDataRead<T>(val result: T, val bytesRead: Int)
 suspend fun openClientSocket(port: UShort,
                              timeout: Duration = 1.seconds,
                              hostname: String? = null,
-                             socketOptions: SocketOptions? = null): ClientToServerSocket {
-    val socket = getClientSocket()
+                             socketOptions: SocketOptions? = null): ClientToServerSocket? {
+    val socket = getClientSocket() ?: return null
     socket.open(port, timeout, hostname, socketOptions)
     return socket
 }
 
 @ExperimentalTime
-fun getClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket {
+fun getClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket? {
     try {
         return asyncClientSocket(pool)
     } catch (e: Throwable) {
@@ -61,8 +61,8 @@ fun getClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket {
 }
 
 @ExperimentalTime
-expect fun asyncClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket
+expect fun asyncClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket?
 
 @ExperimentalTime
-expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool()): ClientToServerSocket
+expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool()): ClientToServerSocket?
 

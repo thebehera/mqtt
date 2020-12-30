@@ -71,9 +71,9 @@ class WebsocketController private constructor(
             scope: CoroutineScope,
             pool: BufferPool,
             remoteHost: IRemoteHost
-        ): WebsocketController {
+        ): WebsocketController? {
             val websocketEndpoint = remoteHost.websocket!!.endpoint
-            val socket = getClientSocket(pool)
+            val socket = getClientSocket(pool) ?: return null
             socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
             val request =
                 "GET $websocketEndpoint HTTP/1.1\r\nHost: ${remoteHost.name}:${remoteHost.port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Protocol: mqtt\r\nSec-WebSocket-Version: 13\r\n\r\n"

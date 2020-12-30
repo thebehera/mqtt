@@ -18,19 +18,19 @@ private fun initSockets() {
 actual fun asyncClientSocket(pool: BufferPool) = clientSocket(false, pool)
 
 @ExperimentalTime
-actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket {
+actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket? {
     initSockets()
     return PosixClientToServerSocket(pool)
 }
 
 @ExperimentalTime
-actual fun asyncServerSocket(): ServerSocket {
+actual fun asyncServerSocket(): ServerSocket? {
     initSockets()
 //    throw UnsupportedOperationException("Server not ready yet")
     return PosixServerSocket()
 }
 
-actual suspend fun readStats(port: UShort, contains: String): List<String> = emptyList()
+//actual suspend fun readStats(port: UShort, contains: String): List<String> = emptyList()
 
 
 internal fun swapBytes(v: UShort): UShort =

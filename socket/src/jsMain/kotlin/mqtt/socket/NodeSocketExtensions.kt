@@ -10,7 +10,7 @@ suspend fun connect(tcpOptions: tcpOptions): Socket {
     var netSocket: Socket? = null
     suspendCoroutine<Unit> {
         var count = 0
-        val socket = Net.connect(tcpOptions) {
+        val socket = js("require('net')").connect(tcpOptions) {
             ++count
             it.resume(Unit)
         }
@@ -30,7 +30,7 @@ suspend fun connect(tcpOptions: TcpSocketConnectOpts): Socket {
     var netSocket: Socket? = null
     suspendCoroutine<Unit> {
         var count = 0
-        val socket = Net.connect(tcpOptions) {
+        val socket = js("require('net')").connect(tcpOptions) {
             println("resume ${++count}")
             it.resume(Unit)
         }

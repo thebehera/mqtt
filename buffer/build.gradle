@@ -14,6 +14,8 @@ kotlin {
         android()
     }
     ios("iOS")
+    watchos()
+    tvos()
     js {
         browser {
             testTask {
@@ -92,6 +94,18 @@ kotlin {
             dependsOn nativeMain
         }
         iOSArm64Test {
+            dependsOn nativeTest
+        }
+        watchosMain {
+            dependsOn nativeMain
+        }
+        watchosTest {
+            dependsOn nativeTest
+        }
+        tvosMain {
+            dependsOn nativeMain
+        }
+        tvosTest {
             dependsOn nativeTest
         }
         linuxMain {

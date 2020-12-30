@@ -77,9 +77,8 @@ class SocketController private constructor(
             scope: CoroutineScope,
             pool: BufferPool,
             remoteHost: IRemoteHost
-        )
-                : SocketController {
-            val socket = getClientSocket(pool)
+        ): SocketController? {
+            val socket = getClientSocket(pool) ?: return null
             socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
             val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
             scope.launch {

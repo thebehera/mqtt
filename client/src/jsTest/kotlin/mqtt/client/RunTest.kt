@@ -16,7 +16,7 @@ fun <T> runTestInternal(
         try {
             return@promise block()
         } catch (e: UnsupportedOperationException) {
-
+            println("unsupported")
         } catch (e: Exception) {
             cancel("failed promise", e)
         }
