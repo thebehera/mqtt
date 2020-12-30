@@ -31,9 +31,9 @@ import kotlin.time.TimeSource
 @ExperimentalTime
 class WebsocketController private constructor(
     private val scope: CoroutineScope,
-    private val controlPacketFactory: ControlPacketFactory,
+    controlPacketFactory: ControlPacketFactory,
     private val socket: ClientSocket,
-    private val keepAliveTimeout: Duration,
+    keepAliveTimeout: Duration,
     private val writeQueue: SendChannel<Collection<ControlPacket>>,
 ) : ISocketController {
     override lateinit var lastMessageReceived: TimeMark
