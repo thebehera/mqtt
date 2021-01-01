@@ -25,7 +25,9 @@ class SimpleTests {
             ), scope = this
         )
         val topic = "hello-${Random.nextLong()}"
+        println("connecting")
         assertTrue(IConnectionAcknowledgment::class.isInstance(client.connectAsync().await()))
+        println("connected, publish")
         assertTrue(
             IPublishComplete::class.isInstance(
                 client.publishAsync(
@@ -35,7 +37,9 @@ class SimpleTests {
                 ).await()
             )
         )
+        println("subscribe")
         assertTrue(ISubscribeAcknowledgement::class.isInstance(client.subscribeAsync(topic, AT_LEAST_ONCE).await()))
+        println("unsub")
         assertTrue(IUnsubscribeAckowledgment::class.isInstance(client.unsubscribeAsync(topic).await()))
         println("disconnecting")
         assertTrue(IDisconnectNotification::class.isInstance(client.disconnectAsync().await()))
@@ -53,7 +57,9 @@ class SimpleTests {
             ), scope = this
         )
         val topic = "hello-${Random.nextLong()}"
+        println("connecting")
         assertTrue(IConnectionAcknowledgment::class.isInstance(client.connectAsync().await()))
+        println("connected, publish")
         assertTrue(
             IPublishComplete::class.isInstance(
                 client.publishAsync(
@@ -63,7 +69,9 @@ class SimpleTests {
                 ).await()
             )
         )
+        println("subscribing")
         assertTrue(ISubscribeAcknowledgement::class.isInstance(client.subscribeAsync(topic, AT_LEAST_ONCE).await()))
+        println("unsub")
         assertTrue(IUnsubscribeAckowledgment::class.isInstance(client.unsubscribeAsync(topic).await()))
         println("disconnecting")
         assertTrue(IDisconnectNotification::class.isInstance(client.disconnectAsync().await()))
