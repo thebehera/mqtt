@@ -16,6 +16,7 @@ class SimpleTests {
 
     @Test
     fun mqttSimpleTest() = block {
+        println("start test")
         if (getNetworkCapabilities() == NetworkCapabilities.WEBSOCKETS_ONLY) return@block
         val client = Client(
             RemoteHost(
@@ -48,6 +49,7 @@ class SimpleTests {
 
     @Test
     fun mqttOverWebsocketsSimpleTest() = block {
+        println("start ws test")
         val client = Client(
             RemoteHost(
                 "localhost",
