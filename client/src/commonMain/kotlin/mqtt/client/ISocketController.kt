@@ -1,4 +1,4 @@
-package mqtt
+package mqtt.client
 
 import kotlinx.coroutines.flow.Flow
 import mqtt.wire.control.packet.ControlPacket
@@ -7,7 +7,7 @@ import kotlin.time.TimeMark
 
 @ExperimentalTime
 interface ISocketController {
-    var lastMessageReceived: TimeMark
+    var lastMessageReceived: TimeMark?
     suspend fun write(controlPacket: ControlPacket)
 
     suspend fun write(controlPackets: Collection<ControlPacket>)

@@ -1,4 +1,4 @@
-package mqtt
+package mqtt.client
 
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import mqtt.socket.SuspendingInputStream
@@ -21,7 +21,7 @@ class WebsocketSuspendableInputStream(
         val payloadLength: Int
     )
 
-    suspend fun readFrameMetadata(): FrameMetadata? {
+    private suspend fun readFrameMetadata(): FrameMetadata? {
         val currentFrame = currentFrame
         if (currentFrame != null) return currentFrame
         inputStream.transformer = null

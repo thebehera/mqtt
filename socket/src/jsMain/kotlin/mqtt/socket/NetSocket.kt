@@ -9,8 +9,6 @@ external class net {
         fun connect(tcpOptions: tcpOptions, connectListener: () -> Unit): Socket
         fun connect(tcpOptions: TcpSocketConnectOpts, connectListener: () -> Unit = definedExternally): Socket
         fun createServer(connectionListener: (Socket) -> Unit = definedExternally): Server
-
-
     }
 }
 fun getNet():net = js("require('net')") as net
@@ -51,6 +49,7 @@ external class Socket {
     fun pause(): Socket
     fun resume(): Socket
     fun end(callback: () -> Unit): Socket
+    fun destroy(error: dynamic = definedExternally): Socket
 }
 
 external interface OnReadOpts {

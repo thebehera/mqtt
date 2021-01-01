@@ -14,13 +14,11 @@ fun <T> runTestInternal(
     block: suspend CoroutineScope.() -> T
 ): Promise<T?> {
     val promise = GlobalScope.promise {
-        if (!isNodeJs) {
-            return@promise null
-        }
         try {
             return@promise block()
         } catch (e: UnsupportedOperationException) {
             println("unsupported")
+            return@promise null
         } catch (e: Exception) {
             cancel("failed promise", e)
         }

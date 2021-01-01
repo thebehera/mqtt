@@ -13,7 +13,7 @@ import kotlin.time.TimeSource
 @ExperimentalTime
 class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope, val socket: ClientSocket) {
     private val channel = Channel<PlatformBuffer>(3)
-    lateinit var lastMessageReceived: TimeMark
+    var lastMessageReceived: TimeMark? = null
     var currentBuffer: ReadBuffer? = null
     var transformer: ((UInt, Byte) -> Byte)? = null
 

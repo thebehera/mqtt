@@ -1,6 +1,5 @@
 package mqtt.client
 
-import mqtt.Client
 import mqtt.connection.RemoteHost
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
@@ -17,10 +16,11 @@ class SimpleTests {
 
     @Test
     fun mqttSimpleTest() = block {
+        if (getNetworkCapabilities() == NetworkCapabilities.WEBSOCKETS_ONLY) return@block
         val client = Client(
             RemoteHost(
-                "test.mosquitto.org",
-                1883,
+                "localhost",
+                60_000,
                 ConnectionRequest<Unit>("m2${Random.nextLong()}", cleanSession = true)
             ), scope = this
         )
@@ -37,15 +37,17 @@ class SimpleTests {
         )
         assertTrue(ISubscribeAcknowledgement::class.isInstance(client.subscribeAsync(topic, AT_LEAST_ONCE).await()))
         assertTrue(IUnsubscribeAckowledgment::class.isInstance(client.unsubscribeAsync(topic).await()))
+        println("disconnecting")
         assertTrue(IDisconnectNotification::class.isInstance(client.disconnectAsync().await()))
+        println("disconnected")
     }
 
     @Test
     fun mqttOverWebsocketsSimpleTest() = block {
         val client = Client(
             RemoteHost(
-                "test.mosquitto.org",
-                8080,
+                "localhost",
+                60_002,
                 ConnectionRequest<Unit>("m2${Random.nextLong()}", keepAliveSeconds = 56, cleanSession = true),
                 websocket = RemoteHost.WebsocketParameters("/mqtt")
             ), scope = this
@@ -63,6 +65,8 @@ class SimpleTests {
         )
         assertTrue(ISubscribeAcknowledgement::class.isInstance(client.subscribeAsync(topic, AT_LEAST_ONCE).await()))
         assertTrue(IUnsubscribeAckowledgment::class.isInstance(client.unsubscribeAsync(topic).await()))
+        println("disconnecting")
         assertTrue(IDisconnectNotification::class.isInstance(client.disconnectAsync().await()))
+        println("disconnected")
     }
 }

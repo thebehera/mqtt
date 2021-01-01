@@ -1,4 +1,4 @@
-package mqtt
+package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -24,7 +24,6 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
-import kotlin.time.TimeSource
 
 
 @ExperimentalUnsignedTypes
@@ -36,9 +35,10 @@ class WebsocketController private constructor(
     keepAliveTimeout: Duration,
     private val writeQueue: SendChannel<Collection<ControlPacket>>,
 ) : ISocketController {
-    override lateinit var lastMessageReceived: TimeMark
+    override var lastMessageReceived: TimeMark? = null
+    private val suspendingInputStream = SuspendingInputStream(keepAliveTimeout, scope, socket)
     private val inputStream =
-        WebsocketSuspendableInputStream(SuspendingInputStream(keepAliveTimeout, scope, socket), controlPacketFactory)
+        WebsocketSuspendableInputStream(suspendingInputStream, controlPacketFactory)
 
     override suspend fun write(controlPacket: ControlPacket) {
         write(listOf(controlPacket))
@@ -55,7 +55,7 @@ class WebsocketController private constructor(
     override suspend fun read() = flow {
         while (scope.isActive) {
             val packet = inputStream.readPacket() ?: return@flow
-            lastMessageReceived = TimeSource.Monotonic.markNow()
+            lastMessageReceived = suspendingInputStream.lastMessageReceived
             emit(packet)
         }
     }
@@ -71,7 +71,8 @@ class WebsocketController private constructor(
             scope: CoroutineScope,
             pool: BufferPool,
             remoteHost: IRemoteHost
-        ): WebsocketController? {
+        ): ISocketController? {
+            loadCustomWebsocketImplementation(scope, pool, remoteHost)?.let { return it }
             val websocketEndpoint = remoteHost.websocket!!.endpoint
             val socket = getClientSocket(pool) ?: return null
             socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)

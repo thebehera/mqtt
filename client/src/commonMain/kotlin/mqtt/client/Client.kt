@@ -1,4 +1,4 @@
-package mqtt
+package mqtt.client
 
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BroadcastChannel
@@ -53,7 +53,9 @@ class Client(
         socketController = if (websocketParams != null) {
             WebsocketController.openWebSocket(scope, pool, remoteHost)!!
         } else {
-            SocketController.openSocket(scope, pool, remoteHost)!!
+            val controller = SocketController.openSocket(scope, pool, remoteHost)
+                ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
+            controller
         }
         socketController?.write(request)
         scope.launch {

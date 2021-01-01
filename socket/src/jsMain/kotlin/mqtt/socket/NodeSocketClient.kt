@@ -57,7 +57,7 @@ open class NodeSocket : ClientSocket {
         incomingMessageChannel.close()
         val socket = netSocket
         netSocket = null
-        socket?.close()
+        socket?.destroy()
     }
 }
 

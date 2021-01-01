@@ -1,4 +1,4 @@
-package mqtt
+package mqtt.client
 
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import kotlin.time.Duration

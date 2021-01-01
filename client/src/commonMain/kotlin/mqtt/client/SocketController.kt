@@ -1,4 +1,4 @@
-package mqtt
+package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -30,7 +30,8 @@ class SocketController private constructor(
     private val keepAliveTimeout: Duration,
     private val writeQueue: SendChannel<Collection<ControlPacket>>,
 ) : ISocketController {
-    override lateinit var lastMessageReceived: TimeMark
+
+    override var lastMessageReceived: TimeMark? = null
 
     override suspend fun write(controlPacket: ControlPacket) {
         write(listOf(controlPacket))
@@ -48,6 +49,7 @@ class SocketController private constructor(
         val inputStream = SuspendingInputStream(keepAliveTimeout * 1.5, scope, socket)
         try {
             while (scope.isActive && socket.isOpen()) {
+                lastMessageReceived = inputStream.lastMessageReceived
                 val byte1 = inputStream.readUnsignedByte()
                 val remainingLength = inputStream.readVariableByteInteger()
                 val packet = inputStream.readTyped(remainingLength.toLong()) { readBuffer ->

@@ -18,7 +18,6 @@ actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket? {
 
     return if (isNodeJs) {
         val net = require("net")
-        println(net)
         NodeClientSocket()
     } else {
         return null
