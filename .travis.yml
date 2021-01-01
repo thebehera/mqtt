@@ -22,6 +22,8 @@ matrix:
       before_install:
         - choco install jdk8 -params 'installdir=c:\\java8'
         - export JAVA_HOME="/C/java8/"
+      before_cache:
+        - rm -rf $HOME/.gradle/
       addons:
         apt:
           packages:
@@ -83,6 +85,19 @@ matrix:
         firefox: latest
       jdk:
         - openjdk10
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+  - rm -rf $HOME/.gradle/wrapper/dists/
+  - rm -rf $HOME/.gradle/caches/6.3/fileHashes/fileHashes.lock
+cache:
+  directories:
+    - $HOME/travis/.rvm/
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+    - $HOME/.konan/
+    - $HOME/Library/Caches/Homebrew
+    - $HOME/.android/build-cache
 script:
   - ./build.sh
 
