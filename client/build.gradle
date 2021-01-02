@@ -60,6 +60,7 @@ kotlin {
         commonTest {
             dependencies {
                 implementation project(":wire4")
+                implementation project(":wire5")
                 implementation kotlin('test')
                 implementation kotlin('test-annotations-common')
             }

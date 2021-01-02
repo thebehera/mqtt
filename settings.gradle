@@ -12,6 +12,5 @@ plugins {
 }
 enableFeaturePreview('GRADLE_METADATA')
 
-include ':wire-core', ':wire5', ':wire4', ':client', ':server', ':socket', ':http', ":buffer"
-include 'persistence'
+include ':wire-core', ':wire5', ':wire4', ':client', ':server', ':socket', ':http', ":buffer", ':persistence', ":sample"
 

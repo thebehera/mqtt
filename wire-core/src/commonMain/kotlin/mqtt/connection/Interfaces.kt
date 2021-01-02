@@ -6,19 +6,6 @@ import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
 import kotlin.time.toDuration
 
-interface IMqttConnectionStateUpdated {
-    val remoteHostConnectionIdentifier: Int
-    val state: ConnectionState
-}
-
-data class MqttConnectionStateUpdated(
-    override val remoteHostConnectionIdentifier: Int,
-    override val state: ConnectionState
-) : IMqttConnectionStateUpdated {
-    constructor(remote: IRemoteHost, acknowledgment: ConnectionState)
-            : this(remote.connectionIdentifier(), acknowledgment)
-}
-
 @ExperimentalTime
 data class RemoteHost(
     override val name: String,
