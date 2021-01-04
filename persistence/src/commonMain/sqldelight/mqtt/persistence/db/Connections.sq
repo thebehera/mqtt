@@ -1,0 +1,18 @@
+CREATE TABLE MqttConnections(
+    connectionId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    connectionRequestId INTEGER NOT NULL
+);
+
+CREATE TABLE Server(
+    connectionId INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    port INTEGER NOT NULL CHECK (port BETWEEN 0 AND 65535),
+    connectionTimeoutMs INTEGER NOT NULL,
+    isTransportLayerSecurityEnabled INTEGER NOT NULL CHECK(isTransportLayerSecurityEnabled BETWEEN 0 AND 1),
+    acceptAllCertificates INTEGER NOT NULL CHECK(isTransportLayerSecurityEnabled BETWEEN 0 AND 1),
+    websocketEndpoint TEXT,
+    lastConnectedMsSince1970 INTEGER,
+    PRIMARY KEY(connectionId, name, port),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId)
+) WITHOUT ROWID;
+

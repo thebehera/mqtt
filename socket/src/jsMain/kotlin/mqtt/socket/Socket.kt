@@ -4,10 +4,9 @@ import mqtt.buffer.BufferPool
 import kotlin.browser.window
 import kotlin.time.ExperimentalTime
 
-val isNodeJs by lazy {
-    try {
-        window
-        false
+fun isNodeJs(): Boolean {
+    return try {
+        !(js("'WebSocket' in window || 'MozWebSocket' in window") as Boolean)
     } catch (t: Throwable) {
         true
     }
@@ -15,8 +14,7 @@ val isNodeJs by lazy {
 
 @ExperimentalTime
 actual fun asyncClientSocket(pool: BufferPool): ClientToServerSocket? {
-
-    return if (isNodeJs) {
+    return if (isNodeJs()) {
         val net = require("net")
         NodeClientSocket()
     } else {
@@ -31,7 +29,7 @@ actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSock
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 actual fun asyncServerSocket(): ServerSocket? {
-    if (isNodeJs) {
+    if (isNodeJs()) {
         val net = require("net")
 //        throw UnsupportedOperationException("Not implemented yet")
         return NodeServerSocket()

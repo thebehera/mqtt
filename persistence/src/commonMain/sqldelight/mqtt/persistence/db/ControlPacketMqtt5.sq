@@ -15,6 +15,7 @@ CREATE TABLE ConnectionRequest5 (
       keepAliveSeconds INTEGER NOT NULL CHECK (keepAliveSeconds BETWEEN 0 AND 65353),
       userProperty INTEGER,
       PRIMARY KEY (connectionId),
+      FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId),
       FOREIGN KEY (willPropertyRowId) REFERENCES WillProperties(row_id),
       FOREIGN KEY (userProperty) REFERENCES UserProperty(property_id)
 ) WITHOUT ROWID;
@@ -34,14 +35,17 @@ CREATE TABLE PublishMessage5 (
     correlationData BLOB,
     userProperty INTEGER,
     payload BLOB,
-    PRIMARY KEY (connectionId, publishMessageId, packetIdentifier)
+    PRIMARY KEY (connectionId, publishMessageId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId)
 ) WITHOUT ROWID;
 
 CREATE TABLE SubscriptionIdentifier(
   connectionId INTEGER NOT NULL,
   publishMessageId INTEGER NOT NULL,
   identifier INTEGER NOT NULL CHECK (identifier BETWEEN 1 AND 268435455),
-  PRIMARY KEY (connectionId, publishMessageId, identifier)
+  PRIMARY KEY (connectionId, publishMessageId, identifier),
+  FOREIGN KEY (publishMessageId) REFERENCES PublishMessage5(publishMessageId),
+  FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId)
 ) WITHOUT ROWID;
 
 
@@ -59,8 +63,49 @@ CREATE TABLE WillProperties (
 ) WITHOUT ROWID;
 
 CREATE TABLE UserProperty (
-  property_id INTEGER NOT NULL,
+  property_id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   `key` TEXT NOT NULL,
-  value TEXT NOT NULL,
-  PRIMARY KEY (property_id, `key`, value)
+  value TEXT NOT NULL
+);
+
+
+CREATE TABLE Subscription5(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER NOT NULL,
+    topicFilter TEXT NOT NULL,
+    maximumQos INTEGER NOT NULL CHECK (maximumQos BETWEEN 0 AND 2),
+    noLocal INTEGER NOT NULL DEFAULT 0 CHECK (noLocal BETWEEN 0 AND 1),
+    retainAsPublished INTEGER NOT NULL DEFAULT 0 CHECK (retainAsPublished BETWEEN 0 AND 1),
+    retainHandling INTEGER NOT NULL DEFAULT 0 CHECK (retainAsPublished BETWEEN 0 AND 2),
+    acknowleged INTEGER NOT NULL DEFAULT 0 CHECK (acknowleged BETWEEN 0 AND 1),
+    PRIMARY KEY(connectionId, packetIdentifier, topicFilter),
+    FOREIGN KEY (connectionId) REFERENCES SubscriptionRequest5(connectionId),
+    FOREIGN KEY (packetIdentifier) REFERENCES SubscriptionRequest5(packetIdentifier)
+) WITHOUT ROWID;
+
+CREATE TABLE SubscriptionRequest5(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER CHECK (packetIdentifier IS NULL OR packetIdentifier BETWEEN 0 AND 65353),
+    reasonString TEXT,
+    userProperty INTEGER,
+    PRIMARY KEY(connectionId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId),
+    FOREIGN KEY (userProperty) REFERENCES UserProperty(property_id)
+) WITHOUT ROWID;
+
+CREATE TABLE Topics(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER,
+    topic TEXT NOT NULL,
+    PRIMARY KEY (connectionId, packetIdentifier, topic),
+    FOREIGN KEY (connectionId) REFERENCES UnsubscriptionRequest5(connectionId)
+);
+
+CREATE TABLE UnsubscriptionRequest5(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER CHECK (packetIdentifier IS NULL OR packetIdentifier BETWEEN 0 AND 65353),
+    userProperty INTEGER,
+    PRIMARY KEY(connectionId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId),
+    FOREIGN KEY (userProperty) REFERENCES UserProperty(property_id)
 ) WITHOUT ROWID;

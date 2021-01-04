@@ -2,69 +2,56 @@ package mqtt.connection
 
 import mqtt.wire.control.packet.IConnectionRequest
 import kotlin.time.Duration
-import kotlin.time.DurationUnit
 import kotlin.time.ExperimentalTime
-import kotlin.time.toDuration
+import kotlin.time.seconds
 
 @ExperimentalTime
 data class RemoteHost(
+    val name: String,
+    val port: Int,
+    override val request: IConnectionRequest,
+    val security: SecurityParameters = SecurityParameters(false, false),
+    val websocket: WebsocketParameters? = null,
+    val connectionTimeout: Duration = 1.seconds,
+) : IConnectionOptions {
+    override val servers =
+        hashSetOf(Server(name, port, connectionTimeout, security, websocket))
+}
+
+@ExperimentalTime
+data class ConnectionOptions(
+    override val request: IConnectionRequest,
+    override val servers: Set<IConnectionOptions.IServer>,
+) : IConnectionOptions
+
+@ExperimentalTime
+data class Server(
     override val name: String,
     override val port: Int,
-    override val request: IConnectionRequest,
-    override val security: SecurityParameters = SecurityParameters(false, false),
-    override val websocket: WebsocketParameters? = null,
-    override val connectionTimeoutMs: Milliseconds = 1000,
-    override val connectionTimeout: Duration = connectionTimeoutMs.toDuration(DurationUnit.MILLISECONDS),
-) : IRemoteHost {
-    data class WebsocketParameters(override val endpoint: String = "/") : IRemoteHost.IWebsocketParameters
-    data class SecurityParameters(
-        override val isTransportLayerSecurityEnabled: Boolean,
-        override val acceptAllCertificates: Boolean
-    ) : IRemoteHost.ISecurityParameters
-}
+    override val connectionTimeout: Duration = 1.seconds,
+    override val security: SecurityParameters,
+    override val websocket: WebsocketParameters?
+) : IConnectionOptions.IServer
 
-interface IRemoteHost {
-    interface IWebsocketParameters {
-        val endpoint: String
+
+interface IConnectionOptions {
+    interface IServer {
+        val name: String
+        val port: Int
+
+        @ExperimentalTime
+        val connectionTimeout: Duration
+        val security: SecurityParameters
+        val websocket: WebsocketParameters?
     }
 
-    interface ISecurityParameters {
-        val isTransportLayerSecurityEnabled: Boolean
-        val acceptAllCertificates: Boolean
-    }
-
-    val name: String
-    val port: Int
-    val connectionTimeoutMs: Milliseconds
-
-    @ExperimentalTime
-    val connectionTimeout: Duration
-    val security: ISecurityParameters
-    val websocket: IWebsocketParameters?
     val request: IConnectionRequest
-
-    fun connectionIdentifier() = uniqueIdentifier().hashCode()
-    fun uniqueIdentifier(): CharSequence = Companion.uniqueIdentifier(
-        request.protocolName, request.protocolVersion,
-        request.clientIdentifier, name, port
-    )
-
-    companion object {
-        fun uniqueIdentifier(
-            protocolName: CharSequence,
-            protocolVersion: Int,
-            clientId: CharSequence,
-            name: CharSequence,
-            port: Int
-        ) =
-            listOf(
-                protocolName,
-                protocolVersion,
-                clientId,
-                name,
-                port
-            ).joinToString(".")
-    }
+    val servers: Set<IServer>
 }
 
-typealias Milliseconds = Long
+class WebsocketParameters(val endpoint: String)
+
+class SecurityParameters(
+    val isTransportLayerSecurityEnabled: Boolean,
+    val acceptAllCertificates: Boolean
+)

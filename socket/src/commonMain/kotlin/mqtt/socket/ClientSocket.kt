@@ -45,7 +45,9 @@ suspend fun openClientSocket(port: UShort,
                              timeout: Duration = 1.seconds,
                              hostname: String? = null,
                              socketOptions: SocketOptions? = null): ClientToServerSocket? {
-    val socket = getClientSocket() ?: return null
+    val socket = getClientSocket()
+    println("open socket $socket")
+    if (socket == null) return null
     socket.open(port, timeout, hostname, socketOptions)
     return socket
 }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mqtt.buffer.BufferPool
-import mqtt.connection.IRemoteHost
+import mqtt.connection.RemoteHost
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream
 import mqtt.socket.getClientSocket
@@ -78,7 +78,7 @@ class SocketController private constructor(
         suspend fun openSocket(
             scope: CoroutineScope,
             pool: BufferPool,
-            remoteHost: IRemoteHost
+            remoteHost: RemoteHost
         ): SocketController? {
             val socket = getClientSocket(pool) ?: return null
             socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)

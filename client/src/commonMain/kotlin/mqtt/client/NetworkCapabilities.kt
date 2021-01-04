@@ -2,7 +2,7 @@ package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
 import mqtt.buffer.BufferPool
-import mqtt.connection.IRemoteHost
+import mqtt.connection.RemoteHost
 
 enum class NetworkCapabilities {
     FULL_SOCKET_ACCESS,
@@ -15,6 +15,6 @@ expect fun getNetworkCapabilities(): NetworkCapabilities
 expect suspend fun loadCustomWebsocketImplementation(
     scope: CoroutineScope,
     pool: BufferPool,
-    remoteHost: IRemoteHost
+    remoteHost: RemoteHost
 ): ISocketController?
 

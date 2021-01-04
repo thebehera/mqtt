@@ -12,6 +12,143 @@ CREATE TABLE ConnectionRequest4 (
    willFlag INTEGER NOT NULL CHECK (willFlag BETWEEN 0 AND 1),
    cleanSession INTEGER NOT NULL DEFAULT 0 CHECK (cleanSession BETWEEN 0 AND 1),
    keepAliveSeconds INTEGER NOT NULL CHECK (keepAliveSeconds BETWEEN 0 AND 65353),
-   PRIMARY KEY (connectionId)
+   PRIMARY KEY (connectionId),
+   FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
+CREATE TABLE PublishMessage4 (
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER NOT NULL CHECK (packetIdentifier BETWEEN 0 AND 65353),
+    dup INTEGER NOT NULL DEFAULT 0 CHECK (dup BETWEEN 0 AND 1),
+    qos INTEGER NOT NULL CHECK (qos BETWEEN 0 AND 2),
+    retain INTEGER NOT NULL DEFAULT 0 CHECK (retain BETWEEN 0 AND 1),
+    topicName TEXT NOT NULL CHECK (topicName GLOB '^(\+|.+/\+|[^#]+#|.*/\+/.*)$'),
+    payload BLOB,
+    PRIMARY KEY (connectionId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE,
+    FOREIGN KEY (connectionId, packetIdentifier) REFERENCES UsedControlPackets(connectionId, packetIdentifier) ON DELETE CASCADE
+) WITHOUT ROWID;
+
+CREATE TABLE SubscriptionRequest4(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER NOT NULL CHECK (packetIdentifier BETWEEN 0 AND 65353),
+    topicFilter TEXT NOT NULL,
+    maximumQos INTEGER NOT NULL CHECK (maximumQos BETWEEN 0 AND 2),
+    PRIMARY KEY(connectionId, packetIdentifier, topicFilter),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE,
+    FOREIGN KEY (connectionId, packetIdentifier) REFERENCES UsedControlPackets(connectionId, packetIdentifier) ON DELETE CASCADE
+) WITHOUT ROWID;
+
+
+
+-- Match with the topics table in ControlPacketMqtt5
+CREATE TABLE UnsubscriptionRequest4(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER NOT NULL CHECK (packetIdentifier BETWEEN 0 AND 65353),
+    topicFilter TEXT NOT NULL,
+    PRIMARY KEY(connectionId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE,
+    FOREIGN KEY (connectionId, packetIdentifier) REFERENCES UsedControlPackets(connectionId, packetIdentifier) ON DELETE CASCADE
+) WITHOUT ROWID;
+
+CREATE TABLE QueuedPubRel4(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER NOT NULL CHECK (packetIdentifier BETWEEN 0 AND 65353),
+    PRIMARY KEY(connectionId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE,
+    FOREIGN KEY (connectionId, packetIdentifier) REFERENCES UsedControlPackets(connectionId, packetIdentifier) ON DELETE CASCADE
+) WITHOUT ROWID;
+
+CREATE TABLE QosServerAssignedPackets(
+    connectionId INTEGER NOT NULL,
+    packetIdentifier INTEGER NOT NULL CHECK (packetIdentifier BETWEEN 0 AND 65353),
+    PRIMARY KEY(connectionId, packetIdentifier),
+    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE
+) WITHOUT ROWID;
+
+
+
+CREATE TABLE UsedControlPackets (
+   connectionId INTEGER NOT NULL,
+   packetIdentifier INTEGER NOT NULL,
+   PRIMARY KEY(connectionId, packetIdentifier)
+);
+
+removeConnection:
+    DELETE FROM UsedControlPackets WHERE connectionId = :connectionId;
+
+
+findUnusedPacketIdentifier:
+WITH RECURSIVE all_ids(id) AS (
+  VALUES(1)
+  UNION ALL
+  SELECT id + 1
+  FROM all_ids
+  LIMIT 65535
+)
+SELECT id
+FROM all_ids
+WHERE NOT EXISTS (SELECT 1
+                  FROM UsedControlPackets
+                  WHERE packetIdentifier = all_ids.id  AND connectionId = :connectionId)
+LIMIT 1;
+
+
+findUnusedPacketIdentifierOldSqlite:
+SELECT id + 1
+FROM (SELECT 0 AS id
+      UNION ALL
+      SELECT packetIdentifier
+      FROM UsedControlPackets
+      WHERE packetIdentifier <= 65535 AND connectionId = :connectionId
+     ) AS ids
+WHERE NOT EXISTS (SELECT 1
+                  FROM UsedControlPackets
+                  WHERE packetIdentifier = ids.id + 1)
+LIMIT 1;
+
+onSubscribeAck4:
+    DELETE FROM SubscriptionRequest4 WHERE connectionId = :connectionId AND packetIdentifier = :packetIdentifier;
+
+subscription4:
+    INSERT INTO SubscriptionRequest4 VALUES (:connectionId, :packetIdentifier, :topicFilter, :maximumQos);
+
+findSubscriptions4:
+    SELECT * FROM SubscriptionRequest4 WHERE connectionId = :connectionId;
+
+unsubscribe4:
+    INSERT INTO UnsubscriptionRequest4 VALUES (:connectionId, :packetIdentifier, :topic);
+
+findUnsubscriptions4:
+    SELECT * FROM UnsubscriptionRequest4 WHERE connectionId = :connectionId;
+
+onUnsubscribeAck4:
+    DELETE FROM UnsubscriptionRequest4 WHERE connectionId = :connectionId AND packetIdentifier = :packetIdentifier;
+
+publish4:
+    INSERT INTO PublishMessage4 VALUES (:connectionId, :packetIdentifier, :dup, :qos, :retain, :topicName, :payload);
+
+findPublish4:
+    SELECT * FROM PublishMessage4 WHERE connectionId = :connectionId;
+
+incomingPublishAcknowlege4:
+    DELETE FROM PublishMessage4 WHERE connectionId = :connectionId AND packetIdentifier = :packetIdentifier;
+
+incomingPubRecAboutToSendPubRel4 {
+    DELETE FROM PublishMessage4 WHERE connectionId = :connectionId AND packetIdentifier = :packetIdentifier;
+    INSERT INTO QueuedPubRel4 VALUES(:connectionId, :packetIdentifier);
+}
+findPubRel4:
+    SELECT * FROM QueuedPubRel4 WHERE connectionId = :connectionId;
+
+numberOfAffectedRows:
+    SELECT changes();
+
+incomingPublishQos2AboutToSendPubRec:
+    INSERT INTO QosServerAssignedPackets VALUES(:connectionId, :packetIdentifier);
+
+incomingPubcomp:
+    DELETE FROM QueuedPubRel4 WHERE connectionId = :connectionId AND packetIdentifier = :packetIdentifier;
+
+incomingPubRelAboutToSendPubComp:
+    DELETE FROM QosServerAssignedPackets WHERE connectionId = :connectionId AND packetIdentifier = :packetIdentifier;

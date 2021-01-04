@@ -10,6 +10,15 @@ enum class QualityOfService(val integerValue: Byte) {
     fun isGreaterThan(otherQos: QualityOfService) = integerValue > otherQos.integerValue
 
     companion object {
+        fun from(number: Long): QualityOfService {
+            return when (number) {
+                AT_MOST_ONCE.integerValue.toLong() -> AT_MOST_ONCE
+                AT_LEAST_ONCE.integerValue.toLong() -> AT_LEAST_ONCE
+                EXACTLY_ONCE.integerValue.toLong() -> EXACTLY_ONCE
+                else -> throw IllegalArgumentException("Invalid qos value")
+            }
+        }
+
         fun fromBooleans(bit2: Boolean, bit1: Boolean): QualityOfService {
             return if (bit2 && !bit1) {
                 EXACTLY_ONCE

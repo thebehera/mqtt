@@ -1,6 +1,5 @@
 package mqtt.client
 
-import kotlinx.browser.window
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.cancel
@@ -30,14 +29,4 @@ fun <T> runTestInternal(
         }
     }
     return promise
-}
-
-
-val isNodeJs by lazy {
-    try {
-        window
-        false
-    } catch (t: Throwable) {
-        true
-    }
 }

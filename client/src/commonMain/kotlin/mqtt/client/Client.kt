@@ -6,7 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import mqtt.buffer.BufferPool
 import mqtt.buffer.GenericType
-import mqtt.connection.IRemoteHost
+import mqtt.connection.RemoteHost
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.RetainHandling.SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
 import mqtt.wire.control.packet.format.ReasonCode
@@ -19,7 +19,7 @@ import kotlin.time.seconds
 @ExperimentalTime
 @ExperimentalUnsignedTypes
 class Client(
-    private val remoteHost: IRemoteHost,
+    private val remoteHost: RemoteHost,
     private val messageCallback: ApplicationMessageCallback? = null,
     private val persistence: Persistence = InMemoryPersistence(),
     private val pool: BufferPool = BufferPool(),
@@ -51,6 +51,7 @@ class Client(
         }
         val websocketParams = remoteHost.websocket
         socketController = if (websocketParams != null) {
+            println("open ws")
             WebsocketController.openWebSocket(scope, pool, remoteHost)!!
         } else {
             val controller = SocketController.openSocket(scope, pool, remoteHost)

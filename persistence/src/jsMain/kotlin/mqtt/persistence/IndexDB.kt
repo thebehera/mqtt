@@ -12,7 +12,8 @@ fun main() {
 }
 
 fun setup() {
-    val isNodeJs = isNodeJs
+    val isNodeJs = isNodeJs()
+    println("setup")
     if (isNodeJs) {
         js("var setGlobalVars = require('indexeddbshim')")
         js("setGlobalVars(null, {checkOrigin: false})")

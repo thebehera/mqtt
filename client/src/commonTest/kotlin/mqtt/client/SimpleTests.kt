@@ -1,6 +1,7 @@
 package mqtt.client
 
 import mqtt.connection.RemoteHost
+import mqtt.connection.WebsocketParameters
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
@@ -55,7 +56,7 @@ class SimpleTests {
                 "localhost",
                 60_002,
                 ConnectionRequest<Unit>("m2${Random.nextLong()}", keepAliveSeconds = 56, cleanSession = true),
-                websocket = RemoteHost.WebsocketParameters("/mqtt")
+                websocket = WebsocketParameters("/mqtt")
             ), scope = this
         )
         val topic = "hello-${Random.nextLong()}"

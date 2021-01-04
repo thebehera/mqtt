@@ -1,11 +1,10 @@
 package mqtt.persistence
 
-import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SimpleTests {
 
-    @Test
+//    @Test
     fun openTest() = runTest { contextProvider ->
         val platformDatabase = getPlatformDatabase("rahultestdb", contextProvider)
         val column1 = TextColumn("column1", "hello")

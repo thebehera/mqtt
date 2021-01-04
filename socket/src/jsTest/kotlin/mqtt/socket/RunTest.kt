@@ -14,7 +14,7 @@ fun <T> runTestInternal(
     block: suspend CoroutineScope.() -> T
 ): Promise<T?> {
     val promise = GlobalScope.promise {
-        if (!isNodeJs) {
+        if (!isNodeJs()) {
             return@promise null
         }
         try {
@@ -32,13 +32,4 @@ fun <T> runTestInternal(
         }
     }
     return promise
-}
-
-val isNodeJs by lazy {
-    try {
-        window
-        false
-    } catch (t: Throwable) {
-        true
-    }
 }

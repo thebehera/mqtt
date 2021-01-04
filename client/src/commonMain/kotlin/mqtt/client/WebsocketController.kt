@@ -11,7 +11,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mqtt.buffer.BufferPool
 import mqtt.buffer.PlatformBuffer
-import mqtt.connection.IRemoteHost
+import mqtt.connection.RemoteHost
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream
 import mqtt.socket.getClientSocket
@@ -70,11 +70,13 @@ class WebsocketController private constructor(
         suspend fun openWebSocket(
             scope: CoroutineScope,
             pool: BufferPool,
-            remoteHost: IRemoteHost
+            remoteHost: RemoteHost
         ): ISocketController? {
-            loadCustomWebsocketImplementation(scope, pool, remoteHost)?.let { return it }
+
             val websocketEndpoint = remoteHost.websocket!!.endpoint
-            val socket = getClientSocket(pool) ?: return null
+            val socket = getClientSocket(pool)
+                ?: (loadCustomWebsocketImplementation(scope, pool, remoteHost)?.let { return it }
+                    ?: throw IllegalStateException("Impossible WS state"))
             socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
             val request =
                 "GET $websocketEndpoint HTTP/1.1\r\nHost: ${remoteHost.name}:${remoteHost.port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Protocol: mqtt\r\nSec-WebSocket-Version: 13\r\n\r\n"

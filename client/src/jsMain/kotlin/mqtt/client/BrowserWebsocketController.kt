@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.promise
 import mqtt.buffer.*
-import mqtt.connection.IRemoteHost
+import mqtt.connection.RemoteHost
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import org.khronos.webgl.ArrayBuffer
@@ -24,10 +24,11 @@ import kotlin.time.TimeSource
 class BrowserWebsocketController(
     val scope: CoroutineScope,
     val pool: BufferPool,
-    val remoteHost: IRemoteHost
+    val remoteHost: RemoteHost
 ) : ISocketController {
 
-    var websocket = WebSocket("ws://${remoteHost.name}:${remoteHost.port}${remoteHost.websocket!!.endpoint}", "mqtt")
+    private val websocket: WebSocket =
+        WebSocket("ws://${remoteHost.name}:${remoteHost.port}${remoteHost.websocket!!.endpoint}", "mqtt")
     var isConnected = false
     override var lastMessageReceived: TimeMark? = null
 
