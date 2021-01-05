@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mqtt.buffer.BufferPool
-import mqtt.connection.RemoteHost
+import mqtt.connection.IConnectionOptions
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream
 import mqtt.socket.getClientSocket
@@ -78,10 +78,10 @@ class SocketController private constructor(
         suspend fun openSocket(
             scope: CoroutineScope,
             pool: BufferPool,
-            remoteHost: RemoteHost
+            connectionOptions: IConnectionOptions
         ): SocketController? {
             val socket = getClientSocket(pool) ?: return null
-            socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
+            socket.open(port = connectionOptions.port.toUShort(), hostname = connectionOptions.name)
             val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
             scope.launch {
                 while (isActive && socket.isOpen()) {
@@ -91,16 +91,16 @@ class SocketController private constructor(
                         }
                         socket.pool.borrowSuspend(totalBufferSize) { buffer ->
                             packets.forEach { packet -> packet.serialize(buffer) }
-                            socket.write(buffer, remoteHost.request.keepAliveTimeout * 1.5)
+                            socket.write(buffer, connectionOptions.request.keepAliveTimeout * 1.5)
                         }
                     }
                 }
             }
             return SocketController(
                 scope,
-                remoteHost.request.controlPacketFactory,
+                connectionOptions.request.controlPacketFactory,
                 socket,
-                remoteHost.request.keepAliveTimeout,
+                connectionOptions.request.keepAliveTimeout,
                 writeQueue
             )
         }

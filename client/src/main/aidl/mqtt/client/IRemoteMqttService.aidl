@@ -1,8 +1,8 @@
 // IRemoteMqttService.aidl
-package com.ditchoom.mqtt;
+package mqtt.client;
 
 // Declare any non-default types here with import statements
-import com.ditchoom.mqtt.ControlPacketCallback;
+import mqtt.client.ControlPacketCallback;
 
 interface IRemoteMqttService {
     void addServer();

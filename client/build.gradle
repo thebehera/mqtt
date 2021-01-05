@@ -2,6 +2,7 @@ import java.time.Duration
 
 plugins {
     id 'kotlin-multiplatform'
+    id 'kotlin-parcelize'
 }
 repositories {
     mavenCentral()

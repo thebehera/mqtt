@@ -1,11 +1,9 @@
-package com.ditchoom.mqtt
+package mqtt.client
 
 import android.app.Service
 import android.content.Intent
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
-import mqtt.client.ControlPacketWrapper
-import mqtt.wire4.control.packet.Reserved
 
 class MqttService : Service() {
     private val mainScope = MainScope()
@@ -27,12 +25,6 @@ class MqttService : Service() {
     }
 
     override fun onBind(intent: Intent) = binder
-
-    override fun onCreate() {
-        super.onCreate()
-        ControlPacketWrapper().also { it.packet = Reserved }
-
-    }
 
     override fun onDestroy() {
         mainScope.cancel()

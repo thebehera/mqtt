@@ -1,9 +1,6 @@
 if (System.getenv("ANDROID_HOME")) {
     apply plugin: 'com.android.library'
-    apply plugin: 'kotlin-android-extensions'
-    androidExtensions {
-        experimental = true
-    }
+
     android {
         compileSdkVersion 29
         defaultConfig {

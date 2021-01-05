@@ -11,7 +11,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mqtt.buffer.BufferPool
 import mqtt.buffer.PlatformBuffer
-import mqtt.connection.RemoteHost
+import mqtt.connection.IConnectionOptions
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream
 import mqtt.socket.getClientSocket
@@ -70,17 +70,16 @@ class WebsocketController private constructor(
         suspend fun openWebSocket(
             scope: CoroutineScope,
             pool: BufferPool,
-            remoteHost: RemoteHost
+            connectionOptions: IConnectionOptions
         ): ISocketController? {
-
-            val websocketEndpoint = remoteHost.websocket!!.endpoint
+            val websocketEndpoint = connectionOptions.websocketEndpoint
             val socket = getClientSocket(pool)
-                ?: (loadCustomWebsocketImplementation(scope, pool, remoteHost)?.let { return it }
+                ?: (loadCustomWebsocketImplementation(scope, pool, connectionOptions)?.let { return it }
                     ?: throw IllegalStateException("Impossible WS state"))
-            socket.open(port = remoteHost.port.toUShort(), hostname = remoteHost.name)
+            socket.open(port = connectionOptions.port.toUShort(), hostname = connectionOptions.name)
             val request =
-                "GET $websocketEndpoint HTTP/1.1\r\nHost: ${remoteHost.name}:${remoteHost.port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Protocol: mqtt\r\nSec-WebSocket-Version: 13\r\n\r\n"
-            socket.write(request, remoteHost.connectionTimeout)
+                "GET $websocketEndpoint HTTP/1.1\r\nHost: ${connectionOptions.name}:${connectionOptions.port}\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\nSec-WebSocket-Protocol: mqtt\r\nSec-WebSocket-Version: 13\r\n\r\n"
+            socket.write(request, connectionOptions.connectionTimeout)
             val response = socket.read().result
             if (!(response.contains("101 Switching Protocols", ignoreCase = true)
                         && response.contains("Upgrade: websocket", ignoreCase = true)
@@ -118,16 +117,16 @@ class WebsocketController private constructor(
                                 writeBuffer.position(position.toInt())
                                 writeBuffer.write(maskedByte)
                             }
-                            socket.write(writeBuffer, remoteHost.request.keepAliveTimeout)
+                            socket.write(writeBuffer, connectionOptions.request.keepAliveTimeout)
                         }
                     }
                 }
             }
             return WebsocketController(
                 scope,
-                remoteHost.request.controlPacketFactory,
+                connectionOptions.request.controlPacketFactory,
                 socket,
-                remoteHost.request.keepAliveTimeout,
+                connectionOptions.request.keepAliveTimeout,
                 writeQueue
             )
         }

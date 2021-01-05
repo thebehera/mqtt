@@ -6,7 +6,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
 import mqtt.buffer.BufferPool
 import mqtt.buffer.GenericType
-import mqtt.connection.RemoteHost
+import mqtt.connection.IConnectionOptions
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.RetainHandling.SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
 import mqtt.wire.control.packet.format.ReasonCode
@@ -19,13 +19,13 @@ import kotlin.time.seconds
 @ExperimentalTime
 @ExperimentalUnsignedTypes
 class Client(
-    private val remoteHost: RemoteHost,
+    private val connectionOptions: IConnectionOptions,
     private val messageCallback: ApplicationMessageCallback? = null,
     private val persistence: Persistence = InMemoryPersistence(),
     private val pool: BufferPool = BufferPool(),
     private val scope: CoroutineScope,
 ) {
-    private val packetFactory = remoteHost.request.controlPacketFactory
+    private val packetFactory = connectionOptions.request.controlPacketFactory
     private var socketController: ISocketController? = null
     private var reconnectCount = 0
     private var keepAliveJob: Job? = null
@@ -45,15 +45,15 @@ class Client(
 
     suspend fun connectAsync() = scope.async {
         reconnectCount++
-        val request = remoteHost.request
+        val request = connectionOptions.request
         if (request.cleanStart) {
             persistence.clear()
         }
-        val websocketParams = remoteHost.websocket
+        val websocketParams = connectionOptions.websocketEndpoint
         socketController = if (websocketParams != null) {
-            WebsocketController.openWebSocket(scope, pool, remoteHost)!!
+            WebsocketController.openWebSocket(scope, pool, connectionOptions)!!
         } else {
-            val controller = SocketController.openSocket(scope, pool, remoteHost)
+            val controller = SocketController.openSocket(scope, pool, connectionOptions)
                 ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
             controller
         }
@@ -317,7 +317,7 @@ class Client(
                     messageCallback?.onAcknowledgementReceived(incomingControlPacket)
                 }
                 is IConnectionAcknowledgment -> {
-                    if (!remoteHost.request.cleanStart) {
+                    if (!connectionOptions.request.cleanStart) {
                         val queuedMessages = persistence.queuedMessages()
                         if (queuedMessages.isNotEmpty()) {
                             socketController?.write(queuedMessages.values)
@@ -334,7 +334,7 @@ class Client(
             if (!receivedConnack && connectionState !is ConnectionState.Connected && authenticator != null) {
                 socketController?.write(authenticator(incomingControlPacket))
             } else if (!receivedConnack && connectionState !is ConnectionState.Connected && authenticator == null) {
-                throw IllegalStateException("Requires an authenticator for $remoteHost but failed to find one")
+                throw IllegalStateException("Requires an authenticator for $connectionOptions but failed to find one")
             }
             incomingMessageBroadcastChannel.send(incomingControlPacket)
         }
@@ -343,7 +343,7 @@ class Client(
     private suspend fun delayUntilNextKeepAlive() {
         val lastMessageReceived = socketController?.lastMessageReceived
         if (lastMessageReceived != null) {
-            delay(remoteHost.request.keepAliveTimeout - lastMessageReceived.elapsedNow())
+            delay(connectionOptions.request.keepAliveTimeout - lastMessageReceived.elapsedNow())
         }
     }
 

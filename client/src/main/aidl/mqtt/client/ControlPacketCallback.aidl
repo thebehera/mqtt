@@ -1,5 +1,5 @@
 // ControlPacketCallback.aidl
-package com.ditchoom.mqtt;
+package mqtt.client;
 
 import mqtt.client.ControlPacketWrapper;
 interface ControlPacketCallback {

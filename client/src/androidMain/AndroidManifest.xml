@@ -1,8 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-        package="mqtt.client">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+          package="mqtt.client">
 
     <application>
+
+        <service
+                android:name=".MqttService"
+                android:enabled="true"
+                android:exported="false">
+        </service>
     </application>
 
 </manifest>

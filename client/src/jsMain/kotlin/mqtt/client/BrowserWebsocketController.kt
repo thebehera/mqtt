@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.promise
 import mqtt.buffer.*
-import mqtt.connection.RemoteHost
+import mqtt.connection.IConnectionOptions
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import org.khronos.webgl.ArrayBuffer
@@ -24,15 +24,18 @@ import kotlin.time.TimeSource
 class BrowserWebsocketController(
     val scope: CoroutineScope,
     val pool: BufferPool,
-    val remoteHost: RemoteHost
+    connectionOptions: IConnectionOptions
 ) : ISocketController {
 
     private val websocket: WebSocket =
-        WebSocket("ws://${remoteHost.name}:${remoteHost.port}${remoteHost.websocket!!.endpoint}", "mqtt")
+        WebSocket(
+            "ws://${connectionOptions.name}:${connectionOptions.port}${connectionOptions.websocketEndpoint}",
+            "mqtt"
+        )
     var isConnected = false
     override var lastMessageReceived: TimeMark? = null
 
-    val reader = SuspendableReader(scope, remoteHost.request.controlPacketFactory, websocket)
+    val reader = SuspendableReader(scope, connectionOptions.request.controlPacketFactory, websocket)
 
     init {
         websocket.binaryType = BinaryType.ARRAYBUFFER
