@@ -51,7 +51,6 @@ class Client(
         }
         val websocketParams = remoteHost.websocket
         socketController = if (websocketParams != null) {
-            println("open ws")
             WebsocketController.openWebSocket(scope, pool, remoteHost)!!
         } else {
             val controller = SocketController.openSocket(scope, pool, remoteHost)

@@ -9,6 +9,9 @@ interface PlatformDatabase {
 
 open class ContextProvider
 
-expect fun getPlatformDatabase(name: String, contextProvider: ContextProvider = ContextProvider()): PlatformDatabase
+expect suspend fun getPlatformDatabase(
+    name: String,
+    contextProvider: ContextProvider = ContextProvider()
+): PlatformDatabase
 
-expect fun createDriver(name: String, contextProvider: ContextProvider = ContextProvider()): SqlDriver
+expect suspend fun createDriver(name: String, contextProvider: ContextProvider = ContextProvider()): SqlDriver
