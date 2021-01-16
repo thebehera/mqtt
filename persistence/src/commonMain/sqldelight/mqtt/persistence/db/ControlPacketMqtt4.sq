@@ -16,6 +16,12 @@ CREATE TABLE ConnectionRequest4 (
    FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE
 ) WITHOUT ROWID;
 
+queueConnectionRequest:
+    INSERT INTO ConnectionRequest4 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+findConnectionRequest:
+    SELECT * FROM ConnectionRequest4 WHERE connectionId = :connectionId;
+
 CREATE TABLE PublishMessage4 (
     connectionId INTEGER NOT NULL,
     packetIdentifier INTEGER NOT NULL CHECK (packetIdentifier BETWEEN 0 AND 65353),
@@ -71,11 +77,9 @@ CREATE TABLE QosServerAssignedPackets(
 CREATE TABLE UsedControlPackets (
    connectionId INTEGER NOT NULL,
    packetIdentifier INTEGER NOT NULL,
-   PRIMARY KEY(connectionId, packetIdentifier)
+   PRIMARY KEY(connectionId, packetIdentifier),
+   FOREIGN KEY (connectionId) REFERENCES MqttConnections(connectionId) ON DELETE CASCADE
 );
-
-removeConnection:
-    DELETE FROM UsedControlPackets WHERE connectionId = :connectionId;
 
 
 findUnusedPacketIdentifier:

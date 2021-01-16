@@ -47,7 +47,7 @@ class DatabasePersistence(
     private val connectionId: Long
 ) : Persistence {
 
-    private val database = Database(driver)
+    val database = Database(driver)
     private val queries4 = database.controlPacketMqtt4Queries
     override suspend fun acknowledge(incomingControlPacket: ISubscribeAcknowledgement) = withContext(dispatcher) {
         queries4.onSubscribeAck4(connectionId, incomingControlPacket.packetIdentifier.toLong())
@@ -170,7 +170,7 @@ class DatabasePersistence(
             .asFlow().mapToOne().first().toUShort()
 
     override suspend fun clear() {
-        queries4.removeConnection(connectionId)
+        database.connectionsQueries.removeConnection(connectionId)
     }
 
 }

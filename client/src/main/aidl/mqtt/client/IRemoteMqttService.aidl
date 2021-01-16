@@ -5,7 +5,7 @@ package mqtt.client;
 import mqtt.client.ControlPacketCallback;
 
 interface IRemoteMqttService {
-    void addServer();
-    void removeServer();
-    void connect(ControlPacketCallback connackCallback);
+    void addServer(long connectionId, byte mqttVersion);
+    void removeServer(long connectionId);
+    void connect(long connectionId, ControlPacketCallback connackCallback);
 }
