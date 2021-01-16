@@ -9,8 +9,8 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import mqtt.buffer.BufferPool
 import mqtt.buffer.PlatformBuffer
+import mqtt.buffer.allocateNewBuffer
 import mqtt.connection.IConnectionOptions
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream
@@ -69,12 +69,11 @@ class WebsocketController private constructor(
         private const val websocketBaseFrameOverhead = 6
         suspend fun openWebSocket(
             scope: CoroutineScope,
-            pool: BufferPool,
             connectionOptions: IConnectionOptions
         ): ISocketController? {
             val websocketEndpoint = connectionOptions.websocketEndpoint
-            val socket = getClientSocket(pool)
-                ?: (loadCustomWebsocketImplementation(scope, pool, connectionOptions)?.let { return it }
+            val socket = getClientSocket()
+                ?: (loadCustomWebsocketImplementation(scope, connectionOptions)?.let { return it }
                     ?: throw IllegalStateException("Impossible WS state"))
             socket.open(port = connectionOptions.port.toUShort(), hostname = connectionOptions.name)
             val request =
@@ -101,24 +100,23 @@ class WebsocketController private constructor(
                             else -> websocketBaseFrameOverhead
                         }
                         val length = payloadSize.toLong() + websocketFrameOverhead.toLong()
-                        pool.borrowSuspend(length.toUInt()) { writeBuffer ->
-                            appendFinAndOpCode(writeBuffer, 2, true)
-                            val mask = Random.Default.nextBytes(4)
-                            appendLengthAndMask(writeBuffer, payloadSize.toInt(), mask)
-                            val startPayloadPosition = writeBuffer.position()
-                            // write the serialized data
-                            packets.forEach { it.serialize(writeBuffer) }
-                            // reset position to original, we are going to mask these values
-                            for ((count, position) in (startPayloadPosition.toInt() until length).withIndex()) {
-                                writeBuffer.position(position.toInt())
-                                val payloadByte = writeBuffer.readByte()
-                                val maskValue = mask[count % 4]
-                                val maskedByte = payloadByte xor maskValue
-                                writeBuffer.position(position.toInt())
-                                writeBuffer.write(maskedByte)
-                            }
-                            socket.write(writeBuffer, connectionOptions.request.keepAliveTimeout)
+                        val writeBuffer = allocateNewBuffer(length.toUInt())
+                        appendFinAndOpCode(writeBuffer, 2, true)
+                        val mask = Random.Default.nextBytes(4)
+                        appendLengthAndMask(writeBuffer, payloadSize.toInt(), mask)
+                        val startPayloadPosition = writeBuffer.position()
+                        // write the serialized data
+                        packets.forEach { it.serialize(writeBuffer) }
+                        // reset position to original, we are going to mask these values
+                        for ((count, position) in (startPayloadPosition.toInt() until length).withIndex()) {
+                            writeBuffer.position(position.toInt())
+                            val payloadByte = writeBuffer.readByte()
+                            val maskValue = mask[count % 4]
+                            val maskedByte = payloadByte xor maskValue
+                            writeBuffer.position(position.toInt())
+                            writeBuffer.write(maskedByte)
                         }
+                        socket.write(writeBuffer, connectionOptions.request.keepAliveTimeout)
                     }
                 }
             }

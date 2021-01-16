@@ -8,8 +8,7 @@ package mqtt.buffer
 @ExperimentalUnsignedTypes
 class FragmentedReadBuffer(
     private val first: ReadBuffer,
-    private val second: ReadBuffer,
-    private val pool: BufferPool = BufferPool(UnlimitedMemoryLimit)
+    private val second: ReadBuffer
 ) : ReadBuffer {
     private val firstInitialLimit = first.limit()
     private val secondInitialLimit = second.limit()
@@ -42,13 +41,11 @@ class FragmentedReadBuffer(
         } else if (currentPosition < firstInitialLimit && currentPosition + size > firstInitialLimit) {
             val firstChunkSize = firstInitialLimit - currentPosition
             val secondChunkSize = size - firstChunkSize
-            pool.borrowTyped(size) {
-                it.write(first.readByteArray(firstChunkSize))
-                it.write(second.readByteArray(secondChunkSize))
-                it.resetForRead()
-                val result = block(it)
-                result
-            }
+            val buffer = allocateNewBuffer(size)
+            buffer.write(first.readByteArray(firstChunkSize))
+            buffer.write(second.readByteArray(secondChunkSize))
+            buffer.resetForRead()
+            block(buffer)
         } else {
             block(second)
         }

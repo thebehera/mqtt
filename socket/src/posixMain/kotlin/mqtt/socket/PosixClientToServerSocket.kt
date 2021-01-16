@@ -1,11 +1,10 @@
 package mqtt.socket
 
 import kotlinx.cinterop.*
-import mqtt.buffer.BufferPool
 import platform.posix.*
 import kotlin.time.Duration
 
-class PosixClientToServerSocket(pool: BufferPool) : PosixClientSocket(pool), ClientToServerSocket {
+class PosixClientToServerSocket() : PosixClientSocket(), ClientToServerSocket {
     private val memScope = MemScope()
 
     override suspend fun open(

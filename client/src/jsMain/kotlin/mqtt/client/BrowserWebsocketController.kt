@@ -23,7 +23,6 @@ import kotlin.time.TimeSource
 
 class BrowserWebsocketController(
     val scope: CoroutineScope,
-    val pool: BufferPool,
     connectionOptions: IConnectionOptions
 ) : ISocketController {
 
@@ -68,14 +67,12 @@ class BrowserWebsocketController(
 
     override suspend fun write(controlPackets: Collection<ControlPacket>) {
         val packetSize = controlPackets.fold(0u) { acc, controlPacket -> acc + controlPacket.packetSize() }
-        pool.borrow(packetSize) { buffer ->
-            val buffer = buffer as JsBuffer
-            controlPackets.forEach { packet -> packet.serialize(buffer) }
-            buffer.resetForRead()
-            val arrayBuffer = buffer.buffer.buffer.slice(buffer.position().toInt(), buffer.limit().toInt())
+        val buffer = allocateNewBuffer(packetSize) as JsBuffer
+        controlPackets.forEach { packet -> packet.serialize(buffer) }
+        buffer.resetForRead()
+        val arrayBuffer = buffer.buffer.buffer.slice(buffer.position().toInt(), buffer.limit().toInt())
 //            println("writing $controlPackets ${arrayBuffer.byteLength}")
-            websocket.send(arrayBuffer)
-        }
+        websocket.send(arrayBuffer)
     }
 
     override suspend fun read() = flow {

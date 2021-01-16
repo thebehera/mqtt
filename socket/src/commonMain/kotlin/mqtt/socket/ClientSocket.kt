@@ -2,7 +2,7 @@
 
 package mqtt.socket
 
-import mqtt.buffer.BufferPool
+import mqtt.buffer.allocateNewBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.SuspendCloseable
 import mqtt.buffer.toBuffer
@@ -12,7 +12,6 @@ import kotlin.time.seconds
 
 @ExperimentalTime
 interface ClientSocket : SuspendCloseable {
-    val pool: BufferPool
 
     fun isOpen(): Boolean
     fun localPort(): UShort?
@@ -23,12 +22,10 @@ interface ClientSocket : SuspendCloseable {
         timeout: Duration = 1.seconds,
         bufferRead: suspend (PlatformBuffer, Int) -> T
     ): SocketDataRead<T> {
-        var bytesRead = 0
-        val result = pool.borrowSuspend {
-            it.resetForWrite()
-            bytesRead = read(it, timeout)
-            bufferRead(it, bytesRead)
-        }
+        val buffer = allocateNewBuffer(8192u)
+        buffer.resetForWrite()
+        val bytesRead = read(buffer, timeout)
+        val result = bufferRead(buffer, bytesRead)
         return SocketDataRead(result, bytesRead)
     }
 
@@ -46,25 +43,24 @@ suspend fun openClientSocket(port: UShort,
                              hostname: String? = null,
                              socketOptions: SocketOptions? = null): ClientToServerSocket? {
     val socket = getClientSocket()
-    println("open socket $socket")
     if (socket == null) return null
     socket.open(port, timeout, hostname, socketOptions)
     return socket
 }
 
 @ExperimentalTime
-fun getClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket? {
+fun getClientSocket(): ClientToServerSocket? {
     try {
-        return asyncClientSocket(pool)
+        return asyncClientSocket()
     } catch (e: Throwable) {
         // failed to allocate async socket channel based socket, fallback to nio
     }
-    return clientSocket(false, pool)
+    return clientSocket(false)
 }
 
 @ExperimentalTime
-expect fun asyncClientSocket(pool: BufferPool = BufferPool()): ClientToServerSocket?
+expect fun asyncClientSocket(): ClientToServerSocket?
 
 @ExperimentalTime
-expect fun clientSocket(blocking: Boolean = false, pool: BufferPool = BufferPool()): ClientToServerSocket?
+expect fun clientSocket(blocking: Boolean = false): ClientToServerSocket?
 

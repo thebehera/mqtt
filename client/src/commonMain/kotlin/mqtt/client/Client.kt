@@ -4,7 +4,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
-import mqtt.buffer.BufferPool
 import mqtt.buffer.GenericType
 import mqtt.connection.IConnectionOptions
 import mqtt.wire.control.packet.*
@@ -22,7 +21,6 @@ class Client(
     private val connectionOptions: IConnectionOptions,
     private val messageCallback: ApplicationMessageCallback? = null,
     private val persistence: Persistence = InMemoryPersistence(),
-    private val pool: BufferPool = BufferPool(),
     private val scope: CoroutineScope,
 ) {
     private val packetFactory = connectionOptions.request.controlPacketFactory
@@ -51,9 +49,9 @@ class Client(
         }
         val websocketParams = connectionOptions.websocketEndpoint
         socketController = if (websocketParams != null) {
-            WebsocketController.openWebSocket(scope, pool, connectionOptions)!!
+            WebsocketController.openWebSocket(scope, connectionOptions)!!
         } else {
-            val controller = SocketController.openSocket(scope, pool, connectionOptions)
+            val controller = SocketController.openSocket(scope, connectionOptions)
                 ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
             controller
         }

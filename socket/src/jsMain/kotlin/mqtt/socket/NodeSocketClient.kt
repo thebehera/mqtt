@@ -1,10 +1,10 @@
 
 package mqtt.socket
 
+import mqtt.buffer.allocateNewBuffer
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedSendChannelException
 import mqtt.buffer.BufferMemoryLimit
-import mqtt.buffer.BufferPool
 import mqtt.buffer.JsBuffer
 import mqtt.buffer.PlatformBuffer
 import org.khronos.webgl.Uint8Array
@@ -12,9 +12,6 @@ import kotlin.time.Duration
 
 open class NodeSocket : ClientSocket {
     var netSocket: Socket? = null
-    override val pool = BufferPool(limits = object : BufferMemoryLimit {
-        override fun isTooLargeForMemory(size: UInt) = false
-    })
     internal val incomingMessageChannel = Channel<SocketDataRead<JsBuffer>>(1)
 
     override fun isOpen() = netSocket?.remoteAddress != null
@@ -39,11 +36,7 @@ open class NodeSocket : ClientSocket {
     ): SocketDataRead<T> {
         val receivedData = incomingMessageChannel.receive()
         netSocket?.resume()
-        try {
-            return SocketDataRead(bufferRead(receivedData.result, receivedData.bytesRead), receivedData.bytesRead)
-        } finally {
-            pool.recycleAsync(receivedData.result)
-        }
+        return SocketDataRead(bufferRead(receivedData.result, receivedData.bytesRead), receivedData.bytesRead)
     }
 
     override suspend fun write(buffer: PlatformBuffer, timeout: Duration): Int {
@@ -71,7 +64,7 @@ class NodeClientSocket : NodeSocket(), ClientToServerSocket {
     ): SocketOptions {
         val arrayPlatformBufferMap = HashMap<Uint8Array, JsBuffer>()
         val onRead = OnRead({
-            val buffer = pool.borrowAsync() as JsBuffer
+            val buffer = allocateNewBuffer(8192u) as JsBuffer
             arrayPlatformBufferMap[buffer.buffer] = buffer
             buffer.buffer
         }, { bytesRead, buffer ->

@@ -2,7 +2,6 @@
 
 package mqtt.socket
 
-import mqtt.buffer.BufferPool
 import platform.posix.init_sockets
 import kotlin.time.ExperimentalTime
 
@@ -15,12 +14,12 @@ private fun initSockets() {
 }
 
 @ExperimentalTime
-actual fun asyncClientSocket(pool: BufferPool) = clientSocket(false, pool)
+actual fun asyncClientSocket() = clientSocket(false)
 
 @ExperimentalTime
-actual fun clientSocket(blocking: Boolean, pool: BufferPool): ClientToServerSocket? {
+actual fun clientSocket(blocking: Boolean): ClientToServerSocket? {
     initSockets()
-    return PosixClientToServerSocket(pool)
+    return PosixClientToServerSocket()
 }
 
 @ExperimentalTime

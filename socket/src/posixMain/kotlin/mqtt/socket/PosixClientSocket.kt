@@ -1,8 +1,8 @@
 package mqtt.socket
 
+import mqtt.buffer.allocateNewBuffer
 import kotlinx.cinterop.*
 import kotlinx.coroutines.withTimeout
-import mqtt.buffer.BufferPool
 import mqtt.buffer.NativeBuffer
 import mqtt.buffer.PlatformBuffer
 import platform.posix.*
@@ -11,7 +11,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-open class PosixClientSocket(override val pool: BufferPool = BufferPool()) : ClientSocket {
+open class PosixClientSocket() : ClientSocket {
 
     var currentFileDescriptor: Int? = null
 
@@ -40,14 +40,13 @@ open class PosixClientSocket(override val pool: BufferPool = BufferPool()) : Cli
         bufferRead: suspend (PlatformBuffer, Int) -> T
     ): SocketDataRead<T> {
         return withTimeout(timeout) {
-            pool.borrowSuspend { buffer ->
-                val nativeBuffer = buffer as NativeBuffer
-                buffer.data.usePinned { pinned ->
-                    val bytesRead =
-                        recv(currentFileDescriptor!!, pinned.addressOf(0), buffer.capacity.toInt().convert(), 0)
-                            .ensureUnixCallResult("read") { it >= 0 }
-                    SocketDataRead(bufferRead(nativeBuffer, bytesRead.toInt()), bytesRead.toInt())
-                }
+            val buffer = allocateNewBuffer(8192u)
+            val nativeBuffer = buffer as NativeBuffer
+            buffer.data.usePinned { pinned ->
+                val bytesRead =
+                    recv(currentFileDescriptor!!, pinned.addressOf(0), buffer.capacity.toInt().convert(), 0)
+                        .ensureUnixCallResult("read") { it >= 0 }
+                SocketDataRead(bufferRead(nativeBuffer, bytesRead.toInt()), bytesRead.toInt())
             }
         }
     }

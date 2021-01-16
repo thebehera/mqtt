@@ -1,19 +1,17 @@
 package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
-import mqtt.buffer.BufferPool
 import mqtt.connection.IConnectionOptions
 import mqtt.persistence.isNodeJs
 
 actual suspend fun loadCustomWebsocketImplementation(
     scope: CoroutineScope,
-    pool: BufferPool,
     connectionOptions: IConnectionOptions
 ): ISocketController? {
     return if (isNodeJs()) {
         null
     } else {
-        val controller = BrowserWebsocketController(scope, pool, connectionOptions)
+        val controller = BrowserWebsocketController(scope, connectionOptions)
         controller.connect()
         controller
     }

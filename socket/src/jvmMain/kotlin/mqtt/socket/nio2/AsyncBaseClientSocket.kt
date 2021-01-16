@@ -1,6 +1,5 @@
 package mqtt.socket.nio2
 
-import mqtt.buffer.BufferPool
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.socket.nio.ByteBufferClientSocket
@@ -13,7 +12,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-abstract class AsyncBaseClientSocket(override val pool: BufferPool) :
+abstract class AsyncBaseClientSocket() :
     ByteBufferClientSocket<AsynchronousSocketChannel>() {
     override fun remotePort() = socket?.assignedPort(remote = true)
 

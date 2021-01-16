@@ -22,7 +22,7 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
         try {
             while (isActive && socket.isOpen()) {
                 try {
-                    val platformBuffer = socket.pool.borrowAsync()
+                    val platformBuffer = allocateNewBuffer(8192u)
                     val bytesRead = socket.read(platformBuffer, timeout)
                     lastMessageReceived = TimeSource.Monotonic.markNow()
                     if (bytesRead == -1) {
@@ -55,7 +55,6 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
         } else if (result is PlatformBuffer) {
             buffers += result
         }
-        buffers.filter { !it.hasRemaining() }.forEach { socket.pool.recycleAsync(it) }
         return result
     }
 

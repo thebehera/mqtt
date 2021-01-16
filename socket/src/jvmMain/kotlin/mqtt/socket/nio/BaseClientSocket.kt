@@ -1,6 +1,6 @@
 package mqtt.socket.nio
 
-import mqtt.buffer.BufferPool
+import mqtt.buffer.allocateNewBuffer
 import mqtt.buffer.JvmBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.socket.SocketDataRead
@@ -16,8 +16,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalUnsignedTypes
 @ExperimentalTime
 abstract class BaseClientSocket(
-    protected val blocking: Boolean = false,
-    override val pool: BufferPool
+    protected val blocking: Boolean = false
 ) : ByteBufferClientSocket<SocketChannel>() {
     val selector = if (!blocking) Selector.open()!! else null
 
@@ -30,12 +29,10 @@ abstract class BaseClientSocket(
         timeout: Duration,
         bufferRead: suspend (PlatformBuffer, Int) -> T
     ): SocketDataRead<T> {
-        var bytesRead = 0
-        val result = pool.borrowSuspend {
-            val byteBuffer = (it as JvmBuffer).byteBuffer
-            bytesRead = socket!!.read(byteBuffer, selector, timeout)
-            bufferRead(it, bytesRead)
-        }
+        val buffer = allocateNewBuffer(8196u)
+        val byteBuffer = (buffer as JvmBuffer).byteBuffer
+        val bytesRead = socket!!.read(byteBuffer, selector, timeout)
+        val result = bufferRead(buffer, bytesRead)
         return SocketDataRead(result, bytesRead)
     }
 

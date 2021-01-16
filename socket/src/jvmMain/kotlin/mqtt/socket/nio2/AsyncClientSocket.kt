@@ -1,6 +1,5 @@
 package mqtt.socket.nio2
 
-import mqtt.buffer.BufferPool
 import mqtt.socket.ClientToServerSocket
 import mqtt.socket.SocketOptions
 import mqtt.socket.nio.util.asInetAddress
@@ -17,7 +16,7 @@ import kotlin.time.ExperimentalTime
 
 @ExperimentalUnsignedTypes
 @ExperimentalTime
-class AsyncClientSocket(pool: BufferPool) : AsyncBaseClientSocket(pool), ClientToServerSocket {
+class AsyncClientSocket() : AsyncBaseClientSocket(), ClientToServerSocket {
 
     override suspend fun open(
         port: UShort,

@@ -1,6 +1,7 @@
 package mqtt.client
 
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
+import mqtt.buffer.allocateNewBuffer
 import mqtt.socket.SuspendingInputStream
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
@@ -61,23 +62,22 @@ class WebsocketSuspendableInputStream(
                 (metadata.payloadLength.toLong() - bytesRead.toLong()) - remainingLength.toLong()
             return when {
                 extraBytesNeededToFinishControlPacket > 0 -> {
-                    inputStream.socket.pool.borrowSuspend(remainingLength) { buffer ->
-                        buffer.write(inputStream.readByteArray(metadata.payloadLength.toLong()))
-                        while (extraBytesNeededToFinishControlPacket > 0) {
-                            val frameMetadata = readFrameMetadata()
-                            currentFrame = frameMetadata
-                            if (frameMetadata == null) return@borrowSuspend null
-                            val bytesToRead =
-                                min(frameMetadata.payloadLength.toLong(), extraBytesNeededToFinishControlPacket)
-                            buffer.write(inputStream.readByteArray(bytesToRead))
-                            if (frameMetadata.payloadLength.toLong() == extraBytesNeededToFinishControlPacket) {
-                                currentFrame = null
-                            }
-                            extraBytesNeededToFinishControlPacket -= bytesToRead
-
+                    val buffer = allocateNewBuffer(remainingLength)
+                    buffer.write(inputStream.readByteArray(metadata.payloadLength.toLong()))
+                    while (extraBytesNeededToFinishControlPacket > 0) {
+                        val frameMetadata = readFrameMetadata()
+                        currentFrame = frameMetadata
+                        if (frameMetadata == null) return null
+                        val bytesToRead =
+                            min(frameMetadata.payloadLength.toLong(), extraBytesNeededToFinishControlPacket)
+                        buffer.write(inputStream.readByteArray(bytesToRead))
+                        if (frameMetadata.payloadLength.toLong() == extraBytesNeededToFinishControlPacket) {
+                            currentFrame = null
                         }
-                        controlPacketFactory.from(buffer, byte1, remainingLength)
+                        extraBytesNeededToFinishControlPacket -= bytesToRead
+
                     }
+                    controlPacketFactory.from(buffer, byte1, remainingLength)
                 }
                 extraBytesNeededToFinishControlPacket == 0L -> {
                     val packet = inputStream.readTyped(remainingLength.toLong()) {
