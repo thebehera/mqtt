@@ -65,16 +65,15 @@ class MqttService : Service() {
             }
         }
 
+        override fun publish(connectionId: Long, topicName: String, payload: String?, qos: Int) {
+
+        }
+
         override fun removeServer(connectionId: Long) {
             scope.launch {
                 clients.remove(connectionId)?.disconnectAsync()?.await()
             }
         }
-
-        override fun connect(connectionId: Long, connackCallback: ControlPacketCallback) {
-
-        }
-
 
     }
 

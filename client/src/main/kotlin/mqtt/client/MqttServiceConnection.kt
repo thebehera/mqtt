@@ -12,6 +12,7 @@ import mqtt.connection.IConnectionOptions
 import mqtt.persistence.AndroidContextProvider
 import mqtt.persistence.createDriver
 import mqtt.persistence.db.Database
+import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -60,6 +61,42 @@ class MqttAppServiceConnection private constructor(
                 "We lost connection to the service, but that's ok as we already queued the connection",
                 e
             )
+        }
+    }
+
+    fun publishAsync(
+        connectionId: Long,
+        topicName: String,
+        payload: String? = null,
+        qos: QualityOfService = QualityOfService.AT_LEAST_ONCE,
+        retain: Boolean = false,
+        // MQTT 5 Properties
+        payloadFormatIndicator: Boolean = false,
+        messageExpiryInterval: Long? = null,
+        topicAlias: Int? = null,
+        responseTopic: CharSequence? = null,
+        correlationData: String? = null,
+        userProperty: List<Pair<CharSequence, CharSequence>> = emptyList(),
+        subscriptionIdentifier: Set<Long> = emptySet(),
+        contentType: CharSequence? = null
+    ) = scope.async {
+        if (qos == QualityOfService.AT_MOST_ONCE) {
+//            service.
+        } else {
+            database.transactionWithResult<Long> {
+                val packetId =
+                    database.controlPacketMqtt4Queries.findUnusedPacketIdentifier(connectionId).executeAsOne()
+                database.controlPacketMqtt4Queries.publish4(
+                    connectionId,
+                    packetId,
+                    0,
+                    qos.integerValue.toLong(),
+                    if (retain) 1 else 0,
+                    topicName,
+                    payload?.toByteArray()
+                )
+                packetId
+            }
         }
     }
 
