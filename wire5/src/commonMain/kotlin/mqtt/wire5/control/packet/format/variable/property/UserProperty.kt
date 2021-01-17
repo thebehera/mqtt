@@ -1,6 +1,7 @@
 package mqtt.wire5.control.packet.format.variable.property
 
 import mqtt.buffer.WriteBuffer
+import mqtt.wire.buffer.writeMqttUtf8String
 import mqtt.wire.data.Type
 import mqtt.wire.data.utf8Length
 

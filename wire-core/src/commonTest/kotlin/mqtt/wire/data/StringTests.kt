@@ -2,11 +2,13 @@
 
 package mqtt.wire.data
 
+import mqtt.buffer.UnlimitedMemoryLimit
+import mqtt.buffer.allocateNewBuffer
+import mqtt.buffer.utf8Length
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
+import mqtt.wire.buffer.writeMqttUtf8String
 import kotlin.js.JsName
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
-import kotlin.test.fail
+import kotlin.test.*
 
 /**
  * MQTT Conformance Character data in a UTF-8 Encoded String MUST be well-formed UTF-8 as defined by the Unicode specification Unicode and restated in RFC 3629
@@ -114,5 +116,19 @@ class StringTests {
             } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
             }
         }
+    }
+
+
+    @Test
+    @ExperimentalStdlibApi
+    fun mqttUtf8String() {
+        val string = "yolo swag lyfestyle"
+        assertEquals(19, string.utf8Length().toInt())
+        val platformBuffer = allocateNewBuffer(21u, UnlimitedMemoryLimit)
+        platformBuffer.writeMqttUtf8String(string)
+        platformBuffer.resetForRead()
+        val actual = platformBuffer.readMqttUtf8StringNotValidated().toString()
+        assertEquals(string.length, actual.length)
+        assertEquals(string, actual)
     }
 }

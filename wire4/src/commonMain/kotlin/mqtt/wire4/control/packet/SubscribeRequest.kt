@@ -4,6 +4,8 @@ package mqtt.wire4.control.packet
 
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
+import mqtt.wire.buffer.readMqttUtf8StringNotValidatedSized
+import mqtt.wire.buffer.writeMqttUtf8String
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow

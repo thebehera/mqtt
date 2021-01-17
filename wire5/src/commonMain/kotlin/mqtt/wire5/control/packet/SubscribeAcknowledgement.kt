@@ -6,6 +6,8 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.variableByteIntegerSize
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
@@ -63,7 +65,7 @@ data class SubscribeAcknowledgement(val variable: VariableHeader, val payload: L
         fun size(): UInt {
             var size = UShort.SIZE_BYTES.toUInt()
             val propsSize = properties.size()
-            size += WriteBuffer.variableByteIntegerSize(propsSize) + propsSize
+            size += variableByteIntegerSize(propsSize) + propsSize
             return size
         }
 

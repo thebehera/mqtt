@@ -6,8 +6,8 @@ import com.squareup.sqldelight.runtime.coroutines.mapToOne
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
-import mqtt.buffer.GenericType
 import mqtt.persistence.db.*
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.*
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService

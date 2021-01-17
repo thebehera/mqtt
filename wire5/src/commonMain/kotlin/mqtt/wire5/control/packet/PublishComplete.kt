@@ -6,6 +6,8 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.variableByteIntegerSize
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.IPublishComplete
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
@@ -74,7 +76,7 @@ data class PublishComplete(val variable: VariableHeader) :
             var size = UShort.SIZE_BYTES.toUInt()
             if (!canOmitReasonCodeAndProperties) {
                 val propsSize = properties.size()
-                size += UByte.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(propsSize) + propsSize
+                size += UByte.SIZE_BYTES.toUInt() + variableByteIntegerSize(propsSize) + propsSize
             }
             return size
         }

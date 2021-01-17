@@ -4,6 +4,9 @@ package mqtt.wire5.control.packet
 
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
+import mqtt.wire.buffer.readVariableByteInteger
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import mqtt.wire.data.topic.Filter

@@ -4,6 +4,7 @@ package mqtt.wire5.control.packet
 
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.format.ReasonCode.PACKET_IDENTIFIER_NOT_FOUND
 import mqtt.wire.control.packet.format.ReasonCode.RECEIVE_MAXIMUM_EXCEEDED
 import mqtt.wire5.control.packet.PublishComplete.VariableHeader

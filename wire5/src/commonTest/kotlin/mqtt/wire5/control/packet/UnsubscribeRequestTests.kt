@@ -3,6 +3,8 @@
 package mqtt.wire5.control.packet
 
 import mqtt.buffer.allocateNewBuffer
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
+import mqtt.wire.buffer.readVariableByteInteger
 import mqtt.wire5.control.packet.UnsubscribeRequest.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.UserProperty
 import kotlin.test.Test

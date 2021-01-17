@@ -2,11 +2,13 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.GenericType
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
+import mqtt.wire.buffer.readVariableByteInteger
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE

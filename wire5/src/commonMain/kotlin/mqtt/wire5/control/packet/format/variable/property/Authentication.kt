@@ -1,6 +1,6 @@
 package mqtt.wire5.control.packet.format.variable.property
 
-import mqtt.buffer.GenericType
+import mqtt.wire.buffer.GenericType
 
 data class Authentication<T : Any>(
     /**

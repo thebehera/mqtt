@@ -8,6 +8,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.promise
 import mqtt.buffer.*
 import mqtt.connection.IConnectionOptions
+import mqtt.wire.buffer.MalformedInvalidVariableByteInteger
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import org.khronos.webgl.ArrayBuffer

@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -262,7 +263,7 @@ data class PublishMessage<ApplicationMessage : Any>(
                 size += UShort.SIZE_BYTES.toUInt()
             }
             val propsSize = properties.size()
-            size += WriteBuffer.variableByteIntegerSize(propsSize) + propsSize
+            size += variableByteIntegerSize(propsSize) + propsSize
             return size
         }
 
@@ -652,7 +653,7 @@ data class PublishMessage<ApplicationMessage : Any>(
                 remainingLength - variableSize,
                 variableHeader.topicName
             )
-            val genericType = buffer.readGenericType(deserializationParameters)
+            val genericType = readGenericType(deserializationParameters)
             return PublishMessage(fixedHeader, variableHeader, genericType)
         }
 

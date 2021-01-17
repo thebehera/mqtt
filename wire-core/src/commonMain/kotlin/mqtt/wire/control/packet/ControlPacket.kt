@@ -4,6 +4,7 @@ package mqtt.wire.control.packet
 
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MqttWarning
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 
 interface ControlPacket {

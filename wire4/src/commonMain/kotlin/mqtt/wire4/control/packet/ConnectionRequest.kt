@@ -2,9 +2,11 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.*
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
+import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
@@ -541,7 +543,7 @@ data class ConnectionRequest<WillPayload : Any>(
                     headers.add("${variableHeader.protocolName.value} Will Topic", willTopic!!.value)
                     val params =
                         DeserializationParameters(buffer, length, ConnectionRequest.toString(), headers = headers)
-                    val obj = buffer.readGenericType(params)!!
+                    val obj = readGenericType(params)!!
                     @Suppress("UNCHECKED_CAST")
                     GenericType(obj.obj, obj.kClass as KClass<Any>)
                 } else {

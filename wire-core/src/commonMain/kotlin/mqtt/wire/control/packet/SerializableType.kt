@@ -4,6 +4,10 @@ package mqtt.wire.control.packet
 
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
+import mqtt.wire.buffer.readVariableByteInteger
+import mqtt.wire.buffer.writeMqttUtf8String
+import mqtt.wire.buffer.writeVariableByteInteger
 import kotlin.reflect.KClass
 
 interface MqttSerializationStrategy<T> {

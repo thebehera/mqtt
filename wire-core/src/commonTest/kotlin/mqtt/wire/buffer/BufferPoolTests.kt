@@ -1,5 +1,6 @@
-package mqtt.buffer
+package mqtt.wire.buffer
 
+import mqtt.buffer.PlatformBuffer
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -33,16 +34,16 @@ class BufferPoolTests {
     }
 
     //@Test
-    fun recyclesSuspend() = runTestBlocking {
-        val bufferPool = BufferPool()
-        var buffer: PlatformBuffer? = null
-        bufferPool.borrowSuspend {
-            buffer = it
-        }
-        assertTrue(bufferPool.pool.contains(buffer!!))
-        bufferPool.borrowSuspend {
-            assertEquals(buffer!!, it)
-        }
+    fun recyclesSuspend() {
+//        val bufferPool = BufferPool()
+//        var buffer: PlatformBuffer? = null
+//        bufferPool.borrowSuspend {
+//            buffer = it
+//        }
+//        assertTrue(bufferPool.pool.contains(buffer!!))
+//        bufferPool.borrowSuspend {
+//            assertEquals(buffer!!, it)
+//        }
     }
 
 

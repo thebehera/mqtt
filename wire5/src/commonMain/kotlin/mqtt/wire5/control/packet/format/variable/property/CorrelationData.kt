@@ -2,9 +2,10 @@
 
 package mqtt.wire5.control.packet.format.variable.property
 
-import mqtt.buffer.GenericSerialization
-import mqtt.buffer.GenericType
 import mqtt.buffer.WriteBuffer
+import mqtt.wire.buffer.GenericSerialization
+import mqtt.wire.buffer.GenericType
+import mqtt.wire.buffer.writeGenericType
 import mqtt.wire.data.Type
 
 data class CorrelationData<T : Any>(val genericType: GenericType<T>) :

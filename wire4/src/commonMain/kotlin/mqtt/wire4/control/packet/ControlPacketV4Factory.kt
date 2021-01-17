@@ -2,8 +2,8 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.ControlPacketFactory
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.SubscriptionWrapper

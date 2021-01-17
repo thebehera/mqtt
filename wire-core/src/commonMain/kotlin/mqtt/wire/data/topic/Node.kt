@@ -2,8 +2,8 @@
 
 package mqtt.wire.data.topic
 
-import mqtt.buffer.BufferDeserializer
-import mqtt.buffer.BufferSerializer
+import mqtt.wire.buffer.BufferDeserializer
+import mqtt.wire.buffer.BufferSerializer
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService

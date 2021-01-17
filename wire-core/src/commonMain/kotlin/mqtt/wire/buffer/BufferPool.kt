@@ -1,6 +1,8 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE", "DANGEROUS_INTERNAL_IO_API")
 
-package mqtt.buffer
+package mqtt.wire.buffer
+
+import mqtt.buffer.*
 
 /**
  * The goal of the buffer pool is to provide a performance increase at the expense of security complexity.

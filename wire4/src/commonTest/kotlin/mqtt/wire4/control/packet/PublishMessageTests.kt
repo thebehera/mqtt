@@ -4,6 +4,7 @@ package mqtt.wire4.control.packet
 
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.buffer.readVariableByteInteger
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.PublishMessage.FixedHeader

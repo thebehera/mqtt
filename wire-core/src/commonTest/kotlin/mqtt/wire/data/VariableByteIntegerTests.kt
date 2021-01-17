@@ -3,8 +3,11 @@
 package mqtt.wire.data
 
 import mqtt.buffer.BufferMemoryLimit
-import mqtt.buffer.MalformedInvalidVariableByteInteger
 import mqtt.buffer.allocateNewBuffer
+import mqtt.wire.buffer.MalformedInvalidVariableByteInteger
+import mqtt.wire.buffer.readVariableByteInteger
+import mqtt.wire.buffer.variableByteSize
+import mqtt.wire.buffer.writeVariableByteInteger
 import kotlin.js.JsName
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -22,21 +25,21 @@ class VariableByteIntegerTests {
     fun `MQTT Conformance The encoded value MUST use the minimum number of bytes necessary to represent the value`() {
         val buffer = allocateNewBuffer(4u, limits)
         val oneMin = 0u
-        assertEquals(1u, buffer.variableByteSize(oneMin))
+        assertEquals(1u, variableByteSize(oneMin))
         val oneMax = 127u
-        assertEquals(1u, buffer.variableByteSize(oneMax))
+        assertEquals(1u, variableByteSize(oneMax))
         val twoMin = 128u
-        assertEquals(2u, buffer.variableByteSize(twoMin))
+        assertEquals(2u, variableByteSize(twoMin))
         val twoMax = 16_383u
-        assertEquals(2u, buffer.variableByteSize(twoMax))
+        assertEquals(2u, variableByteSize(twoMax))
         val threeMin = 16_384u
-        assertEquals(3u, buffer.variableByteSize(threeMin))
+        assertEquals(3u, variableByteSize(threeMin))
         val threeMax = 2_097_151u
-        assertEquals(3u, buffer.variableByteSize(threeMax))
+        assertEquals(3u, variableByteSize(threeMax))
         val fourMin = 2_097_152u
-        assertEquals(4u, buffer.variableByteSize(fourMin))
+        assertEquals(4u, variableByteSize(fourMin))
         val fourMax = 268_435_455u
-        assertEquals(4u, buffer.variableByteSize(fourMax))
+        assertEquals(4u, variableByteSize(fourMax))
     }
 
     @Test

@@ -5,6 +5,9 @@ package mqtt.wire5.control.packet
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
+import mqtt.wire.buffer.readVariableByteInteger
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.UnsubscribeAcknowledgment.VariableHeader
 import mqtt.wire5.control.packet.format.variable.property.ReasonString

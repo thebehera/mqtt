@@ -5,6 +5,7 @@ package mqtt.wire5.control.packet
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire5.control.packet.DisconnectNotification.VariableHeader
 import mqtt.wire5.control.packet.DisconnectNotification.VariableHeader.Properties

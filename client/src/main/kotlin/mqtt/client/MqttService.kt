@@ -2,12 +2,13 @@ package mqtt.client
 
 import android.app.Service
 import android.content.Intent
+import android.content.res.AssetFileDescriptor
 import kotlinx.coroutines.*
-import mqtt.buffer.GenericType
 import mqtt.connection.ConnectionOptions
 import mqtt.connection.IConnectionOptions
 import mqtt.persistence.AndroidContextProvider
 import mqtt.persistence.createDriver
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.ConnectionRequest
@@ -65,14 +66,18 @@ class MqttService : Service() {
             }
         }
 
-        override fun publish(connectionId: Long, topicName: String, payload: String?, qos: Int) {
-
-        }
-
         override fun removeServer(connectionId: Long) {
             scope.launch {
                 clients.remove(connectionId)?.disconnectAsync()?.await()
             }
+        }
+
+        override fun publish(connectionId: Long, packetId: Long, topicName: String?) {
+
+        }
+
+        override fun publishQos0(connectionId: Long, topicName: String?, payload: AssetFileDescriptor?) {
+
         }
 
     }

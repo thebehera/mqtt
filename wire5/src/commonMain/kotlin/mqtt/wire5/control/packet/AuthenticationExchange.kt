@@ -2,11 +2,13 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.GenericType
+import mqtt.wire.buffer.variableByteIntegerSize
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -62,7 +64,7 @@ data class AuthenticationExchange<AuthenticationDataPayload : Any>(val variable:
 
         fun size(): UInt {
             val propSize = properties.size()
-            return propSize + UByte.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(propSize)
+            return propSize + UByte.SIZE_BYTES.toUInt() + variableByteIntegerSize(propSize)
         }
 
         fun serialize(writeBuffer: WriteBuffer) {

@@ -6,6 +6,7 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.IUnsubscribeRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.data.utf8Length
@@ -50,7 +51,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Char
         val properties: Properties = Properties()
     ) {
         fun size() =
-            UShort.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(properties.size()) + properties.size()
+            UShort.SIZE_BYTES.toUInt() + variableByteIntegerSize(properties.size()) + properties.size()
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
@@ -121,7 +122,7 @@ data class UnsubscribeRequest(val variable: VariableHeader, val topics: Set<Char
                 val sized = buffer.readPropertiesSized()
                 val props = Properties.from(sized.second)
                 return Pair(
-                    sized.first + buffer.variableByteSize(sized.first) + UShort.SIZE_BYTES.toUInt(),
+                    sized.first + variableByteSize(sized.first) + UShort.SIZE_BYTES.toUInt(),
                     VariableHeader(packetIdentifier, props)
                 )
             }

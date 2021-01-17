@@ -1,7 +1,8 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE")
 
-package mqtt.buffer
+package mqtt.wire.buffer
 
+import mqtt.buffer.WriteBuffer
 import kotlin.reflect.KClass
 
 interface BufferSerializer<T : Any> {

@@ -4,8 +4,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
-import mqtt.buffer.GenericType
 import mqtt.connection.IConnectionOptions
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.RetainHandling.SEND_RETAINED_MESSAGES_AT_TIME_OF_SUBSCRIBE
 import mqtt.wire.control.packet.format.ReasonCode

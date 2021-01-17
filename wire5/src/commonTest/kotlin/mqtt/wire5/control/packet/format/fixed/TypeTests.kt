@@ -2,7 +2,7 @@
 
 package mqtt.wire5.control.packet.format.fixed
 
-import mqtt.buffer.GenericType
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow.*
 import mqtt.wire.data.topic.Filter

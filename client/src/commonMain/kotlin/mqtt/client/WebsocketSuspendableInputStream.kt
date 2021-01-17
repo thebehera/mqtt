@@ -3,6 +3,7 @@ package mqtt.client
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import mqtt.buffer.allocateNewBuffer
 import mqtt.socket.SuspendingInputStream
+import mqtt.wire.buffer.variableByteSize
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import kotlin.experimental.and
@@ -57,7 +58,7 @@ class WebsocketSuspendableInputStream(
             val metadata = readFrameMetadata() ?: return null
             val byte1 = inputStream.readUnsignedByte()
             val remainingLength = inputStream.readVariableByteInteger()
-            val bytesRead = UByte.SIZE_BYTES.toUShort() + inputStream.currentBuffer!!.variableByteSize(remainingLength)
+            val bytesRead = UByte.SIZE_BYTES.toUShort() + variableByteSize(remainingLength)
             var extraBytesNeededToFinishControlPacket =
                 (metadata.payloadLength.toLong() - bytesRead.toLong()) - remainingLength.toLong()
             return when {

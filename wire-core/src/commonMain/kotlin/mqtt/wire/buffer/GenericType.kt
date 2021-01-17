@@ -1,4 +1,4 @@
-package mqtt.buffer
+package mqtt.wire.buffer
 
 import kotlin.reflect.KClass
 

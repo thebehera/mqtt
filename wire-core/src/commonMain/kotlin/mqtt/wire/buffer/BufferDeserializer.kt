@@ -1,6 +1,8 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
-package mqtt.buffer
+package mqtt.wire.buffer
+
+import mqtt.buffer.ReadBuffer
 
 interface BufferDeserializer<T : Any> {
     fun deserialize(params: DeserializationParameters): GenericType<T>?

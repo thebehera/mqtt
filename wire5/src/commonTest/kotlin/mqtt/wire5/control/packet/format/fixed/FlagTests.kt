@@ -2,8 +2,8 @@
 
 package mqtt.wire5.control.packet.format.fixed
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.allocateNewBuffer
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.format.ReasonCode.*
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.QualityOfService.*

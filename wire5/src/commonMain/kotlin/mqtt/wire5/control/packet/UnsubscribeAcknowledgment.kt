@@ -6,6 +6,9 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.variableByteIntegerSize
+import mqtt.wire.buffer.variableByteSize
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.IUnsubscribeAckowledgment
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
@@ -48,7 +51,7 @@ data class UnsubscribeAcknowledgment(
         val properties: Properties = Properties()
     ) {
         fun size() =
-            UShort.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(properties.size()) + properties.size()
+            UShort.SIZE_BYTES.toUInt() + variableByteIntegerSize(properties.size()) + properties.size()
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
@@ -143,7 +146,7 @@ data class UnsubscribeAcknowledgment(
                 val sized = buffer.readPropertiesSized()
                 val props = Properties.from(sized.second)
                 return Pair(
-                    UShort.SIZE_BYTES.toUInt() + buffer.variableByteSize(sized.first) + sized.first,
+                    UShort.SIZE_BYTES.toUInt() + variableByteSize(sized.first) + sized.first,
                     VariableHeader(packetIdentifier.toInt(), props)
                 )
             }

@@ -2,8 +2,10 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.*
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
+import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
@@ -236,7 +238,7 @@ data class PublishMessage<ApplicationMessage : Any>(
             }
             val deserializationParameters =
                 DeserializationParameters(buffer, remainingLength - variableSize, variableHeader.topicName)
-            val genericType = buffer.readGenericType(deserializationParameters)
+            val genericType = readGenericType(deserializationParameters)
             return PublishMessage(fixedHeader, variableHeader, genericType)
         }
 

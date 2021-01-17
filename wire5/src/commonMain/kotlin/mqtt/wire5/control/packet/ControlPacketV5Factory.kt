@@ -2,8 +2,8 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
+import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.*
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.data.QualityOfService

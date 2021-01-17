@@ -1,4 +1,4 @@
-package mqtt.buffer
+package mqtt.wire.buffer
 
 class MalformedInvalidVariableByteInteger(value: UInt) : Exception(
     "Malformed Variable Byte Integer: This " +

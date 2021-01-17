@@ -1,6 +1,6 @@
 @file:Suppress("UNCHECKED_CAST")
 
-package mqtt.buffer
+package mqtt.wire.buffer
 
 import kotlin.reflect.KClass
 

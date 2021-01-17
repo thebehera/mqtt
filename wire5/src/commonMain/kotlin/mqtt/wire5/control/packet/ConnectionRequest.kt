@@ -6,6 +6,7 @@ import mqtt.buffer.*
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.MqttWarning
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
@@ -743,7 +744,7 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
             var size = UShort.SIZE_BYTES.toUInt() + protocolName.utf8Length().toUInt()
             size += (2u * UByte.SIZE_BYTES.toUInt()) + UShort.SIZE_BYTES.toUInt()
             val propsSize = properties.size()
-            size += propsSize + WriteBuffer.variableByteIntegerSize(propsSize)
+            size += propsSize + variableByteIntegerSize(propsSize)
             return size
         }
 
@@ -1162,7 +1163,7 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
             }
             if (willProperties != null) {
                 val willPropertiesSize = willProperties.size()
-                size += WriteBuffer.variableByteIntegerSize(willPropertiesSize) + willPropertiesSize
+                size += variableByteIntegerSize(willPropertiesSize) + willPropertiesSize
             }
             if (willPayload != null) {
                 size += GenericSerialization.size(willPayload.obj, willPayload.kClass)
@@ -1191,7 +1192,7 @@ data class ConnectionRequest<AuthenticationDataPayload : Any, WillPayload : Any,
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
-                    buffer.readGenericType(DeserializationParameters(buffer, buffer.readUnsignedShort().toUInt()))
+                    readGenericType(DeserializationParameters(buffer, buffer.readUnsignedShort().toUInt()))
                 } else {
                     null
                 }

@@ -6,6 +6,7 @@ import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.ISubscribeRequest
 import mqtt.wire.control.packet.RetainHandling
 import mqtt.wire.control.packet.RetainHandling.*
@@ -83,7 +84,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
         val properties: Properties = Properties()
     ) {
         fun size() =
-            UShort.SIZE_BYTES.toUInt() + WriteBuffer.variableByteIntegerSize(properties.size()) + properties.size()
+            UShort.SIZE_BYTES.toUInt() + variableByteIntegerSize(properties.size()) + properties.size()
 
         fun serialize(writeBuffer: WriteBuffer) {
             writeBuffer.write(packetIdentifier.toUShort())
@@ -187,7 +188,7 @@ data class SubscribeRequest(val variable: VariableHeader, val subscriptions: Set
                 } else {
                     val propsData = buffer.readPropertiesSized()
                     val props = Properties.from(propsData.second)
-                    size += propsData.first + buffer.variableByteSize(propsData.first)
+                    size += propsData.first + variableByteSize(propsData.first)
                     Pair(size, VariableHeader(packetIdentifier, props))
                 }
             }

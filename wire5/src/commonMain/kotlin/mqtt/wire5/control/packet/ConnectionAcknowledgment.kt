@@ -2,11 +2,13 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.WriteBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
+import mqtt.wire.buffer.GenericType
+import mqtt.wire.buffer.variableByteIntegerSize
+import mqtt.wire.buffer.writeVariableByteInteger
 import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.*
@@ -441,7 +443,7 @@ data class ConnectionAcknowledgment<AuthenticationDataPayload : Any>(val header:
             fun size(): UInt {
                 var size = 0u
                 props.forEach { size += it.size() }
-                return size + WriteBuffer.variableByteIntegerSize(size)
+                return size + variableByteIntegerSize(size)
             }
 
             companion object {

@@ -4,6 +4,7 @@ package mqtt.wire4.control.packet
 
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MqttWarning
+import mqtt.wire.buffer.readVariableByteInteger
 import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE

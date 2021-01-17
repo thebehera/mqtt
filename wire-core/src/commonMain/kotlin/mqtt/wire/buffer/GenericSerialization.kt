@@ -1,7 +1,9 @@
 @file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
 
-package mqtt.buffer
+package mqtt.wire.buffer
 
+import mqtt.buffer.WriteBuffer
+import mqtt.buffer.utf8Length
 import kotlin.reflect.KClass
 
 object GenericSerialization {

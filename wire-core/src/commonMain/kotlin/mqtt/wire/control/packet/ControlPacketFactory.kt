@@ -2,8 +2,9 @@
 
 package mqtt.wire.control.packet
 
-import mqtt.buffer.GenericType
 import mqtt.buffer.ReadBuffer
+import mqtt.wire.buffer.GenericType
+import mqtt.wire.buffer.readVariableByteInteger
 import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.control.packet.format.ReasonCode.NORMAL_DISCONNECTION
 import mqtt.wire.data.QualityOfService
