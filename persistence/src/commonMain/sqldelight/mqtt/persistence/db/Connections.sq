@@ -5,7 +5,7 @@ CREATE TABLE MqttConnections(
     connectionTimeoutMs INTEGER NOT NULL CHECK (connectionTimeoutMs > 0),
     websocketEndpoint TEXT,
     lastConnectedMsSince1970 INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
-) WITHOUT ROWID;
+);
 
 addConnection:
     INSERT INTO MqttConnections (name, port, connectionTimeoutMs, websocketEndpoint)
