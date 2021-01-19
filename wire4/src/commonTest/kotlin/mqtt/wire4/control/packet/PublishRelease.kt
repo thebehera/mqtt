@@ -11,7 +11,7 @@ class PublishReleaseTests {
 
     @Test
     fun packetIdentifier() {
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         val puback = PublishRelease(packetIdentifier)
         puback.serialize(buffer)
         buffer.resetForRead()

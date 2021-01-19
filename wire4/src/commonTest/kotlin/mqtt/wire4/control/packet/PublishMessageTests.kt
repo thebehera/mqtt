@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.buffer.readVariableByteInteger
@@ -17,7 +18,7 @@ class PublishMessageTests {
     fun qosBothBitsSetTo1ThrowsMalformedPacketException() {
         val byte1 = 0b00111110.toByte()
         val remainingLength = 1.toByte()
-        val buffer = allocateNewBuffer(2u, limits)
+        val buffer = allocateNewBuffer(2u)
         buffer.write(byte1)
         buffer.write(remainingLength)
         buffer.resetForRead()

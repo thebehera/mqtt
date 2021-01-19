@@ -9,13 +9,6 @@ import kotlin.coroutines.suspendCoroutine
 
 @ExperimentalUnsignedTypes
 data class JvmBuffer(val byteBuffer: ByteBuffer, val fileRef: RandomAccessFile? = null) : PlatformBuffer {
-
-    override val type: BufferType = if (byteBuffer::class == MappedByteBuffer::class) {
-        BufferType.Disk
-    } else {
-        BufferType.InMemory
-    }
-
     override fun resetForRead() {
         byteBuffer.flip()
     }

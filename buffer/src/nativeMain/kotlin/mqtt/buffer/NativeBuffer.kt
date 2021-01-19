@@ -2,7 +2,6 @@ package mqtt.buffer
 
 @ExperimentalUnsignedTypes
 class NativeBuffer(val data: ByteArray) : PlatformBuffer {
-    override val type = BufferType.InMemory
     override val capacity: UInt = data.size.toUInt()
     private var limit = data.size
     private var position = 0
@@ -132,8 +131,7 @@ class NativeBuffer(val data: ByteArray) : PlatformBuffer {
 }
 
 actual fun allocateNewBuffer(
-    size: UInt,
-    limits: BufferMemoryLimit
+    size: UInt
 ): PlatformBuffer = NativeBuffer(ByteArray(size.toInt()))
 
 actual fun String.toBuffer(): PlatformBuffer = NativeBuffer(this.encodeToByteArray())

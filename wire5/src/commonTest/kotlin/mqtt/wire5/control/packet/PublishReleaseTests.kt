@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.buffer.readMqttUtf8StringNotValidated
@@ -24,7 +25,7 @@ class PublishReleaseTests {
     @Test
     fun packetIdentifier() {
         val pubrel = PublishRelease(VariableHeader(packetIdentifier))
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         pubrel.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b01100010, buffer.readByte(), "fixed header byte1")
@@ -38,7 +39,7 @@ class PublishReleaseTests {
     @Test
     fun defaultAndNonDefaultSuccessDeserialization() {
         val pubrel = PublishRelease(VariableHeader(packetIdentifier))
-        val bufferNonDefaults = allocateNewBuffer(6u, limits)
+        val bufferNonDefaults = allocateNewBuffer(6u)
         bufferNonDefaults.write(0b01100010.toByte())
         bufferNonDefaults.writeVariableByteInteger(4u)
         bufferNonDefaults.write(packetIdentifier.toUShort())
@@ -68,7 +69,7 @@ class PublishReleaseTests {
                 properties = VariableHeader.Properties(reasonString = "yolo".toCharSequenceBuffer())
             )
         )
-        val buffer = allocateNewBuffer(13u, limits)
+        val buffer = allocateNewBuffer(13u)
         expected.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b01100010, buffer.readByte(), "fixed header byte1")
@@ -88,7 +89,7 @@ class PublishReleaseTests {
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(15u, limits)
+        val buffer = allocateNewBuffer(15u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -107,7 +108,7 @@ class PublishReleaseTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val buffer = allocateNewBuffer(19u, limits)
+        val buffer = allocateNewBuffer(19u)
         val request = PublishRelease(VariableHeader(packetIdentifier, properties = props))
         request.serialize(buffer)
         buffer.resetForRead()

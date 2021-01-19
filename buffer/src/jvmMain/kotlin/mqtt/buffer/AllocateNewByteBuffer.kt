@@ -12,15 +12,14 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 actual fun allocateNewBuffer(
-    size: UInt,
-    limits: BufferMemoryLimit
-): PlatformBuffer = if (limits.isTooLargeForMemory(size)) {
-    val file = Files.createTempFile(limits.tmpBufferPrefix, null).toFile()
+    size: UInt
+): PlatformBuffer = try {
+    JvmBuffer(ByteBuffer.allocateDirect(size.toInt()))
+} catch (e: OutOfMemoryError) {
+    val file = Files.createTempFile("com.ditcoom.tmp.mqtt.", null).toFile()
     val randomAccessFile = RandomAccessFile(file, "rw")
     val fileMappedBuffer = randomAccessFile.channel!!.map(FileChannel.MapMode.READ_WRITE, 0L, size.toLong())
     JvmBuffer(fileMappedBuffer, randomAccessFile)
-} else {
-    JvmBuffer(ByteBuffer.allocateDirect(size.toInt()))
 }
 
 

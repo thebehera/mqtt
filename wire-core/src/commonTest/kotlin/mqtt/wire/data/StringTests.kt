@@ -2,7 +2,7 @@
 
 package mqtt.wire.data
 
-import mqtt.buffer.UnlimitedMemoryLimit
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.buffer.utf8Length
 import mqtt.wire.buffer.readMqttUtf8StringNotValidated
@@ -47,7 +47,7 @@ class StringTests {
 //        val string = MqttUtf8String("\uFEFF")
 //        val actual = string.getValueOrThrow()
 //        assertEquals("\uFEFF", actual)
-//        val buffer = allocateNewBuffer(6u, limits = object : BufferMemoryLimit {
+//        val buffer = allocateNewBuffer(6u = object : BufferMemoryLimit {
 //            override fun isTooLargeForMemory(size: UInt) = false
 //        })
 //        buffer.writeUtf8String(string.value)
@@ -124,7 +124,7 @@ class StringTests {
     fun mqttUtf8String() {
         val string = "yolo swag lyfestyle"
         assertEquals(19, string.utf8Length().toInt())
-        val platformBuffer = allocateNewBuffer(21u, UnlimitedMemoryLimit)
+        val platformBuffer = allocateNewBuffer(21u)
         platformBuffer.writeMqttUtf8String(string)
         platformBuffer.resetForRead()
         val actual = platformBuffer.readMqttUtf8StringNotValidated().toString()

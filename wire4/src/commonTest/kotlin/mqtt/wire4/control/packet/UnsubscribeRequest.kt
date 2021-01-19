@@ -12,7 +12,7 @@ class UnsubscribeRequestTests {
 
     @Test
     fun basicTest() {
-        val buffer = allocateNewBuffer(17u, limits)
+        val buffer = allocateNewBuffer(17u)
         val unsub = UnsubscribeRequest(packetIdentifier, listOf(MqttUtf8String("yolo"), MqttUtf8String("yolo1")))
         unsub.serialize(buffer)
         buffer.resetForRead()

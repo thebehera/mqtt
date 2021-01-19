@@ -1,12 +1,10 @@
 package mqtt.client
 
 import android.os.Parcel
-import mqtt.buffer.BufferType
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.WriteBuffer
 
 class ParcelableBuffer(private val parcel: Parcel) : PlatformBuffer {
-    override val type: BufferType = BufferType.InMemory
     override val capacity: UInt = parcel.dataCapacity().toUInt()
 
 

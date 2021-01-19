@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.buffer.readMqttUtf8StringNotValidated
 import mqtt.wire.buffer.readVariableByteInteger
@@ -16,7 +17,7 @@ class UnsubscribeRequestTests {
 
     @Test
     fun basicTest() {
-        val buffer = allocateNewBuffer(11u, limits)
+        val buffer = allocateNewBuffer(11u)
         val unsub = UnsubscribeRequest(VariableHeader(packetIdentifier), setOf("yolo".toCharSequenceBuffer()))
         unsub.serialize(buffer)
         buffer.resetForRead()
@@ -47,7 +48,7 @@ class UnsubscribeRequestTests {
 
         val request =
             UnsubscribeRequest(VariableHeader(packetIdentifier, properties = props), setOf("test"))
-        val buffer = allocateNewBuffer(24u, limits)
+        val buffer = allocateNewBuffer(24u)
         request.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as UnsubscribeRequest

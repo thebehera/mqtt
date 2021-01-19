@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -12,7 +13,7 @@ class PublishReceivedTests {
     @Test
     fun packetIdentifier() {
         val puback = PublishReceived(packetIdentifier)
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         puback.serialize(buffer)
         buffer.resetForRead()
         val pubackResult = ControlPacketV4.from(buffer) as PublishReceived
@@ -22,7 +23,7 @@ class PublishReceivedTests {
     @Test
     fun packetIdentifierSendDefaults() {
         val puback = PublishReceived(packetIdentifier)
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         puback.serialize(buffer)
         buffer.resetForRead()
         val pubackResult = ControlPacketV4.from(buffer) as PublishReceived

@@ -4,7 +4,6 @@ package mqtt.socket
 import mqtt.buffer.allocateNewBuffer
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ClosedSendChannelException
-import mqtt.buffer.BufferMemoryLimit
 import mqtt.buffer.JsBuffer
 import mqtt.buffer.PlatformBuffer
 import org.khronos.webgl.Uint8Array

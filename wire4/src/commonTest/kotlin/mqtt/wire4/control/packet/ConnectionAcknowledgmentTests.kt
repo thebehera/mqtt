@@ -2,7 +2,7 @@
 
 package mqtt.wire4.control.packet
 
-import mqtt.buffer.BufferMemoryLimit
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire4.control.packet.ConnectionAcknowledgment.VariableHeader
@@ -16,7 +16,7 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun serializeDeserializeDefault() {
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         val actual = ConnectionAcknowledgment()
         actual.serialize(buffer)
         buffer.resetForRead()
@@ -26,14 +26,14 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun bit0SessionPresentFalseFlags() {
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         val model = ConnectionAcknowledgment()
         model.header.serialize(buffer)
         buffer.resetForRead()
         val sessionPresentBit = buffer.readUnsignedByte().get(0)
         assertFalse(sessionPresentBit)
 
-        val buffer2 = allocateNewBuffer(4u, limits)
+        val buffer2 = allocateNewBuffer(4u)
         model.serialize(buffer2)
         buffer2.resetForRead()
         val result = ControlPacketV4.from(buffer2) as ConnectionAcknowledgment
@@ -42,15 +42,10 @@ class ConnectionAcknowledgmentTests {
 
     @Test
     fun bit0SessionPresentFlags() {
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         val model = ConnectionAcknowledgment(VariableHeader(true))
         model.header.serialize(buffer)
         buffer.resetForRead()
         assertTrue(buffer.readUnsignedByte().get(0))
     }
-}
-
-
-val limits = object : BufferMemoryLimit {
-    override fun isTooLargeForMemory(size: UInt): Boolean = false
 }

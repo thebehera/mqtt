@@ -10,6 +10,7 @@ import mqtt.buffer.JsBuffer
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.allocateNewBuffer
 import mqtt.connection.IConnectionOptions
+import mqtt.socket.toComposableBuffer
 import mqtt.wire.buffer.MalformedInvalidVariableByteInteger
 import mqtt.wire.buffer.VARIABLE_BYTE_INT_MAX
 import mqtt.wire.control.packet.ControlPacket

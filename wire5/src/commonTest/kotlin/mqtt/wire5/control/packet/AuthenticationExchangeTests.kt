@@ -2,7 +2,7 @@
 
 package mqtt.wire5.control.packet
 
-import mqtt.buffer.BufferMemoryLimit
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
@@ -20,15 +20,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.fail
 
-val limits = object : BufferMemoryLimit {
-    override fun isTooLargeForMemory(size: UInt) = false
-}
-
 class AuthenticationExchangeTests {
 
     @Test
     fun serializationByteVerification() {
-        val buffer = allocateNewBuffer(14u, limits)
+        val buffer = allocateNewBuffer(14u)
         val props = Properties(Authentication("test", GenericType("", CharSequence::class)))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
@@ -46,7 +42,7 @@ class AuthenticationExchangeTests {
 
     @Test
     fun serializeDeserialize() {
-        val buffer = allocateNewBuffer(14u, limits)
+        val buffer = allocateNewBuffer(14u)
         val props = Properties(Authentication("test".toCharSequenceBuffer(), GenericType("", CharSequence::class)))
         val disconnect = AuthenticationExchange(VariableHeader(SUCCESS, props))
         disconnect.serialize(buffer)
@@ -67,7 +63,7 @@ class AuthenticationExchangeTests {
 
     @Test
     fun reasonString() {
-        val buffer = allocateNewBuffer(18u, limits)
+        val buffer = allocateNewBuffer(18u)
         val props = Properties(
             Authentication("2".toCharSequenceBuffer(), GenericType("", CharSequence::class)),
             reasonString = "yolo"
@@ -84,7 +80,7 @@ class AuthenticationExchangeTests {
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(20u, limits)
+        val buffer = allocateNewBuffer(20u)
         val size = obj1.size() + obj2.size()
         buffer.writeVariableByteInteger(size)
         obj1.write(buffer)
@@ -112,7 +108,7 @@ class AuthenticationExchangeTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val buffer = allocateNewBuffer(17u, limits)
+        val buffer = allocateNewBuffer(17u)
         AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize(buffer)
         buffer.resetForRead()
         // fixed header
@@ -141,7 +137,7 @@ class AuthenticationExchangeTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val buffer = allocateNewBuffer(21u, limits)
+        val buffer = allocateNewBuffer(21u)
         AuthenticationExchange(VariableHeader(SUCCESS, properties = props)).serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as AuthenticationExchange<*>
@@ -153,7 +149,7 @@ class AuthenticationExchangeTests {
     @Test
     fun authMethodMultipleTimesThrowsProtocolError() {
         val obj1 = AuthenticationMethod("yolo")
-        val buffer1 = allocateNewBuffer(20u, limits)
+        val buffer1 = allocateNewBuffer(20u)
         val remainingLength = 2u * obj1.size() + 1u
         buffer1.writeVariableByteInteger(remainingLength)
         obj1.write(buffer1)
@@ -169,7 +165,7 @@ class AuthenticationExchangeTests {
     fun authDataMultipleTimesThrowsProtocolError() {
         val method = AuthenticationMethod("yolo")
         val obj1 = AuthenticationData(GenericType("123", CharSequence::class))
-        val buffer1 = allocateNewBuffer(20u, limits)
+        val buffer1 = allocateNewBuffer(20u)
         buffer1.writeVariableByteInteger(19u)
         method.write(buffer1)
         obj1.write(buffer1)

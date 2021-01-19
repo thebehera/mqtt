@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
@@ -12,7 +13,7 @@ class SubscribeRequestTest {
 
     @Test
     fun serializeTestByteArray() {
-        val readBuffer = allocateNewBuffer(12u, limits)
+        val readBuffer = allocateNewBuffer(12u)
         val subscription = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
         Subscription.writeMany(subscription, readBuffer)
         readBuffer.resetForRead()
@@ -50,7 +51,7 @@ class SubscribeRequestTest {
 
     @Test
     fun subscriptionPayload() {
-        val readBuffer = allocateNewBuffer(12u, limits)
+        val readBuffer = allocateNewBuffer(12u)
         val subscription = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
         Subscription.writeMany(subscription, readBuffer)
         readBuffer.resetForRead()
@@ -88,7 +89,7 @@ class SubscribeRequestTest {
 
     @Test
     fun packetIdentifierIsCorrect() {
-        val buffer = allocateNewBuffer(10u, limits)
+        val buffer = allocateNewBuffer(10u)
         val subscription = SubscribeRequest(10.toUShort(), Filter("a/b"), AT_MOST_ONCE)
         assertEquals(10, subscription.packetIdentifier)
         subscription.serialize(buffer)
@@ -102,7 +103,7 @@ class SubscribeRequestTest {
     @Test
     fun serialized() {
         val subscriptions = Subscription.from(listOf(Filter("a/b"), Filter("c/d")), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
-        val buffer = allocateNewBuffer(19u, limits)
+        val buffer = allocateNewBuffer(19u)
         val request = SubscribeRequest(10, subscriptions)
         request.serialize(buffer)
         buffer.resetForRead()
@@ -162,7 +163,7 @@ class SubscribeRequestTest {
         val filter = firstSub.topicFilter
         val validated = filter.validate()!!
         assertEquals(validated.level.value, "test")
-        val buffer = allocateNewBuffer(11u, limits)
+        val buffer = allocateNewBuffer(11u)
         subscribeRequest.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV4.from(buffer) as SubscribeRequest

@@ -2,7 +2,7 @@
 
 package mqtt.wire.data
 
-import mqtt.buffer.BufferMemoryLimit
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.buffer.MalformedInvalidVariableByteInteger
 import mqtt.wire.buffer.readVariableByteInteger
@@ -16,14 +16,9 @@ import kotlin.test.assertFailsWith
 class VariableByteIntegerTests {
 
     val VARIABLE_BYTE_INT_MAX = 268435455.toUInt()
-    val limits = object : BufferMemoryLimit {
-        override fun isTooLargeForMemory(size: UInt) = false
-    }
-
     @Test
     @JsName("encodedValueMustUseMinNumberOfBytes")
     fun `MQTT Conformance The encoded value MUST use the minimum number of bytes necessary to represent the value`() {
-        val buffer = allocateNewBuffer(4u, limits)
         val oneMin = 0u
         assertEquals(1u, variableByteSize(oneMin))
         val oneMax = 127u
@@ -45,7 +40,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles0() {
         val expectedValue = 0.toUInt()
-        val buffer = allocateNewBuffer(1u, limits)
+        val buffer = allocateNewBuffer(1u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -54,7 +49,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles1() {
         val expectedValue = 1.toUInt()
-        val buffer = allocateNewBuffer(1u, limits)
+        val buffer = allocateNewBuffer(1u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -63,7 +58,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles127() {
         val expectedValue = 127.toUInt()
-        val buffer = allocateNewBuffer(1u, limits)
+        val buffer = allocateNewBuffer(1u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -72,7 +67,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles128() {
         val expectedValue = 128.toUInt()
-        val buffer = allocateNewBuffer(2u, limits)
+        val buffer = allocateNewBuffer(2u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -81,7 +76,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles16383() {
         val expectedValue = 16383.toUInt()
-        val buffer = allocateNewBuffer(2u, limits)
+        val buffer = allocateNewBuffer(2u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -90,7 +85,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles16384() {
         val expectedValue = 16384.toUInt()
-        val buffer = allocateNewBuffer(3u, limits)
+        val buffer = allocateNewBuffer(3u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -99,7 +94,7 @@ class VariableByteIntegerTests {
     @Test
     fun handles65535() {
         val expectedValue = 65535.toUInt()
-        val buffer = allocateNewBuffer(3u, limits)
+        val buffer = allocateNewBuffer(3u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -108,7 +103,7 @@ class VariableByteIntegerTests {
     @Test
     fun handlesMaxMinus1() {
         val expectedValue = VARIABLE_BYTE_INT_MAX - 1.toUInt()
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -117,7 +112,7 @@ class VariableByteIntegerTests {
     @Test
     fun handlesMax() {
         val expectedValue = VARIABLE_BYTE_INT_MAX
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         buffer.writeVariableByteInteger(expectedValue.toUInt())
         buffer.resetForRead()
         assertEquals(expectedValue, buffer.readVariableByteInteger(), "Failed to read remaining bytes properly")
@@ -127,7 +122,7 @@ class VariableByteIntegerTests {
     @Test
     fun handlesMaxPlus1() {
         val expectedValue = VARIABLE_BYTE_INT_MAX + 1.toUInt()
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         assertFailsWith(MalformedInvalidVariableByteInteger::class, "Larger than variable byte integer maximum") {
             buffer.writeVariableByteInteger(expectedValue.toUInt())
             buffer.resetForRead()

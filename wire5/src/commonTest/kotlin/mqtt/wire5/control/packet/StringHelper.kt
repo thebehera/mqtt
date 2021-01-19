@@ -7,7 +7,7 @@ import mqtt.wire.buffer.readMqttUtf8StringNotValidated
 import mqtt.wire.buffer.writeMqttUtf8String
 
 fun CharSequence.toCharSequenceBuffer(): CharSequence {
-    val buffer = allocateNewBuffer((count() + 2).toUInt(), limits)
+    val buffer = allocateNewBuffer((count() + 2).toUInt())
     buffer.writeMqttUtf8String(this)
     buffer.resetForRead()
     return buffer.readMqttUtf8StringNotValidated()

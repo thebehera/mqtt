@@ -21,7 +21,7 @@ class PublishCompleteTests {
     @Test
     fun packetIdentifier() {
         val pubcomp = PublishComplete(VariableHeader(packetIdentifier))
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         pubcomp.serialize(buffer)
         buffer.resetForRead()
         val pubcompResult = ControlPacketV5.from(buffer) as PublishComplete
@@ -31,7 +31,7 @@ class PublishCompleteTests {
     @Test
     fun packetIdentifierSendDefaults() {
         val pubcomp = PublishComplete(VariableHeader(packetIdentifier))
-        val buffer = allocateNewBuffer(4u, limits)
+        val buffer = allocateNewBuffer(4u)
         pubcomp.serialize(buffer)
         buffer.resetForRead()
         val pubcompResult = ControlPacketV5.from(buffer) as PublishComplete
@@ -41,7 +41,7 @@ class PublishCompleteTests {
     @Test
     fun noMatchingSubscribers() {
         val pubcomp = PublishComplete(VariableHeader(packetIdentifier, PACKET_IDENTIFIER_NOT_FOUND))
-        val buffer = allocateNewBuffer(6u, limits)
+        val buffer = allocateNewBuffer(6u)
         pubcomp.serialize(buffer)
         buffer.resetForRead()
         val pubcompResult = ControlPacketV5.from(buffer) as PublishComplete
@@ -65,7 +65,7 @@ class PublishCompleteTests {
                 properties = VariableHeader.Properties(reasonString = "yolo")
             )
         )
-        val buffer = allocateNewBuffer(13u, limits)
+        val buffer = allocateNewBuffer(13u)
         expected.serialize(buffer)
         buffer.resetForRead()
 //        val actual = ControlPacketV5.from(buffer) as PublishComplete
@@ -76,7 +76,7 @@ class PublishCompleteTests {
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(35u, limits)
+        val buffer = allocateNewBuffer(35u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -105,7 +105,7 @@ class PublishCompleteTests {
         }
         assertEquals(userPropertyResult.size, 1)
 
-        val buffer = allocateNewBuffer(19u, limits)
+        val buffer = allocateNewBuffer(19u)
         val request = PublishComplete(VariableHeader(packetIdentifier, properties = props))
         request.serialize(buffer)
         buffer.resetForRead()

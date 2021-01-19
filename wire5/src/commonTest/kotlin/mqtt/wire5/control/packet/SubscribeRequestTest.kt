@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.ProtocolError
 import mqtt.wire.buffer.readMqttUtf8StringNotValidated
@@ -26,7 +27,7 @@ class SubscribeRequestTest {
         val subscribeRequest = SubscribeRequest(2.toUShort(), "test", AT_LEAST_ONCE)
         assertEquals(subscribeRequest.variable.packetIdentifier, 2)
         assertEquals(subscribeRequest.subscriptions.first().topicFilter.validate().toString(), "test")
-        val buffer = allocateNewBuffer(12u, limits)
+        val buffer = allocateNewBuffer(12u)
         subscribeRequest.serialize(buffer)
         buffer.resetForRead()
         // fixed header 2 bytes
@@ -69,7 +70,7 @@ class SubscribeRequestTest {
     fun serialized() {
         val subscribeRequest = SubscribeRequest(2.toUShort(), listOf("a/b", "c/d"), listOf(AT_LEAST_ONCE, EXACTLY_ONCE))
         assertEquals(subscribeRequest.variable.packetIdentifier, 2)
-        val buffer = allocateNewBuffer(17u, limits)
+        val buffer = allocateNewBuffer(17u)
         subscribeRequest.serialize(buffer)
         buffer.resetForRead()
         // fixed header 2 bytes
@@ -121,7 +122,7 @@ class SubscribeRequestTest {
     @Test
     fun subscriptionPayloadOptions() {
         val subscription = Subscription.from("a/b", AT_LEAST_ONCE)
-        val buffer = allocateNewBuffer(6u, limits)
+        val buffer = allocateNewBuffer(6u)
         subscription.serialize(buffer)
         buffer.resetForRead()
         assertEquals("a/b", buffer.readMqttUtf8StringNotValidated().toString())
@@ -130,7 +131,7 @@ class SubscribeRequestTest {
 
     @Test
     fun reasonString() {
-        val buffer = allocateNewBuffer(19u, limits)
+        val buffer = allocateNewBuffer(19u)
         val actual = SubscribeRequest(
             VariableHeader(
                 packetIdentifier.toInt(),
@@ -147,7 +148,7 @@ class SubscribeRequestTest {
     fun reasonStringMultipleTimesThrowsProtocolError() {
         val obj1 = ReasonString("yolo")
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(15u, limits)
+        val buffer = allocateNewBuffer(15u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -170,7 +171,7 @@ class SubscribeRequestTest {
             VariableHeader(packetIdentifier.toInt(), properties = props),
             setOf(Subscription(Filter("test")))
         )
-        val buffer = allocateNewBuffer(25u, limits)
+        val buffer = allocateNewBuffer(25u)
         request.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as SubscribeRequest

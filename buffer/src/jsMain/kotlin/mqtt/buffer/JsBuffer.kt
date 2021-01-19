@@ -4,7 +4,6 @@ import org.khronos.webgl.*
 import kotlin.experimental.and
 
 data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
-    override val type = BufferType.InMemory
     private val littleEndian = false // network endian is big endian
     override val capacity: UInt = buffer.byteLength.toUInt()
     private var limit = 0
@@ -153,8 +152,7 @@ data class JsBuffer(val buffer: Uint8Array) : PlatformBuffer {
 }
 
 actual fun allocateNewBuffer(
-    size: UInt,
-    limits: BufferMemoryLimit
+    size: UInt
 ): PlatformBuffer {
     return JsBuffer(Uint8Array(size.toInt()))
 }

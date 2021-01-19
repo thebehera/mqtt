@@ -12,7 +12,7 @@ class SubscribeAcknowledgementTests {
 
     @Test
     fun successMaxQos0() {
-        val buffer = allocateNewBuffer(5u, limits)
+        val buffer = allocateNewBuffer(5u)
         val payload = GRANTED_QOS_0
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
         puback.serialize(buffer)
@@ -26,7 +26,7 @@ class SubscribeAcknowledgementTests {
     fun grantedQos1() {
         val payload = GRANTED_QOS_1
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val buffer = allocateNewBuffer(5u, limits)
+        val buffer = allocateNewBuffer(5u)
         puback.serialize(buffer)
         buffer.resetForRead()
         val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement
@@ -39,7 +39,7 @@ class SubscribeAcknowledgementTests {
     fun grantedQos2() {
         val payload = GRANTED_QOS_2
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val buffer = allocateNewBuffer(5u, limits)
+        val buffer = allocateNewBuffer(5u)
         puback.serialize(buffer)
         buffer.resetForRead()
         val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement
@@ -51,7 +51,7 @@ class SubscribeAcknowledgementTests {
     fun failure() {
         val payload = UNSPECIFIED_ERROR
         val puback = SubscribeAcknowledgement(packetIdentifier, listOf(payload))
-        val buffer = allocateNewBuffer(5u, limits)
+        val buffer = allocateNewBuffer(5u)
         puback.serialize(buffer)
         buffer.resetForRead()
         val pubackResult = ControlPacketV4.from(buffer) as SubscribeAcknowledgement

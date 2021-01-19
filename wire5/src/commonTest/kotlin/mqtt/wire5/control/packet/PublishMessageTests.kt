@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MalformedPacketException
 import mqtt.wire.ProtocolError
@@ -19,7 +20,7 @@ class PublishMessageTests {
 
     @Test
     fun serialize() {
-        val buffer = allocateNewBuffer(8u, limits)
+        val buffer = allocateNewBuffer(8u)
         val expected = PublishMessage<Unit>("", QualityOfService.AT_LEAST_ONCE, 1u)
         expected.serialize(buffer)
         buffer.resetForRead()
@@ -37,7 +38,7 @@ class PublishMessageTests {
     fun qosBothBitsSetTo1ThrowsMalformedPacketException() {
         val byte1 = 0b00111110.toByte()
         val remainingLength = 1u
-        val buffer = allocateNewBuffer(2u, limits)
+        val buffer = allocateNewBuffer(2u)
         buffer.write(byte1)
         buffer.writeVariableByteInteger(remainingLength)
         buffer.resetForRead()
@@ -50,7 +51,7 @@ class PublishMessageTests {
 
     @Test
     fun payloadFormatIndicatorDefault() {
-        val buffer = allocateNewBuffer(6u, limits)
+        val buffer = allocateNewBuffer(6u)
         val expected = PublishMessage<Unit>(variable = VariableHeader("t"))
         expected.serialize(buffer)
         buffer.resetForRead()
@@ -67,7 +68,7 @@ class PublishMessageTests {
     fun payloadFormatIndicatorTrue() {
         val props = VariableHeader.Properties<Any>(true)
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(8u, limits)
+        val buffer = allocateNewBuffer(8u)
         val expected = PublishMessage<Unit>(variable = variableHeader)
         expected.serialize(buffer)
         buffer.resetForRead()
@@ -88,7 +89,7 @@ class PublishMessageTests {
     @Test
     fun payloadFormatIndicatorFalse() {
         val props = VariableHeader.Properties<Any>(false)
-        val buffer = allocateNewBuffer(6u, limits)
+        val buffer = allocateNewBuffer(6u)
         val variableHeader = VariableHeader("t", properties = props)
         val expected = PublishMessage<Unit>(variable = variableHeader)
         expected.serialize(buffer)
@@ -108,7 +109,7 @@ class PublishMessageTests {
     fun payloadFormatIndicatorDuplicateThrowsProtocolError() {
         val obj1 = PayloadFormatIndicator(false)
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(5u, limits)
+        val buffer = allocateNewBuffer(5u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -124,7 +125,7 @@ class PublishMessageTests {
     fun messageExpiryInterval() {
         val props = VariableHeader.Properties<Any>(messageExpiryInterval = 2)
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(11u, limits)
+        val buffer = allocateNewBuffer(11u)
         val msg = PublishMessage<Unit>(variable = variableHeader)
         msg.serialize(buffer)
         buffer.resetForRead()
@@ -146,7 +147,7 @@ class PublishMessageTests {
     fun messageExpiryIntervalDuplicateThrowsProtocolError() {
         val obj1 = MessageExpiryInterval(2)
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(11u, limits)
+        val buffer = allocateNewBuffer(11u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -163,7 +164,7 @@ class PublishMessageTests {
         val props = VariableHeader.Properties<Any>(topicAlias = 2)
         val variableHeader = VariableHeader("t", properties = props)
         val expected = PublishMessage<Unit>(variable = variableHeader)
-        val buffer = allocateNewBuffer(9u, limits)
+        val buffer = allocateNewBuffer(9u)
         expected.serialize(buffer)
         buffer.resetForRead()
         assertEquals(0b00110000, buffer.readByte(), "fixed header byte 1")
@@ -199,7 +200,7 @@ class PublishMessageTests {
     fun topicAliasDuplicateThrowsProtocolError() {
         val obj1 = TopicAlias(2)
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(7u, limits)
+        val buffer = allocateNewBuffer(7u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -215,7 +216,7 @@ class PublishMessageTests {
     fun responseTopic() {
         val props = VariableHeader.Properties<Any>(responseTopic = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(13u, limits)
+        val buffer = allocateNewBuffer(13u)
         val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
@@ -234,7 +235,7 @@ class PublishMessageTests {
     fun responseTopicDuplicateThrowsProtocolError() {
         val obj1 = ResponseTopic("t/as")
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(15u, limits)
+        val buffer = allocateNewBuffer(15u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -250,7 +251,7 @@ class PublishMessageTests {
     fun correlationData() {
         val props = VariableHeader.Properties(correlationData = GenericType("yoyo", String::class))
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(13u, limits)
+        val buffer = allocateNewBuffer(13u)
         val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
@@ -270,7 +271,7 @@ class PublishMessageTests {
     fun correlationDataDuplicateThrowsProtocolError() {
         val obj1 = CorrelationData(GenericType("yoyo", String::class))
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(15u, limits)
+        val buffer = allocateNewBuffer(15u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)
@@ -293,7 +294,7 @@ class PublishMessageTests {
         assertEquals(userPropertyResult.size, 1)
 
         val request = PublishMessage<Unit>(variable = VariableHeader("t", properties = props))
-        val buffer = allocateNewBuffer(100u, limits)
+        val buffer = allocateNewBuffer(100u)
         request.serialize(buffer)
         buffer.resetForRead()
         val requestRead = ControlPacketV5.from(buffer) as PublishMessage<*>
@@ -306,7 +307,7 @@ class PublishMessageTests {
     fun subscriptionIdentifier() {
         val props = VariableHeader.Properties<Unit>(subscriptionIdentifier = setOf(2))
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(8u, limits)
+        val buffer = allocateNewBuffer(8u)
         val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
@@ -317,7 +318,7 @@ class PublishMessageTests {
     @Test
     fun subscriptionIdentifierZeroThrowsProtocolError() {
         val obj1 = SubscriptionIdentifier(0)
-        val buffer = allocateNewBuffer(6u, limits)
+        val buffer = allocateNewBuffer(6u)
         val size = obj1.size()
         buffer.writeVariableByteInteger(size)
         obj1.write(buffer)
@@ -329,7 +330,7 @@ class PublishMessageTests {
     fun contentType() {
         val props = VariableHeader.Properties<Unit>(contentType = "t/as")
         val variableHeader = VariableHeader("t", properties = props)
-        val buffer = allocateNewBuffer(13u, limits)
+        val buffer = allocateNewBuffer(13u)
         val actual = PublishMessage<Unit>(variable = variableHeader)
         actual.serialize(buffer)
         buffer.resetForRead()
@@ -341,7 +342,7 @@ class PublishMessageTests {
     fun contentTypeDuplicateThrowsProtocolError() {
         val obj1 = ContentType("t/as")
         val obj2 = obj1.copy()
-        val buffer = allocateNewBuffer(15u, limits)
+        val buffer = allocateNewBuffer(15u)
         buffer.writeVariableByteInteger(obj1.size() + obj2.size())
         obj1.write(buffer)
         obj2.write(buffer)

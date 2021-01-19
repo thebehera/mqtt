@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,7 +10,7 @@ import kotlin.test.assertEquals
 class PingRequestTests {
     @Test
     fun serializeDeserialize() {
-        val buffer = allocateNewBuffer(2u, limits)
+        val buffer = allocateNewBuffer(2u)
         val ping = PingRequest
         ping.serialize(buffer)
         buffer.resetForRead()

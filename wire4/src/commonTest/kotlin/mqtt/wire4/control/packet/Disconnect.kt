@@ -2,6 +2,7 @@
 
 package mqtt.wire4.control.packet
 
+
 import mqtt.buffer.allocateNewBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -10,7 +11,7 @@ class DisconnectTests {
     @Test
     fun serializeDeserialize() {
         val actual = DisconnectNotification
-        val buffer = allocateNewBuffer(2u, limits)
+        val buffer = allocateNewBuffer(2u)
         actual.serialize(buffer)
         buffer.resetForRead()
         val expected = ControlPacketV4.from(buffer) as DisconnectNotification

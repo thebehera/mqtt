@@ -2,6 +2,7 @@
 
 package mqtt.wire5.control.packet.format.fixed
 
+
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.format.ReasonCode.*
@@ -89,7 +90,7 @@ class FlagTests {
             detailed.controlPacketValue, 0x03,
             "Invalid Byte 1 in the fixed header: Control Packet Value"
         )
-        val buffer = allocateNewBuffer(8u, limits)
+        val buffer = allocateNewBuffer(8u)
         detailed.serialize(buffer)
         buffer.resetForRead()
         val byteAsUInt = buffer.readByte().toUInt()
