@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.persistence
 
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.runtime.coroutines.asFlow

@@ -9,6 +9,7 @@ import kotlinx.coroutines.promise
 import mqtt.buffer.JsBuffer
 import mqtt.buffer.ReadBuffer
 import mqtt.buffer.allocateNewBuffer
+import mqtt.client.socket.ISocketController
 import mqtt.connection.IConnectionOptions
 import mqtt.socket.toComposableBuffer
 import mqtt.wire.buffer.MalformedInvalidVariableByteInteger

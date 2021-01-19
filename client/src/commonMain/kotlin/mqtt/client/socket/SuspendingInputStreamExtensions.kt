@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.socket
 
 import mqtt.socket.SuspendingInputStream
 import mqtt.wire.buffer.MalformedInvalidVariableByteInteger

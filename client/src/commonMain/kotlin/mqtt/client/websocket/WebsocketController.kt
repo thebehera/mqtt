@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.websocket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
@@ -11,6 +11,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.allocateNewBuffer
+import mqtt.client.loadCustomWebsocketImplementation
+import mqtt.client.socket.ISocketController
 import mqtt.connection.IConnectionOptions
 import mqtt.socket.ClientSocket
 import mqtt.socket.SuspendingInputStream

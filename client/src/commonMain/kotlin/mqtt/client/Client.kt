@@ -4,6 +4,12 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.BroadcastChannel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collect
+import mqtt.client.persistence.InMemoryPersistence
+import mqtt.client.persistence.Persistence
+import mqtt.client.socket.ConnectionState
+import mqtt.client.socket.ISocketController
+import mqtt.client.socket.SocketController
+import mqtt.client.websocket.WebsocketController
 import mqtt.connection.IConnectionOptions
 import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.*

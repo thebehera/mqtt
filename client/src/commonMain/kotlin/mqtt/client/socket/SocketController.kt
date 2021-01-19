@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.socket
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel

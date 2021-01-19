@@ -1,7 +1,8 @@
-package mqtt.client
+package mqtt.client.websocket
 
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import mqtt.buffer.allocateNewBuffer
+import mqtt.client.socket.readVariableByteInteger
 import mqtt.socket.SuspendingInputStream
 import mqtt.wire.buffer.variableByteSize
 import mqtt.wire.control.packet.ControlPacket

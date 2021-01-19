@@ -1,4 +1,4 @@
-package mqtt.client
+package mqtt.client.socket
 
 import kotlinx.coroutines.flow.Flow
 import mqtt.wire.control.packet.ControlPacket

@@ -1,6 +1,7 @@
 package mqtt.client
 
 import kotlinx.coroutines.CoroutineScope
+import mqtt.client.socket.ISocketController
 import mqtt.connection.IConnectionOptions
 import mqtt.persistence.isNodeJs
 

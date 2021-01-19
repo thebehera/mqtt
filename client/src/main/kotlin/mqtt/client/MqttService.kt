@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.AssetFileDescriptor
 import android.util.Log
 import kotlinx.coroutines.*
+import mqtt.client.persistence.DatabasePersistence
 import mqtt.connection.ConnectionOptions
 import mqtt.connection.IConnectionOptions
 import mqtt.persistence.AndroidContextProvider
