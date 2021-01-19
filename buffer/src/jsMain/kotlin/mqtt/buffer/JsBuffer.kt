@@ -157,7 +157,7 @@ actual fun allocateNewBuffer(
     return JsBuffer(Uint8Array(size.toInt()))
 }
 
-actual fun String.toBuffer(): PlatformBuffer {
+actual fun String.toUtf8Buffer(): PlatformBuffer {
     val int8Array = encodeToByteArray().unsafeCast<Int8Array>()
     val uint8Array = Uint8Array(int8Array.buffer)
     return JsBuffer(uint8Array)

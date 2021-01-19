@@ -3,7 +3,7 @@
 package mqtt.socket
 
 import mqtt.buffer.allocateNewBuffer
-import mqtt.buffer.toBuffer
+import mqtt.buffer.toUtf8Buffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -352,10 +352,10 @@ class FragmentedReadBufferTests {
     @Test
     fun readFragmentedStringFromThreeBuffers() {
         val expectedString = "yolo-swag-lyfestyle"
-        val utf8length = expectedString.toBuffer().limit()
+        val utf8length = expectedString.toUtf8Buffer().limit()
         val composableBuffer = expectedString
             .split(Regex("(?=-)"))
-            .map { it.toBuffer() }
+            .map { it.toUtf8Buffer() }
             .toComposableBuffer()
         val actual = composableBuffer.readUtf8(utf8length)
         assertEquals(expectedString, actual.toString())
@@ -364,7 +364,7 @@ class FragmentedReadBufferTests {
     @Test
     fun utf8Line() {
         val buffers = arrayOf("yolo\r\n", "\nsw\n\r\nag", "\r\nli\n\r\nfe\r\nstyle\r\n")
-        val composableBuffer = buffers.map { it.toBuffer() }.toComposableBuffer()
+        val composableBuffer = buffers.map { it.toUtf8Buffer() }.toComposableBuffer()
         assertEquals("yolo", composableBuffer.readUtf8Line().toString())
         assertEquals("", composableBuffer.readUtf8Line().toString())
         assertEquals("sw", composableBuffer.readUtf8Line().toString())

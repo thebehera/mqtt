@@ -121,7 +121,7 @@ class BufferTests {
     @Test
     fun readUtf8LineSingle() {
         val text = "hello"
-        val buffer = text.toBuffer()
+        val buffer = text.toUtf8Buffer()
         assertEquals("hello", buffer.readUtf8Line().toString())
         assertEquals(buffer.remaining(), 0u)
     }
@@ -129,7 +129,7 @@ class BufferTests {
     @Test
     fun readUtf8LineDouble() {
         val text = "hello\r\n"
-        val buffer = text.toBuffer()
+        val buffer = text.toUtf8Buffer()
         assertEquals("hello", buffer.readUtf8Line().toString())
         assertEquals("", buffer.readUtf8Line().toString())
         assertEquals(buffer.remaining(), 0u)
@@ -138,7 +138,7 @@ class BufferTests {
     @Test
     fun readUtf8LineStart() {
         val text = "\r\nhello"
-        val buffer = text.toBuffer()
+        val buffer = text.toUtf8Buffer()
         assertEquals("", buffer.readUtf8Line().toString())
         assertEquals("hello", buffer.readUtf8Line().toString())
         assertEquals(buffer.remaining(), 0u)
@@ -147,7 +147,7 @@ class BufferTests {
     @Test
     fun readUtf8LineStartN() {
         val text = "\nhello"
-        val buffer = text.toBuffer()
+        val buffer = text.toUtf8Buffer()
         assertEquals("", buffer.readUtf8Line().toString())
         assertEquals("hello", buffer.readUtf8Line().toString())
         assertEquals(buffer.remaining(), 0u)
@@ -156,7 +156,7 @@ class BufferTests {
     @Test
     fun readUtf8LineMix() {
         val text = "\nhello\r\nhello\nhello\r\n"
-        val buffer = text.toBuffer()
+        val buffer = text.toUtf8Buffer()
         assertEquals("", buffer.readUtf8Line().toString())
         assertEquals("hello", buffer.readUtf8Line().toString())
         assertEquals("hello", buffer.readUtf8Line().toString())
@@ -169,7 +169,7 @@ class BufferTests {
     @Test
     fun readUtf8LineMixMulti() {
         val text = "\nhello\r\n\nhello\n\nhello\r\n"
-        val buffer = text.toBuffer()
+        val buffer = text.toUtf8Buffer()
         assertEquals("", buffer.readUtf8Line().toString())
         assertEquals("hello", buffer.readUtf8Line().toString())
         assertEquals("", buffer.readUtf8Line().toString())
@@ -185,7 +185,7 @@ class BufferTests {
         val stringArray = "yolo swag lyfestyle".split(' ')
         assertEquals(3, stringArray.size)
         val newLineString = stringArray.joinToString("\r\n")
-        val stringBuffer = newLineString.toBuffer()
+        val stringBuffer = newLineString.toUtf8Buffer()
         stringArray.forEach {
             val line = stringBuffer.readUtf8Line()
             assertEquals(it, line.toString())

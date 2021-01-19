@@ -5,7 +5,7 @@ package mqtt.socket
 import mqtt.buffer.allocateNewBuffer
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.SuspendCloseable
-import mqtt.buffer.toBuffer
+import mqtt.buffer.toUtf8Buffer
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
@@ -30,8 +30,8 @@ interface ClientSocket : SuspendCloseable {
     }
 
     suspend fun write(buffer: PlatformBuffer, timeout: Duration = 1.seconds): Int
-    suspend fun write(buffer: String, timeout: Duration = 1.seconds): Int
-            = write(buffer.toBuffer().also { it.position(it.limit().toInt()) }, timeout)
+    suspend fun write(buffer: String, timeout: Duration = 1.seconds): Int =
+        write(buffer.toUtf8Buffer().also { it.position(it.limit().toInt()) }, timeout)
 
 }
 

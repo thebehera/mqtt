@@ -7,5 +7,5 @@ fun allocateNewBuffer(size: Int) = allocateNewBuffer(size.toUInt())
 
 expect fun allocateNewBuffer(size: UInt): PlatformBuffer
 
-expect fun String.toBuffer(): PlatformBuffer
+expect fun String.toUtf8Buffer(): PlatformBuffer
 expect fun String.utf8Length(): UInt
