@@ -1,8 +1,8 @@
 package mqtt.client
 
-import mqtt.buffer.VARIABLE_BYTE_INT_MAX
 import mqtt.socket.SuspendingInputStream
 import mqtt.wire.buffer.MalformedInvalidVariableByteInteger
+import mqtt.wire.buffer.VARIABLE_BYTE_INT_MAX
 import kotlin.experimental.and
 import kotlin.time.ExperimentalTime
 

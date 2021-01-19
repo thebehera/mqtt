@@ -2,7 +2,6 @@ package mqtt.wire.buffer
 
 import mqtt.buffer.PlatformBuffer
 import mqtt.buffer.ReadBuffer
-import mqtt.buffer.VARIABLE_BYTE_INT_MAX
 import kotlin.experimental.and
 
 

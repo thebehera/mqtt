@@ -42,6 +42,7 @@ class Client(
     private fun isConnected() = connectionState is ConnectionState.Connected
 
     suspend fun connectAsync() = scope.async {
+        println("CONNECT ASYNC")
         reconnectCount++
         val request = connectionOptions.request
         if (request.cleanStart) {
@@ -55,6 +56,7 @@ class Client(
                 ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
             controller
         }
+        println("WRITING $request")
         socketController?.write(request)
         scope.launch {
             routeIncomingMessages()
@@ -98,8 +100,10 @@ class Client(
         var currentDelay = initialFailureDelay
         while (isActive) {
             try {
-                connectAsync().await()
-                connectionState = ConnectionState.Reconnecting(null, currentDelay)
+                println("RAHUL CONNECTING")
+                val result = connectAsync().await()
+                println("RAHUL CONNECTED $result")
+                connectionState = ConnectionState.Connected(result, socketController!!)
             } catch (e: Exception) {
                 connectionState = ConnectionState.Reconnecting(e, currentDelay)
                 socketController?.close()

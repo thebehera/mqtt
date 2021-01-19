@@ -6,9 +6,12 @@ import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.promise
-import mqtt.buffer.*
+import mqtt.buffer.JsBuffer
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.allocateNewBuffer
 import mqtt.connection.IConnectionOptions
 import mqtt.wire.buffer.MalformedInvalidVariableByteInteger
+import mqtt.wire.buffer.VARIABLE_BYTE_INT_MAX
 import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.ControlPacketFactory
 import org.khronos.webgl.ArrayBuffer

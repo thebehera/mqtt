@@ -2,6 +2,8 @@ package mqtt.client
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.Context.BIND_AUTO_CREATE
+import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
 import android.os.RemoteException
@@ -24,9 +26,11 @@ class MqttAppServiceConnection private constructor(
 ) {
     private val database = Database(driver)
 
-    fun addServerAsync(serverOptions: IConnectionOptions) = scope.async {
+    suspend fun addServerAsync(serverOptions: IConnectionOptions): Long {
+        Log.i("RAHUL", "add Server async $serverOptions")
         val request = serverOptions.request as ConnectionRequest<ByteArray>
         val insertedConnectionId = withContext(Dispatchers.IO) {
+            Log.i("RAHUL", "Dispatch IO")
             database.transactionWithResult<Long> {
                 database.connectionsQueries.addConnection(
                     serverOptions.name,
@@ -35,6 +39,7 @@ class MqttAppServiceConnection private constructor(
                     serverOptions.websocketEndpoint
                 )
                 val insertedConnectionId = database.connectionsQueries.lastInsertRowId().executeAsOne()
+                Log.i("RAHUL", "QUEUE($insertedConnectionId): $request")
                 database.controlPacketMqtt4Queries.queueConnectionRequest(
                     insertedConnectionId,
                     request.variableHeader.protocolName.toString(),
@@ -53,18 +58,20 @@ class MqttAppServiceConnection private constructor(
                 insertedConnectionId
             }
         }
+
         try {
             service.addServer(insertedConnectionId, request.mqttVersion)
         } catch (e: RemoteException) {
             Log.e(
-                "MqttAppServiceConnection",
+                "[MASC]",
                 "We lost connection to the service, but that's ok as we already queued the connection",
                 e
             )
         }
+        return insertedConnectionId
     }
 
-    fun publishAsync(
+    fun publish(
         connectionId: Long,
         topicName: String,
         payload: String? = null,
@@ -81,9 +88,9 @@ class MqttAppServiceConnection private constructor(
         contentType: CharSequence? = null
     ) = scope.async {
         if (qos == QualityOfService.AT_MOST_ONCE) {
-//            service.
+            service.publishQos0(connectionId, topicName, payload?.toByteArray())
         } else {
-            database.transactionWithResult<Long> {
+            val packetId = database.transactionWithResult<Long> {
                 val packetId =
                     database.controlPacketMqtt4Queries.findUnusedPacketIdentifier(connectionId).executeAsOne()
                 database.controlPacketMqtt4Queries.publish4(
@@ -97,6 +104,7 @@ class MqttAppServiceConnection private constructor(
                 )
                 packetId
             }
+            service.publish(connectionId, packetId)
         }
     }
 
@@ -106,7 +114,7 @@ class MqttAppServiceConnection private constructor(
             service.removeServer(connectionId)
         } catch (e: RemoteException) {
             Log.e(
-                "MqttAppServiceConnection",
+                "[MASC]",
                 "We lost connection to the service, but that's ok as we already queued the connection",
                 e
             )
@@ -116,18 +124,22 @@ class MqttAppServiceConnection private constructor(
     companion object {
         fun getMqttServiceConnectionAsync(context: Context, parent: CoroutineScope) = parent.async {
             val driver = async { createDriver("mqtt", AndroidContextProvider(context)) }
-            val service = suspendCoroutine<IRemoteMqttService> {
-                object : ServiceConnection {
+            val binder = suspendCoroutine<IBinder> {
+                val serviceConn = object : ServiceConnection {
                     override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-                        it.resume(IRemoteMqttService.Stub.asInterface(binder)!!)
+                        it.resume(binder)
                     }
 
-                    override fun onServiceDisconnected(name: ComponentName?) {
+                    override fun onServiceDisconnected(name: ComponentName) {
                         cancel()
                     }
                 }
+                context.bindService(Intent(context, MqttService::class.java), serviceConn, BIND_AUTO_CREATE)
+                serviceConn
             }
+            val service = IRemoteMqttService.Stub.asInterface(binder)
             MqttAppServiceConnection(driver.await(), service, this)
         }
+
     }
 }

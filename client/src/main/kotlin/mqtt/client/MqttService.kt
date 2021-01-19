@@ -3,6 +3,7 @@ package mqtt.client
 import android.app.Service
 import android.content.Intent
 import android.content.res.AssetFileDescriptor
+import android.util.Log
 import kotlinx.coroutines.*
 import mqtt.connection.ConnectionOptions
 import mqtt.connection.IConnectionOptions
@@ -17,16 +18,19 @@ import kotlin.time.milliseconds
 class MqttService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private lateinit var persistence: DatabasePersistence
+    private val clients = mutableMapOf<Long, Client>()
 
     val binder = object : IRemoteMqttService.Stub() {
-        private val clients = mutableMapOf<Long, Client>()
         override fun addServer(connectionId: Long, mqttVersion: Byte) {
+            Log.i("RAHUL", "Add Server $connectionId, $mqttVersion")
             scope.launch {
                 val connection = persistence.database.connectionsQueries.findConnection(connectionId).executeAsOne()
                 val connectionOptions: IConnectionOptions = if (mqttVersion == 4.toByte()) {
                     val connectionRequestWrapper =
-                        persistence.database.controlPacketMqtt4Queries.findConnectionRequest(connectionId)
-                            .executeAsOne()
+                        withContext(Dispatchers.IO) {
+                            persistence.database.controlPacketMqtt4Queries.findConnectionRequest(connectionId)
+                                .executeAsOne()
+                        }
                     val willPayload = connectionRequestWrapper.willPayload
                     val username = connectionRequestWrapper.username
                     val password = connectionRequestWrapper.password
@@ -62,6 +66,7 @@ class MqttService : Service() {
                 }
                 val client = Client(connectionOptions, null, persistence, scope = scope)
                 clients[connectionId] = client
+                Log.i("RAHUL", "Connect! $connectionId, $mqttVersion")
                 client.stayConnectedAsync()
             }
         }
@@ -72,11 +77,30 @@ class MqttService : Service() {
             }
         }
 
-        override fun publish(connectionId: Long, packetId: Long, topicName: String?) {
-
+        override fun publish(connectionId: Long, packetId: Long) {
+            val client = clients[connectionId] ?: return
+            scope.launch {
+                val msg = persistence.database.controlPacketMqtt4Queries.findPublish4PacketId(connectionId, packetId)
+                    .executeAsOneOrNull() ?: return@launch
+                client.publishAsync(
+                    msg.topicName,
+                    msg.payload?.decodeToString(),
+                    QualityOfService.from(msg.qos),
+                    msg.dup == 1L,
+                    msg.retain == 1L
+                ).await()
+            }
         }
 
-        override fun publishQos0(connectionId: Long, topicName: String?, payload: AssetFileDescriptor?) {
+        override fun publishQos0(connectionId: Long, topicName: String, payload: ByteArray?) {
+            val client = clients[connectionId] ?: return
+            scope.launch {
+                client.publishAsync(topicName, payload?.decodeToString(), QualityOfService.AT_MOST_ONCE).await()
+            }
+        }
+
+
+        override fun publishQos0Fd(connectionId: Long, topicName: String?, payload: AssetFileDescriptor?) {
 
         }
 

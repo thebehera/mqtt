@@ -1,4 +1,9 @@
-package mqtt.buffer
+package mqtt.socket
+
+import mqtt.buffer.PlatformBuffer
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.allocateNewBuffer
+import mqtt.buffer.utf8Length
 
 /**
  * Provides a single ReadBuffer interface that delegates to multiple buffers.
@@ -78,7 +83,7 @@ class FragmentedReadBuffer(
             val initialFirstPosition = first.position()
             val firstUtf8 = first.readUtf8Line()
             val bytesRead = first.position() - initialFirstPosition
-            return if (firstUtf8.toString().utf8Length() == bytesRead) {
+            return if (firstUtf8.toString().utf8Length().toLong() == bytesRead.toLong()) {
                 // read the entire string, check the second one
                 currentPosition = firstInitialLimit
                 val secondInitialPosition = second.position()

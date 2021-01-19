@@ -79,8 +79,11 @@ class SocketController private constructor(
             scope: CoroutineScope,
             connectionOptions: IConnectionOptions
         ): SocketController? {
+            println("get client socket")
             val socket = getClientSocket() ?: return null
+            println("opening")
             socket.open(port = connectionOptions.port.toUShort(), hostname = connectionOptions.name)
+            println("opened")
             val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
             scope.launch {
                 while (isActive && socket.isOpen()) {
@@ -94,6 +97,7 @@ class SocketController private constructor(
                     }
                 }
             }
+            println("return")
             return SocketController(
                 scope,
                 connectionOptions.request.controlPacketFactory,

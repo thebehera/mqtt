@@ -1,4 +1,7 @@
-package mqtt.buffer
+package mqtt.socket
+
+import mqtt.buffer.ReadBuffer
+import mqtt.buffer.allocateNewBuffer
 
 @ExperimentalUnsignedTypes
 class TransformedReadBuffer(val origin: ReadBuffer, val transformer: ((UInt, Byte) -> Byte)) : ReadBuffer {

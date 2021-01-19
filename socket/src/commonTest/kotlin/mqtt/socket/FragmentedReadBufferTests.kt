@@ -1,7 +1,9 @@
 @file:Suppress("EXPERIMENTAL_UNSIGNED_LITERALS")
 
-package mqtt.buffer
+package mqtt.socket
 
+import mqtt.buffer.allocateNewBuffer
+import mqtt.buffer.toBuffer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

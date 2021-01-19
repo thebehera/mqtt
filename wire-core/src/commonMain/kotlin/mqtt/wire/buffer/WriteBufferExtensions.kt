@@ -1,6 +1,5 @@
 package mqtt.wire.buffer
 
-import mqtt.buffer.VARIABLE_BYTE_INT_MAX
 import mqtt.buffer.WriteBuffer
 import mqtt.buffer.utf8Length
 import kotlin.experimental.or
