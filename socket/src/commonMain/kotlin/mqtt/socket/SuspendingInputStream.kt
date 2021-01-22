@@ -23,7 +23,9 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
             while (isActive && socket.isOpen()) {
                 try {
                     val platformBuffer = allocateNewBuffer(8192u)
+                    println("reading $platformBuffer")
                     val bytesRead = socket.read(platformBuffer, timeout)
+                    println("read $platformBuffer $bytesRead")
                     lastMessageReceived = TimeSource.Monotonic.markNow()
                     if (bytesRead == -1) {
                         return@launch

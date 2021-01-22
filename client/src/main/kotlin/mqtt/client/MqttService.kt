@@ -3,7 +3,6 @@ package mqtt.client
 import android.app.Service
 import android.content.Intent
 import android.content.res.AssetFileDescriptor
-import android.util.Log
 import kotlinx.coroutines.*
 import mqtt.client.persistence.DatabasePersistence
 import mqtt.connection.ConnectionOptions
@@ -23,7 +22,6 @@ class MqttService : Service() {
 
     val binder = object : IRemoteMqttService.Stub() {
         override fun addServer(connectionId: Long, mqttVersion: Byte) {
-            Log.i("RAHUL", "Add Server $connectionId, $mqttVersion")
             scope.launch {
                 val connection = persistence.database.connectionsQueries.findConnection(connectionId).executeAsOne()
                 val connectionOptions: IConnectionOptions = if (mqttVersion == 4.toByte()) {
@@ -67,7 +65,6 @@ class MqttService : Service() {
                 }
                 val client = Client(connectionOptions, null, persistence, scope = scope)
                 clients[connectionId] = client
-                Log.i("RAHUL", "Connect! $connectionId, $mqttVersion")
                 client.stayConnectedAsync()
             }
         }

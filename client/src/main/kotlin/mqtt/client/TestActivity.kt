@@ -18,9 +18,10 @@ class TestActivity : Activity() {
         val context = this
         mainScope.launch(Dispatchers.Default) {
             val service = MqttAppServiceConnection.getMqttServiceConnectionAsync(context, this).await()
-            val request = ConnectionRequest<Unit>("rahultest2", keepAliveSeconds = 15, cleanSession = true)
+            val request = ConnectionRequest<Unit>("rahultest2", keepAliveSeconds = 2000, cleanSession = true)
             Log.i("RAHUL", "Pre- Add Server async")
-            val connectionId = service.addServerAsync(ConnectionOptions("10.0.2.2", 60000, request))
+            val port = 60_000
+            val connectionId = service.addServerAsync(ConnectionOptions("10.0.2.2", port, request))
             service.publish(connectionId, "hello", System.currentTimeMillis().toString())
         }
     }

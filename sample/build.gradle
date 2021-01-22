@@ -8,9 +8,7 @@ repositories {
     mavenCentral()
 }
 
-apply from: "../gradle/android.gradle"
 kotlin {
-    android()
     jvm()
     sourceSets {
         commonMain {
@@ -26,11 +24,6 @@ kotlin {
             dependencies {
                 implementation kotlin('test-common')
                 implementation kotlin('test-annotations-common')
-            }
-        }
-        androidMain{
-            dependencies {
-                implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.4.1"
             }
         }
     }

@@ -50,11 +50,13 @@ class SocketController private constructor(
         try {
             while (scope.isActive && socket.isOpen()) {
                 lastMessageReceived = inputStream.lastMessageReceived
+                println("reading")
                 val byte1 = inputStream.readUnsignedByte()
                 val remainingLength = inputStream.readVariableByteInteger()
                 val packet = inputStream.readTyped(remainingLength.toLong()) { readBuffer ->
                     controlPacketFactory.from(readBuffer, byte1, remainingLength)
                 }
+                println("IN : $packet")
                 emit(packet)
             }
         } catch (e: ClosedReceiveChannelException) {
@@ -79,11 +81,8 @@ class SocketController private constructor(
             scope: CoroutineScope,
             connectionOptions: IConnectionOptions
         ): SocketController? {
-            println("get client socket")
             val socket = getClientSocket() ?: return null
-            println("opening")
             socket.open(port = connectionOptions.port.toUShort(), hostname = connectionOptions.name)
-            println("opened")
             val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
             scope.launch {
                 while (isActive && socket.isOpen()) {
@@ -92,12 +91,14 @@ class SocketController private constructor(
                             acc + controlPacket.packetSize()
                         }
                         val buffer = allocateNewBuffer(totalBufferSize)
-                        packets.forEach { packet -> packet.serialize(buffer) }
+                        packets.forEach { packet ->
+                            println("OUT : $packet")
+                            packet.serialize(buffer)
+                        }
                         socket.write(buffer, connectionOptions.request.keepAliveTimeout * 1.5)
                     }
                 }
             }
-            println("return")
             return SocketController(
                 scope,
                 connectionOptions.request.controlPacketFactory,

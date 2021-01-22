@@ -48,7 +48,6 @@ class Client(
     private fun isConnected() = connectionState is ConnectionState.Connected
 
     suspend fun connectAsync() = scope.async {
-        println("CONNECT ASYNC")
         reconnectCount++
         val request = connectionOptions.request
         if (request.cleanStart) {
@@ -106,7 +105,6 @@ class Client(
         var currentDelay = initialFailureDelay
         while (isActive) {
             try {
-                println("RAHUL CONNECTING")
                 val result = connectAsync().await()
                 println("RAHUL CONNECTED $result")
                 connectionState = ConnectionState.Connected(result, socketController!!)

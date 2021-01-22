@@ -27,10 +27,8 @@ class MqttAppServiceConnection private constructor(
     private val database = Database(driver)
 
     suspend fun addServerAsync(serverOptions: IConnectionOptions): Long {
-        Log.i("RAHUL", "add Server async $serverOptions")
         val request = serverOptions.request as ConnectionRequest<ByteArray>
         val insertedConnectionId = withContext(Dispatchers.IO) {
-            Log.i("RAHUL", "Dispatch IO")
             database.transactionWithResult<Long> {
                 database.connectionsQueries.addConnection(
                     serverOptions.name,
@@ -39,7 +37,6 @@ class MqttAppServiceConnection private constructor(
                     serverOptions.websocketEndpoint
                 )
                 val insertedConnectionId = database.connectionsQueries.lastInsertRowId().executeAsOne()
-                Log.i("RAHUL", "QUEUE($insertedConnectionId): $request")
                 database.controlPacketMqtt4Queries.queueConnectionRequest(
                     insertedConnectionId,
                     request.variableHeader.protocolName.toString(),
