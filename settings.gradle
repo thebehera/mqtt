@@ -12,5 +12,8 @@ plugins {
 }
 enableFeaturePreview('GRADLE_METADATA')
 
-include ':wire-core', ':wire5', ':wire4', ':client', ':server', ':socket', ':http', ":buffer", ':persistence', ":sample", ":sample-android"
+include ':wire-core', ':wire5', ':wire4', ':client', ':server', ':socket', ':http', ":buffer", ':persistence', ":sample"
+if (System.getenv("ANDROID_HOME")) {
+    include ":sample-android"
+}
 
