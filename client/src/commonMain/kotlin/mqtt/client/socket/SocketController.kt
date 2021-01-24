@@ -92,10 +92,13 @@ class SocketController private constructor(
                         }
                         val buffer = allocateNewBuffer(totalBufferSize)
                         packets.forEach { packet ->
-                            println("OUT : $packet")
+                            println("OUT : $packet $buffer")
                             packet.serialize(buffer)
+                            println("OUTB : $buffer")
                         }
                         socket.write(buffer, connectionOptions.request.keepAliveTimeout * 1.5)
+                        buffer.resetForRead()
+                        println("OUTB5 : ${packets.first().controlPacketFactory.from(buffer)} $buffer")
                     }
                 }
             }

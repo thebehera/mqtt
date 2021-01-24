@@ -9,7 +9,6 @@ import kotlinx.coroutines.withContext
 import mqtt.persistence.db.*
 import mqtt.wire.buffer.GenericType
 import mqtt.wire.control.packet.*
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
@@ -114,7 +113,7 @@ class DatabasePersistence(
         database.transaction {
             val unusedPacketId = queries4.findUnusedPacketIdentifier(connectionId).executeAsOne()
             unsub.topics.forEach {
-                queries4.unsubscribe4(connectionId, unusedPacketId, it.value.toString())
+                queries4.unsubscribe4(connectionId, unusedPacketId, it.toString())
             }
         }
     }
@@ -144,7 +143,7 @@ class DatabasePersistence(
             val packetId = it.packetIdentifier.toUShort()
             val unsub =
                 map.getOrPut(packetId) { UnsubscribeRequest(packetId.toInt(), mutableListOf()) } as UnsubscribeRequest
-            (unsub.topics as MutableList<MqttUtf8String>) += MqttUtf8String(it.topicFilter)
+            (unsub.topics as MutableList<CharSequence>) += it.topicFilter
         }
         pubs.forEach {
             val packetId = it.packetIdentifier.toUShort()

@@ -3,7 +3,6 @@
 package mqtt.wire.data.topic
 
 import mqtt.wire.ProtocolError
-import mqtt.wire.data.MqttUtf8String
 import kotlin.test.*
 
 class NodeTests {
@@ -63,33 +62,33 @@ class NodeTests {
 
     @Test
     fun singleLevelWildcardInBetweeenTopicLevelsExactTopicMatches() {
-        val topic1 = Node.from(MqttUtf8String("sport/+/p1"))
-        val topic2 = Node.from(MqttUtf8String("sport/+/p1"))
+        val topic1 = Node.from(("sport/+/p1"))
+        val topic2 = Node.from(("sport/+/p1"))
         assertTrue(topic1.matchesTopic(topic2))
     }
 
     @Test
     fun singleLevelWildcardInBetweeenTopicLevels() {
-        val topic = Node.from(MqttUtf8String("sport/+/p1"))
-        topic += Node.from(MqttUtf8String("sport/+/p2"))
-        topic += Node.from(MqttUtf8String("sportw/+/p2"))
+        val topic = Node.from(("sport/+/p1"))
+        topic += Node.from(("sport/+/p2"))
+        topic += Node.from(("sportw/+/p2"))
         assertTrue(topic.matchesTopic(Node.parse("sport/yolo/p1")))
     }
 
     @Test
     fun addTopicStructures() {
-        val mergedTopic = Node.from(MqttUtf8String("sport/+/p1")).root()
-        mergedTopic += Node.from(MqttUtf8String("sport/+/p2")).root()
+        val mergedTopic = Node.from("sport/+/p1").root()
+        mergedTopic += Node.from("sport/+/p2").root()
         assertTrue(mergedTopic.matchesTopic(Node.parse("sport/+/p1")))
         assertTrue(mergedTopic.matchesTopic(Node.parse("sport/+/p2")))
     }
 
     @Test
     fun removeTopicStructures() {
-        val mergedTopic = Node.from(MqttUtf8String("sport/+/p1")).root()
-        mergedTopic += Node.from(MqttUtf8String("sport/+/p2")).root()
+        val mergedTopic = Node.from("sport/+/p1").root()
+        mergedTopic += Node.from("sport/+/p2").root()
 
-        mergedTopic -= Node.from(MqttUtf8String("sport/+/p2"))
+        mergedTopic -= Node.from("sport/+/p2")
         assertEquals(mergedTopic.children.values.first().children.size, 1)
         assertEquals(mergedTopic.allChildren().first().toString(), "sport/+/p1")
     }

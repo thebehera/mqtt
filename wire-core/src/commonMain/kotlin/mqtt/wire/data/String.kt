@@ -47,10 +47,6 @@ data class MqttUtf8String(val value: CharSequence) {
         return value
     }
 
-    override fun equals(other: Any?): Boolean {
-        return value.toString() == ((other as? MqttUtf8String)?.value).toString()
-    }
-
     private val exception: InvalidMqttUtf8StringMalformedPacketException?
         get() {
             if (value.length > 65_535) {

@@ -10,7 +10,6 @@ import mqtt.connection.IConnectionOptions
 import mqtt.persistence.AndroidContextProvider
 import mqtt.persistence.createDriver
 import mqtt.wire.buffer.GenericType
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.time.milliseconds
@@ -35,7 +34,7 @@ class MqttService : Service() {
                     val password = connectionRequestWrapper.password
                     val request = ConnectionRequest(
                         ConnectionRequest.VariableHeader(
-                            MqttUtf8String(connectionRequestWrapper.protocolName),
+                            connectionRequestWrapper.protocolName,
                             connectionRequestWrapper.protocolVersion.toByte(),
                             username != null,
                             password != null,
@@ -46,11 +45,11 @@ class MqttService : Service() {
                             connectionRequestWrapper.keepAliveSeconds.toInt()
                         ),
                         ConnectionRequest.Payload(
-                            MqttUtf8String(connectionRequestWrapper.clientId),
-                            MqttUtf8String(connectionRequestWrapper.willTopic.toString()),
+                            connectionRequestWrapper.clientId,
+                            connectionRequestWrapper.willTopic,
                             if (willPayload != null) GenericType(willPayload, ByteArray::class) else null,
-                            username?.let { MqttUtf8String(it) },
-                            password?.let { MqttUtf8String(it) }
+                            username,
+                            password
                         )
                     )
                     ConnectionOptions(

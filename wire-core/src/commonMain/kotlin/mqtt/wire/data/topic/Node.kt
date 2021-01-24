@@ -5,7 +5,6 @@ package mqtt.wire.data.topic
 import mqtt.wire.buffer.BufferDeserializer
 import mqtt.wire.buffer.BufferSerializer
 import mqtt.wire.control.packet.IPublishMessage
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 
 data class Node internal constructor(val level: TopicLevel) {
@@ -89,7 +88,7 @@ data class Node internal constructor(val level: TopicLevel) {
         private const val TOPIC_SEPERATOR = '/'
         internal const val ROOT_TOPIC_NODE_VALUE = "\$SYS_ROOT_TOPIC_DEFAULT"
 
-        fun from(topic: MqttUtf8String) = parse(topic.getValueOrThrow())
+        fun from(topic: CharSequence) = parse(topic)
 
         fun parse(topic: CharSequence): Node {
             val rootNode = Node(RootTopicValue)

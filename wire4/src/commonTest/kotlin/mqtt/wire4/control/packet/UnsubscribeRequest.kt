@@ -3,7 +3,6 @@
 package mqtt.wire4.control.packet
 
 import mqtt.buffer.allocateNewBuffer
-import mqtt.wire.data.MqttUtf8String
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -13,11 +12,11 @@ class UnsubscribeRequestTests {
     @Test
     fun basicTest() {
         val buffer = allocateNewBuffer(17u)
-        val unsub = UnsubscribeRequest(packetIdentifier, listOf(MqttUtf8String("yolo"), MqttUtf8String("yolo1")))
+        val unsub = UnsubscribeRequest(packetIdentifier, listOf(("yolo"), ("yolo1")))
         unsub.serialize(buffer)
         buffer.resetForRead()
         val result = ControlPacketV4.from(buffer) as UnsubscribeRequest
-        assertEquals(result.topics.first().getValueOrThrow().toString(), "yolo")
-        assertEquals(result.topics[1].getValueOrThrow().toString(), "yolo1")
+        assertEquals(result.topics.first().toString(), "yolo")
+        assertEquals(result.topics[1].toString(), "yolo1")
     }
 }

@@ -1,7 +1,5 @@
 package mqtt.wire.data.topic
 
-import mqtt.wire.data.MqttUtf8String
-
 /**
  * Represent the topics in a tree like structure. Saves memory for multiple topics with a similar structure compared
  * to using a string and speeds up lookups to see if a topic matches a structure
@@ -161,12 +159,11 @@ data class TopicLevelNode(val value: TopicLevel) {
         /**
          * Convert an MQTT UTF8 Compliant string into a topic level node structure
          */
-        fun from(topic: MqttUtf8String): TopicLevelNode {
-            val topicValidated = topic.getValueOrThrow()
-            if (topicValidated.isEmpty()) {
+        fun from(topic: CharSequence): TopicLevelNode {
+            if (topic.isEmpty()) {
                 return TopicLevelNode(EmptyValue)
             }
-            return parse(topicValidated.toString()) ?: TopicLevelNode(EmptyValue)
+            return parse(topic.toString()) ?: TopicLevelNode(EmptyValue)
         }
 
         /**

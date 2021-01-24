@@ -6,6 +6,7 @@ import mqtt.wire.data.QualityOfService.AT_LEAST_ONCE
 import mqtt.wire.data.QualityOfService.EXACTLY_ONCE
 import mqtt.wire4.control.packet.ConnectionRequest
 import kotlin.random.Random
+import kotlin.test.Test
 import kotlin.test.assertTrue
 import kotlin.time.ExperimentalTime
 
@@ -13,7 +14,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalTime
 class SimpleTests {
 
-//    @Test
+    @Test
     fun mqttSimpleTest() = block {
         println("start test")
         if (getNetworkCapabilities() == NetworkCapabilities.WEBSOCKETS_ONLY) return@block
@@ -46,7 +47,7 @@ class SimpleTests {
         println("disconnected")
     }
 
-    //    @Test
+        @Test
     fun mqttOverWebsocketsSimpleTest() = block {
         println("start ws test")
         val client = Client(

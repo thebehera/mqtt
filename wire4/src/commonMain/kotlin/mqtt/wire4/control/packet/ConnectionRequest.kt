@@ -10,7 +10,6 @@ import mqtt.wire.buffer.*
 import mqtt.wire.control.packet.IConnectionRequest
 import mqtt.wire.control.packet.format.fixed.DirectionOfFlow
 import mqtt.wire.control.packet.format.fixed.get
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.utf8Length
 import kotlin.reflect.KClass
@@ -52,16 +51,14 @@ data class ConnectionRequest<WillPayload : Any>(
                     cleanSession = cleanSession
                 ),
                 Payload(
-                    clientId = MqttUtf8String(clientId),
-                    userName = username?.let { MqttUtf8String(it) },
-                    password = password?.let { MqttUtf8String(it) })
+                    clientId = clientId,
+                    userName = username?.let { it },
+                    password = password?.let { it })
             )
 
-    override val username = payload.userName?.getValueOrThrow()
-
-    override val clientIdentifier = payload.clientId.getValueOrThrow()
-
-    override val protocolName = variableHeader.protocolName.getValueOrThrow()
+    override val username = payload.userName
+    override val clientIdentifier = payload.clientId
+    override val protocolName = variableHeader.protocolName
     override val protocolVersion = variableHeader.protocolLevel.toInt()
     override fun variableHeader(writeBuffer: WriteBuffer) = variableHeader.serialize(writeBuffer)
     override fun payload(writeBuffer: WriteBuffer) = payload.serialize(writeBuffer)
@@ -124,7 +121,7 @@ data class ConnectionRequest<WillPayload : Any>(
          *
          * Packet inspectors, such as firewalls, could use the Protocol Name to identify MQTT traffic.
          */
-        val protocolName: MqttUtf8String = MqttUtf8String("MQTT"),
+        val protocolName: CharSequence = "MQTT",
         /**
          * 3.1.2.2 Protocol Version
          *
@@ -356,13 +353,13 @@ data class ConnectionRequest<WillPayload : Any>(
             val wFlag = if (willFlag) 0b100 else 0
             val cleanStart = if (cleanSession) 0b10 else 0
             val flags = (usernameFlag or passwordFlag or wRetain or qos or wFlag or cleanStart).toByte()
-            writeBuffer.writeMqttUtf8String(protocolName.value)
+            writeBuffer.writeMqttUtf8String(protocolName)
             writeBuffer.write(protocolLevel.toUByte())
             writeBuffer.write(flags)
             writeBuffer.write(keepAliveSeconds.toUShort())
         }
 
-        fun size() = protocolName.value.utf8Length().toUInt() + 6u
+        fun size() = protocolName.utf8Length().toUInt() + 6u
 
         companion object {
 
@@ -386,7 +383,7 @@ data class ConnectionRequest<WillPayload : Any>(
                 }
                 val keepAliveSeconds = buffer.readUnsignedShort()
                 return VariableHeader(
-                    MqttUtf8String(protocolName),
+                    protocolName,
                     protocolVersion.toByte(),
                     hasUsername,
                     hasPassword,
@@ -446,14 +443,14 @@ data class ConnectionRequest<WillPayload : Any>(
          * A Client implementation could provide a convenience method to generate a random ClientId. Use of such a
          * method should be actively discouraged when the CleanSession is set to 0.
          */
-        val clientId: MqttUtf8String = MqttUtf8String(""),
+        val clientId: CharSequence = "",
         /**
          * 3.1.3.2 Will Topic
          *
          * If the Will Flag is set to 1, the Will Topic is the next field in the payload. The Will Topic MUST be a
          * UTF-8 encoded string as defined in Section 1.5.3 [MQTT-3.1.3-10].
          */
-        val willTopic: MqttUtf8String? = null,
+        val willTopic: CharSequence? = null,
         /**
          * 3.1.3.3 Will Message
          * If the Will Flag is set to 1 the Will Message is the next field in the payload. The Will Message defines
@@ -473,7 +470,7 @@ data class ConnectionRequest<WillPayload : Any>(
          * encoded string as defined in Section 1.5.3 [MQTT-3.1.3-11]. It can be used by the Server for
          * authentication and authorization.
          */
-        val userName: MqttUtf8String? = null,
+        val userName: CharSequence? = null,
         /**
          * 3.1.3.5 Password
          *
@@ -481,39 +478,39 @@ data class ConnectionRequest<WillPayload : Any>(
          * to 65535 bytes of binary data prefixed with a two byte length field which indicates the number of bytes
          * used by the binary data (it does not include the two bytes taken up by the length field itself).
          */
-        val password: MqttUtf8String? = null
+        val password: CharSequence? = null
     ) {
 
         fun size(): UInt {
-            var size = 2u + clientId.value.utf8Length().toUInt()
+            var size = 2u + clientId.utf8Length().toUInt()
             if (willTopic != null) {
-                size += 2u + willTopic.value.utf8Length().toUInt()
+                size += 2u + willTopic.utf8Length().toUInt()
             }
             if (willPayload != null) {
                 size += GenericSerialization.size(willPayload.obj, willPayload.kClass)
             }
             if (userName != null) {
-                size += 2u + userName.value.utf8Length().toUInt()
+                size += 2u + userName.utf8Length().toUInt()
             }
             if (password != null) {
-                size += 2u + password.value.utf8Length().toUInt()
+                size += 2u + password.utf8Length().toUInt()
             }
             return size
         }
 
         fun serialize(writeBuffer: WriteBuffer) {
-            writeBuffer.writeMqttUtf8String(clientId.value)
+            writeBuffer.writeMqttUtf8String(clientId)
             if (willTopic != null) {
-                writeBuffer.writeMqttUtf8String(willTopic.value)
+                writeBuffer.writeMqttUtf8String(willTopic)
             }
             if (willPayload != null) {
                 writeBuffer.writeGenericType(willPayload)
             }
             if (userName != null) {
-                writeBuffer.writeMqttUtf8String(userName.value)
+                writeBuffer.writeMqttUtf8String(userName)
             }
             if (password != null) {
-                writeBuffer.writeMqttUtf8String(password.value)
+                writeBuffer.writeMqttUtf8String(password)
             }
         }
 
@@ -525,22 +522,22 @@ data class ConnectionRequest<WillPayload : Any>(
             ): Payload<*> {
                 val clientId = buffer.readMqttUtf8StringNotValidated()
                 val willTopic = if (variableHeader.willFlag) {
-                    MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                    buffer.readMqttUtf8StringNotValidated()
                 } else {
                     null
                 }
                 val willPayload = if (variableHeader.willFlag) {
                     val length = buffer.readUnsignedShort().toUInt()
                     val headers = HashMap<CharSequence, HashSet<CharSequence>>()
-                    headers.add("${variableHeader.protocolName.value} Control Packet Value", "1")
-                    headers.add("Protocol Name", variableHeader.protocolName.value)
+                    headers.add("${variableHeader.protocolName} Control Packet Value", "1")
+                    headers.add("Protocol Name", variableHeader.protocolName)
                     headers.add("Protocol Level", variableHeader.protocolLevel.toString())
                     headers.add(
-                        "${variableHeader.protocolName.value} Will Retain",
+                        "${variableHeader.protocolName} Will Retain",
                         variableHeader.willRetain.toString()
                     )
-                    headers.add("${variableHeader.protocolName.value} Will QoS", variableHeader.willQos.toString())
-                    headers.add("${variableHeader.protocolName.value} Will Topic", willTopic!!.value)
+                    headers.add("${variableHeader.protocolName} Will QoS", variableHeader.willQos.toString())
+                    headers.add("${variableHeader.protocolName} Will Topic", willTopic!!)
                     val params =
                         DeserializationParameters(buffer, length, ConnectionRequest.toString(), headers = headers)
                     val obj = readGenericType(params)!!
@@ -550,16 +547,16 @@ data class ConnectionRequest<WillPayload : Any>(
                     null
                 }
                 val username = if (variableHeader.hasUserName) {
-                    MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                    buffer.readMqttUtf8StringNotValidated()
                 } else {
                     null
                 }
                 val password = if (variableHeader.hasPassword) {
-                    MqttUtf8String(buffer.readMqttUtf8StringNotValidated())
+                    buffer.readMqttUtf8StringNotValidated()
                 } else {
                     null
                 }
-                return Payload(MqttUtf8String(clientId), willTopic, willPayload, username, password)
+                return Payload(clientId, willTopic, willPayload, username, password)
             }
         }
     }

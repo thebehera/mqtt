@@ -63,6 +63,7 @@ class Client(
         }
         println("WRITING $request")
         socketController?.write(request)
+        println("WROTE $request")
         scope.launch {
             routeIncomingMessages()
         }

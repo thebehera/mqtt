@@ -2,8 +2,6 @@
 
 package mqtt.wire.data.topic
 
-import mqtt.wire.data.MqttUtf8String
-
 /**
  * The topic level separator is used to introduce structure into the Topic Name. If present, it divides the Topic Name
  * into multiple “topic levels”.
@@ -17,7 +15,7 @@ inline class Name(val topic: CharSequence) {
 
     fun validate(asServer: Boolean = false): Node? {
         return try {
-            val rootNode = Node.from(MqttUtf8String(topic))
+            val rootNode = Node.from(topic)
             if (rootNode.isWildcard) {
                 return null
             }
@@ -35,7 +33,7 @@ inline class Name(val topic: CharSequence) {
      */
     fun validateTopic(asServer: Boolean = false): TopicLevelNode? {
         return try {
-            val rootNode = TopicLevelNode.from(MqttUtf8String(topic))
+            val rootNode = TopicLevelNode.from(topic)
             if (rootNode.hasWildcardInTopic()) {
                 return null
             }

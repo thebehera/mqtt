@@ -2,12 +2,10 @@
 
 package mqtt.wire.data.topic
 
-import mqtt.wire.data.MqttUtf8String
-
 data class Filter(val topicFilter: CharSequence) {
     fun validate(asServer: Boolean = false): Node? {
         return try {
-            val rootNode = Node.from(MqttUtf8String(topicFilter))
+            val rootNode = Node.from(topicFilter)
             if (!asServer && rootNode.level.value.startsWith('$')) {
                 return null
             }

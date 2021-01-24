@@ -5,8 +5,8 @@ package mqtt.wire4.control.packet
 
 import mqtt.buffer.allocateNewBuffer
 import mqtt.wire.MqttWarning
+import mqtt.wire.buffer.readMqttUtf8StringNotValidated
 import mqtt.wire.buffer.readVariableByteInteger
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.AT_MOST_ONCE
 import mqtt.wire4.control.packet.ConnectionRequest.VariableHeader
@@ -186,7 +186,7 @@ class ConnectionRequestTests {
     fun variableHeaderConnectFlagsByte8HasUsername() {
         val connectionRequest = ConnectionRequest<Unit>(
             VariableHeader(willQos = AT_MOST_ONCE, hasUserName = true),
-            ConnectionRequest.Payload(userName = MqttUtf8String("yolo"))
+            ConnectionRequest.Payload(userName = ("yolo"))
         )
         val buffer = allocateNewBuffer(20u)
         connectionRequest.serialize(buffer)
@@ -226,13 +226,10 @@ class ConnectionRequestTests {
     fun variableHeaderConnectFlagsByte8HasPassword() {
         val connectionRequest = ConnectionRequest<Unit>(
             VariableHeader(willQos = AT_MOST_ONCE, hasPassword = true),
-            ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
+            ConnectionRequest.Payload(password = ("yolo"))
         )
-        val buffer = allocateNewBuffer(20u)
+        val buffer = allocateNewBuffer(connectionRequest.packetSize())
         connectionRequest.serialize(buffer)
-        buffer.resetForRead()
-        val actual = ControlPacketV4.from(buffer)
-        assertEquals(actual, connectionRequest)
         buffer.resetForRead()
         buffer.readByte() // skip the first byte
         buffer.readVariableByteInteger() // skip the remaining length
@@ -263,6 +260,9 @@ class ConnectionRequestTests {
         assertFalse(cleanStart, "invalid byte 8 bit 1 on the CONNECT variable header for cleanSession flag")
         val reserved = connectFlagsPackedInByte.shl(7).shr(7) == 1
         assertFalse(reserved, "invalid byte 8 bit 0 on the CONNECT variable header for reserved flag")
+        buffer.position(0)
+        val actual = ControlPacketV4.from(buffer)
+        assertEquals(actual.toString(), connectionRequest.toString())
     }
 
     @Test
@@ -541,7 +541,7 @@ class ConnectionRequestTests {
         request.serialize(buffer)
         buffer.resetForRead()
         val requestDeserialized = ControlPacketV4.from(buffer)
-        assertEquals(requestDeserialized, request)
+        assertEquals(requestDeserialized.toString(), request.toString())
     }
 
     @Test
@@ -551,7 +551,7 @@ class ConnectionRequestTests {
         request.serialize(buffer)
         buffer.resetForRead()
         val requestDeserialized = ControlPacketV4.from(buffer)
-        assertEquals(requestDeserialized, request)
+        assertEquals(requestDeserialized.toString(), request.toString())
     }
 
 
@@ -559,7 +559,7 @@ class ConnectionRequestTests {
     fun usernameFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
             val connectionRequest = ConnectionRequest<Unit>(
-                payload = ConnectionRequest.Payload(userName = MqttUtf8String("yolo"))
+                payload = ConnectionRequest.Payload(userName = ("yolo"))
             )
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
@@ -583,7 +583,7 @@ class ConnectionRequestTests {
     fun passwordFlagMatchesPayloadFailureCaseNoFlagWithUsername() {
         try {
             val connectionRequest = ConnectionRequest<Unit>(
-                payload = ConnectionRequest.Payload(password = MqttUtf8String("yolo"))
+                payload = ConnectionRequest.Payload(password = ("yolo"))
             )
             val warning = connectionRequest.validateOrGetWarning()
             if (warning != null) throw warning
@@ -601,6 +601,45 @@ class ConnectionRequestTests {
             fail()
         } catch (e: MqttWarning) {
         }
+    }
+
+    @Test
+    fun sampleCodeTestExample() {
+        val connectionRequest = ConnectionRequest<Unit>("rahultest2", keepAliveSeconds = 2000, cleanSession = true)
+        val buffer = allocateNewBuffer(24)
+        connectionRequest.serialize(buffer)
+        buffer.resetForRead()
+        buffer.readByte() // skip the first byte
+        buffer.readVariableByteInteger() // skip the remaining length
+        buffer.readByte() // Length MSB (0)
+        buffer.readByte() // Length LSB (4)
+        buffer.readByte() // 'M' or 0b01001101
+        buffer.readByte() // 'Q' or 0b01010001
+        buffer.readByte() // 'T' or 0b01010100
+        buffer.readByte() // 'T' or 0b01010100
+        buffer.readByte() // 5 or 0b00000101
+        val byte = buffer.readUnsignedByte()
+        val connectFlagsPackedInByte = byte.toInt()
+        val usernameFlag = connectFlagsPackedInByte.shr(7) == 1
+        assertFalse(usernameFlag, "invalid byte 8 bit 7 on the CONNECT variable header for username flag")
+        val passwordFlag = connectFlagsPackedInByte.shl(1).shr(7) == 1
+        assertFalse(passwordFlag, "invalid byte 8 bit 6 on the CONNECT variable header for password flag")
+        val willRetain = connectFlagsPackedInByte.shl(2).shr(7) == 1
+        assertFalse(willRetain, "invalid byte 8 bit 5 on the CONNECT variable header for willRetain flag")
+        val willQosBit4 = connectFlagsPackedInByte.shl(3).shr(7) == 1
+        assertFalse(willQosBit4, "invalid byte 8 bit 4 on the CONNECT variable header for willQosBit4 flag")
+        val willQosBit3 = connectFlagsPackedInByte.shl(4).shr(7) == 1
+        assertFalse(willQosBit3, "invalid byte 8 bit 3 on the CONNECT variable header for willQosBit3 flag")
+        val willQos = QualityOfService.fromBooleans(willQosBit4, willQosBit3)
+        assertEquals(willQos, AT_MOST_ONCE, "invalid byte 8 qos on the CONNECT variable header for willQos flag")
+        val willFlag = connectFlagsPackedInByte.shl(5).shr(7) == 1
+        assertFalse(willFlag, "invalid byte 8 bit 2 on the CONNECT variable header for willFlag flag")
+        val cleanStart = connectFlagsPackedInByte.shl(6).shr(7) == 1
+        assertTrue(cleanStart, "invalid byte 8 bit 1 on the CONNECT variable header for cleanSession flag")
+        val reserved = connectFlagsPackedInByte.shl(7).shr(7) == 1
+        assertFalse(reserved, "invalid byte 8 bit 0 on the CONNECT variable header for reserved flag")
+        assertEquals(2000, buffer.readUnsignedShort().toInt())
+        assertEquals("rahultest2", buffer.readMqttUtf8StringNotValidated().toString())
     }
 
 }

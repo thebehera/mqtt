@@ -8,7 +8,6 @@ import mqtt.wire.control.packet.ControlPacketFactory
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.SubscriptionWrapper
 import mqtt.wire.control.packet.format.ReasonCode
-import mqtt.wire.data.MqttUtf8String
 import mqtt.wire.data.QualityOfService
 
 object ControlPacketV4Factory : ControlPacketFactory {
@@ -27,7 +26,7 @@ object ControlPacketV4Factory : ControlPacketFactory {
     ) = SubscribeRequest(packetIdentifier, subscriptions.map { Subscription(it.topicFilter, it.maximumQos) })
 
     override fun unsubscribe(packetIdentifier: Int, subscriptions: Set<CharSequence>) =
-        UnsubscribeRequest(packetIdentifier, subscriptions.map { MqttUtf8String(it) })
+        UnsubscribeRequest(packetIdentifier, subscriptions.map { it })
 
     override fun <ApplicationMessage : Any, CorrelationData : Any> publish(
         dup: Boolean,

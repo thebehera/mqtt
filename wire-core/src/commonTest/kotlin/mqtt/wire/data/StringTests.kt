@@ -27,18 +27,6 @@ class StringTests {
     @Test
     fun validMqttStringBasic() = assertTrue("abcdef".validateMqttUTF8String())
 
-
-    @Test
-    @JsName("utf8DoesNotHaveNull")
-    fun `MQTT Conformance A UTF-8 Encoded String MUST NOT include an encoding of the null character U+0000`() {
-        val string = MqttUtf8String("\u0000")
-        try {
-            string.getValueOrThrow()
-            fail("should of thrown")
-        } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
-        }
-    }
-
     //TODO: FIX THIS CONFORMANCE TEST!
 //
 //    @Test
@@ -70,54 +58,6 @@ class StringTests {
 //        assertEquals(0x9B.toByte(), packet.readByte())
 //        assertEquals(0x94.toByte(), packet.readByte())
     }
-
-    @Test
-    fun controlCharacterU0001toU001F() {
-        for (c in '\u0001'..'\u001F') {
-            try {
-                val string = MqttUtf8String(c.toString())
-                string.getValueOrThrow()
-                fail("should of thrown")
-            } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
-                e.toString()
-            }
-        }
-    }
-
-
-    @Test
-    fun stringLengthOverflow() {
-        try {
-            MqttUtf8String("a".repeat(65_536)).getValueOrThrow()
-            fail("should of thrown")
-        } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
-        }
-    }
-
-    @Test
-    fun controlCharacterUD800toUDFFF() {
-        for (c in '\uD800'..'\uDFFF') {
-            try {
-                val string = MqttUtf8String(c.toString())
-                string.getValueOrThrow()
-                fail("should of thrown")
-            } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
-            }
-        }
-    }
-
-    @Test
-    fun controlCharacterU007FtoU009F() {
-        for (c in '\u007F'..'\u009F') {
-            try {
-                val string = MqttUtf8String(c.toString())
-                string.getValueOrThrow()
-                fail("should of thrown")
-            } catch (e: InvalidMqttUtf8StringMalformedPacketException) {
-            }
-        }
-    }
-
 
     @Test
     @ExperimentalStdlibApi
