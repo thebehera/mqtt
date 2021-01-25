@@ -27,7 +27,7 @@ class SimpleTests {
         )
         val topic = "hello-${Random.nextLong()}"
         println("connecting")
-        assertTrue(IConnectionAcknowledgment::class.isInstance(client.connectAsync().await()))
+        assertTrue(IConnectionAcknowledgment::class.isInstance(client.connect()))
         println("connected, publish")
         assertTrue(
             IPublishComplete::class.isInstance(
@@ -60,7 +60,7 @@ class SimpleTests {
         )
         val topic = "hello-${Random.nextLong()}"
         println("connecting")
-        assertTrue(IConnectionAcknowledgment::class.isInstance(client.connectAsync().await()))
+        assertTrue(IConnectionAcknowledgment::class.isInstance(client.connect()))
         println("connected, publish")
         assertTrue(
             IPublishComplete::class.isInstance(

@@ -8,6 +8,7 @@ import kotlin.time.TimeMark
 @ExperimentalTime
 interface ISocketController {
     var lastMessageReceived: TimeMark?
+    var lastMessageSent: TimeMark?
     suspend fun write(controlPacket: ControlPacket)
 
     suspend fun write(controlPackets: Collection<ControlPacket>)
@@ -15,4 +16,6 @@ interface ISocketController {
     suspend fun read(): Flow<ControlPacket>
 
     suspend fun close()
+
+    var closedSocketCallback: (() -> Unit)?
 }

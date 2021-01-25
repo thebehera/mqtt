@@ -4,18 +4,30 @@ CREATE TABLE MqttConnections(
     port INTEGER NOT NULL CHECK (port BETWEEN 0 AND 65535),
     connectionTimeoutMs INTEGER NOT NULL CHECK (connectionTimeoutMs > 0),
     websocketEndpoint TEXT,
-    lastConnectedMsSince1970 INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP
+    version INTEGER NOT NULL,
+    lastConnectedMsSince1970 INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(name, port, websocketEndpoint)
 );
 
 addConnection:
-    INSERT INTO MqttConnections (name, port, connectionTimeoutMs, websocketEndpoint)
-    VALUES(?, ?, ?, ?);
+    INSERT INTO MqttConnections (name, port, connectionTimeoutMs, version, websocketEndpoint)
+    VALUES(?, ?, ?, ?, ?);
 
 lastInsertRowId:
     SELECT last_insert_rowid();
 
+getConnections:
+    SELECT *
+    FROM MqttConnections;
+
 findConnection:
     SELECT *
+    FROM MqttConnections
+    WHERE connectionId = :connectionId
+    LIMIT 1;
+
+findConnectionId:
+    SELECT connectionId
     FROM MqttConnections
     WHERE connectionId = :connectionId
     LIMIT 1;

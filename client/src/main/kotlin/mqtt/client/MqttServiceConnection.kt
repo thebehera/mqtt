@@ -26,6 +26,10 @@ class MqttAppServiceConnection private constructor(
 ) {
     private val database = Database(driver)
 
+    suspend fun findConnections() = withContext(Dispatchers.IO) {
+        return@withContext database.connectionsQueries.getConnections().executeAsList()
+    }
+
     suspend fun addServerAsync(serverOptions: IConnectionOptions): Long {
         val request = serverOptions.request as ConnectionRequest<ByteArray>
         val insertedConnectionId = withContext(Dispatchers.IO) {
@@ -34,6 +38,7 @@ class MqttAppServiceConnection private constructor(
                     serverOptions.name,
                     serverOptions.port.toLong(),
                     serverOptions.connectionTimeout.toLongMilliseconds(),
+                    request.mqttVersion.toLong(),
                     serverOptions.websocketEndpoint
                 )
                 val insertedConnectionId = database.connectionsQueries.lastInsertRowId().executeAsOne()
@@ -44,7 +49,7 @@ class MqttAppServiceConnection private constructor(
                     request.payload.userName?.toString(),
                     request.payload.password?.toString(),
                     request.payload.clientId.toString(),
-                    request.payload.willTopic.toString(),
+                    request.payload.willTopic?.toString(),
                     request.payload.willPayload?.obj,
                     if (request.variableHeader.willRetain) 1L else 0L,
                     request.variableHeader.willQos.integerValue.toLong(),

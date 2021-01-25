@@ -39,6 +39,7 @@ class BrowserWebsocketController(
         )
     var isConnected = false
     override var lastMessageReceived: TimeMark? = null
+    override var lastMessageSent: TimeMark? = null
 
     val reader = SuspendableReader(scope, connectionOptions.request.controlPacketFactory, websocket)
 
@@ -77,8 +78,8 @@ class BrowserWebsocketController(
         controlPackets.forEach { packet -> packet.serialize(buffer) }
         buffer.resetForRead()
         val arrayBuffer = buffer.buffer.buffer.slice(buffer.position().toInt(), buffer.limit().toInt())
-//            println("writing $controlPackets ${arrayBuffer.byteLength}")
         websocket.send(arrayBuffer)
+        lastMessageSent = TimeSource.Monotonic.markNow()
     }
 
     override suspend fun read() = flow {
@@ -168,4 +169,6 @@ class BrowserWebsocketController(
             return buffers.toComposableBuffer()
         }
     }
+
+    override var closedSocketCallback: (() -> Unit)? = null
 }

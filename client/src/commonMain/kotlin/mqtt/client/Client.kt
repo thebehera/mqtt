@@ -18,6 +18,8 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
 import kotlin.time.seconds
 
@@ -47,7 +49,7 @@ class Client(
 
     private fun isConnected() = connectionState is ConnectionState.Connected
 
-    suspend fun connectAsync() = scope.async {
+    suspend fun connect(): IConnectionAcknowledgment{
         reconnectCount++
         val request = connectionOptions.request
         if (request.cleanStart) {
@@ -61,13 +63,11 @@ class Client(
                 ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
             controller
         }
-        println("WRITING $request")
         socketController?.write(request)
-        println("WROTE $request")
         scope.launch {
             routeIncomingMessages()
         }
-        suspendUntilMessage { it is IConnectionAcknowledgment } as IConnectionAcknowledgment
+        return suspendUntilMessage { it is IConnectionAcknowledgment } as IConnectionAcknowledgment
     }
 
     suspend fun disconnectAsync(
@@ -106,14 +106,30 @@ class Client(
         var currentDelay = initialFailureDelay
         while (isActive) {
             try {
-                val result = connectAsync().await()
-                println("RAHUL CONNECTED $result")
-                connectionState = ConnectionState.Connected(result, socketController!!)
+                val result = connect()
+                currentDelay = initialFailureDelay
+                val socketController = socketController!!
+                connectionState = ConnectionState.Connected(result, socketController)
+                suspendCoroutine<Unit> {
+                    socketController.closedSocketCallback = {
+                        socketController.closedSocketCallback = null
+                        keepAliveJob?.cancel()
+                        keepAliveJob = null
+                        it.resume(Unit)
+                    }
+                }
+                connectionState = ConnectionState.Reconnecting(null, currentDelay)
             } catch (e: Exception) {
+                e.printStackTrace()
                 connectionState = ConnectionState.Reconnecting(e, currentDelay)
-                socketController?.close()
-                socketController = null
             }
+            keepAliveJob?.cancel()
+            keepAliveJob = null
+            socketController?.closedSocketCallback = null
+            socketController?.close()
+            socketController = null
+            println("disconnected")
+
             delay(currentDelay)
             currentDelay = (currentDelay * exponentialBackoffFactor)
             if (currentDelay > maxDelay) currentDelay = maxDelay
@@ -348,19 +364,30 @@ class Client(
     }
 
     private suspend fun delayUntilNextKeepAlive() {
-        val lastMessageReceived = socketController?.lastMessageReceived
-        if (lastMessageReceived != null) {
-            delay(connectionOptions.request.keepAliveTimeout - lastMessageReceived.elapsedNow())
+        val lastMessageSent = socketController?.lastMessageSent ?: return
+        val timeout = connectionOptions.request.keepAliveTimeout
+        while (timeout.minus(lastMessageSent.elapsedNow()).isPositive()) {
+            println(timeout.minus(lastMessageSent.elapsedNow()))
+            delay(timeout.minus(lastMessageSent.elapsedNow()))
+            println("delay wakeup")
         }
+        println("done delaying")
     }
 
     private fun maintainKeepAlive() {
+        keepAliveJob?.cancel()
         keepAliveJob = scope.launch {
             try {
                 while (isActive && isConnected() && socketController != null) {
+                    println("delay")
                     delayUntilNextKeepAlive()
-                    socketController?.write(packetFactory.pingRequest())
-                    delay(5)
+                    println("ping $socketController")
+                    if (socketController?.write(packetFactory.pingRequest()) ?: -1 == -1) {
+                        return@launch
+                    }
+                    println("ping done")
+                    suspendUntilMessage()
+                    println("suspend done")
                 }
             } catch (e: Throwable) {
                 // ignore cancellation exceptions
@@ -368,7 +395,7 @@ class Client(
         }
     }
 
-    private suspend fun suspendUntilMessage(matches: (ControlPacket) -> Boolean): ControlPacket {
+    private suspend fun suspendUntilMessage(matches: (ControlPacket) -> Boolean = {true}): ControlPacket {
         val coroutineSubscription = incomingMessageBroadcastChannel.openSubscription()
         var done = false
         while (!done) {

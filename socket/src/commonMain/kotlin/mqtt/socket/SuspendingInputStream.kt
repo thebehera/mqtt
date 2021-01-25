@@ -20,12 +20,11 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
     val readJob = sessionScope.launch {
         var exception: Exception? = null
         try {
+            println("Suspending ${isActive} ${socket.isOpen()}")
             while (isActive && socket.isOpen()) {
                 try {
                     val platformBuffer = allocateNewBuffer(8192u)
-                    println("reading $platformBuffer")
                     val bytesRead = socket.read(platformBuffer, timeout)
-                    println("read $platformBuffer $bytesRead")
                     lastMessageReceived = TimeSource.Monotonic.markNow()
                     if (bytesRead == -1) {
                         return@launch
@@ -33,7 +32,8 @@ class SuspendingInputStream(timeout: Duration, val sessionScope: CoroutineScope,
                     channel.send(platformBuffer)
                 } catch (e: Exception) {
                     // ignore streaming errors
-//                    exception = e
+                        e.printStackTrace()
+                    exception = e
                     return@launch
                 }
             }

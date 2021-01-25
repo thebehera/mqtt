@@ -1,10 +1,13 @@
 package mqtt.client.persistence
 
+import com.squareup.sqldelight.Query
 import com.squareup.sqldelight.db.SqlDriver
 import com.squareup.sqldelight.runtime.coroutines.asFlow
 import com.squareup.sqldelight.runtime.coroutines.mapToOne
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mqtt.persistence.db.*
 import mqtt.wire.buffer.GenericType
@@ -12,6 +15,8 @@ import mqtt.wire.control.packet.*
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import mqtt.wire4.control.packet.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 interface Persistence {
     suspend fun acknowledge(incomingControlPacket: ISubscribeAcknowledgement)
@@ -41,12 +46,12 @@ interface Persistence {
 }
 
 class DatabasePersistence(
-    driver: SqlDriver,
+    val database:Database,
     private val dispatcher: CoroutineDispatcher,
     private val connectionId: Long
 ) : Persistence {
 
-    val database = Database(driver)
+
     private val queries4 = database.controlPacketMqtt4Queries
     override suspend fun acknowledge(incomingControlPacket: ISubscribeAcknowledgement) = withContext(dispatcher) {
         queries4.onSubscribeAck4(connectionId, incomingControlPacket.packetIdentifier.toLong())
@@ -72,6 +77,25 @@ class DatabasePersistence(
                 )
             }
         }
+    }
+
+    suspend fun suspendUntilConnectionRemoval() = withContext(dispatcher) {
+        val query = database.connectionsQueries.findConnectionId(connectionId)
+        suspendCoroutine<Unit> {
+            query.addListener(object : Query.Listener {
+                override fun queryResultsChanged() {
+                    val listener = this
+                    launch(Dispatchers.Default) {
+                        val result = withContext(dispatcher) {query.executeAsOneOrNull()}
+                        if (result == null) {
+                            query.removeListener(listener)
+                            it.resume(Unit)
+                        }
+                    }
+                }
+            })
+        }
+
     }
 
     override suspend fun storeIncoming(packetIdentifier: UShort) = withContext(dispatcher) {

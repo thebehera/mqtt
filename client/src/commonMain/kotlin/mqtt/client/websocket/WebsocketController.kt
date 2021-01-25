@@ -26,6 +26,7 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
 import kotlin.time.TimeMark
+import kotlin.time.TimeSource
 
 
 @ExperimentalUnsignedTypes
@@ -34,13 +35,51 @@ class WebsocketController private constructor(
     private val scope: CoroutineScope,
     controlPacketFactory: ControlPacketFactory,
     private val socket: ClientSocket,
-    keepAliveTimeout: Duration,
-    private val writeQueue: SendChannel<Collection<ControlPacket>>,
+    keepAliveTimeout: Duration
 ) : ISocketController {
+    override var closedSocketCallback: (() -> Unit)? = null
     override var lastMessageReceived: TimeMark? = null
+    override var lastMessageSent: TimeMark? = null
+
     private val suspendingInputStream = SuspendingInputStream(keepAliveTimeout, scope, socket)
     private val inputStream =
         WebsocketSuspendableInputStream(suspendingInputStream, controlPacketFactory)
+    private val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
+    init {
+        scope.launch {
+            while (isActive && socket.isOpen()) {
+                writeQueue.consumeAsFlow().collect { packets ->
+                    val payloadSize = packets.fold(0u) { acc, controlPacket ->
+                        acc + controlPacket.packetSize()
+                    }
+                    val websocketFrameOverhead = when {
+                        payloadSize > UShort.MAX_VALUE -> websocketBaseFrameOverhead + 8
+                        payloadSize >= 126u -> websocketBaseFrameOverhead + 2
+                        else -> websocketBaseFrameOverhead
+                    }
+                    val length = payloadSize.toLong() + websocketFrameOverhead.toLong()
+                    val writeBuffer = allocateNewBuffer(length.toUInt())
+                    appendFinAndOpCode(writeBuffer, 2, true)
+                    val mask = Random.Default.nextBytes(4)
+                    appendLengthAndMask(writeBuffer, payloadSize.toInt(), mask)
+                    val startPayloadPosition = writeBuffer.position()
+                    // write the serialized data
+                    packets.forEach { it.serialize(writeBuffer) }
+                    // reset position to original, we are going to mask these values
+                    for ((count, position) in (startPayloadPosition.toInt() until length).withIndex()) {
+                        writeBuffer.position(position.toInt())
+                        val payloadByte = writeBuffer.readByte()
+                        val maskValue = mask[count % 4]
+                        val maskedByte = payloadByte xor maskValue
+                        writeBuffer.position(position.toInt())
+                        writeBuffer.write(maskedByte)
+                    }
+                    socket.write(writeBuffer, keepAliveTimeout)
+                    lastMessageSent = TimeSource.Monotonic.markNow()
+                }
+            }
+        }
+    }
 
     override suspend fun write(controlPacket: ControlPacket) {
         write(listOf(controlPacket))
@@ -89,45 +128,12 @@ class WebsocketController private constructor(
             ) {
                 throw IllegalStateException("Invalid response from server when reading the result from websockets. Response:\r\n$response")
             }
-            val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
-            scope.launch {
-                while (isActive && socket.isOpen()) {
-                    writeQueue.consumeAsFlow().collect { packets ->
-                        val payloadSize = packets.fold(0u) { acc, controlPacket ->
-                            acc + controlPacket.packetSize()
-                        }
-                        val websocketFrameOverhead = when {
-                            payloadSize > UShort.MAX_VALUE -> websocketBaseFrameOverhead + 8
-                            payloadSize >= 126u -> websocketBaseFrameOverhead + 2
-                            else -> websocketBaseFrameOverhead
-                        }
-                        val length = payloadSize.toLong() + websocketFrameOverhead.toLong()
-                        val writeBuffer = allocateNewBuffer(length.toUInt())
-                        appendFinAndOpCode(writeBuffer, 2, true)
-                        val mask = Random.Default.nextBytes(4)
-                        appendLengthAndMask(writeBuffer, payloadSize.toInt(), mask)
-                        val startPayloadPosition = writeBuffer.position()
-                        // write the serialized data
-                        packets.forEach { it.serialize(writeBuffer) }
-                        // reset position to original, we are going to mask these values
-                        for ((count, position) in (startPayloadPosition.toInt() until length).withIndex()) {
-                            writeBuffer.position(position.toInt())
-                            val payloadByte = writeBuffer.readByte()
-                            val maskValue = mask[count % 4]
-                            val maskedByte = payloadByte xor maskValue
-                            writeBuffer.position(position.toInt())
-                            writeBuffer.write(maskedByte)
-                        }
-                        socket.write(writeBuffer, connectionOptions.request.keepAliveTimeout)
-                    }
-                }
-            }
+
             return WebsocketController(
                 scope,
                 connectionOptions.request.controlPacketFactory,
                 socket,
-                connectionOptions.request.keepAliveTimeout,
-                writeQueue
+                connectionOptions.request.keepAliveTimeout
             )
         }
 

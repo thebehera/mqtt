@@ -19,16 +19,12 @@ class TestActivity : Activity() {
         val context = this
         mainScope.launch(Dispatchers.Default) {
             val service = MqttAppServiceConnection.getMqttServiceConnectionAsync(context, this).await()
-            val request = ConnectionRequest<Unit>("rahultest2", keepAliveSeconds = 2000, cleanSession = true)
-            val size = request.packetSize()
-            val buffer = allocateNewBuffer(size)
-            request.serialize(buffer)
-            buffer.resetForRead()
-            val request2 = request.controlPacketFactory.from(buffer)
-            check(request.toString().contentEquals(request2.toString()))
-            Log.i("RAHUL", "Pre- Add Server async")
-            val port = 1883
-            val connectionId = service.addServerAsync(ConnectionOptions("apt.behera.me", port, request))
+            val request = ConnectionRequest<Unit>("rt2", cleanSession = true, keepAliveSeconds = 12)
+            Log.i("RAHUL", service.findConnections().toString())
+            val host = "10.0.2.2"
+            val connectionId = service.findConnections().firstOrNull { it.name == host }?.connectionId
+                ?: service.addServerAsync(ConnectionOptions(host, 60000, request))
+
             service.publish(connectionId, "hello", System.currentTimeMillis().toString())
         }
     }

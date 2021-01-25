@@ -4,6 +4,8 @@ package mqtt.socket.nio2.util
 
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.net.InetSocketAddress
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.net.SocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
@@ -34,8 +36,10 @@ suspend fun asyncSocket(group: AsynchronousChannelGroup? = null) = suspendCorout
 @ExperimentalTime
 suspend fun AsynchronousSocketChannel.aConnect(
     socketAddress: SocketAddress
-) = suspendCoroutine<Unit> { cont ->
-    connect(socketAddress, cont, AsyncVoidIOHandler())
+) = withContext(Dispatchers.IO) {
+    suspendCoroutine<Unit> { cont ->
+        connect(socketAddress, cont, AsyncVoidIOHandler())
+    }
 }
 
 /**
@@ -49,7 +53,7 @@ suspend fun AsynchronousSocketChannel.aConnect(
 suspend fun AsynchronousSocketChannel.aRead(
     buf: ByteBuffer,
     duration: Duration
-): Int {
+)= withContext(Dispatchers.IO)  {
     val result = suspendCancellableCoroutine<Int> { cont ->
         read(
             buf, duration.toLongMilliseconds(), TimeUnit.MILLISECONDS, cont,
@@ -58,7 +62,7 @@ suspend fun AsynchronousSocketChannel.aRead(
         closeOnCancel(cont)
     }
     buf.flip()
-    return result
+    result
 }
 
 /**
@@ -72,8 +76,8 @@ suspend fun AsynchronousSocketChannel.aRead(
 suspend fun AsynchronousSocketChannel.aWrite(
     buf: ByteBuffer,
     duration: Duration
-): Int {
-    return suspendCancellableCoroutine<Int> { cont ->
+) = withContext(Dispatchers.IO) {
+    suspendCancellableCoroutine<Int> { cont ->
         buf.flip()
         write(
             buf, duration.toLongMilliseconds(), TimeUnit.MILLISECONDS, cont,
@@ -90,7 +94,7 @@ suspend fun AsynchronousSocketChannel.aWrite(
  */
 
 @ExperimentalTime
-suspend fun AsynchronousSocketChannel.aClose() {
+suspend fun AsynchronousSocketChannel.aClose()= withContext(Dispatchers.IO) {
     suspendCoroutine<Unit> { cont ->
         blockingClose()
         cont.resume(Unit)

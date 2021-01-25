@@ -25,6 +25,11 @@ if (System.getenv("ANDROID_HOME")) {
             exclude 'io/ktor/http/cio/websocket/*.kotlin_metadata'
             exclude 'io/ktor/http/cio/*.kotlin_metadata'
         }
+
+        compileOptions {
+            sourceCompatibility 1.8
+            targetCompatibility 1.8
+        }
         sourceSets {
             main {
                 manifest.srcFile 'src/androidMain/AndroidManifest.xml'
