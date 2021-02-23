@@ -1,4 +1,4 @@
-@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS")
+@file:Suppress("EXPERIMENTAL_API_USAGE", "EXPERIMENTAL_UNSIGNED_LITERALS", "EXPERIMENTAL_TIME")
 
 package mqtt.wire4.control.packet
 
@@ -13,6 +13,10 @@ import mqtt.wire.control.packet.format.fixed.get
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.utf8Length
 import kotlin.reflect.KClass
+import kotlin.time.Duration
+import kotlin.time.DurationUnit
+import kotlin.time.ExperimentalTime
+import kotlin.time.seconds
 
 /**
  * 3.1 CONNECT – Client requests a connection to a Server
@@ -36,6 +40,14 @@ data class ConnectionRequest<WillPayload : Any>(
     val variableHeader: VariableHeader = VariableHeader(),
     val payload: Payload<WillPayload> = Payload()
 ) : ControlPacketV4(1, DirectionOfFlow.CLIENT_TO_SERVER), IConnectionRequest {
+    @ExperimentalTime
+    constructor(
+        clientId: String,
+        username: String? = null,
+        password: String? = null,
+        keepAlive: Duration = UShort.MAX_VALUE.toInt().seconds,
+        cleanSession: Boolean = false
+    ): this(clientId, username, password, keepAlive.toInt(DurationUnit.SECONDS), cleanSession)
     constructor(
         clientId: String,
         username: String? = null,

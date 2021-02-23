@@ -1,76 +1,87 @@
 package mqtt.client
 
+import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.res.AssetFileDescriptor
-import android.os.IBinder
-import com.squareup.sqldelight.db.SqlDriver
-import com.squareup.sqldelight.runtime.coroutines.asFlow
+import android.os.RemoteException
+import android.util.Log
+import androidx.core.app.NotificationManagerCompat
+import androidx.work.Configuration
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
+import androidx.work.multiprocess.RemoteWorkManager
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.sync.Mutex
 import mqtt.client.persistence.DatabasePersistence
-import mqtt.client.persistence.Persistence
-import mqtt.connection.ConnectionOptions
+import mqtt.client.socket.ConnectionState
 import mqtt.connection.IConnectionOptions
 import mqtt.persistence.AndroidContextProvider
 import mqtt.persistence.createDriver
 import mqtt.persistence.db.Database
 import mqtt.persistence.db.MqttConnections
-import mqtt.wire.buffer.GenericType
+import mqtt.wire.control.packet.ControlPacket
+import mqtt.wire.control.packet.SubscriptionWrapper
 import mqtt.wire.data.QualityOfService
-import mqtt.wire4.control.packet.ConnectionRequest
+import mqtt.wire.data.topic.Filter
+import java.util.concurrent.TimeUnit.MILLISECONDS
 import kotlin.time.milliseconds
 
 class MqttService : Service() {
-    private val scope = MainScope()
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val clients = mutableMapOf<Long, Client>()
     private val persistence = mutableMapOf<Long, DatabasePersistence>()
+    private val workManager by lazy {
+        WorkManager.getInstance(this)
+    }
     private lateinit var database: Database
+    private val incomingMessageObservers = mutableSetOf<ControlPacketCallback>()
+    private val outgoingMessageObservers = mutableSetOf<ControlPacketCallback>()
+
 
     suspend fun connect(connection: MqttConnections) {
         val connectionId = connection.connectionId
         val persistence = findPersistence(connectionId)
-        val connectionOptions: IConnectionOptions = if (connection.version == 4L) {
-            val connectionRequestWrapper =
-                withContext(Dispatchers.IO) {
-                    persistence.database.controlPacketMqtt4Queries.findConnectionRequest(connectionId)
-                        .executeAsOne()
-                }
-            val willPayload = connectionRequestWrapper.willPayload
-            val username = connectionRequestWrapper.username
-            val password = connectionRequestWrapper.password
-            val request = ConnectionRequest(
-                ConnectionRequest.VariableHeader(
-                    connectionRequestWrapper.protocolName,
-                    connectionRequestWrapper.protocolVersion.toByte(),
-                    username != null,
-                    password != null,
-                    connectionRequestWrapper.willRetain == 1L,
-                    QualityOfService.from(connectionRequestWrapper.willQos),
-                    connectionRequestWrapper.willFlag == 1L,
-                    connectionRequestWrapper.cleanSession == 1L,
-                    connectionRequestWrapper.keepAliveSeconds.toInt()
-                ),
-                ConnectionRequest.Payload(
-                    connectionRequestWrapper.clientId,
-                    connectionRequestWrapper.willTopic,
-                    if (willPayload != null) GenericType(willPayload, ByteArray::class) else null,
-                    username,
-                    password
-                )
-            )
-            ConnectionOptions(
-                connection.name,
-                connection.port.toInt(),
-                request,
-                connection.connectionTimeoutMs.milliseconds,
-                connection.websocketEndpoint
-            )
-        } else {
-            throw UnsupportedOperationException("mqtt 5 not implemented yet")
+        val connectionOptions: IConnectionOptions = buildConnectionOptions(connection, persistence)
+        val callback = object : ApplicationMessageCallback {
+            override suspend fun onMessageReceived(msg: ControlPacket) {
+                notifyObserverOfMessage(msg, incomingMessageObservers)
+            }
+            override suspend fun onMessageSent(msg: ControlPacket) {
+                notifyObserverOfMessage(msg, outgoingMessageObservers)
+            }
         }
-        val client = Client(connectionOptions, null, persistence, scope = scope)
+        val client = Client(connectionOptions, callback, persistence, scope, false)
+        val keepAlive = connectionOptions.request.keepAliveTimeout
+        val keepAliveLongMs = keepAlive.toLong(MILLISECONDS)
+        val keepAliveFlex = keepAliveLongMs.div(2)
+        val clientWorkRequest = PeriodicWorkRequestBuilder<PingWorker>(
+            keepAliveLongMs, MILLISECONDS,
+            keepAliveFlex, MILLISECONDS
+        )
+            .addTag("mqtt:ping:$connectionId")
+            .addTag("mqtt:ping")
+//            .setInitialDelay(keepAliveLongMs, MILLISECONDS)
+            .build()
+
+        client.onConnectionStateCallback = {
+            when (it) {
+                is ConnectionState.Connected -> {
+                    val worker = PingWorker.createForegroundInfo(this, null, "Connected", "Connected")
+                    if (PingWorker.shouldForeground)
+                        startForeground(PingWorker.notificationId, worker.notification)
+                    else
+                        NotificationManagerCompat.from(this).notify(PingWorker.notificationId, worker.notification)
+                    workManager.enqueueUniquePeriodicWork("mqtt:ping:$connectionId", ExistingPeriodicWorkPolicy.REPLACE, clientWorkRequest)
+                }
+                ConnectionState.Disconnected -> {
+                    workManager.cancelAllWorkByTag("mqtt:ping:$connectionId")
+                }
+                is ConnectionState.Reconnecting -> {
+                    // do nothing
+                }
+            }
+        }
         clients[connectionId] = client
         client.stayConnectedAsync()
     }
@@ -80,8 +91,11 @@ class MqttService : Service() {
         override fun addServer(connectionId: Long, mqttVersion: Byte) {
             scope.launch {
                 val connection = database.connectionsQueries.findConnection(connectionId).executeAsOne()
-                persistence[connection.connectionId] = DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
-                connect(connection)
+                if (!persistence.containsKey(connection.connectionId)) {
+                    persistence[connection.connectionId] =
+                        DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
+                    connect(connection)
+                }
             }
         }
 
@@ -115,11 +129,62 @@ class MqttService : Service() {
             }
         }
 
+        override fun subscribe(connectionId: Long, topic: Array<out String>, qos: IntArray) {
+            println("sub client ${clients[connectionId]}")
+            val client = clients[connectionId] ?: return
+            scope.launch {
+                val subscriptionsWrapped = topic.mapIndexed { index, topic ->
+                    SubscriptionWrapper(Filter(topic), QualityOfService.from(qos[index].toLong()))
+                }.toSet()
+                println("subscribe to: $subscriptionsWrapped")
+                client.subscribeAsync(subscriptionsWrapped)
+            }
+        }
+
+        override fun unsubscribe(connectionId: Long, topic: Array<out String>) {
+            val client = clients[connectionId] ?: return
+            scope.launch {
+                client.unsubscribeAsync(*topic)
+            }
+        }
+
 
         override fun publishQos0Fd(connectionId: Long, topicName: String?, payload: AssetFileDescriptor?) {
 
         }
 
+        override fun ping(): LongArray {
+            val list = mutableListOf<Long>()
+            val jobs = mutableSetOf<Job>()
+            for ((connectionId, client) in clients) {
+                if (client.connectionState is ConnectionState.Connected) {
+                    jobs += scope.launch {
+                        client.writePing()
+                        list += connectionId
+                    }
+                }
+            }
+            runBlocking(Dispatchers.Default) {
+                jobs.joinAll()
+            }
+            return list.toLongArray()
+        }
+
+        override fun addIncomingMessageCallback(callback: ControlPacketCallback) {
+            incomingMessageObservers += callback
+        }
+
+        override fun removeIncomingMessageCallback(callback: ControlPacketCallback) {
+            incomingMessageObservers -= callback
+        }
+
+        override fun addOutgoingMessageCallback(callback: ControlPacketCallback) {
+            outgoingMessageObservers += callback
+        }
+
+        override fun removeOutgoingMessageCallback(callback: ControlPacketCallback) {
+            outgoingMessageObservers -= callback
+        }
     }
 
     private suspend fun findPersistence(connectionId:Long): DatabasePersistence {
@@ -141,20 +206,47 @@ class MqttService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        scope.launch(Dispatchers.IO) {
+        scope.launch {
+            val workConfig = Configuration.Builder()
+            workConfig.setMinimumLoggingLevel(Log.VERBOSE)
+            workConfig.setDefaultProcessName(applicationInfo.processName)
+            WorkManager.initialize(this@MqttService, workConfig.build())
             database = Database(createDriver("mqtt", AndroidContextProvider(this@MqttService)))
             val connections = database.connectionsQueries.getConnections().executeAsList()
-            connections.forEach { connection ->
-                launch(Dispatchers.Default) {
-                    persistence[connection.connectionId] = DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
-                    connect(connection)
-                }
+            connections.filterNot { persistence.containsKey(it.connectionId) }.forEach { connection ->
+                persistence[connection.connectionId] = DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
+                connect(connection)
             }
         }
     }
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent != null) {
+            if (intent.getBooleanExtra("ping", true)) {
+                scope.launch {
+                    binder.ping()
+                }
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
+
+    private fun notifyObserverOfMessage(msg: ControlPacket, callbacks: MutableCollection<ControlPacketCallback>) {
+        val deadObservers = mutableListOf<ControlPacketCallback>()
+        callbacks.forEach { callback ->
+            try {
+                callback.onMessage(ControlPacketWrapper().also { it.packet = msg })
+            } catch (e: RemoteException) {
+                deadObservers += callback
+            }
+        }
+        callbacks.removeAll(deadObservers)
+    }
+
     override fun onBind(intent: Intent) = binder
     override fun onDestroy() {
-        scope.cancel()
+        Log.i("RAHUL","destroy service")
         super.onDestroy()
+        scope.cancel()
     }
 }

@@ -18,9 +18,12 @@ import mqtt.wire.control.packet.format.ReasonCode
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.QualityOfService.*
 import mqtt.wire.data.topic.Filter
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource
+import kotlin.time.milliseconds
 import kotlin.time.seconds
 
 @ExperimentalTime
@@ -30,6 +33,7 @@ class Client(
     private val messageCallback: ApplicationMessageCallback? = null,
     private val persistence: Persistence = InMemoryPersistence(),
     private val scope: CoroutineScope,
+    private val enableKeepAlive: Boolean = true
 ) {
     private val packetFactory = connectionOptions.request.controlPacketFactory
     private var socketController: ISocketController? = null
@@ -46,15 +50,14 @@ class Client(
         }
 
     var onConnectionStateCallback: ((ConnectionState) -> Unit)? = null
-
     private fun isConnected() = connectionState is ConnectionState.Connected
 
     suspend fun connect(): IConnectionAcknowledgment{
         reconnectCount++
         val request = connectionOptions.request
-        if (request.cleanStart) {
-            persistence.clear()
-        }
+//        if (request.cleanStart) {
+//            persistence.clear()
+//        }
         val websocketParams = connectionOptions.websocketEndpoint
         socketController = if (websocketParams != null) {
             WebsocketController.openWebSocket(scope, connectionOptions)!!
@@ -63,7 +66,9 @@ class Client(
                 ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
             controller
         }
-        socketController?.write(request)
+        val socketController = socketController!!
+        socketController.write(request)
+        messageCallback?.onMessageSent(request)
         scope.launch {
             routeIncomingMessages()
         }
@@ -91,6 +96,7 @@ class Client(
             serverReference
         )
         socketControllerTmp?.write(disconnect)
+        messageCallback?.onMessageSent(disconnect)
         launch {
             // just add a short delay to prevent things from crashing
             delay(10)
@@ -99,38 +105,43 @@ class Client(
         disconnect
     }
 
-    fun stayConnectedAsync() = scope.async {
+    fun stayConnectedAsync() = scope.launch(Dispatchers.Default) {
         val exponentialBackoffFactor = 2.0
         val maxDelay = 10.seconds
         val initialFailureDelay = 1.seconds
         var currentDelay = initialFailureDelay
         while (isActive) {
+            var currentException :Throwable? = null
             try {
                 val result = connect()
                 currentDelay = initialFailureDelay
                 val socketController = socketController!!
                 connectionState = ConnectionState.Connected(result, socketController)
+                println("connected $connectionState")
                 suspendCoroutine<Unit> {
                     socketController.closedSocketCallback = {
+                        println("socket closed callback")
                         socketController.closedSocketCallback = null
                         keepAliveJob?.cancel()
                         keepAliveJob = null
                         it.resume(Unit)
                     }
                 }
+                println("start reconnecting")
                 connectionState = ConnectionState.Reconnecting(null, currentDelay)
             } catch (e: Exception) {
-                e.printStackTrace()
+                currentException = e
                 connectionState = ConnectionState.Reconnecting(e, currentDelay)
             }
-            keepAliveJob?.cancel()
+            keepAliveJob?.cancel(CancellationException(currentException))
             keepAliveJob = null
             socketController?.closedSocketCallback = null
             socketController?.close()
             socketController = null
-            println("disconnected")
+            println("disconnected $currentDelay $isActive")
 
             delay(currentDelay)
+            println("undelay $isActive")
             currentDelay = (currentDelay * exponentialBackoffFactor)
             if (currentDelay > maxDelay) currentDelay = maxDelay
         }
@@ -272,11 +283,11 @@ class Client(
                 socketController?.write(outgoingControlPacket)
                 socketController?.close()
             }
-            is IPingRequest -> {
-                socketController?.write(outgoingControlPacket)
-            }
+            else -> socketController?.write(outgoingControlPacket)
         }
-        Unit
+        if (socketController != null) {
+            messageCallback?.onMessageSent(outgoingControlPacket)
+        }
     }
 
     private suspend fun getExpectedResponse(pub: IPublishMessage):
@@ -306,11 +317,11 @@ class Client(
                             messageCallback?.onPublishMessageReceived5(this, incomingControlPacket)
                         }
                         AT_LEAST_ONCE -> {
-                            socketController?.write(getExpectedResponse(incomingControlPacket)!!)
+                            routeOutgoingMessages(getExpectedResponse(incomingControlPacket)!!)
                         }
                         EXACTLY_ONCE -> {
                             if (persistence.storeIncoming(incomingControlPacket.packetIdentifier!!)) {
-                                socketController?.write(getExpectedResponse(incomingControlPacket)!!)
+                                routeOutgoingMessages(getExpectedResponse(incomingControlPacket)!!)
                             }
                         }
                     }
@@ -321,12 +332,12 @@ class Client(
                 is IPublishReceived -> {
                     val pubRelResponse = incomingControlPacket.expectedResponse()
                     persistence.received(pubRelResponse)
-                    socketController?.write(pubRelResponse)
+                    routeOutgoingMessages(pubRelResponse)
                 }
                 is IPublishRelease -> {
                     val pubcompResponse = incomingControlPacket.expectedResponse()
                     persistence.release(pubcompResponse)
-                    socketController?.write(pubcompResponse)
+                    routeOutgoingMessages(pubcompResponse)
                 }
                 is IPublishComplete -> {
                     persistence.complete(incomingControlPacket)
@@ -346,10 +357,11 @@ class Client(
                             socketController?.write(queuedMessages.values)
                         }
                     }
-                    socketController?.let { connectionState = ConnectionState.Connected(incomingControlPacket, it) }
                     reconnectCount = 0
                     receivedConnack = true
-                    maintainKeepAlive()
+                    if (enableKeepAlive) {
+                        maintainKeepAlive()
+                    }
                 }
             }
 
@@ -360,18 +372,16 @@ class Client(
                 throw IllegalStateException("Requires an authenticator for $connectionOptions but failed to find one")
             }
             incomingMessageBroadcastChannel.send(incomingControlPacket)
+            messageCallback?.onMessageReceived(incomingControlPacket)
         }
     }
 
-    private suspend fun delayUntilNextKeepAlive() {
-        val lastMessageSent = socketController?.lastMessageSent ?: return
-        val timeout = connectionOptions.request.keepAliveTimeout
-        while (timeout.minus(lastMessageSent.elapsedNow()).isPositive()) {
-            println(timeout.minus(lastMessageSent.elapsedNow()))
-            delay(timeout.minus(lastMessageSent.elapsedNow()))
-            println("delay wakeup")
+    suspend fun writePing() :Boolean {
+        val result = (socketController?.write(packetFactory.pingRequest()) ?: -1) != 0
+        if (result) {
+            messageCallback?.onMessageSent(packetFactory.pingRequest())
         }
-        println("done delaying")
+        return result
     }
 
     private fun maintainKeepAlive() {
@@ -379,15 +389,11 @@ class Client(
         keepAliveJob = scope.launch {
             try {
                 while (isActive && isConnected() && socketController != null) {
-                    println("delay")
-                    delayUntilNextKeepAlive()
-                    println("ping $socketController")
-                    if (socketController?.write(packetFactory.pingRequest()) ?: -1 == -1) {
+                    if (!writePing()) {
                         return@launch
                     }
-                    println("ping done")
-                    suspendUntilMessage()
-                    println("suspend done")
+                    socketController?.lastMessageSent = TimeSource.Monotonic.markNow()
+                    delay(connectionOptions.request.keepAliveTimeout.div(2))
                 }
             } catch (e: Throwable) {
                 // ignore cancellation exceptions

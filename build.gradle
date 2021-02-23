@@ -36,11 +36,11 @@ allprojects {
         google()
     }
     // die on warnings
-    gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
-            options.compilerArgs << "-Xlint:all" << "-Werror"
-        }
-    }
+//    gradle.projectsEvaluated {
+//        tasks.withType(JavaCompile) {
+//            options.compilerArgs << "-Xlint:all" << "-Werror"
+//        }
+//    }
 
     if (System.properties['os.name'].toLowerCase().contains('windows')) {
         logger.warn("Integration tests are disabled for windows! Reason: Headless chrome isn't working properly")

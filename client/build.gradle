@@ -79,9 +79,28 @@ kotlin {
             }
         }
         if (System.getenv("ANDROID_HOME")) {
+            def work_version = "2.5.0"
+            def appcompat_version = "1.2.0"
             androidMain {
                 dependsOn commonJvm
                 dependencies {
+                    implementation "androidx.work:work-runtime-ktx:$work_version"
+                    implementation "androidx.work:work-multiprocess:$work_version"
+                    implementation 'androidx.core:core-ktx:1.3.2'
+                    implementation 'androidx.compose.ui:ui:1.0.0-alpha11'
+                    // Foundation (Border, Background, Box, Image, Scroll, shapes, animations, etc.)
+                    implementation 'androidx.compose.foundation:foundation:1.0.0-alpha11'
+
+                    // Material Design
+                    implementation 'androidx.compose.material:material:1.0.0-alpha10'
+                    // Material design icons
+                    implementation 'androidx.compose.material:material-icons-core:1.0.0-alpha10'
+                    implementation 'androidx.compose.material:material-icons-extended:1.0.0-alpha10'
+                    // Integration with observables
+                    implementation 'androidx.compose.runtime:runtime-livedata:1.0.0-alpha11'
+
+                    implementation "androidx.appcompat:appcompat:$appcompat_version"
+
                 }
             }
             androidTest {
@@ -159,6 +178,11 @@ kotlin {
                 ]
             }
         }
+    }
+}
+tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).all {
+    kotlinOptions {
+        jvmTarget = "1.8"
     }
 }
 

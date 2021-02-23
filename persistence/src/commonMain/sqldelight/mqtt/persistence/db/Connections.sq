@@ -1,17 +1,17 @@
 CREATE TABLE MqttConnections(
-    connectionId INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    connectionId INTEGER NOT NULL,
     name TEXT NOT NULL,
     port INTEGER NOT NULL CHECK (port BETWEEN 0 AND 65535),
     connectionTimeoutMs INTEGER NOT NULL CHECK (connectionTimeoutMs > 0),
     websocketEndpoint TEXT,
     version INTEGER NOT NULL,
     lastConnectedMsSince1970 INTEGER NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(name, port, websocketEndpoint)
+    PRIMARY KEY(connectionId, name, port, version, websocketEndpoint)
 );
 
 addConnection:
-    INSERT INTO MqttConnections (name, port, connectionTimeoutMs, version, websocketEndpoint)
-    VALUES(?, ?, ?, ?, ?);
+    INSERT INTO MqttConnections (connectionId, name, port, connectionTimeoutMs, version, websocketEndpoint)
+    VALUES((SELECT IFNULL(MAX(connectionId), 0) + 1 FROM MqttConnections), ?, ?, ?, ?, ?);
 
 lastInsertRowId:
     SELECT last_insert_rowid();
@@ -19,6 +19,9 @@ lastInsertRowId:
 getConnections:
     SELECT *
     FROM MqttConnections;
+
+getConnectionCount:
+    SELECT COUNT(*) FROM MqttConnections;
 
 findConnection:
     SELECT *

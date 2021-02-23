@@ -8,6 +8,8 @@ import mqtt.socket.nio.util.asyncSetOptions
 import mqtt.socket.nio2.util.aConnect
 import mqtt.socket.nio2.util.asyncSocket
 import java.net.InetAddress
+
+import kotlinx.coroutines.*
 import java.net.InetSocketAddress
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -26,7 +28,9 @@ class AsyncClientSocket() : AsyncBaseClientSocket(), ClientToServerSocket {
         socketOptions: SocketOptions?
     ): SocketOptions {
         val socketAddress = if (hostname != null) {
-            InetSocketAddress(hostname.asInetAddress(), port.toInt())
+            withContext(Dispatchers.IO) {
+                InetSocketAddress(hostname.asInetAddress(), port.toInt())
+            }
         } else {
             suspendCoroutine {
                 try {

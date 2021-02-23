@@ -22,6 +22,7 @@ import kotlin.coroutines.suspendCoroutine
 class MqttAppServiceConnection private constructor(
     driver: SqlDriver,
     private val service: IRemoteMqttService,
+    val serviceConnection: ServiceConnection,
     private val scope: CoroutineScope
 ) {
     private val database = Database(driver)
@@ -34,6 +35,7 @@ class MqttAppServiceConnection private constructor(
         val request = serverOptions.request as ConnectionRequest<ByteArray>
         val insertedConnectionId = withContext(Dispatchers.IO) {
             database.transactionWithResult<Long> {
+
                 database.connectionsQueries.addConnection(
                     serverOptions.name,
                     serverOptions.port.toLong(),
@@ -60,7 +62,7 @@ class MqttAppServiceConnection private constructor(
                 insertedConnectionId
             }
         }
-
+        println("connection $insertedConnectionId")
         try {
             service.addServer(insertedConnectionId, request.mqttVersion)
         } catch (e: RemoteException) {
@@ -71,6 +73,17 @@ class MqttAppServiceConnection private constructor(
             )
         }
         return insertedConnectionId
+    }
+
+    fun subscribe(connectionId: Long,
+                  topic: String,
+                  qos: QualityOfService = QualityOfService.AT_LEAST_ONCE) {
+        service.subscribe(connectionId, arrayOf(topic), intArrayOf(qos.integerValue.toInt()))
+    }
+
+    fun unsubscribe(connectionId: Long,
+                  topic: String) {
+        service.unsubscribe(connectionId, arrayOf(topic))
     }
 
     fun publish(
@@ -123,24 +136,55 @@ class MqttAppServiceConnection private constructor(
         }
     }
 
-    companion object {
-        fun getMqttServiceConnectionAsync(context: Context, parent: CoroutineScope) = parent.async {
-            val driver = async { createDriver("mqtt", AndroidContextProvider(context)) }
-            val binder = suspendCoroutine<IBinder> {
-                val serviceConn = object : ServiceConnection {
-                    override fun onServiceConnected(name: ComponentName, binder: IBinder) {
-                        it.resume(binder)
-                    }
+    fun pingAsync() = scope.async {
+        service.ping()
+    }
 
-                    override fun onServiceDisconnected(name: ComponentName) {
-                        cancel()
+    fun addIncomingMessageObserver(callback: ControlPacketCallback)
+        = scope.async { service.addIncomingMessageCallback(callback) }
+
+    fun removeIncomingMessageObserver(callback: ControlPacketCallback)
+        = scope.async { service.removeIncomingMessageCallback(callback) }
+
+    fun addOutgoingMessageObserver(callback: ControlPacketCallback)
+        = scope.async { service.addOutgoingMessageCallback(callback) }
+
+    fun removeOutgoingMessageObserver(callback: ControlPacketCallback)
+        = scope.async {service.removeOutgoingMessageCallback(callback) }
+
+    companion object {
+
+        private var serviceConnection: MqttAppServiceConnection? = null
+
+        suspend fun getMqttServiceConnection(context: Context, parent: CoroutineScope): MqttAppServiceConnection {
+            val serviceConnection = serviceConnection
+            return serviceConnection
+                ?: parent.async {
+                    val driver = async { createDriver("mqtt", AndroidContextProvider(context)) }
+                    val (binder, serviceConnection) = suspendCancellableCoroutine<Pair<IBinder, ServiceConnection>> {
+                        val serviceConn = object : ServiceConnection {
+                            override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+                                it.resume(Pair(binder, this))
+                            }
+
+                            override fun onServiceDisconnected(name: ComponentName) {
+                                println("service disconnected $name")
+                                this@Companion.serviceConnection = null
+                                it.cancel()
+                            }
+                        }
+                        try {
+                            context.bindService(Intent(context, MqttService::class.java), serviceConn, BIND_AUTO_CREATE)
+                        } catch (e: Exception ) {
+                            Log.e("[MQSC]", "Failed to bind service", e)
+                        }
                     }
-                }
-                context.bindService(Intent(context, MqttService::class.java), serviceConn, BIND_AUTO_CREATE)
-                serviceConn
-            }
-            val service = IRemoteMqttService.Stub.asInterface(binder)
-            MqttAppServiceConnection(driver.await(), service, this)
+                    val service = IRemoteMqttService.Stub.asInterface(binder)
+                    val connection = MqttAppServiceConnection(driver.await(), service, serviceConnection, parent)
+                    this@Companion.serviceConnection = connection
+                    connection
+                }.await()
+
         }
 
     }

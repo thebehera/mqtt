@@ -25,6 +25,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    buildFeatures {
+        // Enables Jetpack Compose for this module
+        compose true
+        dataBinding true
+    }
 }
 
 dependencies {

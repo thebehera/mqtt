@@ -10,4 +10,12 @@ interface IRemoteMqttService {
     void publish(long connectionId, long packetId);
     void publishQos0Fd(long connectionId, String topicName, in AssetFileDescriptor payload);
     void publishQos0(long connectionId, String topicName, in byte[] payload);
+    void subscribe(long connectionId, inout String[] topic, inout int[] qos);
+    void unsubscribe(long connectionId, inout String[] topic);
+    long[] ping();
+
+    void addIncomingMessageCallback(ControlPacketCallback callback);
+    void removeIncomingMessageCallback(ControlPacketCallback callback);
+    void addOutgoingMessageCallback(ControlPacketCallback callback);
+    void removeOutgoingMessageCallback(ControlPacketCallback callback);
 }

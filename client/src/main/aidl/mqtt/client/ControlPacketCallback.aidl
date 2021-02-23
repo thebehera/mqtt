@@ -2,6 +2,8 @@
 package mqtt.client;
 
 import mqtt.client.ControlPacketWrapper;
+
 interface ControlPacketCallback {
-    void onResponse(out ControlPacketWrapper controlPacketWrapper);
+    void onMessage(inout ControlPacketWrapper controlPacketWrapper);
+    void onMessageFd(String fileReference);
 }

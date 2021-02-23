@@ -13,6 +13,11 @@ if (System.getenv("ANDROID_HOME")) {
                 proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             }
         }
+        buildFeatures {
+            // Enables Jetpack Compose for this module
+            compose true
+            dataBinding true
+        }
         compileOptions {
             sourceCompatibility 1.8
             targetCompatibility 1.8
@@ -34,6 +39,10 @@ if (System.getenv("ANDROID_HOME")) {
                 java.srcDirs = ['src/androidTest/kotlin']
                 res.srcDirs = ['src/androidTest/res']
             }
+        }
+        composeOptions {
+            kotlinCompilerVersion '1.4.21'
+            kotlinCompilerExtensionVersion '1.0.0-alpha10'
         }
 
     }

@@ -7,9 +7,10 @@ import mqtt.wire4.control.packet.ControlPacketV4
 import mqtt.wire5.control.packet.ControlPacketV5
 
 class ControlPacketWrapper : Parcelable {
-    lateinit var packet: ControlPacket
+    var packet: ControlPacket? = null
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
+        val packet = packet ?: return
         val buffer = ParcelableBuffer(parcel)
         parcel.writeByte(packet.mqttVersion)
         packet.serialize(buffer)
@@ -18,9 +19,8 @@ class ControlPacketWrapper : Parcelable {
     override fun describeContents() = 0
 
     fun readFromParcel(reply: Parcel) {
-        println("reply $reply")
+        packet = toControlPacket(reply)
     }
-
 
     companion object CREATOR : Parcelable.Creator<ControlPacketWrapper> {
 

@@ -1,5 +1,6 @@
 package mqtt.client
 
+import mqtt.wire.control.packet.ControlPacket
 import mqtt.wire.control.packet.IPublishMessage
 import mqtt.wire.control.packet.ISubscribeAcknowledgement
 import mqtt.wire.control.packet.IUnsubscribeAckowledgment
@@ -17,7 +18,8 @@ interface ApplicationMessageCallback {
     suspend fun onPublishMessageReceived(client: Client, pub: IPublishMessage) = Unit
     suspend fun onAcknowledgementReceived(ack: ISubscribeAcknowledgement) = Unit
     suspend fun onAcknowledgementReceived(ack: IUnsubscribeAckowledgment) = Unit
-
+    suspend fun onMessageReceived(msg: ControlPacket) = Unit
+    suspend fun onMessageSent(msg: ControlPacket) = Unit
     class Mqtt5Extras(
         val reasonCode: ReasonCode = ReasonCode.SUCCESS,
         val reasonString: CharSequence? = null,

@@ -3,14 +3,19 @@
           package="mqtt.client">
 
     <uses-permission android:name="android.permission.INTERNET"/>
-    <application>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+    <application
+            android:usesCleartextTraffic="true">
 
         <service
                 android:name=".MqttService"
                 android:enabled="true"
                 android:exported="false"
-        >
-        </service>
+                android:process=":sync"
+        />
+        <service
+                android:name="androidx.work.impl.background.systemjob.SystemJobService"
+                android:process=":sync"/>
     </application>
 
 </manifest>

@@ -33,6 +33,7 @@ class SocketController private constructor(
 
     private val writeQueue = Channel<Collection<ControlPacket>>(Channel.RENDEZVOUS)
     init {
+
         scope.launch {
             while (isActive && socket.isOpen()) {
                 writeQueue.consumeAsFlow().collect { packets ->
@@ -41,7 +42,7 @@ class SocketController private constructor(
                     }
                     val buffer = allocateNewBuffer(totalBufferSize)
                     packets.forEach { packet ->
-                        println("OUT : $packet")
+                        println("OUT: $packet")
                         packet.serialize(buffer)
                     }
                     try {
@@ -70,14 +71,10 @@ class SocketController private constructor(
     }
 
     override suspend fun read() = flow {
-        println("start read ${socket.isOpen()}")
         val inputStream = SuspendingInputStream(keepAliveTimeout * 1.5, scope, socket)
-        println("start read ${socket.isOpen()}")
         try {
-            println(scope.isActive && socket.isOpen())
             while (scope.isActive && socket.isOpen()) {
                 lastMessageReceived = inputStream.lastMessageReceived
-                println("reading")
                 val byte1 = inputStream.readUnsignedByte()
                 val remainingLength = inputStream.readVariableByteInteger()
                 val packet = inputStream.readTyped(remainingLength.toLong()) { readBuffer ->
@@ -86,7 +83,7 @@ class SocketController private constructor(
                 println("IN : $packet")
                 emit(packet)
             }
-        } catch (e: ClosedReceiveChannelException) {
+        } catch (e: Exception) {
             // ignore closed
                 e.printStackTrace()
             close()
@@ -96,13 +93,14 @@ class SocketController private constructor(
     }
 
     override suspend fun close() {
+        println("closing sc")
         writeQueue.close()
         try {
             socket.close()
         } catch (e: Exception) {
             // ignore close exceptions
         }
-        scope.cancel()
+//        scope.cancel()
         closedSocketCallback?.invoke()
     }
 
@@ -114,7 +112,6 @@ class SocketController private constructor(
         ): SocketController? {
             val socket = getClientSocket() ?: return null
             socket.open(port = connectionOptions.port.toUShort(), timeout = 1.seconds, hostname = connectionOptions.name)
-            println("${socket.isOpen()}")
             return SocketController(
                 scope,
                 connectionOptions.request.controlPacketFactory,
