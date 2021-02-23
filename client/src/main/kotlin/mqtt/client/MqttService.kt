@@ -1,6 +1,5 @@
 package mqtt.client
 
-import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.content.res.AssetFileDescriptor
@@ -11,8 +10,8 @@ import androidx.work.Configuration
 import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import androidx.work.multiprocess.RemoteWorkManager
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import mqtt.client.persistence.DatabasePersistence
 import mqtt.client.socket.ConnectionState
 import mqtt.connection.IConnectionOptions
@@ -21,11 +20,13 @@ import mqtt.persistence.createDriver
 import mqtt.persistence.db.Database
 import mqtt.persistence.db.MqttConnections
 import mqtt.wire.control.packet.ControlPacket
+import mqtt.wire.control.packet.IConnectionAcknowledgment
 import mqtt.wire.control.packet.SubscriptionWrapper
 import mqtt.wire.data.QualityOfService
 import mqtt.wire.data.topic.Filter
 import java.util.concurrent.TimeUnit.MILLISECONDS
-import kotlin.time.milliseconds
+import kotlin.time.minutes
+import kotlin.time.seconds
 
 class MqttService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -37,9 +38,18 @@ class MqttService : Service() {
     private lateinit var database: Database
     private val incomingMessageObservers = mutableSetOf<ControlPacketCallback>()
     private val outgoingMessageObservers = mutableSetOf<ControlPacketCallback>()
-
+    private val currentConnectionJob = mutableMapOf<Long, Job>()
+    private val connectFlow = Channel<MqttConnections>()
 
     suspend fun connect(connection: MqttConnections) {
+        connectFlow.send(connection)
+    }
+
+    private suspend fun connectLocal(connection: MqttConnections) {
+        if (persistence.containsKey(connection.connectionId)) {
+            return
+        }
+        persistence[connection.connectionId] = DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
         val connectionId = connection.connectionId
         val persistence = findPersistence(connectionId)
         val connectionOptions: IConnectionOptions = buildConnectionOptions(connection, persistence)
@@ -83,7 +93,7 @@ class MqttService : Service() {
             }
         }
         clients[connectionId] = client
-        client.stayConnectedAsync()
+        currentConnectionJob[connectionId] = client.stayConnectedAsync()
     }
 
     private val binder = object : IRemoteMqttService.Stub() {
@@ -91,11 +101,7 @@ class MqttService : Service() {
         override fun addServer(connectionId: Long, mqttVersion: Byte) {
             scope.launch {
                 val connection = database.connectionsQueries.findConnection(connectionId).executeAsOne()
-                if (!persistence.containsKey(connection.connectionId)) {
-                    persistence[connection.connectionId] =
-                        DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
-                    connect(connection)
-                }
+                connect(connection)
             }
         }
 
@@ -157,11 +163,17 @@ class MqttService : Service() {
             val list = mutableListOf<Long>()
             val jobs = mutableSetOf<Job>()
             for ((connectionId, client) in clients) {
-                if (client.connectionState is ConnectionState.Connected) {
-                    jobs += scope.launch {
+                jobs += scope.launch {
+                    if (client.connectionState !is ConnectionState.Connected) {
+                        println("reconnecting pingy")
+                        currentConnectionJob[connectionId]?.cancel()
+                        currentConnectionJob[connectionId] = client.stayConnectedAsync()
+                        client.suspendUntilMessage { it is IConnectionAcknowledgment }
+                        println("reconnected pingy")
+                    } else {
                         client.writePing()
-                        list += connectionId
                     }
+                    list += connectionId
                 }
             }
             runBlocking(Dispatchers.Default) {
@@ -185,6 +197,17 @@ class MqttService : Service() {
         override fun removeOutgoingMessageCallback(callback: ControlPacketCallback) {
             outgoingMessageObservers -= callback
         }
+
+        override fun resetReconnectTimer() {
+            clients.forEach {  (connectionId, client) ->
+                client.currentDelay = 0.seconds
+                if (client.connectionState !is ConnectionState.Connected) {
+                    currentConnectionJob[connectionId]?.cancel()
+                    currentConnectionJob[connectionId] = client.stayConnectedAsync()
+                }
+            }
+        }
+
     }
 
     private suspend fun findPersistence(connectionId:Long): DatabasePersistence {
@@ -207,16 +230,19 @@ class MqttService : Service() {
     override fun onCreate() {
         super.onCreate()
         scope.launch {
+            launch {
+                registerNetworkListener(this@MqttService)
+                for (connection in connectFlow) {
+                    connectLocal(connection)
+                }
+            }
             val workConfig = Configuration.Builder()
             workConfig.setMinimumLoggingLevel(Log.VERBOSE)
             workConfig.setDefaultProcessName(applicationInfo.processName)
             WorkManager.initialize(this@MqttService, workConfig.build())
             database = Database(createDriver("mqtt", AndroidContextProvider(this@MqttService)))
             val connections = database.connectionsQueries.getConnections().executeAsList()
-            connections.filterNot { persistence.containsKey(it.connectionId) }.forEach { connection ->
-                persistence[connection.connectionId] = DatabasePersistence(database, Dispatchers.IO, connection.connectionId)
-                connect(connection)
-            }
+            connections.forEach { connect(it) }
         }
     }
 
@@ -247,6 +273,7 @@ class MqttService : Service() {
     override fun onDestroy() {
         Log.i("RAHUL","destroy service")
         super.onDestroy()
+        connectFlow.close()
         scope.cancel()
     }
 }

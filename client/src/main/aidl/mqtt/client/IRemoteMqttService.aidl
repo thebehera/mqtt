@@ -18,4 +18,5 @@ interface IRemoteMqttService {
     void removeIncomingMessageCallback(ControlPacketCallback callback);
     void addOutgoingMessageCallback(ControlPacketCallback callback);
     void removeOutgoingMessageCallback(ControlPacketCallback callback);
+    void resetReconnectTimer();
 }

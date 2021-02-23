@@ -35,6 +35,8 @@ class Client(
     private val scope: CoroutineScope,
     private val enableKeepAlive: Boolean = true
 ) {
+    private val initialFailureDelay = 1.seconds
+    var currentDelay = initialFailureDelay
     private val packetFactory = connectionOptions.request.controlPacketFactory
     private var socketController: ISocketController? = null
     private var reconnectCount = 0
@@ -59,6 +61,7 @@ class Client(
 //            persistence.clear()
 //        }
         val websocketParams = connectionOptions.websocketEndpoint
+        println("connecting to $connectionOptions")
         socketController = if (websocketParams != null) {
             WebsocketController.openWebSocket(scope, connectionOptions)!!
         } else {
@@ -66,6 +69,7 @@ class Client(
                 ?: throw UnsupportedOperationException("Native sockets area not supportd. make sure you have added the websocket params to the IRemoteHost object")
             controller
         }
+        println("socket connected")
         val socketController = socketController!!
         socketController.write(request)
         messageCallback?.onMessageSent(request)
@@ -108,8 +112,6 @@ class Client(
     fun stayConnectedAsync() = scope.launch(Dispatchers.Default) {
         val exponentialBackoffFactor = 2.0
         val maxDelay = 10.seconds
-        val initialFailureDelay = 1.seconds
-        var currentDelay = initialFailureDelay
         while (isActive) {
             var currentException :Throwable? = null
             try {
@@ -127,13 +129,17 @@ class Client(
                         it.resume(Unit)
                     }
                 }
-                println("start reconnecting")
                 connectionState = ConnectionState.Reconnecting(null, currentDelay)
             } catch (e: Exception) {
                 currentException = e
                 connectionState = ConnectionState.Reconnecting(e, currentDelay)
             }
-            keepAliveJob?.cancel(CancellationException(currentException))
+            println("start reconnecting $connectionState")
+            if (currentException != null) {
+                keepAliveJob?.cancel(CancellationException(currentException))
+            } else {
+                keepAliveJob?.cancel()
+            }
             keepAliveJob = null
             socketController?.closedSocketCallback = null
             socketController?.close()
@@ -401,7 +407,7 @@ class Client(
         }
     }
 
-    private suspend fun suspendUntilMessage(matches: (ControlPacket) -> Boolean = {true}): ControlPacket {
+    suspend fun suspendUntilMessage(matches: (ControlPacket) -> Boolean = {true}): ControlPacket {
         val coroutineSubscription = incomingMessageBroadcastChannel.openSubscription()
         var done = false
         while (!done) {

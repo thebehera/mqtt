@@ -14,31 +14,39 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import mqtt.persistence.db.MqttConnections
 import java.util.*
+import kotlin.time.seconds
 
 class PingWorker(context: Context, val params: WorkerParameters) : CoroutineWorker(context.applicationContext, params) {
+    private val scope = MainScope()
 
-
-    override suspend fun doWork(): Result = withContext(Dispatchers.Default) {
-        val waitingInfo = createForegroundInfo(applicationContext, id, "waiting", "waiting")
-        if(shouldForeground) setForeground(waitingInfo)
-        println("get service connection")
-        val serviceConnection = MqttAppServiceConnection.getMqttServiceConnection(applicationContext, this)
-        val pingInfo = createForegroundInfo(applicationContext, id, "pinging", "pinging")
-        if(shouldForeground) setForeground(pingInfo)
-        val sucesses = serviceConnection.pingAsync().await()
-        val doneInfo = createForegroundInfo(applicationContext, id, "pinging", "done")
-        if(shouldForeground) setForeground(doneInfo)
-        val total = serviceConnection.findConnections().associateBy { it.connectionId }
-        val failures = total.keys - sucesses
-        if (failures.isEmpty()) {
+    override suspend fun doWork(): Result {
+        if(shouldForeground) setForeground(createForegroundInfo(applicationContext, id, "waiting", "waiting"))
+        println("get service connection ping worker")
+        val serviceConnection = MqttAppServiceConnection.getMqttServiceConnection(applicationContext, scope)
+        val failures = pingGetFailureConnections(serviceConnection)
+        return if (failures.isEmpty()) {
             Result.success()
         } else {
             val failedInfo = createForegroundInfo(applicationContext, id, "failed ${failures.count()}", "pinged")
             if (shouldForeground) setForeground(failedInfo)
             Result.retry()
         }
+    }
+
+    private suspend fun pingGetFailureConnections(serviceConnection: MqttAppServiceConnection): Map<Long, MqttConnections> {
+        if(shouldForeground) setForeground(createForegroundInfo(applicationContext, id, "pinging", "pinging"))
+        println("ping worker ping")
+        val sucesses = serviceConnection.pingAsync().await()
+        println("ping worker ping ${sucesses.joinToString()}")
+        if(shouldForeground) setForeground(createForegroundInfo(applicationContext, id, "pinging", "done"))
+        val total = serviceConnection.findConnections().associateBy { it.connectionId }.filter { !sucesses.contains(it.key) }
+        if (total.keys.isNotEmpty()) println("ping worker failures ${total.keys.joinToString()}")
+        return total
     }
 
     companion object {

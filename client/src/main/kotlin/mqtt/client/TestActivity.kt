@@ -5,14 +5,11 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.widget.TextView
 import androidx.databinding.DataBindingUtil
 import kotlinx.coroutines.*
 import mqtt.client.databinding.LayoutBinding
 import mqtt.connection.ConnectionOptions
 import mqtt.wire4.control.packet.ConnectionRequest
-import java.io.File
-import java.io.FileInputStream
 import kotlin.time.minutes
 
 class TestActivity : Activity() {

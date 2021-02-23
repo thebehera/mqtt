@@ -152,6 +152,10 @@ class MqttAppServiceConnection private constructor(
     fun removeOutgoingMessageObserver(callback: ControlPacketCallback)
         = scope.async {service.removeOutgoingMessageCallback(callback) }
 
+    fun resetReconnectTimer() {
+        service.resetReconnectTimer()
+    }
+
     companion object {
 
         private var serviceConnection: MqttAppServiceConnection? = null
