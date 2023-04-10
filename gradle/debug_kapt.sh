@@ -1,1 +1,0 @@
-./gradlew :android_app_sample:kaptDebugKotlin --no-daemon -Dorg.gradle.debug=true -Dkotlin.compiler.execution.strategy="in-process" -Dkotlin.daemon.jvm.options="-Xdebug,-Xrunjdwp:transport=dt_socket\,address=5007\,server=y\,suspend=n"

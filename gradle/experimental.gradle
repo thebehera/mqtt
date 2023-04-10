@@ -1,5 +1,0 @@
-ext.experimentalAnnotations = [
-        "kotlin.Experimental",
-        "kotlin.ExperimentalUnsignedTypes",
-        "kotlin.ExperimentalStdlibApi"
-]
